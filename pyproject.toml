@@ -47,9 +47,9 @@ dev = ["pytest", "PySide6>=6.6", "pyqtdarktheme-fork>=2.3",
        "pyte>=0.8", "ptyprocess>=0.7; sys_platform != 'win32'", "pywinpty>=2; sys_platform == 'win32'"]
 
 [project.urls]
-Homepage = "https://github.com/NaoshiKitamura/adit-chem"
-Repository = "https://github.com/NaoshiKitamura/adit-chem"
-Issues = "https://github.com/NaoshiKitamura/adit-chem/issues"
+Homepage = "https://github.com/adit-chem-project/adit-chem"
+Repository = "https://github.com/adit-chem-project/adit-chem"
+Issues = "https://github.com/adit-chem-project/adit-chem/issues"
 
 [project.scripts]
 adit = "adit.gui.app:main"

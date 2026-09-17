@@ -1,6 +1,6 @@
 # Build the macOS application bundle (.app). Started by hand from the Actions page ("Run workflow").
 # The bundle is neither signed nor notarised: the first launch needs right-click -> Open in Finder.
-# See docs/MACOS_BUILD.md. Only Apple Silicon (arm64) is built.
+# See docs/INSTALL.md. Only Apple Silicon (arm64) is built.
 name: macos-app
 
 on:

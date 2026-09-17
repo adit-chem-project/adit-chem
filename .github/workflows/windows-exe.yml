@@ -1,6 +1,6 @@
 # Build the Windows executable (.exe).
 # Pushing a tag such as v0.1.0a1 also attaches the zip to the matching GitHub Release,
-# so that users can download it without a GitHub account. See docs/WINDOWS_BUILD.md.
+# so that users can download it without a GitHub account. See docs/INSTALL.md.
 name: windows-exe
 
 on:
