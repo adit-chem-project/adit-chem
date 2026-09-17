@@ -1,19 +1,14 @@
 from __future__ import annotations
 
+import http.client
 import threading
-import urllib.error
-import urllib.request
+from urllib.parse import urlparse
 
 import pytest
 
 from adit.config import default_config
 from adit.web.server import WebApp, main, serve, server_url
 from tests.conftest import make_fake_skset
-
-
-class _NoRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, *args, **kwargs):
-        return None
 
 
 @pytest.fixture
@@ -27,20 +22,23 @@ def web(tmp_path):
     httpd.shutdown(); httpd.server_close()
 
 
-def _status(req, opener=None) -> tuple[int, dict]:
-    opener = opener or urllib.request.build_opener(_NoRedirect)
+def _status(url: str, body: bytes | None = None, headers: dict | None = None) -> tuple[int, dict]:
+    u = urlparse(url)
+    conn = http.client.HTTPConnection(u.hostname, u.port, timeout=60)
     try:
-        r = opener.open(req, timeout=60)
+        conn.request("POST" if body is not None else "GET", u.path + ("?" + u.query if u.query else ""), body=body, headers=headers or {})
+        r = conn.getresponse()
+        r.read()
         return r.status, dict(r.headers)
-    except urllib.error.HTTPError as ex:
-        return ex.code, dict(ex.headers)
+    finally:
+        conn.close()
 
 
 def test_requests_without_token_are_refused(web):
     assert _status(web + "/")[0] == 403
-    assert _status(urllib.request.Request(web + "/preview", data=b"x=1"))[0] == 403
+    assert _status(web + "/preview", body=b"x=1")[0] == 403
     assert _status(web + "/?token=wrong")[0] == 403
-    assert _status(urllib.request.Request(web + "/", headers={"Cookie": "adit_token=wrong"}))[0] == 403
+    assert _status(web + "/", headers={"Cookie": "adit_token=wrong"})[0] == 403
 
 
 def test_token_in_url_sets_cookie_and_strips_token(web):
@@ -48,7 +46,7 @@ def test_token_in_url_sets_cookie_and_strips_token(web):
     assert code == 303
     assert headers["Location"] == "/analysis?dir=abc"
     assert "adit_token=secret-token" in headers["Set-Cookie"] and "HttpOnly" in headers["Set-Cookie"]
-    assert _status(urllib.request.Request(web + "/", headers={"Cookie": "adit_token=secret-token"}))[0] == 200
+    assert _status(web + "/", headers={"Cookie": "adit_token=secret-token"})[0] == 200
 
 
 def test_no_token_keeps_old_behaviour(tmp_path):
