@@ -4,7 +4,7 @@ message: "If you use this software in your research, please cite it as below, to
 type: software
 authors:
   - name: "The ADIT project"
-repository-code: "https://github.com/NaoshiKitamura/adit-chem"
+repository-code: "https://github.com/adit-chem-project/adit-chem"
 license: MIT
 version: 0.1.0a1
 date-released: "2026-09-15"
