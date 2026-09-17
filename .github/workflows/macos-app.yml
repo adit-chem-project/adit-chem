@@ -17,8 +17,8 @@ jobs:
     env:
       ARCH: arm64
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Install dependencies
@@ -46,7 +46,7 @@ jobs:
           cd dist
           gh release create "${{ github.ref_name }}" "ADIT-${{ env.ARCH }}.zip" --generate-notes --title "${{ github.ref_name }}" \
             || gh release upload "${{ github.ref_name }}" "ADIT-${{ env.ARCH }}.zip" --clobber
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: adit-macos-${{ env.ARCH }}
           path: |

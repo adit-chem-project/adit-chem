@@ -17,8 +17,8 @@ jobs:
       QT_QPA_PLATFORM: offscreen
       PYTHONUTF8: "1"          # do not use the Windows default code page
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
       - name: Shared libraries Qt needs on Linux
@@ -36,8 +36,8 @@ jobs:
       QT_QPA_PLATFORM: offscreen
       PYTHONUTF8: "1"          # do not use the Windows default code page
     steps:
-      - uses: actions/checkout@v4
-      - uses: mamba-org/setup-micromamba@v1
+      - uses: actions/checkout@v6
+      - uses: mamba-org/setup-micromamba@v3
         with:
           environment-name: qc
           create-args: python=3.12 dftbplus=*=nompi_* qe
