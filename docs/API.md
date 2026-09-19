@@ -1,11 +1,10 @@
-# ADIT を Python から使う (2026-09-13)
+# ADIT を Python から使う
 
 コマンド (`adit-gen` / `adit-analyze` / `adit-report` / `adit-convert`) ではなく、**自分のスクリプトから
-部品として呼ぶ**ときの地図。2026-09-13 の試用で、博士研究員と自動処理の役から「入り口が分からない」
-「例外を 1 つにまとめてほしい」と指摘された分の答え。
+部品として呼ぶ**ときの地図です。
 
-**約束**: ここに書いた名前は `adit.<モジュール>` から直接 import できる。私的な関数 (`_` で始まるもの) は
-いつ変わるか分からないので使わない。
+**約束**: ここに書いた名前は `adit.<モジュール>` から直接 import できます。内部用の関数 (`_` で始まるもの) は
+いつ変わるか分からないので使わないでください。
 
 ## 1 最短の流れ
 
@@ -49,7 +48,7 @@ print(methods_markdown([load_run_report("out/run1")], "ja"))   # 論文の「方
 | 距離・角・二面角・RMSD・Rg の時系列 | `adit.analysis.geometry_series.*` | `numpy` の配列 |
 | 配位数・中心対称性・Steinhardt・かたまり・S(q) | `adit.analysis.local_order.*` | `numpy` の配列 / `dict` |
 | 水素結合を数える | `adit.analysis.hbond.count_series(frames, distance, angle)` | 1 フレームごとの本数 (しきい値は必須) |
-| 速度自己相関と振動スペクトル | `adit.analysis.vacf.vacf(frames, dt_fs)` | `VacfResult` |
+| 速度自己相関と振動スペクトル | `adit.analysis.vacf.vacf(velocities, dt_fs, *, max_lag_fraction=0.5, source="velocities", window="hann")` (`velocities` は (フレーム, 原子, 3) の配列、Å/fs) | `VacfResult` |
 | 有効質量 | `adit.analysis.effective_mass.at_band_edges(kdist, energies, fermi)` | `list[EffectiveMass]` |
 | 射影バンド (QE の projwfc.x) | `adit.analysis.projected_bands.read_filproj(path)` | `ProjectedBands` |
 | 光学 (QE の epsilon.x) | `adit.analysis.optical.read_epsilon(run_dir)` | `Optical` (n, k, 吸収係数, 反射率, EELS) |
@@ -67,8 +66,8 @@ print(methods_markdown([load_run_report("out/run1")], "ja"))   # 論文の「方
 
 ## 3 例外
 
-すべての例外は `adit.errors.AditError` を継承する。**外部要因 (ファイルが無い、メモリ不足) と ADIT 起因の
-失敗を 1 行で分けられる**ようにするため。
+すべての例外は `adit.errors.AditError` を継承します。**外部要因 (ファイルが無い、メモリ不足) と ADIT 起因の
+失敗を 1 行で分けられる**ようにするためです。
 
 ```python
 from adit.errors import AditError, AditValueError
@@ -80,7 +79,7 @@ except AditError as ex:          # ADIT が「これでは動かない」と判�
 ```
 
 `AditValueError` は `AditError` と `ValueError` の両方を継承するので、`except ValueError` で書いた
-既存のコードもそのまま動く。
+既存のコードもそのまま動きます。
 
 | 例外 | いつ | モジュール |
 |---|---|---|
@@ -90,19 +89,19 @@ except AditError as ex:          # ADIT が「これでは動かない」と判�
 | `ScanError` | 振る値の指定が読めない | `adit.scan` |
 | `StructuresError` / `EnumerateError` | 一括生成・置換基の列挙 | `adit.structures_batch` / `adit.enumerate_r` |
 | `TemplateError` | 雛形の保存・読み出し | `adit.templates` |
-| `ConfigMissing` / `ConfigError` | 設定ファイル | `adit.config` |
+| `ConfigMissing` / `ConfigError` | 環境設定ファイル | `adit.config` |
 | `ReportError` | 報告を作れない (spec.json が無いなど) | `adit.report` |
 | `TrajectoryTooLarge` | 軌跡がメモリの上限を超える | `adit.analysis.trajectory` |
 | `TransportError` / `VolumetricError` / `XrdError` / `RateError` | 粘度・体積データ・粉末回折・速度定数 | `adit.analysis.*` |
 | `HandoffError` | 段階の引き継ぎ (**このモジュールだけ `AditError` を継承しない**) | `adit.handoff` |
 
-`adit/handoff.py` は計算機の上に写して単体で実行するので、ADIT を import しない。例外もその場で定義している。
+`adit/handoff.py` は計算機の上に写して単体で実行するので、ADIT を import しません。例外もその場で定義しています。
 
 ## 4 覚えておくこと
 
-- **ジョブは投入しない。** `write_project` は `submit.sh` を書くだけで、実行するのは人
-- **解析は既定で計算のディレクトリに書く。** 汚したくないときは `AnalysisOptions(out_dir=...)`
-- **設定ファイルは 1 つ。** 試験などで差し替えるときは環境変数 `ADIT_CONFIG` を使う
- (`load_config(path)` に直接渡してもよい)
-- **言語は `adit.lang.set_language("ja" / "en")`** で切り替わる。エラー文も表の見出しも同じ設定を見る
-- **GUI を import しない。** `adit.gui` は PySide6 を要求する。ウェブ版・CLI・解析は import しない
+- **ジョブは投入しません。** `write_project` は `submit.sh` を書くだけで、実行するのは人です
+- **解析は既定で計算のディレクトリに書きます。** 汚したくないときは `AnalysisOptions(out_dir=...)` を指定します
+- **環境設定ファイルは 1 つです。** 試験などで差し替えるときは環境変数 `ADIT_CONFIG` を使います
+ (`load_config(path)` に直接渡しても構いません)
+- **言語は `adit.lang.set_language("ja" / "en")`** で切り替わります。エラー文も表の見出しも同じ設定を見ます
+- **GUI を import しないでください。** `adit.gui` は PySide6 を要求します。ウェブ版・CLI・解析は import しません

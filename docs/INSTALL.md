@@ -39,7 +39,7 @@ Linux を使ったことがなくても、この節の手順を上から順に�
 
 ### 2. miniforge (conda) を入れる
 
-conda は、Python や計算ソフトを「環境」という箱に分けて入れる仕組みです。miniforge はその配布版で、conda-forge (DFTB+、xtb、Quantum ESPRESSO を配布している場所) を既定で使います。
+conda は、Python や計算コードを「環境」という箱に分けて入れる仕組みです。miniforge はその配布版で、conda-forge (DFTB+、xtb、Quantum ESPRESSO を配布している場所) を既定で使います。
 
 ```bash
 curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
@@ -48,7 +48,7 @@ bash Miniforge3-$(uname)-$(uname -m).sh      # 質問には Enter と yes で答
 
 終わったら、ターミナルを一度閉じて開き直します。行頭に `(base)` と出ていれば入っています。
 
-> **venv ではなく conda を勧める理由**: ADIT は Python だけで動きますが、この PC で計算を実行するには DFTB+ などの計算ソフトが要ります。
+> **venv ではなく conda を勧める理由**: ADIT は Python だけで動きますが、この PC で計算を実行するには DFTB+ などの計算コードが要ります。
 > conda ならそれらを同じ手順で入れられます。WSL の Ubuntu には最初 `python` コマンドが無く `python3` だけですが、conda の環境を有効にすると `python` が使えます。
 > 計算はクラスタでしか実行せず、手元では入力の生成だけをする場合は、`python3 -m venv adit-env` と `source adit-env/bin/activate` の venv でもかまいません。
 
@@ -203,7 +203,7 @@ dist\adit\adit-cli.exe web --open              # ブラウザで http://127.0.0.
 
 | 同梱しない | 理由 |
 |---|---|
-| DFTB+・xtb・Quantum ESPRESSO などの計算ソフト | 配布条件が別。**Windows では計算を実行しない** (生成した入力を Linux のサーバーへ転送して使う) ので、そもそも要らない |
+| DFTB+・xtb・Quantum ESPRESSO などの計算コード | 配布条件が別。**Windows では計算を実行しない** (生成した入力を Linux のサーバーへ転送して使う) ので、そもそも要らない |
 | Slater-Koster セット、擬ポテンシャル、POTCAR | ライセンス上、ADIT が配ってはいけない |
 
 #### 4 分かっている制限
