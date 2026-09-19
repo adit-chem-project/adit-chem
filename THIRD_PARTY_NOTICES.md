@@ -44,6 +44,22 @@
 **これらは「読み取りが本当に合っているか」を、実物の書式で確かめるために置いています。**
 出典と確かめた内容は `tests/data/SOURCES.md` にあります。
 
+## データベースから取得した構造 (利用者が取得するもの)
+
+「データベースから取得」(`adit-gen --fetch`) で手元に来るファイルは ADIT の配布物ではなく、**利用者がそのサイトから取得したもの**です。
+ADIT は取得元・ID・取得日時・応答の SHA-256 とライセンスの表記を spec.json (`provenance.fetched_structure`) と README.txt に記録し、
+取得したファイルを出力ディレクトリに写します。**公開・再配布するときは、その表記の条件に従ってください。**
+各サイトの表記は 2026-09-19 に確認しました。
+
+| 取得元 | 表記 | 確認したページ |
+|---|---|---|
+| PubChem | NCBI の方針: 米国政府が作った情報はパブリックドメイン。提供元 (submitter) が特許・著作権などを主張する場合があり、NCBI は個別の許諾を出せないとしている。PubChem の案内も「提供元のライセンス表記を確かめること」としている | https://www.ncbi.nlm.nih.gov/home/about/policies/ 、https://pubchem.ncbi.nlm.nih.gov/docs/downloads |
+| COD (Crystallography Open Database) | 「All data in the COD and the database itself are dedicated to the public domain and licensed under the CC0 License」 | https://www.crystallography.net/cod/ |
+| Materials Project | 「By downloading Content from Materials Project, User agrees to accept the Creative Commons Attribution 4.0 License … provided proper attribution is given to the Materials Project」 | https://next-gen.materialsproject.org/about/terms (ブラウザ以外からは 403 になるので、同じ文面のある https://legacy.materialsproject.org/terms で確認) |
+| OPTIMADE (横断検索) | 提供元ごとに異なる。ADIT は提供元の名前とホームページを記録するので、そこで条件を確かめてください | https://providers.optimade.org/ |
+
+PubChem の利用方針は「1 秒に 5 回まで」の要求で、ADIT は 1 回の取得で 3 回 (名前 → CID、SDF、化合物名) までしか要求しません。
+
 ## 同梱していないもの (配れないもの)
 
 - **VASP の POTCAR**: ライセンス保持者以外に配布できません。ADIT は**書きも写しもしません**
