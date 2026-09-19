@@ -808,18 +808,26 @@ class MainWindow(QMainWindow):
     def apply_spec(self, spec: CalculationSpec, *, origin: bool = True) -> None:
         if origin:
             self.origin = PrepOrigin(spec)
+        from adit.structure import StructureError
         self._applying = True
         try:
-            self.structure.set_structure(spec.structure)
+            try:
+                self.structure.set_structure(spec.structure)
+            except StructureError as ex:
+                QMessageBox.critical(self, tr("読めません"), str(ex)); return
             self._on_context()
             self.method.set_method(spec.method)
-            if spec.kpoints is not None:
-                self.kpoints.set_kpoints(spec.kpoints)
+            from adit.spec import KPoints
+            self.kpoints.set_kpoints(spec.kpoints if spec.kpoints is not None else KPoints())
             self.task.set_task(spec.task)
             self.runtime.set_runtime(spec.runtime)
         finally:
             self._applying = False
         self.refresh_preview()
+        unshown = [*self.method.unshown, *self.runtime.unshown]
+        if unshown:
+            self.statusBar().showMessage(L("次の欄は画面で表せないので変わりました: " + "、".join(unshown),
+                                           "These fields cannot be shown here and were changed: " + ", ".join(unshown)))
 
     def _record_history(self) -> None:
         if self._applying:

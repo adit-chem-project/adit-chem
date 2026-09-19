@@ -4,6 +4,14 @@ from __future__ import annotations
 from adit.lang import L
 
 
+def short_number(v) -> str:
+    if isinstance(v, bool) or not isinstance(v, (int, float)):
+        return str(v)
+    if isinstance(v, int):
+        return str(v)
+    return min((repr(v), format(v, ".17g")), key=len)
+
+
 def parse_indices(text: str, n: int) -> list[int]:
     return parse_constraints(text, n)[0]
 
