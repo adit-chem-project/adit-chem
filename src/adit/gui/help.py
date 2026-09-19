@@ -20,9 +20,13 @@ R, O = True, False  # required / optional
 
 HELP: dict[str, Help] = {
     "構造の作り方": Help(R, "計算する原子の並びをどこから作るか (土台)。プリセット (ASE の g2 セット)、SMILES (RDKit で 3 次元化)、ファイル、バルク結晶、表面スラブ、溶液・混合物、"
-                        "2 次元材料・ナノチューブ、ナノ粒子、ポリマーのいずれか 1 つ。下の「組み立て手順」で、この土台に加工を重ねられます。",
+                        "2 次元材料・ナノチューブ、ナノ粒子、ポリマー、データベースから取得のいずれか 1 つ。下の「組み立て手順」で、この土台に加工を重ねられます。",
                    "Where the atoms come from (the base): a preset (ASE molecule set), SMILES (3D via RDKit), a file, a bulk crystal, a surface slab, a solution / mixture, "
-                   "a 2D material / nanotube, a nanoparticle or a polymer. The build steps below can then modify this base."),
+                   "a 2D material / nanotube, a nanoparticle, a polymer, or an entry fetched from a database. The build steps below can then modify this base."),
+    "データベース": Help(R, "PubChem (名前か CID → 3D の SDF)、COD (ID → CIF)、Materials Project (mp-ID。環境設定の mp_api_key が要ります)、OPTIMADE (組成で複数のデータベースを横断検索) から構造を取得します。"
+                       "「取得」を押したときだけ通信します。候補が複数あれば一覧から選びます。取得元・ID・日時・応答の SHA-256・ライセンスは spec.json と README.txt に記録され、取得したファイルは出力ディレクトリにも写します。",
+                     "Fetches a structure from PubChem (name or CID -> 3D SDF), COD (ID -> CIF), the Materials Project (mp-ID; needs mp_api_key in the settings) or OPTIMADE (a formula searched across databases). "
+                     "The network is used only when Fetch is pressed. With several candidates you choose from a list. Database, ID, time, SHA-256 of the response and the license are recorded in spec.json and README.txt, and the fetched file is copied into the output directory."),
     "プリセット": Help(R, "ASE に収録された分子 (G2 集など) を名前で選びます。座標は ASE の値です。", "A molecule from ASE's built-in set (G2 etc.); coordinates are ASE's."),
     "SMILES": Help(R, "分子を文字列で表す記法 (例 CCO = エタノール)。RDKit が配座を作り、力場 (MMFF) で粗く整えます。", "Line notation for molecules (e.g. CCO = ethanol). RDKit builds a conformer and relaxes it with MMFF."),
     "ファイル": Help(R, "ASE が読める構造ファイル (xyz, cif, POSCAR, gen など)。周期セルが書かれていれば周期系として扱います。", "Any structure file ASE can read (xyz, cif, POSCAR, gen, ...). A cell in the file makes it periodic."),
@@ -47,6 +51,12 @@ HELP: dict[str, Help] = {
     "周期の像との隙間 [Å]": Help(O, "その方向で、構造の端と周期の像の端のあいだを何 Å 空けるか (いまの隙間は置き換えます)。", "Gap between the structure and its periodic image along this axis (replaces the current gap)."),
     "余白 [Å]": Help(O, "分子やナノ粒子の端から箱の面までの距離。周期の像どうしの距離はこの 2 倍になります。", "Distance from the outermost atoms to the box faces; periodic images end up twice this apart."),
     "倍数の上限": Help(O, "周期の構造を直交するセルに取り直すとき、元のセルの何倍まで大きくしてよいか。", "When re-cutting a periodic structure into an orthogonal cell, the largest allowed multiple of the original cell."),
+    "欄に送る": Help(O, "3D 表示で選んだ原子の番号 (1 始まり) を、固定原子の欄、解析の「原子の選び方」(index 1,2 の形)、"
+                       "または距離・角度・二面角の時系列の欄 (選んだ順で 1,2 の形) に入れます。繰り返して表示している周期系では、基本セルの番号に直します。",
+                    "Puts the atoms picked in the 3D view (1-based) into the fixed-atoms field, the analysis \"Atom selection\" field "
+                    "(as index 1,2) or a distance/angle/dihedral series field (as 1,2 in click order). "
+                    "For a periodic cell shown repeated, the indices refer to the base cell."),
+    "選択を消す": Help(O, "3D 表示で選んだ原子の印と測った値を消します。", "Clears the picked atoms and the measured value in the 3D view."),
     "元素 (条件)": Help(O, "選ぶ原子の元素 (空白かカンマで区切って複数可)。空欄なら元素で絞りません。", "Elements to select (several separated by spaces or commas). Empty = any element."),
     "z の範囲 [Å]": Help(O, "選ぶ原子の z 座標 (デカルト座標) の下限と上限。空欄ならその側は制限なし。条件はすべて「かつ」です。", "Lower and upper bounds on the Cartesian z of the selected atoms; empty = no bound on that side. All conditions must hold."),
     "選ぶ数": Help(R, "条件に合う原子から無作為に選ぶ数。個数か、合う原子に対する割合 (0〜1) のどちらか。", "How many of the matching atoms are picked at random: a count, or a fraction (0-1) of the matching atoms."),

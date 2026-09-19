@@ -12,6 +12,11 @@
 | `gaussian_dvb_raman.out.gz` / `gamess_dvb_ir.out.gz` / `qchem_dvb_raman.out.gz` / `orca_dvb_raman.out.gz` | [cclib](https://github.com/cclib/cclib) の `data/` (Gaussian 16、GAMESS-US 2018、Q-Chem 5.4、ORCA 6.0 の実際の出力) | BSD-3 | 2026-09-13。エネルギー・構造・振動数・赤外の強度・**ラマン活性**・Mulliken 電荷。読んだ値は cclib 自身の読み取りと一致 (GAMESS の赤外だけ単位の換算が要る) |
 | `water_hessian.out` | DFTB+ の実行 (2026-09-10) | — (自分で作った) | hessian.out の並び |
 
+| `fetch/pubchem_water_cids.json` / `fetch/pubchem_962_3d.sdf` / `fetch/pubchem_962_props.json` | PubChem PUG REST の実際の応答 (`compound/name/water/cids/JSON`、`compound/cid/962/SDF?record_type=3d`、`compound/cid/962/property/MolecularFormula,IUPACName,Title/JSON`) | NCBI の方針 (米国政府の著作物はパブリックドメイン) | 2026-09-19。名前 → CID、3D SDF、化合物名の応答の形 |
+| `fetch/cod_1000041.cif` / `fetch/cod_1000041_meta.json` | COD の実際の応答 (`https://www.crystallography.net/cod/1000041.cif`、`result?id=1000041&format=json`) | CC0 1.0 | 2026-09-19。CIF と JSON の項目名 (formula, title, authors, doi …) |
+| `fetch/providers.json` / `fetch/idx_oqmd_links.json` / `fetch/oqmd_si.json` / `fetch/oqmd_4061352.json` | OPTIMADE の実際の応答 (`https://providers.optimade.org/providers.json` を 3 提供元に間引いたもの、`index-metadbs/oqmd/v1/links`、`oqmd.org/optimade/v1/structures?filter=chemical_formula_reduced="Si"` を 2 件に間引いたもの、その 1 件目を単体の応答の形にしたもの) | providers.json は OPTIMADE 連合 (MIT)、OQMD の項目は OQMD の規約 | 2026-09-19。提供元一覧 → links → structures の 3 段の形と、lattice_vectors / species / cartesian_site_positions |
+| `fetch/mp_summary_mp-149.json` | **実物ではない。**Materials Project の OpenAPI (`https://api.materialsproject.org/openapi.json` の `TypedStructureDict` / `TypedLatticeDict` / `TypedSiteDict`) に合わせて自分で書いた応答 (API キーが無く実物を取れなかった) | — (自分で作った) | 2026-09-19。`data[0].structure.lattice.matrix` と `sites[].species[].element` / `xyz` の形だけ |
+
 **開発機に VASP は無いので、VASP の出力は公開されている本物のファイルで確かめています。**
 
 ## リポジトリに置いていないが、実物で確かめたもの

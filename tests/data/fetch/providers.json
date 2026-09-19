@@ -1,0 +1,45 @@
+{
+ "meta": {
+  "api_version": "1.0.0",
+  "query": {
+   "representation": "/links"
+  },
+  "more_data_available": false,
+  "schema": "https://schemas.optimade.org/openapi/v1.0/optimade_index.json"
+ },
+ "data": [
+  {
+   "type": "links",
+   "id": "aiida",
+   "attributes": {
+    "name": "AiiDA",
+    "description": "Automated Interactive Infrastructure and Database for Computational Science (AiiDA)",
+    "base_url": null,
+    "homepage": "https://www.aiida.net",
+    "link_type": "external"
+   }
+  },
+  {
+   "type": "links",
+   "id": "exmpl",
+   "attributes": {
+    "name": "Example provider",
+    "description": "Provider used for examples, not to be assigned to a real database",
+    "base_url": "https://providers.optimade.org/index-metadbs/exmpl",
+    "homepage": "https://example.com",
+    "link_type": "external"
+   }
+  },
+  {
+   "type": "links",
+   "id": "oqmd",
+   "attributes": {
+    "name": "The Open Quantum Materials Database (OQMD)",
+    "description": "The OQMD is a database of DFT calculated thermodynamic and structural properties of materials",
+    "base_url": "https://providers.optimade.org/index-metadbs/oqmd",
+    "homepage": "https://oqmd.org",
+    "link_type": "external"
+   }
+  }
+ ]
+}

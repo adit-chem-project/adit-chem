@@ -98,7 +98,12 @@ def readme_lines(prov: dict) -> list[str]:
     else:
         lines.append(L("  計算コードのバージョン: この計算コードの出力からバージョンの行を拾う方法を確かめていないので、記録しません",
                        "  Code version: not recorded (how to pick the version line from this code's output has not been verified)"))
-    return lines + [""]
+    lines.append("")
+    if prov.get("fetched_structure"):
+        from adit.fetch import readme_lines as fetched_lines
+
+        lines += fetched_lines(prov["fetched_structure"])
+    return lines
 
 
 def verify_inputs(run_dir: Path | str) -> list[dict]:

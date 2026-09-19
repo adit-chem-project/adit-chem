@@ -62,7 +62,7 @@ class VaspMethodPanel(QWidget):
         self.lasph = QCheckBox(L("有効にする", "Enable"))
         self.lmaxmix = narrow(QSpinBox()); self.lmaxmix.setRange(0, 100)
         self.nbands = narrow(QSpinBox()); self.nbands.setRange(0, 10_000_000)
-        self.isym = QLineEdit(); self.isym.setPlaceholderText(L("空欄なら VASP の既定", "Empty = VASP default")); self.isym.setMaximumWidth(120)
+        self.isym = narrow(QLineEdit()); self.isym.setPlaceholderText(L("空欄なら VASP の既定", "Empty = VASP default"))
         self.idipol = QComboBox()
         for value, text in ((0, L("指定しない", "Not set")), (1, "1: a"), (2, "2: b"), (3, "3: c"), (4, "4: molecule")):
             self.idipol.addItem(text, value)

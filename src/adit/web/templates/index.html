@@ -152,7 +152,8 @@ button.link:hover { text-decoration:underline; background:none; }
   {% set src = form.get("source", "preset") %}
   {% call row("構造の作り方", "Source", "source") %}<select name="source" id="source">
     {%- for k, ja, en in [("preset", "プリセット", "Preset"), ("smiles", "SMILES", "SMILES"), ("file", "ファイル", "File"), ("bulk", "バルク", "Bulk"), ("surface", "スラブ", "Slab"), ("mixture", "溶液・混合物", "Solution / mixture"),
-                          ("2d", "2 次元材料・ナノチューブ", "2D material / nanotube"), ("cluster", "ナノ粒子", "Nanoparticle"), ("polymer", "ポリマー", "Polymer")] %}
+                          ("2d", "2 次元材料・ナノチューブ", "2D material / nanotube"), ("cluster", "ナノ粒子", "Nanoparticle"), ("polymer", "ポリマー", "Polymer"),
+                          ("fetch", "データベースから取得", "Fetch from a database")] %}
     {%- set off = k in ("smiles", "polymer") and not choices.has_rdkit %}
     <option value="{{ k }}"{% if k == src %} selected{% endif %}{% if off %} disabled{% endif %}>{{ (T("SMILES (RDKit が未導入のため使えません)", "SMILES (RDKit not installed)") if k == "smiles" else T("ポリマー (RDKit が未導入のため使えません)", "Polymer (RDKit not installed)")) if off else T(ja, en) }}</option>
     {%- endfor %}</select>{% endcall %}
@@ -166,6 +167,13 @@ button.link:hover { text-decoration:underline; background:none; }
   <div class="only" data-source="file">
   {% call row("ファイル", "File", "file_path") %}{{ txt("file_path", ph=T("この PC 上のパス (xyz, cif, POSCAR など)", "Path on this machine (xyz, cif, POSCAR, ...)")) }}{% endcall %}
   {% call row("アップロード", "Upload", "structure_file") %}<input type="file" name="structure_file" id="structure_file"><span class="hint">{{ T("パスを書く代わりに、ファイルを選んでもかまいません", "Instead of a path, you may choose a file") }}</span>{% endcall %}
+  </div>
+  <div class="only" data-source="fetch">
+  {% call row("データベース", "Database", "fetch_db") %}{{ sel("fetch_db", fetch_db_opts, form.get("fetch_db","pubchem")) }}{{ txt("fetch_query", ph=T("名前か ID (例 water、1000041、mp-149、SiO2)", "Name or ID (e.g. water, 1000041, mp-149, SiO2)"), aria=T("名前か ID", "Name or ID")) }}<button type="submit" formaction="/fetch_structure" formnovalidate title="{{ T('押したときだけ、選んだデータベースに問い合わせます', 'Contacts the chosen database only when pressed') }}">{{ T("取得", "Fetch") }}</button>{% endcall %}
+  {% if fetch_candidates %}{% call row("候補", "Candidates", "fetch_pick") %}<select name="fetch_pick" id="fetch_pick">{% for c in fetch_candidates %}<option value="{{ c.ref }}">{{ c.label }}</option>{% endfor %}</select><span class="hint">{{ T("1 つ選んで「取得」を押してください (どれを使うかは ADIT は判断しません)", "Choose one and press Fetch (ADIT does not choose for you)") }}</span>{% endcall %}{% endif %}
+  <input type="hidden" name="fetch_file" id="fetch_file" value="{{ form.get('fetch_file','') }}"><input type="hidden" name="fetch_record" id="fetch_record" value="{{ form.get('fetch_record','') }}">
+  {% if fetch_info %}<div class="row"><span></span><div class="hint">{{ fetch_info }}</div></div>{% endif %}
+  <div class="row"><span></span><div class="hint">{{ T("PubChem: 名前か CID / COD: ID / Materials Project: mp-ID (環境設定の mp_api_key が要ります) / OPTIMADE: 組成か データベース:ID。取得元・ID・日時・SHA-256・ライセンスを spec.json と README.txt に記録します", "PubChem: name or CID / COD: ID / Materials Project: mp-ID (needs mp_api_key in the settings) / OPTIMADE: formula or database:ID. Database, ID, time, SHA-256 and license are recorded in spec.json and README.txt") }}</div></div>
   </div>
   <div class="only" data-source="bulk">
   {% call row("元素", "Element", "bulk_el") %}{{ txt("bulk_el", "tiny", ph="Si") }}{% endcall %}
@@ -624,6 +632,11 @@ button.link:hover { text-decoration:underline; background:none; }
     <button type="button" data-view="-1.5708,0">{{ T("y 軸から", "Along y") }}</button>
   </div>
   <div class="hint">{{ T("左ドラッグで回転、ホイールで拡大縮小、右ドラッグで移動、ダブルクリックで戻す", "Drag to rotate, scroll to zoom, right-drag to pan, double-click to reset") }}</div>
+  <div class="hint" id="adit3d-measure">{{ T("原子をクリックで選択、Shift+クリックで追加 (2 個で距離、3 個で角度、4 個で二面角。周期系は最も近い像で測ります)",
+                                             "Click an atom to select it, Shift+click to add (2 atoms give the distance, 3 the angle, 4 the dihedral; periodic cells use the nearest image)") }}</div>
+  <div class="actions"><button type="button" id="adit3d-clear" disabled>{{ T("選択を消す", "Clear selection") }}</button>
+    <button type="button" id="adit3d-send-fixed" disabled title="{{ T('選んだ原子の番号 (1 始まり) を固定原子の欄に足します', 'Adds the picked atoms (1-based) to the fixed-atoms field') }}">{{ T("固定原子の欄へ", "To the fixed-atoms field") }}</button>
+    <span class="hint">{{ T("解析ページの「原子の選び方」や距離・角度の欄には、この番号を貼ってください", "Paste these numbers into the analysis page's atom selection or distance/angle fields") }}: <code id="adit3d-indices">-</code></span></div>
   <div class="hint">{{ scene_note }}</div>
   <div class="actions"><a class="btn" href="/structure.svg" title="{{ T('Word や PowerPoint に貼れます (拡大しても粗くなりません)', 'Paste into Word or PowerPoint; stays sharp when enlarged') }}">{{ T("SVG で保存", "Save as SVG") }}</a></div>
   <noscript><div class="hint">{{ T("この絵はブラウザの中の小さなプログラム (JavaScript) で描いています。ブラウザで JavaScript を切っていると出ません。デスクトップ版の「構造」タブでも同じものが見られます。",
@@ -657,7 +670,7 @@ button.link:hover { text-decoration:underline; background:none; }
 </div>
 </div>
 </form>
-{% if scene_json %}<script>window.ADIT_SCENE = {{ scene_json | safe }};</script>
+{% if scene_json %}<script>window.ADIT_SCENE = {{ scene_json | safe }}; window.ADIT_LANG = "{{ lang }}";</script>
 <script>{{ viewer_js | safe }}</script>{% endif %}
 <script>
 /* Field visibility is handled by CSS (:has() above); this only switches the preview tabs. */

@@ -3,7 +3,10 @@
   "meta": {
     "created": "2026-09-10T09:22:44+00:00",
     "app_version": "0.0.1",
-    "comment": ""
+    "comment": "",
+    "continued_from": null,
+    "template": null,
+    "stage": null
   },
   "structure": {
     "source": "file",
@@ -75,7 +78,8 @@
     "charge": 0,
     "multiplicity": 1,
     "fixed_atoms": [],
-    "fixed_axes": {}
+    "fixed_axes": {},
+    "velocities": null
   },
   "method": {
     "code": "dftbplus",
@@ -86,7 +90,9 @@
     "third_order": false,
     "dispersion": "none",
     "d3_params": null,
-    "filling_temperature": 0.0
+    "filling_temperature": 0.0,
+    "seed": 12345,
+    "solvation_param_file": ""
   },
   "kpoints": {
     "mode": "mesh",
@@ -133,5 +139,75 @@
     "omp_threads": 4,
     "walltime": "01:00:00",
     "job_name": "tio2"
+  },
+  "handoff": null,
+  "plumed": null,
+  "provenance": {
+    "adit_version": "0.1.0a1",
+    "generated_utc": "2026-09-19T05:32:35+00:00",
+    "python": "3.14.7",
+    "ase": "3.29.0",
+    "files": [
+      {
+        "name": "skf/LICENSE",
+        "sha256": "9348ddfd44da5a127c59141981954746a860ec8e03e0412cf3af7134af0f97e2",
+        "bytes": 20133,
+        "source": "/home/<user>/adit/slakos/mio-ext/LICENSE"
+      },
+      {
+        "name": "skf/O-O.skf",
+        "sha256": "423de839173a667cc1fd75bd111e6dfa46435b874544a5ce4441b84a31b80b43",
+        "bytes": 102082,
+        "source": "/home/<user>/adit/slakos/mio-ext/O-O.skf"
+      },
+      {
+        "name": "skf/O-Ti.skf",
+        "sha256": "0287863edec03966dacbf7644ad082b6cc170f23f13bef1104f209d9a5f75cd4",
+        "bytes": 186743,
+        "source": "/home/<user>/adit/slakos/mio-ext/O-Ti.skf"
+      },
+      {
+        "name": "skf/README",
+        "sha256": "abb2a2a5a5b4e03d50521858b08459c5199a3cad34f99a72ffdeb8fa33ab0166",
+        "bytes": 5340,
+        "source": "/home/<user>/adit/slakos/mio-ext/README"
+      },
+      {
+        "name": "skf/Ti-O.skf",
+        "sha256": "d65ddc9fa57829378d740a70fae455467d296985f8810a65300b981a3ee0949a",
+        "bytes": 117123,
+        "source": "/home/<user>/adit/slakos/mio-ext/Ti-O.skf"
+      },
+      {
+        "name": "skf/Ti-Ti.skf",
+        "sha256": "6d3c24e10103fd11268f073d73cc3979bf3f412fb27d866f55b3d0cf75211ed2",
+        "bytes": 256337,
+        "source": "/home/<user>/adit/slakos/mio-ext/Ti-Ti.skf"
+      }
+    ],
+    "generated_files": [],
+    "inputs": [
+      {
+        "name": "bands/dftb_in.hsd",
+        "sha256": "214cb716c6604c9e0cfceb197d2f802d2cc39a91cc7a287c6d799d5d41065901"
+      },
+      {
+        "name": "bands/kpath.json",
+        "sha256": "df1dc848ad6f9a6ba629167beec8391ba0784b6b6549337166093673ea2b6211"
+      },
+      {
+        "name": "dftb_in.hsd",
+        "sha256": "56a1d13d31f26e102f5ff701e7d4f835bcf4f3450af46b1f55bf444173435b4d"
+      },
+      {
+        "name": "geometry.gen",
+        "sha256": "ee6263689d02e85589551df03b9316d81aa8115aa834b4d77444abc4cd2d4303"
+      },
+      {
+        "name": "submit.sh",
+        "sha256": "cc7eca32bd006d7eb10d7749261c52bbf168bc7e51e2ad3b18f0d38c176f4533"
+      }
+    ],
+    "code_version_file": "code_version.txt"
   }
 }

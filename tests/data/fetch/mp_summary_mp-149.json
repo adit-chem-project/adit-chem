@@ -1,0 +1,98 @@
+{
+ "data": [
+  {
+   "material_id": "mp-149",
+   "formula_pretty": "Si",
+   "deprecated": false,
+   "symmetry": {
+    "crystal_system": "Cubic",
+    "symbol": "Fd-3m",
+    "number": 227
+   },
+   "structure": {
+    "@module": "pymatgen.core.structure",
+    "@class": "Structure",
+    "charge": 0,
+    "lattice": {
+     "matrix": [
+      [
+       0.0,
+       2.7218,
+       2.7218
+      ],
+      [
+       2.7218,
+       0.0,
+       2.7218
+      ],
+      [
+       2.7218,
+       2.7218,
+       0.0
+      ]
+     ],
+     "pbc": [
+      true,
+      true,
+      true
+     ],
+     "a": 3.849,
+     "b": 3.849,
+     "c": 3.849,
+     "alpha": 60.0,
+     "beta": 60.0,
+     "gamma": 60.0,
+     "volume": 40.33
+    },
+    "sites": [
+     {
+      "species": [
+       {
+        "element": "Si",
+        "occu": 1
+       }
+      ],
+      "abc": [
+       0.875,
+       0.875,
+       0.875
+      ],
+      "xyz": [
+       4.7632,
+       4.7632,
+       4.7632
+      ],
+      "label": "Si",
+      "properties": {}
+     },
+     {
+      "species": [
+       {
+        "element": "Si",
+        "occu": 1
+       }
+      ],
+      "abc": [
+       0.125,
+       0.125,
+       0.125
+      ],
+      "xyz": [
+       0.6805,
+       0.6805,
+       0.6805
+      ],
+      "label": "Si",
+      "properties": {}
+     }
+    ]
+   }
+  }
+ ],
+ "meta": {
+  "api_version": "0.87.3",
+  "time_stamp": "2026-09-19T00:00:00",
+  "total_doc": 1,
+  "max_limit": 1000
+ }
+}
