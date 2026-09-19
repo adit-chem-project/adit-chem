@@ -273,6 +273,8 @@ STAGES = {"stages": [{"name": "min", "task": {"type": "geometry_optimization", "
 def test_stages_plan_and_files(cfg, tmp_path):
     out = tmp_path / "staged"
     dirs = write_stages(water_spec(), cfg, out, parse_stages(STAGES))
+    from adit.stages import STAGES_FILE, load_stages
+    assert [st.name for st in load_stages(out / STAGES_FILE)] == [st.name for st in parse_stages(STAGES)]
     assert [d.name for d in dirs] == ["stage_01_min", "stage_02_nvt", "stage_03_nve"]
     sub2 = (out / "stage_02_nvt" / "submit.sh").read_text(encoding="utf-8").rstrip().splitlines()[-1]
     assert sub2.startswith("python3 ../handoff.py dftbplus ../stage_01_min geometry_optimization && dftb+")
