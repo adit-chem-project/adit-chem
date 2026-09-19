@@ -18,10 +18,20 @@ from ase.data import atomic_numbers, reference_states
 from ase.io import read
 
 from adit.spec import AtomsData, Structure
+from adit.fetch import DATABASES as FETCH_DATABASES, FetchError, fetch as fetch_from_database  # noqa: F401
 
 
 class StructureError(AditError):
     pass
+
+
+def from_fetched(fetched, *, charge: int = 0, multiplicity: int = 1) -> Structure:
+    """Structure for a fetched entry saved with Fetched.save(): a 'file' source that carries the fetch record."""
+    path = fetched.record.get("file")
+    if not path:
+        raise StructureError(L("取得した構造はまだファイルに保存されていません", "the fetched structure has not been saved to a file yet"))
+    return Structure(source="file", source_ref=str(path), atoms=AtomsData.from_ase(fetched.atoms), charge=charge, multiplicity=multiplicity,
+                     fetched=dict(fetched.record))
 
 
 def preset_names() -> list[str]:
