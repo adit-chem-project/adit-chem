@@ -375,3 +375,63 @@ def test_cli_export_with_stride(tmp_path, capsys):
     e = d / "analysis" / "export"
     assert len(read(e / "trajectory.extxyz", index=":")) == 10 and len(read(e / "trajectory.pdb", index=":")) == 10
     assert "4 fs" in (e / "export_README.txt").read_text(encoding="utf-8") and "書き出し:" in capsys.readouterr().out
+
+
+def test_export_writes_vmd_tcl_ovito_templates_and_travis_answers(tmp_path):
+    from adit.analysis.export import TrajectoryExporter
+    ex = TrajectoryExporter(tmp_path / "e", unwrap_molecules=False)
+    for fr in _broken_water_frames():
+        fr.set_cell([10, 12, 10])
+        ex.add(fr)
+    info = ex.close(run_dir=tmp_path, code="dftbplus", source="geo_end.xyz", dt_frame_fs=2.5, stride=2, skip=0, n_total=3, rdf_cutoff=5.0,
+                    select="element O and z < 10")
+    names = {Path(f).name for f in info["files"]}
+    assert {"vmd_load.tcl", "travis_rdf.in", "travis_cdf.in", "travis_msd.in", "travis_hbond.in", "travis_acf.in"} <= names
+    assert all((tmp_path / "e" / n).is_file() for n in names)
+    tcl = (tmp_path / "e" / "vmd_load.tcl").read_text(encoding="utf-8")
+    assert "mol new trajectory.xyz type xyz waitfor all" in tcl and "pbc set {10.000000 12.000000 10.000000 90.0000 90.0000 90.0000} -all" in tcl
+    assert "mol modselect 1 $m {(name O and z < 10)}" in tcl and "mol modstyle 1 $m VDW" in tcl and "color Display Background white" in tcl
+    ovito = (tmp_path / "e" / "ovito_pipeline.py").read_text(encoding="utf-8")
+    compile(ovito, "ovito_pipeline.py", "exec")
+    for cls in ("CommonNeighborAnalysisModifier", "PolyhedralTemplateMatchingModifier", "AcklandJonesModifier", "WignerSeitzAnalysisModifier",
+                "CalculateDisplacementsModifier", "AtomicStrainModifier", "ClusterAnalysisModifier", "SpatialBinningModifier",
+                "TimeAveragingModifier", "ExpressionSelectionModifier"):
+        assert f"om.{cls}(" in ovito
+    assert "expression='(ParticleType == \"O\" && Position.Z < 10)'" in ovito
+    assert "compute_com=True" in ovito and 'data.tables["binning[average]"]' in ovito
+    rdf = (tmp_path / "e" / "travis_rdf.in").read_text(encoding="utf-8").splitlines()
+    answers = [l for l in rdf if not l.startswith("!")]
+    assert answers == ["", "no", "1000.0000", "1200.0000", "1000.0000", "", "", "rdf", ""]
+    msd = (tmp_path / "e" / "travis_msd.in").read_text(encoding="utf-8")
+    assert "\nmsd\n" in msd and "未確認" in msd
+    readme = (tmp_path / "e" / "export_README.txt").read_text(encoding="utf-8")
+    assert "travis -p trajectory.xyz -i travis_rdf.in" in readme and "vmd -e vmd_load.tcl" in readme
+    assert "1 フレームあたり 5 fs" in readme and "acf (vacf ではありません)" in readme
+
+
+def test_export_travis_answers_only_for_orthorhombic_cells(tmp_path):
+    from adit.analysis.export import TrajectoryExporter
+    ex = TrajectoryExporter(tmp_path / "cubic")
+    ex.add(Atoms("OHH", positions=[(0, 0, 0), (0.96, 0, 0), (-0.24, 0.93, 0)], cell=[10, 10, 10], pbc=True))
+    info = ex.close(run_dir=tmp_path, code="dftbplus", source="x", dt_frame_fs=None, stride=1, skip=0, n_total=1, rdf_cutoff=5.0)
+    answers = [l for l in (tmp_path / "cubic" / "travis_rdf.in").read_text(encoding="utf-8").splitlines() if not l.startswith("!")]
+    assert answers == ["", "", "1000.0000", "", "", "rdf", ""] and info["travis_answer_files"] == sorted(info["travis_answer_files"])
+    ovito = (tmp_path / "cubic" / "ovito_pipeline.py").read_text(encoding="utf-8")
+    assert "expression='ParticleType == \"<元素>\" && Position.Z < <z の上限 Å>'" in ovito
+    ex = TrajectoryExporter(tmp_path / "hex")
+    ex.add(Atoms("C2", positions=[(0, 0, 0), (1.42, 0, 0)], cell=[[2.46, 0, 0], [-1.23, 2.13, 0], [0, 0, 10]], pbc=True))
+    info = ex.close(run_dir=tmp_path, code="vasp", source="x", dt_frame_fs=None, stride=1, skip=0, n_total=1, rdf_cutoff=5.0)
+    assert info["travis_answer_files"] == [] and not (tmp_path / "hex" / "travis_rdf.in").exists()
+    assert "直方体でないセル" in (tmp_path / "hex" / "export_README.txt").read_text(encoding="utf-8")
+    ex = TrajectoryExporter(tmp_path / "mol")
+    ex.add(Atoms("OHH", positions=[(0, 0, 0), (0.96, 0, 0), (-0.24, 0.93, 0)]))
+    info = ex.close(run_dir=tmp_path, code="xtb", source="x", dt_frame_fs=None, stride=1, skip=0, n_total=1, rdf_cutoff=5.0)
+    assert info["travis_answer_files"] == [] and "pbc set" not in (tmp_path / "mol" / "vmd_load.tcl").read_text(encoding="utf-8")
+
+
+def test_cli_export_passes_the_selection(tmp_path):
+    from adit.analysis.cli import main
+    d = _copy("qe_md_si_generated", tmp_path)
+    assert main([str(d), "--export", "--select", "index 1-4"]) == 0
+    tcl = (d / "analysis" / "export" / "vmd_load.tcl").read_text(encoding="utf-8")
+    assert "mol modselect 1 $m {index 0 to 3}" in tcl

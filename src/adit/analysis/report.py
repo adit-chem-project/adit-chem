@@ -347,8 +347,9 @@ class AnalysisResult:
             lines += str(t["compare"].get("summary", "")).splitlines()
         if "export" in t:
             x = t["export"]
-            lines.append(L(f"書き出し: {x['dir']} ({x['n_frames']} フレーム。trajectory.extxyz / .xyz / .pdb、view.vmd、ovito_pipeline.py、export_README.txt)",
-                           f"export: {x['dir']} ({x['n_frames']} frames; trajectory.extxyz / .xyz / .pdb, view.vmd, ovito_pipeline.py, export_README.txt)"))
+            travis = L("、TRAVIS の答えファイル travis_*.in", ", TRAVIS answer files travis_*.in") if x.get("travis_answer_files") else ""
+            lines.append(L(f"書き出し: {x['dir']} ({x['n_frames']} フレーム。trajectory.extxyz / .xyz / .pdb、view.vmd、vmd_load.tcl、ovito_pipeline.py{travis}、export_README.txt)",
+                           f"export: {x['dir']} ({x['n_frames']} frames; trajectory.extxyz / .xyz / .pdb, view.vmd, vmd_load.tcl, ovito_pipeline.py{travis}, export_README.txt)"))
         lines += [L("注: ", "note: ") + n for n in self.notes]
         return "\n".join(lines)
 
@@ -831,7 +832,8 @@ def run_analysis(run_dir: Path | str, opts: AnalysisOptions | None = None) -> An
                        "Convert the trajectory to PDB with GROMACS first, then open it in VMD, OVITO or TRAVIS (answer 0 = System when asked for the output group):"),
                      "  echo 0 | gmx trjconv -f adit.xtc -s adit.tpr -o traj.pdb", ""]
         info = exporter.close(run_dir=run_dir, code=data.code, source=data.frame_source or "?", dt_frame_fs=data.frame_dt_fs, stride=opts.stride,
-                              skip=skip, n_total=n_all, rdf_cutoff=float(min(6.0, rmax)) if periodic else 6.0, extra_lines=extra)
+                              skip=skip, n_total=n_all, rdf_cutoff=float(min(6.0, rmax)) if periodic else 6.0, extra_lines=extra,
+                              select=opts.select)
         res.tables["export"] = info
     if opts.dos and data.eigenvalues_ev is not None:
         x, y = compute.dos(data.eigenvalues_ev, data.eigen_weights, sigma=opts.dos_sigma)

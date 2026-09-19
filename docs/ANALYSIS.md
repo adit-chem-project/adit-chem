@@ -40,7 +40,7 @@ GUI の「解析」タブ、ウェブ版の「解析」ページ、`adit-analyze
 | `--stride N` | 軌跡を N フレームおきに使う (大きな軌跡の間引き。RDF・MSD・z 密度・書き出しに効く) |
 | `--msd-fit T0 T1` | 拡散係数を当てはめる時間の範囲 [fs] (既定は最大の遅れ時間の 10〜50 %) |
 | `--zdens [Å]` | z 方向の密度分布 (数を続けると区間の幅。既定 0.2 Å。周期系だけ) |
-| `--export` | 軌跡を `analysis/export/` に書き出す (extxyz・xyz・pdb、VMD の view.vmd、OVITO の ovito_pipeline.py、export_README.txt) |
+| `--export` | 軌跡を `analysis/export/` に書き出す (extxyz・xyz・pdb、VMD の view.vmd と vmd_load.tcl、OVITO の ovito_pipeline.py、TRAVIS の答えファイル travis_*.in、export_README.txt。下の「書き出したファイル」) |
 | `--unwrap-molecules` | 書き出す前に分子を周期境界でつなぎ直す (`--export` を含む) |
 | `--memory-mb MB` | MSD で座標を持つメモリの上限 (既定 1024)。超える軌跡は読まずに止まり、間引きの間隔を示す |
 | `--compare [組]` | 組にして比べる表。`"ads=1:slab_mol,-1:slab,-1:mol"` (係数:ディレクトリ。反応は `;` で区切る)。省くと compare.json を読む |
@@ -68,6 +68,34 @@ z 方向の密度分布、時系列の統計、熱化学の各欄、UV-Vis の�
   デスクトップ版は「書き出したフォルダを開く」でファイルマネージャを開きます (ウェブ版は場所を表示するだけ)
 - 「組にして比べる…」で、比べる計算のディレクトリと係数を行で入れます (名前が空の行は上の行と同じ反応)。
   デスクトップ版は小さな画面、ウェブ版は別のページ (`/compare`)。基準のディレクトリに compare.json があれば読み込めます
+
+### 書き出したファイル (TRAVIS・OVITO・VMD 用) / Exported files for TRAVIS, OVITO and VMD
+
+`--export` は `analysis/export/` に次を書きます。**どれも ADIT では実行していません** (TRAVIS・OVITO・VMD は手元に無い前提)。
+雛形の中に数値は入れず、`<...>` の穴か、出典を添えた「例」にしています。
+
+| ファイル | 中身 | 確かめ方 |
+|---|---|---|
+| `trajectory.extxyz` / `.xyz` / `.pdb` | 軌跡 (extxyz にはセル、pdb には各フレームの CRYST1) | ASE で読み戻す検査 |
+| `view.vmd` | VMD の読み込みとセル (最小) | 検査で文字列を照合 |
+| `vmd_load.tcl` | VMD の読み込みに加えて代表的な表示: 全原子 CPK、`--select` の原子を VDW、白背景、平行投影。DynamicBonds と画像の描画は例 (コメントアウト) | コマンド名と引数は VMD User's Guide (mol / color / display / axes / render) と PBCTools の説明で照合 |
+| `ovito_pipeline.py` | 動径分布関数と配位数 (実行部) のあとに、**コメントアウトした雛形**: 構造同定 (CNA / PTM / Ackland-Jones)、Wigner-Seitz 欠陥解析 (参照構造は `<...>`)、変位ベクトルと原子ひずみ、クラスタ解析、空間ビニング + 時間平均、式による選択 | クラス名と引数名は OVITO 3.16 の Python リファレンス (`ovito.modifiers`) で照合 |
+| `travis_rdf.in` / `travis_cdf.in` / `travis_msd.in` / `travis_hbond.in` / `travis_acf.in` | TRAVIS の `-i` に渡す答えファイル。セルの大きさ [pm] と関数の選択まで | 書式 (1 行 1 答、空行 = 既定値、`!` = コメント) は TRAVIS の Quick Start Guide とソースで確認。**質問の並びはソースを読んだもので、実行では未確認** |
+| `export_README.txt` | 上の説明と、TRAVIS の残りの質問の目安 (時間の刻み、分子と原子の選択、フレームの範囲) | — |
+
+TRAVIS の答えファイルは、**直方体で固定のセル**のときだけ書きます (直方体でないセルは advanced mode の手順が未確認、非周期は TRAVIS がセルを聞くので手で答える)。
+ファイルが尽きると TRAVIS はキーボード入力に切り替わるので、残りは対話で答えられます。公式の勧めどおり、一度 `-i` なしで走らせて TRAVIS が書く `input.txt` を次回に使うのが確実です。
+速度自己相関は TRAVIS では関数名 `acf` です (`vacf` ではありません)。
+
+`--select` の式 (`element O and z < 10` など) は、`vmd_load.tcl` では VMD の選択式 (`name O and z < 10`。番号は 0 から)、
+`ovito_pipeline.py` では OVITO の式 (`ParticleType == "O" && Position.Z < 10`) に直して入れます。`within` は OVITO の式には直せないので、その旨を書きます。
+
+`--export` writes the files above into `analysis/export/`. None of them has been run by ADIT. Templates contain no numerical values: they use
+`<...>` holes or examples with their source. The VMD commands were checked against the VMD User's Guide and the PBCTools page, the OVITO class
+and argument names against the OVITO 3.16 Python reference, and the TRAVIS answer-file format (one answer per line, empty line = default,
+`!` = comment) against the TRAVIS Quick Start Guide and source. The order of the TRAVIS questions was read from the source and is not verified
+by running; answer files are written only for orthorhombic fixed cells, and TRAVIS switches to keyboard input when the file runs out.
+A `--select` expression is rewritten as a VMD selection in `vmd_load.tcl` and as an OVITO expression in `ovito_pipeline.py` (`within` cannot be rewritten for OVITO).
 
 ## 収束の確認と格子定数 (1 つの条件を変えて一括生成)
 
