@@ -134,7 +134,7 @@ def default_config(sk_root: str = "") -> Config:
         sk_root=sk_root,
         default_profile="local",
         profiles={
-            "local": Profile(kind="direct", description=L("この PC で bash submit.sh を実行 (計算ソフトがインストール済みで PATH にあること)",
+            "local": Profile(kind="direct", description=L("この PC で bash submit.sh を実行 (計算コードがインストール済みで PATH にあること)",
                                                           "run bash submit.sh on this PC (the program must be installed and on PATH)")),
         },
     )
@@ -358,7 +358,7 @@ def unknown_keys_message(cfg: Config) -> str:
         return ""
     from adit.lang import L
 
-    return L(f"注意: 設定ファイル {cfg.source_path} の次の項目は ADIT が知らないので使っていません: {', '.join(keys)}。"
+    return L(f"注意: 環境設定ファイル {cfg.source_path} の次の項目は ADIT が知らないので使っていません: {', '.join(keys)}。"
              "[profiles.…] の見出しより下に書いた項目は、その節の中に入ります (TOML の決まり)。見出しより上へ移してください。",
              f"Note: these entries of the settings file {cfg.source_path} are unknown to ADIT and were not used: {', '.join(keys)}. "
              "In TOML, anything written below a [profiles.…] header belongs to that section; move them above the header.")

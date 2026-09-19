@@ -205,7 +205,7 @@ class AbinitGenerator(InputGenerator):
         if fixed:
             lines += ["", "# ---- 動かさない原子 / fixed atoms ----"] + fixed
         if m.extra:
-            lines += ["", "# ---- 画面に無い変数 (利用者の指定) / extra variables set by the user ----"]
+            lines += ["", "# ---- 画面にない変数 (利用者の指定) / extra variables set by the user ----"]
             lines += [f"{k.strip()} {v}" for k, v in m.extra.items()]
         lines.append("")
         return {INPUT_FILE: "\n".join(lines)}

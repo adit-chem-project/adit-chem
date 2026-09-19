@@ -23,7 +23,7 @@ _HINTS = {
     "adsorb": ("高さ (height) を上げるか、置き場所を変えてください。スラブの上に真空が無いと、周期の像のスラブの下面に当たります",
                "raise the height or move the site; without vacuum above the slab it hits the periodic image"),
     "remove": ("", ""), "substitute": ("", ""),
-    "solvent_layer": ("間隙 (gap) か最短距離を大きくしてください", "increase the gap or the minimum distance"),
+    "solvent_layer": ("隙間 (gap) か最短距離を大きくしてください", "increase the gap or the minimum distance"),
     "solvate": ("最短距離を大きくしてください", "increase the minimum distance"), "fix": ("", ""),
 }
 

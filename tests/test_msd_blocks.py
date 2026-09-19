@@ -58,4 +58,4 @@ def test_missing_error_reason_is_localized(language, monkeypatch):
     monkeypatch.setattr(lang, "LANGUAGE", language)
     result = compute.diffusion_blocks(np.zeros((7, 1, 1)), 5, 1)
     assert result["reason_code"] == "insufficient_blocks"
-    assert ("Cannot form" if language == "en" else "区間を 2 つ以上") in result["reason"]
+    assert ("Cannot form" if language == "en" else "ブロックを 2 つ以上") in result["reason"]

@@ -215,7 +215,7 @@ def _path_hint(code: str, program: str) -> list[str]:
     if code == "mlip":
         return [L("     python3 が出ても、ase とモデルのパッケージが入っていなければ走りません。下の「実行する前に用意すること」の pip の行で入れます。",
                   "     Even if python3 is found, it runs only when ase and the model package are installed; see the pip line under 'Before running'.")]
-    return [L("     何も出なければ、計算ソフトを入れた conda 環境 (ソフトごとに分けたインストール先) を有効にしてから、",
+    return [L("     何も出なければ、計算コードを入れた conda 環境 (コードごとに分けたインストール先) を有効にしてから、",
               "     If nothing appears, activate the conda environment (a separate install location per program) that has it,"),
             L(f"     もう一度確かめます。例: conda activate <環境名>  (入れていなければ: conda install -c conda-forge {_CONDA_PKG.get(code, code)})",
               f"     then check again. e.g. conda activate <env name>  (if it is not installed: conda install -c conda-forge {_CONDA_PKG.get(code, code)})")]
@@ -233,7 +233,7 @@ def _cluster_profile_example(code: str) -> list[str]:
         L('       header_extra = ["#PBS -q <キュー名>"]        # Slurm なら ["#SBATCH --partition=<パーティション名>"]',
           '       header_extra = ["#PBS -q <queue>"]           # Slurm: ["#SBATCH --partition=<partition>"]'),
         "       [profiles.remote.code_modules]",
-        L(f'       {code} = ["<module 名>"]                   # 計算ソフトを使えるようにする module の名前 (クラスタで module avail と打つと一覧が出ます)',
+        L(f'       {code} = ["<module 名>"]                   # 計算コードを使えるようにする module の名前 (クラスタで module avail と打つと一覧が出ます)',
           f'       {code} = ["<module name>"]                 # module that makes the program available (module avail on the cluster lists them)'),
     ]
 
@@ -372,7 +372,7 @@ def _readme(spec: CalculationSpec, profile, notes: ReadmeNotes, output_dir: Path
             f"       {settings_path or config_path()}",
             L("     いちばん短い書き方は次のとおりです。ファイルの最後に書き足し、<...> を自分の値に置き換えます (# から行末までは説明で、",
               "     The shortest form is below. Append it to the end of the file and replace <...> with your values (from # to the end of a line"),
-            L("     消してもかまいません)。キュー名や module 名 (クラスタで計算ソフトを使えるようにするための名前) はクラスタごとに違うので、",
+            L("     消してもかまいません)。キュー名や module 名 (クラスタで計算コードを使えるようにするための名前) はクラスタごとに違うので、",
               "     is a comment and may be removed). Queue names and module names (the names that make a program available on the cluster) differ"),
             L("     管理者か研究室の先輩に確かめてください。",
               "     between clusters, so ask the administrator or a senior member of your group."),

@@ -41,7 +41,7 @@ HELP: dict[str, Help] = {
     "変換行列": Help(O, "新しい格子 = 行列 × 元の格子。行列式が 1 以上 (右手系) の整数行列で、行列式の倍だけ原子が増えます。", "New cell = matrix × old cell. An integer matrix with determinant ≥ 1 (right-handed); the atom count grows by the determinant."),
     "ミラー指数 (h k l)": Help(R, "切る面の向き。いまのセルの格子ベクトルに対する指数です (基本セルか慣用セルかで意味が変わります)。", "Orientation of the cut plane, relative to the current cell vectors (the meaning differs between primitive and conventional cells)."),
     "層の数 (周期)": Help(O, "面に垂直な方向の繰り返し単位を何周期ぶん重ねるか。1 周期に原子面がいくつ入るかは面によります。", "How many repeat units are stacked normal to the surface; the number of atomic planes per repeat depends on the plane."),
-    "真空 (片側) [Å]": Help(O, "板の上下それぞれに付ける真空の厚み (周期の像との隙間はこの 2 倍)。0 なら真空なし。", "Vacuum added on each side of the slab (the gap to the periodic image is twice this). 0 = no vacuum."),
+    "真空 (片側) [Å]": Help(O, "スラブの上下それぞれに付ける真空の厚み (周期の像との隙間はこの 2 倍)。0 なら真空なし。", "Vacuum added on each side of the slab (the gap to the periodic image is twice this). 0 = no vacuum."),
     "終端 (最上面)": Help(O, "1 周期の中の原子面のうち、どれを最上面にするか。面の窓をずらすだけなので、組成は変わりません。", "Which atomic plane of one period becomes the top surface. It only shifts the window, so the composition is unchanged."),
     "軸": Help(O, "真空を付ける方向。スラブなら c (面に垂直な方向) です。", "Direction to add vacuum along; for a slab it is c (normal to the surface)."),
     "周期の像との隙間 [Å]": Help(O, "その方向で、構造の端と周期の像の端のあいだを何 Å 空けるか (いまの隙間は置き換えます)。", "Gap between the structure and its periodic image along this axis (replaces the current gap)."),
@@ -50,19 +50,18 @@ HELP: dict[str, Help] = {
     "元素 (条件)": Help(O, "選ぶ原子の元素 (空白かカンマで区切って複数可)。空欄なら元素で絞りません。", "Elements to select (several separated by spaces or commas). Empty = any element."),
     "z の範囲 [Å]": Help(O, "選ぶ原子の z 座標 (デカルト座標) の下限と上限。空欄ならその側は制限なし。条件はすべて「かつ」です。", "Lower and upper bounds on the Cartesian z of the selected atoms; empty = no bound on that side. All conditions must hold."),
     "選ぶ数": Help(R, "条件に合う原子から無作為に選ぶ数。個数か、合う原子に対する割合 (0〜1) のどちらか。", "How many of the matching atoms are picked at random: a count, or a fraction (0-1) of the matching atoms."),
-    "乱数シード": Help(O, "無作為に選ぶ・置くときの乱数の種。同じ値なら同じ構造になります。", "Random seed for picking or placing; the same value gives the same structure."),
     "置き換え先の元素": Help(R, "選んだ原子をこの元素に置き換えます (ドープ、置換型の固溶体など)。電荷は自動では変えません。", "The selected atoms become this element (doping, substitutional alloys). The total charge is not changed automatically."),
     "分子": Help(R, "吸着させる分子 1 つ。プリセット、SMILES (Draw で描ける)、構造ファイルのどれか。", "The molecule to adsorb: a preset, a SMILES string (can be drawn with Draw) or a structure file."),
-    "置き場所": Help(R, "分子を置く位置の決め方。席の名前 (ASE の面で作ったスラブだけ)、原子の真上、xy 座標のどれか。", "How the position is given: a site name (only for ASE surface slabs), above an atom, or an xy position."),
-    "吸着サイトの名前": Help(R, "ASE の面関数の席 (ontop, bridge, fcc, hcp, hollow など)。面によって使える席が違います。", "A site of the ASE surface function (ontop, bridge, fcc, hcp, hollow, ...); available sites depend on the surface."),
+    "置き場所": Help(R, "分子を置く位置の決め方。吸着サイトの名前 (ASE の面で作ったスラブだけ)、原子の真上、xy 座標のどれか。", "How the position is given: a site name (only for ASE surface slabs), above an atom, or an xy position."),
+    "吸着サイトの名前": Help(R, "ASE の面関数の吸着サイト (ontop, bridge, fcc, hcp, hollow など)。面によって使える吸着サイトが違います。", "A site of the ASE surface function (ontop, bridge, fcc, hcp, hollow, ...); available sites depend on the surface."),
     "原子の番号 (1 始まり)": Help(R, "この原子の真上に分子を置きます。番号は、この手順を実行する時点の並び (1 始まり) です。", "The molecule is placed above this atom, numbered (from 1) as the structure stands at this step."),
     "xy 座標 [Å]": Help(R, "分子を置く x, y (デカルト座標)。高さは構造のいちばん上の原子から測ります。", "Cartesian x and y of the molecule; the height is measured from the topmost atom."),
-    "高さ [Å]": Help(O, "基準の原子 (席なら最上層、原子の真上ならその原子) から、分子の「下に向ける原子」までの高さ。", "Height from the reference atom (the top layer for a site, or the chosen atom) to the molecule's downward atom."),
+    "高さ [Å]": Help(O, "基準の原子 (吸着サイトなら最上層、原子の真上ならその原子) から、分子の「下に向ける原子」までの高さ。", "Height from the reference atom (the top layer for a site, or the chosen atom) to the molecule's downward atom."),
     "下に向ける原子 (1 始まり)": Help(O, "分子のどの原子を面に向けるか (分子の中の番号、1 始まり)。分子の重心がこの原子の真上に来る向きに回します。", "Which atom of the molecule points at the surface (numbered within the molecule, from 1); the molecule is turned so its center sits right above it."),
     "厚みの決め方": Help(R, "溶液の帯の厚み。密度から (成分の総質量 ÷ 密度 ÷ 断面積) か、厚みを直接指定するか。厚みを直接決めると詰めすぎになりやすいので、はじめは密度からが確実です。",
                         "Thickness of the solution band: from a density (total mass ÷ density ÷ cross-section) or given directly. A directly given thickness easily overpacks, so starting from a density is safer."),
-    "間隙 [Å]": Help(O, "板の上面と溶液の帯のあいだ (帯の上側にも同じだけ空けます) の隙間。", "Gap between the slab surface and the solution band (the same gap is left above the band)."),
-    "真空 [Å] (0 なら両側が溶液)": Help(O, "溶液の上に置く真空の層の厚み。0 なら真空は無く、溶液は周期の像の板の下面にも接します (板の両側が溶液)。",
+    "隙間 [Å]": Help(O, "スラブの上面と溶液の帯のあいだ (帯の上側にも同じだけ空けます) の隙間。", "Gap between the slab surface and the solution band (the same gap is left above the band)."),
+    "真空 [Å] (0 なら両側が溶液)": Help(O, "溶液の上に置く真空の層の厚み。0 なら真空は無く、溶液は周期の像のスラブの下面にも接します (スラブの両側が溶液)。",
                                      "Thickness of a vacuum layer above the solution. 0 = no vacuum: the solution also touches the underside of the periodic image of the slab (solution on both sides)."),
     "濃度から個数": Help(O, "溶液の帯の体積と濃度 [mol/L] から、表で選んだ行 (イオンなど) の個数を出します。個数 = 濃度 × アボガドロ数 × 体積 (四捨五入)。値を決めるのは利用者です。",
                         "Sets the count of the selected row (such as an ion) from the band volume and a concentration [mol/L]: count = concentration × Avogadro × volume (rounded). The value is yours to choose."),
@@ -73,7 +72,7 @@ HELP: dict[str, Help] = {
                           "Puts the molecule in a cubic periodic cell of edge L. VASP and pw.x need a cell; L must keep periodic images apart."),
     "固定原子": Help(O, "構造最適化や MD で動かさない原子。1 始まりの番号 (例 1-4,7)。7:xy のように書くとその軸だけ止めます。スラブの下層を固定するときなどに使います。",
                     "Atoms kept fixed during optimization or MD, 1-based (e.g. 1-4,7). 7:xy freezes only those axes. Typical for the bottom layers of a slab."),
-    "全電荷": Help(O, "系全体の電荷 (電子を減らすと正)。電子数を変えるので、多重度と偶奇が合っている必要があります。", "Net charge of the system (positive = fewer electrons). It changes the electron count, so it must be consistent with the multiplicity."),
+    "全電荷": Help(O, "系全体の電荷 (電子を減らすと正)。電子数を変えるので、多重度と偶奇が合っている必要があります。", "Total charge of the system (positive = fewer electrons). It changes the electron count, so it must be consistent with the multiplicity."),
     "スピン多重度": Help(O, "2S+1。不対電子の数 + 1 です (閉殻なら 1、ラジカルなら 2、三重項なら 3)。電子数の偶奇と合わないと生成できません。",
                     "2S+1: number of unpaired electrons + 1 (1 closed shell, 2 radical, 3 triplet). Must match the parity of the electron count."),
     "種類": Help(R, "何を計算するか。一点計算 (エネルギーと力)、構造最適化、分子動力学、振動解析、バンド計算 (周期系のみ)。", "What to compute: single point (energy and forces), geometry optimization, molecular dynamics, vibrations, or band structure (periodic only)."),
@@ -102,7 +101,7 @@ HELP: dict[str, Help] = {
                             "Γ 点のみ (1 点。数百原子の大きなセル向け)、分割数を指定、密度から自動で決める、から選びます。専門的には「ブリルアン領域の刻み方」です。",
                             "How many wave vectors (k-points) represent the electrons in the crystal. Smaller cells need more k-points; too few shifts the energy. "
                             "Γ only (one point; large cells of hundreds of atoms), an explicit mesh, or an automatic density. Technically: Brillouin-zone sampling."),
-    "メッシュ (n1 n2 n3)": Help(R, "セルの 3 つの辺の方向それぞれに、k 点を何点並べるか。短い辺の方向ほど多く要ります (例: Si の基本セルで 8 8 8 程度から試し、値を増やしてエネルギーが変わらなくなる所を探すのが普通)。"
+    "メッシュ (n1 n2 n3)": Help(R, "セルの 3 つの辺の方向それぞれに、k 点を何点並べるか。短い辺の方向ほど多く要ります (例 Si の基本セルで 8 8 8 程度から試し、値を増やしてエネルギーが変わらなくなる所を探すのが普通)。"
                                 "シフトは 0 (Γ を含む) か 0.5 (Monkhorst-Pack 型)。",
                                 "How many k-points along each of the three cell directions; short directions need more (e.g. start around 8 8 8 for the Si primitive cell and increase until the energy stops changing). "
                                 "Shift 0 includes Γ, 0.5 is Monkhorst-Pack-like."),
@@ -162,9 +161,9 @@ HELP: dict[str, Help] = {
     "写すファイル": Help(O, "生成したディレクトリへ写すファイル (EAM のファイル、ReaxFF の ffield、機械学習ポテンシャルのモデル)。1 行に 1 つ。", "Files copied into the output directory (EAM files, ReaxFF ffield, machine-learning models), one per line."),
     "read_data の前の行": Help(O, "read_data の前に置く行 (bond_style、angle_style、special_bonds など、分子の力場で要るもの)。", "Lines placed before read_data (bond_style, angle_style, special_bonds, ... as molecular force fields need)."),
     "pair_coeff の後の行": Help(O, "pair_coeff の後に置く行 (kspace_style、fix qeq/reaxff、neigh_modify など)。", "Lines placed after pair_coeff (kspace_style, fix qeq/reaxff, neigh_modify, ...)."),
-    "乱数の種": Help(O, "乱数の種。同じ値なら同じ結果になります。LAMMPS と機械学習ポテンシャルでは初速と確率的な熱浴 (Langevin、CSVR)、"
+    "乱数の種": Help(O, "乱数の種。同じ値なら同じ結果 (同じ構造) になります。溶液や吸着では無作為に選ぶ・置くときに、LAMMPS と機械学習ポテンシャルでは初速と確率的な熱浴 (Langevin、CSVR) に、"
                     "配座の候補では RDKit の ETKDG に使います (LAMMPS では 1 以上の整数)。",
-                    "Random seed; the same value reproduces the same result. It is used for the initial velocities and stochastic thermostats "
+                    "Random seed; the same value reproduces the same result (the same structure). It is used for random picking and placing in solutions and adsorption, for the initial velocities and stochastic thermostats "
                     "(Langevin, CSVR) in LAMMPS and machine-learning potentials, and for RDKit ETKDG in the conformer search (LAMMPS needs a positive integer)."),
     # ---- GROMACS ----
     "トポロジー (.top)": Help(R, "分子の種類と数、力場を書いたトポロジー (CHARMM-GUI、acpype、pdb2gmx などで作ったもの)。相対の #include はこのファイルの場所から探して一緒に写します。",
@@ -183,7 +182,7 @@ HELP: dict[str, Help] = {
     "前の段階の .cpt": Help(O, "前の段階 (NVT → NPT → 本計算) の gmx mdrun が書いた .cpt。あれば続きから計算し、速度を作り直しません。", "The .cpt written by the previous stage (NVT → NPT → production). If given, the run continues from it without new velocities."),
     "初速の乱数の種 (gen-seed)": Help(O, "初速を作るときの乱数の種。ADIT が置く 12345 は spec.json に残るため、同じ初速を再現できます。",
                                       "Random seed for generating initial velocities. ADIT supplies 12345 and records it in spec.json so the same initial velocities can be reproduced."),
-    "追加の mdp": Help(O, "画面に無い mdp の項目を「名前 = 値」の行で書きます。同じ名前の項目は上書きします。", "mdp options not in the form, as name = value lines; they override items of the same name."),
+    "追加の mdp": Help(O, "画面にない mdp の項目を「名前 = 値」の行で書きます。同じ名前の項目は上書きします。", "mdp options not in the form, as name = value lines; they override items of the same name."),
     # ---- DFTB+ ----
     "Slater-Koster パラメータ": Help(R, "DFTB+ のパラメータ (元素ペアごとの skf ファイルの組)。対応元素はセットで決まります。sk_root の下のディレクトリから選びます。", "The DFTB+ parameter set (skf files per element pair); it decides which elements are available. Chosen from directories under sk_root."),
     "SCC (自己無撞着電荷)": Help(O, "原子電荷を自己無撞着に決めるか (DFTB2 以上)。外すと非自己無撞着の DFTB1 になります。", "Whether atomic charges are determined self-consistently (DFTB2+). Unchecked = non-self-consistent DFTB1."),
@@ -212,7 +211,7 @@ HELP: dict[str, Help] = {
     "MAGMOM": Help(O, "各原子の初期磁気モーメント (μB)。原子数と同じ個数を空白区切りで。空なら書きません。", "Initial magnetic moment per atom (μB), space-separated, one per atom. Empty = not written."),
     "IVDW": Help(O, "ファンデルワールス補正。11: D3、12: D3(BJ)、20: Tkatchenko-Scheffler。", "Van der Waals correction: 11 D3, 12 D3(BJ), 20 Tkatchenko-Scheffler."),
     "LREAL": Help(O, "投影演算子を実空間で評価するか。Auto は大きなセルで速く、.FALSE. は逆空間で精密。", "Real-space projection: Auto is faster for large cells, .FALSE. is more precise (reciprocal space)."),
-    "追加の INCAR 設定": Help(O, "画面に無い INCAR のキーを「KEY = value」の行で書きます。そのまま INCAR に書かれます。", "INCAR keys not in the form, as KEY = value lines, written as is."),
+    "追加の INCAR 設定": Help(O, "画面にない INCAR のキーを「KEY = value」の行で書きます。そのまま INCAR に書かれます。", "INCAR keys not in the form, as KEY = value lines, written as is."),
     # ---- xtb ----
     "計算手法 (--gfn)": Help(O, "GFN2-xTB (既定)、GFN1、GFN0、GFN-FF (力場)。数字が大きいほど新しい方法です。", "GFN2-xTB (default), GFN1, GFN0, or GFN-FF (force field)."),
     "精度 (--acc)": Help(O, "数値精度の目安。小さいほど厳密 (積分格子や収束判定が細かくなります)。", "Accuracy level; smaller is stricter (grids and thresholds)."),
@@ -232,7 +231,7 @@ HELP: dict[str, Help] = {
     "degauss [Ry]": Help(O, "ぼかしの幅。smearing のときは 0 より大きい値が要ります。", "Smearing width; must be > 0 with smearing."),
     "nspin": Help(O, "1: スピンなし、2: 共線スピン分極。多重度が 1 でないときは 2 が要ります。", "1 non-spin-polarized, 2 collinear spin-polarized. Needed for multiplicity ≠ 1."),
     "input_dft": Help(O, "交換相関汎関数を UPF のものから変えるとき (例 vdw-df2)。空なら UPF に従います。", "Override the XC functional of the UPF (e.g. vdw-df2). Empty follows the UPF."),
-    "追加の変数 (名前空間.変数 = 値)": Help(O, "画面に無い pw.x の変数を「名前空間.変数 = 値」の行で (例 system.nbnd = 20)。", "pw.x variables not in the form, as namelist.variable = value lines (e.g. system.nbnd = 20)."),
+    "追加の変数 (名前空間.変数 = 値)": Help(O, "画面にない pw.x の変数を「名前空間.変数 = 値」の行で (例 system.nbnd = 20)。", "pw.x variables not in the form, as namelist.variable = value lines (e.g. system.nbnd = 20)."),
     # ---- ORCA ----
     "計算手法 (! 行)": Help(R, "! 行の手法キーワード (HF、PBE、B3LYP、MP2、DLPNO-CCSD(T) など)。", "Method keyword of the ! line (HF, PBE, B3LYP, MP2, DLPNO-CCSD(T), ...)."),
     "基底関数": Help(R, "基底関数系のキーワード (def2-SVP、def2-TZVP、cc-pVTZ など)。大きいほど精密で遅い。", "Basis set keyword (def2-SVP, def2-TZVP, cc-pVTZ, ...); larger is more precise and slower."),

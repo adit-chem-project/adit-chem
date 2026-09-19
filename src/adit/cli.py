@@ -111,7 +111,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--scan", metavar="PATH=V1,V2,...", action="append", default=[], help=L(
         "1 つの値だけを振った入力を、値ごとのディレクトリにまとめて作ります (収束の確認・格子定数の探索)。"
         "例 method.ecutwfc=30,40,50 / kpoints.mesh=4x4x4,6x6x6 / scale=0.98,1.00,1.02 (周期系のセルを伸縮)。"
-        "実行したあと adit-analyze <出力先> --scan で値とエネルギーの表を作ります。"
+        "実行したあと adit-analyze <出力ディレクトリ> --scan で値とエネルギーの表を作ります。"
         "**2 回以上書くと、値のすべての組み合わせ (格子状) を作ります** (例 --scan method.ecutwfc=30,40 --scan kpoints.mesh=4x4x4,6x6x6)。"
         "構造の幾何も振れます: geom.distance(0,1)=0.9,1.0 / geom.angle(0,1,2)=100,105 / geom.dihedral(0,1,2,3)=0,30,60 (原子の番号は 0 始まり)",
         "generate one directory per value of a single parameter (convergence checks, lattice scans). "
@@ -134,7 +134,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--list-samples", action="store_true", help=L(
         "同梱のサンプル (examples/) の一覧を表示します", "list the bundled samples (examples/)"))
     ap.add_argument("--sample", metavar="NAME", help=L(
-        "サンプルの spec.json を写して、書き換えの出発点にします (写し先は出力先の引数。--list-samples で名前が分かります)",
+        "サンプルの spec.json を写して、書き換えの出発点にします (写し先は出力ディレクトリの引数。--list-samples で名前が分かります)",
         "copy the spec.json of a sample as a starting point (the destination is the output argument; see --list-samples)"))
     ap.add_argument("--check-config", action="store_true", help=L(
         "環境設定ファイルの中身を確かめて表示します (プロファイル・置き場所・知らない項目)。生成はしません",
@@ -224,7 +224,7 @@ def main(argv: list[str] | None = None) -> int:
         except (FileNotFoundError, FileExistsError) as ex:
             print(str(ex), file=sys.stderr)
             return 1
-        print(L(f"サンプルの spec.json を写しました: {written}\n書き換えてから adit-gen {written} <出力先> で生成します",
+        print(L(f"サンプルの spec.json を写しました: {written}\n書き換えてから adit-gen {written} <出力ディレクトリ> で生成します",
                 f"copied the sample spec.json: {written}\nedit it, then run adit-gen {written} <output>"))
         return 0
     if args.check_config:
