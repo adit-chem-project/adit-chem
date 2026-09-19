@@ -48,7 +48,8 @@ def parse_stages(data) -> list[Stage]:
     for i, it in enumerate(items, 1):
         if not isinstance(it, dict):
             raise StageError(L(f"{i} 段階目が {{…}} の形ではありません", f"stage {i} is not an object {{...}}"))
-        bad = [k for k in it if k not in ("name", "velocities", *ALLOWED)]
+        # "dir" is what write_stages records, so its own stages.json reads back
+        bad = [k for k in it if k not in ("name", "velocities", "dir", *ALLOWED)]
         if bad:
             raise StageError(L(f"{i} 段階目に使えない項目があります: {bad} (使えるのは name / task / method / runtime / velocities)",
                                f"stage {i} has unknown items: {bad} (allowed: name / task / method / runtime / velocities)"))
