@@ -79,6 +79,7 @@ LABELS: dict[str, tuple[str, str]] = {
     "fes": ("自由エネルギー面の温度 [K]", "Temperature for the free-energy surface [K]"),
     "fes_bins": ("自由エネルギー面の区間の数", "Bins for the free-energy surface"),
     "fes_unit": ("自由エネルギーの単位", "Unit for the free energy"),
+    "conformer_temperature": ("CREST の配座の重みの温度 [K]", "Temperature for the CREST conformer weights [K]"),
     "bands_window": ("バンド図の縦軸の幅 [eV]", "Band-plot energy window [eV]"),
     "effective_mass_points": ("有効質量に使う k 点の数", "k-points used for the effective mass"),
     "bader": ("Bader の ACF.dat", "Bader ACF.dat"),
@@ -154,6 +155,7 @@ PLACEHOLDERS: dict[str, tuple[str, str]] = {
     "cluster": ("主成分分析が要ります", "The PCA is required"),
     "fes": ("空欄なら出しません", "Empty = not computed"),
     "fes_bins": ("空欄なら 50", "Empty = 50"),
+    "conformer_temperature": ("空欄なら重みを出しません", "Empty = no weights"),
     "bands_window": ("空欄なら 10", "Empty = 10"),
     "effective_mass_points": ("空欄なら 5", "Empty = 5"),
     "bader": ("外部の bader が書いたファイル", "written by the external bader program"),
@@ -344,6 +346,7 @@ def _extra_options(f: dict) -> dict:
         "fes_temperature_k": _num(f, "fes", positive=True) or 0.0,
         "fes_bins": fes_bins or 50,
         "fes_unit": _text(f, "fes_unit") or "kJ/mol",
+        "conformer_temperature_k": _num(f, "conformer_temperature", positive=True) or 0.0,
         "bands_window_ev": _num(f, "bands_window", positive=True) or 10.0,
         "effective_mass_points": _num(f, "effective_mass_points", int, positive=True) or 5,
         "bader": _text(f, "bader"),
@@ -413,6 +416,7 @@ def _extra_fields(o) -> dict[str, str]:
          "displacement": g(o.displacement_reference), "strain": g(o.strain_cutoff),
          "pca": g(o.pca), "cluster": g(o.cluster), "fes": g(o.fes_temperature_k),
          "fes_bins": "" if o.fes_bins == 50 else str(o.fes_bins), "fes_unit": o.fes_unit,
+         "conformer_temperature": g(o.conformer_temperature_k),
          "bands_window": "" if o.bands_window_ev == 10.0 else g(o.bands_window_ev),
          "effective_mass_points": "" if o.effective_mass_points == 5 else str(o.effective_mass_points),
          "bader": o.bader, "bader_valence": o.bader_valence, "xrd": o.xrd,
@@ -610,6 +614,19 @@ def result_sections(res) -> list[Section]:
         out.append(_cut(Section("uvvis", L("UV-Vis の遷移", "UV-Vis transitions"), [L("遷移", "Transition"), "E [eV]", "λ [nm]", L("振動子強度 f", "Oscillator strength f")],
                                 rows, [False, True, True, True], [L(f"出典: {uv['source']}", f"source: {uv['source']}")] + list(uv.get("reasons", []))),
                         uv.get("file_transitions", summary_json)))
+    if "crest_conformers" in t:
+        c = t["crest_conformers"]
+        weighted = c.get("temperature_k") is not None and all("weight" in r for r in c.get("conformers", []))
+        rows = [[str(r["index"]), _g(r.get("relative_kcal_mol"), ".3f"), _g(r.get("relative_kj_mol"), ".2f"), str(r["degeneracy"]),
+                 _g(r.get("rmsd_heavy_A"), ".3f")] + ([_g(r.get("weight"), ".4f")] if weighted else []) for r in c.get("conformers", [])]
+        cols = [L("番号", "Index"), "E−E(lowest) [kcal/mol]", "E−E(lowest) [kJ/mol]", L("縮退度", "Degeneracy"), L("重原子 RMSD [Å]", "Heavy-atom RMSD [Å]")]
+        if weighted:
+            cols.append(L(f"重み ({c['temperature_k']:g} K)", f"Weight ({c['temperature_k']:g} K)"))
+        notes = [c.get("rmsd_note", "")] + list(c.get("reasons", []))
+        if weighted:
+            notes.append(c.get("weight_formula", ""))
+        out.append(_cut(Section("crest_conformers", L("CREST の配座", "CREST conformers"), cols, rows, [True] * len(cols),
+                                [n for n in notes if n]), (c.get("files") or {}).get("table", summary_json)))
     if "export" in t:
         x = t["export"]
         rows = [[L("書き出し先", "Folder"), x["dir"]], [L("フレーム数", "Frames"), str(x["n_frames"])],
