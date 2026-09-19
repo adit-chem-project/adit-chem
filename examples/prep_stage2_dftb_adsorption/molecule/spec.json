@@ -10,7 +10,7 @@
   },
   "structure": {
     "source": "file",
-    "source_ref": "<作業ディレクトリ>/ads_inputs/h2o.xyz",
+    "source_ref": "/home/<user>/adit/examples/prep_stage2_dftb_adsorption/inputs/h2o.xyz",
     "atoms": {
       "symbols": [
         "O",
@@ -73,6 +73,7 @@
     "dispersion": "none",
     "d3_params": null,
     "filling_temperature": 0.0,
+    "seed": 12345,
     "solvation_param_file": ""
   },
   "kpoints": null,
@@ -109,9 +110,10 @@
     "job_name": "prep"
   },
   "handoff": null,
+  "plumed": null,
   "provenance": {
-    "adit_version": "0.0.1",
-    "generated_utc": "2026-09-11T18:56:53+00:00",
+    "adit_version": "0.1.0a1",
+    "generated_utc": "2026-09-19T01:29:57+00:00",
     "python": "3.14.7",
     "ase": "3.29.0",
     "files": [
@@ -153,6 +155,20 @@
       }
     ],
     "generated_files": [],
+    "inputs": [
+      {
+        "name": "dftb_in.hsd",
+        "sha256": "3e4426531b1f40117bc9d8748c333b4f98210ce8e53eee68620243db77609670"
+      },
+      {
+        "name": "geometry.gen",
+        "sha256": "2d80017185b9a3427137815bb6795b11a25e6a218cd99621b9943d2416343f6b"
+      },
+      {
+        "name": "submit.sh",
+        "sha256": "05f4390fc3347b4cdbc77cdc84bd2e9fbb2c3011b2864b377e687c63f90e7f13"
+      }
+    ],
     "code_version_file": "code_version.txt"
   }
 }

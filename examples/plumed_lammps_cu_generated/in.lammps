@@ -1,4 +1,4 @@
-# adit が生成した LAMMPS の入力 (コマンドは https://docs.lammps.org/ で確かめたもの)
+# ADIT が生成した LAMMPS の入力 (コマンドは https://docs.lammps.org/ で確かめたもの)
 # 原子の型番号と元素: 1=Cu
 units metal
 atom_style atomic

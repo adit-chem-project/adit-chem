@@ -1,4 +1,4 @@
-# adit: /home/<user>/miniforge3/envs/cp2k/share/cp2k/data/BASIS_MOLOPT から、この計算で使う項目だけを写したもの (CP2K の配布物。GPL-2.0-or-later)
+# adit: miniforge3/envs/cp2k/share/cp2k/data/BASIS_MOLOPT から、この計算で使う項目だけを写したもの (CP2K の配布物。GPL-2.0-or-later)
 
  O  DZVP-MOLOPT-SR-GTH DZVP-MOLOPT-SR-GTH-q6
  1

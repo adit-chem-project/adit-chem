@@ -3936,9 +3936,9 @@
   "method": {
     "code": "openmm",
     "input_format": "gromacs",
-    "topology_file": "/home/<user>/adit/examples/gromacs_spce/topol.top",
-    "coordinates_file": "/home/<user>/adit/examples/gromacs_spce/conf.gro",
-    "include_dir": "/home/<user>/miniforge3/envs/gromacs/share/gromacs/top",
+    "topology_file": "examples/gromacs_spce/topol.top",
+    "coordinates_file": "examples/gromacs_spce/conf.gro",
+    "include_dir": "miniforge3/envs/gromacs/share/gromacs/top",
     "defines": {},
     "nonbonded_method": "PME",
     "nonbonded_cutoff_nm": 0.8,
@@ -3985,8 +3985,8 @@
   "handoff": null,
   "plumed": null,
   "provenance": {
-    "adit_version": "0.0.1",
-    "generated_utc": "2026-09-12T21:20:59+00:00",
+    "adit_version": "0.1.0a1",
+    "generated_utc": "2026-09-19T01:36:14+00:00",
     "python": "3.14.7",
     "ase": "3.29.0",
     "files": [
@@ -3994,28 +3994,28 @@
         "name": "conf.gro",
         "sha256": "dcb2c65552058a5083fddc5a4bb3187b1eac6c46e3acf038643ec2ec9f147620",
         "bytes": 29266,
-        "source": "/home/<user>/adit/examples/gromacs_spce/conf.gro"
+        "source": "examples/gromacs_spce/conf.gro"
       },
       {
         "name": "topol.top",
         "sha256": "f86096c40f9cb9c75da0b5ce22f7920532a832884b8b77e4da58f32517ee3f77",
         "bytes": 183,
-        "source": "/home/<user>/adit/examples/gromacs_spce/topol.top"
+        "source": "examples/gromacs_spce/topol.top"
       }
     ],
     "generated_files": [],
     "inputs": [
       {
         "name": "openmm_settings.json",
-        "sha256": "e1ee2760a1d5460167123217c121a15563eb9205f6f17e9614e7622c2943bb94"
+        "sha256": "6025880506cd6dee008af4c04426f4295b8b5da99938a77d89d2433149b1ee16"
       },
       {
         "name": "run_openmm.py",
-        "sha256": "c14439ea72b2e64e3c0b6d0a165ff6bf3bfda56e8b3d7bbbfdfef9a2fa600350"
+        "sha256": "9b296d796dfcdd0a7ca2daf77c7f29f0c6841b9e47159e7b2611a95d4a4be789"
       },
       {
         "name": "submit.sh",
-        "sha256": "8628682e4aab3e2ca5b98ff052619c7ca0c50f097b91b569cc8757ddc3c02c34"
+        "sha256": "d2b305d525b6ab1809cbc11cd18012e12edd3f1789d93a6483d6bdee43a3e1d3"
       }
     ],
     "code_version_file": "code_version.txt"

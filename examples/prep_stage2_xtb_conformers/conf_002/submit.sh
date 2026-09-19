@@ -1,5 +1,5 @@
 #!/bin/bash
-# adit 0.0.1 が生成 (2026-09-11T19:01:43+00:00)。実行先: ローカル (プロファイル local)
+# adit 0.1.0a1 が生成 (2026-09-11T19:01:43+00:00)。実行先: ローカル (プロファイル local)
 # 使い方: 実行ファイルが PATH にある状態で、このディレクトリで  bash submit.sh
 cd "$(dirname "$0")"
 export OMP_NUM_THREADS=1
