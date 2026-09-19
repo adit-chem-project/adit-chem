@@ -136,7 +136,7 @@ pseudo_root = "/home/<ユーザー名>/pseudo"    # Quantum ESPRESSO を使う�
 adit-web --open                             # ブラウザが開かなければ、Windows のブラウザで http://127.0.0.1:8765/ を開きます
 ```
 
-ブラウザの画面で、構造「プリセット」の H2O、計算コード DFTB+、Slater-Koster パラメータ mio-1-1、プロファイル local のまま「プレビュー」→「生成」と進み、ターミナルで `bash submit.sh` を実行したあと「解析へ進む」を押します。
+ブラウザの画面で、構造「プリセット」の H2O、計算コード DFTB+、Slater-Koster パラメータ mio-1-1、プロファイル local のまま「プレビュー」→「生成」と進み、ターミナルで `bash submit.sh` を実行したあと「解析へ進む」を押し、解析のページで「解析を実行」を押します。
 ターミナルだけで行う場合は、画面で保存した計算設定 (spec.json) から次のように作れます。
 
 ```bash

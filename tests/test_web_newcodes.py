@@ -138,13 +138,15 @@ def test_labels_help_and_english(web):
     app, base = web
     html = urllib.request.urlopen(base + "/").read().decode()
     assert _fields_without_label(html) == []
-    assert re.search(r'<label for="cp_xc" class="required" title="[^"]+">汎関数</label>', html)
-    assert re.search(r'<label for="gmx_top" class="required" title="[^"]+">トポロジー \(.top\)</label>', html)
+    pill = '<span class="pill">必須</span></label>'
+    assert re.search(r'<label for="cp_xc" class="required" title="[^"]+">汎関数' + re.escape(pill), html)
+    assert re.search(r'<label for="gmx_top" class="required" title="[^"]+">トポロジー \(.top\)' + re.escape(pill), html)
+    assert "青字は必須" not in html      # the pill replaced the legend
     lang.set_language("en")
     try:
         html = urllib.request.urlopen(base + "/").read().decode()
         for t in ("Functional", "Basis and pseudopotential per element", "Units", "Files to copy", "Topology (.top)", "Compressibility [1/bar]"):
-            assert f">{t}</label>" in html, t
+            assert f">{t}</label>" in html or f'>{t}<span class="pill">required</span></label>' in html, t
     finally:
         lang.set_language("ja")
 
