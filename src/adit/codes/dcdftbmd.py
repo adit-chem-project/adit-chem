@@ -1,9 +1,7 @@
-"""DCDFTBMD 2.0 input generator (documented subset).
-
-Input sections, .spl order, geometry, OPT, MD, and execution:
-https://www.chem.waseda.ac.jp/dcdftbmd/document/DCDFTBMD_2.0_en.pdf
-The program and its .spl files are supplied by the user; .skf is not converted.
-"""
+"""DCDFTBMD 2.0 input generator (documented subset)."""
+# Input sections, .spl order, geometry, OPT, MD, and execution:
+# https://www.chem.waseda.ac.jp/dcdftbmd/document/DCDFTBMD_2.0_en.pdf
+# The program and its .spl files are supplied by the user; .skf is not converted.
 
 from __future__ import annotations
 

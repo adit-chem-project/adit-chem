@@ -1,10 +1,8 @@
-"""Read-only comparison of mapped native values against a generated spec.
-
-This checks represented fields, never whole-calculation equivalence.
-VASP element grouping follows codes/vasp.py and https://vasp.at/wiki/POSCAR.
-LAMMPS time units: https://docs.lammps.org/units.html (converted by native_import).
-QE input units: https://www.quantum-espresso.org/Doc/INPUT_PW.html.
-"""
+"""Read-only comparison of mapped native values against a generated spec."""
+# This checks represented fields, never whole-calculation equivalence.
+# VASP element grouping follows codes/vasp.py and https://vasp.at/wiki/POSCAR.
+# LAMMPS time units: https://docs.lammps.org/units.html (converted by native_import).
+# QE input units: https://www.quantum-espresso.org/Doc/INPUT_PW.html.
 from __future__ import annotations
 
 from dataclasses import dataclass, field

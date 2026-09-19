@@ -1,14 +1,12 @@
-"""NWChem molecular single-point input (no implicit chemistry choices).
-
-Official syntax and scope:
-https://nwchemgit.github.io/Getting-Started.html
-https://nwchemgit.github.io/Geometry.html
-https://nwchemgit.github.io/Basis.html
-https://nwchemgit.github.io/Charge.html
-https://nwchemgit.github.io/Hartree-Fock-Theory-for-Molecules.html
-https://nwchemgit.github.io/Density-Functional-Theory-for-Molecules.html
-https://nwchemgit.github.io/TASK.html
-"""
+"""NWChem molecular single-point input (no implicit chemistry choices)."""
+# Official syntax and scope:
+# https://nwchemgit.github.io/Getting-Started.html
+# https://nwchemgit.github.io/Geometry.html
+# https://nwchemgit.github.io/Basis.html
+# https://nwchemgit.github.io/Charge.html
+# https://nwchemgit.github.io/Hartree-Fock-Theory-for-Molecules.html
+# https://nwchemgit.github.io/Density-Functional-Theory-for-Molecules.html
+# https://nwchemgit.github.io/TASK.html
 
 from __future__ import annotations
 

@@ -1,12 +1,10 @@
-"""Read-only, deliberately limited native-input inspection.
-
-Keyword sources: https://vasp.at/wiki/INCAR, https://vasp.at/wiki/KPOINTS,
-https://vasp.at/wiki/POSCAR, https://www.quantum-espresso.org/Doc/INPUT_PW.html,
-https://docs.lammps.org/read_data.html, https://docs.lammps.org/run.html.
-Benign output labels: https://vasp.at/wiki/SYSTEM; QE CONTROL variables are
-defined in INPUT_PW above. Output-directory references are reported, not opened.
-No input text is executed and no referenced potential or script is opened.
-"""
+"""Read-only, deliberately limited native-input inspection."""
+# Keyword sources: https://vasp.at/wiki/INCAR, https://vasp.at/wiki/KPOINTS,
+# https://vasp.at/wiki/POSCAR, https://www.quantum-espresso.org/Doc/INPUT_PW.html,
+# https://docs.lammps.org/read_data.html, https://docs.lammps.org/run.html.
+# Benign output labels: https://vasp.at/wiki/SYSTEM; QE CONTROL variables are
+# defined in INPUT_PW above. Output-directory references are reported, not opened.
+# No input text is executed and no referenced potential or script is opened.
 from __future__ import annotations
 
 from adit.errors import AditValueError
@@ -392,14 +390,11 @@ def _qe(path, result):
 
 
 def _lammps_md(commands, result, path, method):
-    """Inverse of the generated NVE / Nose-Hoover subset; no velocity guessing.
-
-    https://docs.lammps.org/velocity.html
-    https://docs.lammps.org/units.html
-    https://docs.lammps.org/fix_nve.html
-    https://docs.lammps.org/fix_nh.html
-    A final canonical-command comparison rejects any omitted control/option.
-    """
+    # Inverse of the generated NVE / Nose-Hoover subset; no velocity guessing.
+    # https://docs.lammps.org/velocity.html
+    # https://docs.lammps.org/units.html
+    # https://docs.lammps.org/fix_nve.html
+    # https://docs.lammps.org/fix_nh.html
     run = commands.get("run", [])
     if len(run) != 1 or not run[0].isdigit() or int(run[0]) <= 0:
         return None

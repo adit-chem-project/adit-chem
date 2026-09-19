@@ -295,7 +295,7 @@ def _pairs(f: dict, key: str) -> list:
 
 
 def _element_pairs(f: dict, key: str) -> list:
-    """"O-H; O-O" → [("O", "H"), ("O", "O")]。"""
+    # "O-H; O-O" → [("O", "H"), ("O", "O")]。
     out = []
     for part in _pairs(f, key):
         a, sep, b = part.partition("-")

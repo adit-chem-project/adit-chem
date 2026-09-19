@@ -1,13 +1,11 @@
-"""Small, explicit molecular-input subsets for Gaussian, US GAMESS, Q-Chem and GRRM17.
-
-Official/vendor input references:
-https://www.conflex.co.jp/gaussian_support/input.php
-https://www.msg.chem.iastate.edu/gamess/GAMESS_Manual/intro.pdf
-https://www.msg.chem.iastate.edu/GAMESS/GAMESS_Manual/input.pdf
-https://manual.q-chem.com/6.0/Ch3.S2.SS1.html
-https://afir.sci.hokudai.ac.jp/manual/grrm17/grrm17_12.html
-https://afir.sci.hokudai.ac.jp/manual/grrm17/grrm17_9.html
-"""
+"""Small, explicit molecular-input subsets for Gaussian, US GAMESS, Q-Chem and GRRM17."""
+# Official/vendor input references:
+# https://www.conflex.co.jp/gaussian_support/input.php
+# https://www.msg.chem.iastate.edu/gamess/GAMESS_Manual/intro.pdf
+# https://www.msg.chem.iastate.edu/GAMESS/GAMESS_Manual/input.pdf
+# https://manual.q-chem.com/6.0/Ch3.S2.SS1.html
+# https://afir.sci.hokudai.ac.jp/manual/grrm17/grrm17_12.html
+# https://afir.sci.hokudai.ac.jp/manual/grrm17/grrm17_9.html
 
 from __future__ import annotations
 

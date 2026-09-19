@@ -1,9 +1,7 @@
-"""Package an existing, user-authored DOCK 6 input without choosing chemistry.
-
-DOCK 6.13 input/command and rigid/flexible ligand tutorial:
-https://dock.compbio.ucsf.edu/DOCK_6/dock6_manual.htm
-https://dock.compbio.ucsf.edu/DOCK_6/tutorials/ligand_sampling_dock/ligand_sampling_dock.html
-"""
+"""Package an existing, user-authored DOCK 6 input without choosing chemistry."""
+# DOCK 6.13 input/command and rigid/flexible ligand tutorial:
+# https://dock.compbio.ucsf.edu/DOCK_6/dock6_manual.htm
+# https://dock.compbio.ucsf.edu/DOCK_6/tutorials/ligand_sampling_dock/ligand_sampling_dock.html
 
 from __future__ import annotations
 
@@ -43,11 +41,9 @@ def _sha256(path: Path) -> str:
 
 
 def package_dock6(source: Path | str, output: Path | str, *, assets: list[str] | None = None) -> Path:
-    """Stage dock.in and its declared local inputs, leaving the input deck unchanged.
-
-    This does not prepare receptors, assign charges, or validate all DOCK6
-    keywords. The author must provide a complete dock.in and its dependencies.
-    """
+    """Stage dock.in and its declared local inputs, leaving the input deck unchanged."""
+    # This does not prepare receptors, assign charges, or validate all DOCK6
+    # keywords. The author must provide a complete dock.in and its dependencies.
     src, dst = Path(source).expanduser(), Path(output).expanduser()
     if not src.is_file() or src.name != "dock.in":
         raise Dock6Error(L("入力には既存の dock.in を指定してください", "provide an existing dock.in input file"))

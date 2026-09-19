@@ -54,7 +54,7 @@ def test_wide_characters_take_two_columns(tmp_path):
         assert _wait_for(session, "日本語"), session.text()
         row = next(r for r in session.lines() if any(c.text == "日" for c in r))
         i = next(i for i, c in enumerate(row) if c.text == "日")
-        assert row[i + 1].text == ""      # 全角の 2 桁目は空
+        assert row[i + 1].text == ""      # second cell of a wide character is empty
     finally:
         session.close()
 
@@ -81,7 +81,7 @@ def test_the_editor_opens_saves_and_refuses_binaries(tmp_path):
         panel.editor.insertPlainText("# note\n")
         assert panel.editor.dirty and panel.save() == ""
         assert (tmp_path / "in.hsd").read_text(encoding="utf-8").startswith("# note")
-        assert panel.open_file(tmp_path / "blob.bin") != ""      # 開かない理由を返す
+        assert panel.open_file(tmp_path / "blob.bin") != ""      # returns the reason
     finally:
         panel.close_session()
 
@@ -93,7 +93,7 @@ def test_the_mouse_is_reported_when_a_program_asks_for_it(tmp_path):
         session.screen.set_mode(1000, private=True)
         assert session.mouse_wanted()
         assert session.mouse_report(0, 4, 2, True) == "\x1b[M \x25\x23".replace("\x25", chr(32 + 5)).replace("\x23", chr(32 + 3))
-        session.screen.set_mode(1006, private=True)      # SGR の書式
+        session.screen.set_mode(1006, private=True)      # SGR form
         assert session.mouse_report(0, 4, 2, True) == "\x1b[<0;5;3M"
         assert session.mouse_report(0, 4, 2, False) == "\x1b[<0;5;3m"
     finally:
@@ -103,13 +103,13 @@ def test_the_mouse_is_reported_when_a_program_asks_for_it(tmp_path):
 def test_the_history_can_be_scrolled_back(tmp_path):
     session = ShellSession(cwd=tmp_path, command=SHELL, rows=6, cols=40)
     try:
-        for i in range(1, 13):           # シェルの書き方に依らない形で、画面より多い行を出す
+        for i in range(1, 13):           # more lines than the screen, whatever the shell
             session.write(f"echo line-{i}" + ("\r\n" if os.name == "nt" else "\n"))
         assert _wait_for(session, "line-12"), session.text()
-        assert session.history_above > 0                  # 流れていった行がある
+        assert session.history_above > 0                  # lines scrolled away
         before = session.text()
         session.scroll_pages(-1)
-        assert session.text() != before                   # さかのぼれた
+        assert session.text() != before                   # scrolled back
         session.scroll_pages(1)
     finally:
         session.close()
@@ -129,7 +129,7 @@ def test_several_terminals_can_be_open_at_once(tmp_path):
         tabs.add_tab()
         assert tabs.tabs.count() == 2 and tabs.current is not None
         tabs.close_tab(1)
-        assert tabs.tabs.count() == 1                     # 最後の 1 つは残る
+        assert tabs.tabs.count() == 1                     # the last tab stays
         tabs.close_tab(0)
         assert tabs.tabs.count() == 1
     finally:
@@ -150,7 +150,7 @@ def test_the_font_size_changes_the_number_of_columns(tmp_path):
         term.set_font_size(9)
         small = term.cols()
         term.set_font_size(18)
-        assert term.cols() < small                        # 大きい文字ほど桁数は減る
+        assert term.cols() < small                        # bigger font, fewer columns
         assert term.session is not None and term.session.cols == term.cols()
     finally:
         term.close_session()
@@ -171,10 +171,10 @@ def test_the_editor_and_terminal_can_be_rearranged_and_folded(tmp_path):
         assert panel.right.widget(0) is panel.edit_box
         panel.layout_choice.setCurrentIndex(panel.layout_choice.findData("h_rev"))
         assert panel.right.orientation() == Qt.Orientation.Horizontal
-        assert panel.right.widget(0) is panel.term_box          # 入れ替わる
-        panel.btn_fold_editor.setChecked(True)                   # 窓を出していないので isHidden で見る
+        assert panel.right.widget(0) is panel.term_box          # swapped
+        panel.btn_fold_editor.setChecked(True)                   # no window shown, so use isHidden
         assert panel.editor.isHidden() and not panel.terminal.isHidden()
-        panel.btn_fold_terminal.setChecked(True)                 # 両方は畳めない
+        panel.btn_fold_terminal.setChecked(True)                 # never fold both
         assert not (panel.editor.isHidden() and panel.terminal.isHidden())
     finally:
         panel.close_session()
@@ -194,4 +194,4 @@ def test_the_tree_marks_the_kind_of_each_file(tmp_path):
     model.setRootPath(str(tmp_path))
     icon = model.data(model.index(str(tmp_path / "dftb_in.hsd")), Qt.ItemDataRole.DecorationRole)
     assert icon is not None and not icon.isNull()
-    assert FileIcons.KIND[".hsd"][0] == "in"                     # 入力ファイルの印
+    assert FileIcons.KIND[".hsd"][0] == "in"                     # marked as an input file

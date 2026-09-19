@@ -36,12 +36,10 @@ class StructureDataLossWarning(UserWarning):
 def convert_with_openbabel(source: Path | str, output: Path | str, *,
                            input_format: str | None = None, output_format: str | None = None,
                            overwrite: bool = False, executable: str = "obabel") -> Path:
-    """Use the explicitly selected Open Babel backend; do not infer chemistry options.
-
-    Open Babel CLI: https://openbabel.org/docs/Command-line_tools/babel.html
-    Bond typing and format-specific metadata are Open Babel's responsibility;
-    this operation does not promise a lossless structural round trip.
-    """
+    """Use the explicitly selected Open Babel backend; do not infer chemistry options."""
+    # Open Babel CLI: https://openbabel.org/docs/Command-line_tools/babel.html
+    # Bond typing and format-specific metadata are Open Babel's responsibility;
+    # this operation does not promise a lossless structural round trip.
     src, dst = Path(source).expanduser(), Path(output).expanduser()
     if not src.is_file():
         raise ConversionError(L(f"入力ファイルがありません: {src}", f"input file does not exist: {src}"))
@@ -88,11 +86,9 @@ def convert_with_openbabel(source: Path | str, output: Path | str, *,
 
 
 def combine_xyz(sources: list[Path | str], output: Path | str, *, overwrite: bool = False) -> Path:
-    """Concatenate single-frame, non-periodic XYZ files without changing coordinates.
-
-    Equivalent in scope to CMMDE's combinexyz preparation command:
-    https://git.mki.or.id/CoreDev/CMMDE/src/commit/5e0e0a58482e371279e87c373536390ec9d11309/bin/cmmdepre.py
-    """
+    """Concatenate single-frame, non-periodic XYZ files without changing coordinates."""
+    # Equivalent in scope to CMMDE's combinexyz preparation command:
+    # https://git.mki.or.id/CoreDev/CMMDE/src/commit/5e0e0a58482e371279e87c373536390ec9d11309/bin/cmmdepre.py
     import numpy as np
     from ase import Atoms
     from ase.io import read, write
@@ -161,7 +157,7 @@ def combine_xyz(sources: list[Path | str], output: Path | str, *, overwrite: boo
 
 
 def _spec_export_atoms(spec: CalculationSpec):
-    """Restore Spec-only constraints and Å/fs velocities for ASE export."""
+    # Restore Spec-only constraints and Å/fs velocities for ASE export.
     import numpy as np
     from ase.constraints import FixAtoms, FixCartesian
     from ase.units import fs
@@ -185,7 +181,7 @@ def _spec_export_atoms(spec: CalculationSpec):
 
 
 def _structure_losses(atoms, fmt: str) -> list[str]:
-    """Known omissions in common ASE structure writers; no chemical judgment."""
+    # Known omissions in common ASE structure writers; no chemical judgment.
     from ase.constraints import FixAtoms, FixCartesian
 
     constrained = any(

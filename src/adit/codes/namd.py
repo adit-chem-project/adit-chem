@@ -1,10 +1,8 @@
-"""NAMD 3 NVE input with user-supplied PSF, PDB and CHARMM parameter files.
-
-Official syntax and sample configurations:
-https://www.ks.uiuc.edu/Research/namd/3.0/ug/node9.html
-https://www.ks.uiuc.edu/Research/namd/3.0/ug/node12.html
-https://www.ks.uiuc.edu/Research/namd/3.0/ug/node91.html
-"""
+"""NAMD 3 NVE input with user-supplied PSF, PDB and CHARMM parameter files."""
+# Official syntax and sample configurations:
+# https://www.ks.uiuc.edu/Research/namd/3.0/ug/node9.html
+# https://www.ks.uiuc.edu/Research/namd/3.0/ug/node12.html
+# https://www.ks.uiuc.edu/Research/namd/3.0/ug/node91.html
 
 from __future__ import annotations
 

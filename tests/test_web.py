@@ -132,7 +132,7 @@ def test_cluster_profile_is_not_run(web, tmp_path):
     f = dict(app.form); f.update(sk_set="fake-1-0", profile="cluster", ncpus="8", omp="8", output_dir=str(tmp_path / "c"))
     html = _post(base + "/generate", f)
     assert not _error(html) and "#PBS" in (tmp_path / "c" / "submit.sh").read_text(encoding="utf-8")
-    assert "transfer_and_submit.sh" in html        # 実行は人がターミナルで行う
+    assert "transfer_and_submit.sh" in html        # the person runs it in a terminal
 
 
 def test_analysis_page_and_figures(web, tmp_path):

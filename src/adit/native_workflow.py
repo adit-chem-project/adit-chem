@@ -1,8 +1,6 @@
-"""Shared, conservative workflow for inspecting native input bundles.
-
-The CLI, desktop GUI, and web UI call this module; it never executes input or
-submits a calculation. Parsing is delegated to :mod:`adit.native_import`.
-"""
+"""Shared, conservative workflow for inspecting native input bundles."""
+# The CLI, desktop GUI, and web UI call this module; it never executes input or
+# submits a calculation. Parsing is delegated to :mod:`adit.native_import`.
 
 from __future__ import annotations
 
@@ -21,11 +19,9 @@ class NativeWorkflowError(AditValueError):
 
 def write_import_review(source: Path | str, output: Path | str, *,
                         code: str | None = None) -> tuple[NativeImportResult, Path]:
-    """Write a new report and, only for fully parsed input, a review draft.
-
-    A parser failure still produces a report. The original input is never
-    changed, and no review artifact is written inside its bundle.
-    """
+    """Write a new report and, only for fully parsed input, a review draft."""
+    # A parser failure still produces a report. The original input is never
+    # changed, and no review artifact is written inside its bundle.
     if not str(source).strip() or not str(output).strip():
         raise NativeWorkflowError(L("入力と点検結果の保存先を指定してください",
                                     "Specify both the input and a review-output directory."))

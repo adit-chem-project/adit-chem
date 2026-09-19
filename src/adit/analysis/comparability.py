@@ -1,9 +1,7 @@
-"""Cross-code comparability checks for native output analysis.
-
-This module reads existing run directories and checks mechanical facts that
-must line up before comparing MSD or energy across different engines. It does
-not judge whether a setup is chemically meaningful.
-"""
+"""Cross-code comparability checks for native output analysis."""
+# This module reads existing run directories and checks mechanical facts that
+# must line up before comparing MSD or energy across different engines. It does
+# not judge whether a setup is chemically meaningful.
 
 from __future__ import annotations
 
@@ -137,18 +135,15 @@ def audit_run_dirs(
     cell_atol_ang: float = DEFAULT_CELL_ATOL_ANG,
     time_atol_fs: float = DEFAULT_TIME_ATOL_FS,
 ) -> ComparabilityAudit:
-    """Read existing run directories and audit mechanical comparability.
-
-    The returned object is read-only analysis data: no files are written. Values
-    taken from native outputs are normalized by ``load_run``: coordinates in
-    angstrom, times in fs, and energies in eV for the simulated system.
-
-    ``require_md=True`` audits MSD comparability: trajectories, element-symbol
-    order, PBC, cells, and frame spacing must match, but energy is optional.
-    ``False`` audits energy comparability: composition, PBC, cells, and
-    whole-system energies must be readable; trajectories and atom
-    order are not blocking.
-    """
+    """Read existing run directories and audit mechanical comparability."""
+    # The returned object is read-only analysis data: no files are written. Values
+    # taken from native outputs are normalized by ``load_run``: coordinates in
+    # angstrom, times in fs, and energies in eV for the simulated system.
+    # ``require_md=True`` audits MSD comparability: trajectories, element-symbol
+    # order, PBC, cells, and frame spacing must match, but energy is optional.
+    # ``False`` audits energy comparability: composition, PBC, cells, and
+    # whole-system energies must be readable; trajectories and atom
+    # order are not blocking.
     paths = [Path(p).expanduser() for p in run_dirs]
     names = list(labels) if labels is not None else [p.name or str(p) for p in paths]
     if len(names) != len(paths):

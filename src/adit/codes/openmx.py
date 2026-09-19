@@ -1,9 +1,7 @@
-"""OpenMX 4.0 neutral, non-spin-polarized single-point inputs.
-
-Official keywords and file layout:
-https://openmx-square.org/openmx_man4.0/s8_2_keywords.html
-https://openmx-square.org/openmx_man4.0/s13_1_valence-pseudo.html
-"""
+"""OpenMX 4.0 neutral, non-spin-polarized single-point inputs."""
+# Official keywords and file layout:
+# https://openmx-square.org/openmx_man4.0/s8_2_keywords.html
+# https://openmx-square.org/openmx_man4.0/s13_1_valence-pseudo.html
 
 from __future__ import annotations
 
