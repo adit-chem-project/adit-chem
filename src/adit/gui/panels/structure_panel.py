@@ -80,10 +80,10 @@ class StructurePanel(QGroupBox):
         for name in self._preset_names:
             self.preset.addItem(pretty_formula(name), name)
         self.preset.setCurrentIndex(max(0, self.preset.findData("H2O")))
-        self.preset_search = QLineEdit(); self.preset_search.setPlaceholderText(L("式・英語名・日本語名で絞り込み", "Filter by formula or name"))
+        self.preset_search = QLineEdit(); self.preset_search.setPlaceholderText(L("式・英語名・日本語名で絞り込み", "Filter by formula, English name or Japanese name"))
         self.preset_search.setClearButtonEnabled(True)
         self.smiles = QLineEdit()
-        self.smiles.setPlaceholderText("例: CCO")
+        self.smiles.setPlaceholderText("例 CCO")
         self.smiles_go = QPushButton("3D 構造を生成")
         self.file = QLineEdit()
         self.file_browse = QPushButton("参照…")
@@ -264,7 +264,7 @@ class StructurePanel(QGroupBox):
         c3 = hrow(L("格子定数 a [Å]", "lattice constant a [Å]"), self.cl_a)
         add_row(form, "ナノ粒子", c1); form.addRow(label(""), c2); form.addRow(label(""), c3)
         self._source_rows["cluster"] = [c1, c2, c3]
-        p2 = hrow(L("重合度", "units"), self.pl_n, L("乱数シード", "seed"), self.pl_seed)
+        p2 = hrow(L("重合度", "units"), self.pl_n, L("乱数の種", "seed"), self.pl_seed)
         p3 = hint(L("鎖を 1 本作ります (H を含めて 500 原子まで)。3 次元化に数秒〜20 秒ほどかかるので、「作る」を押して作ります",
                     "builds one chain (up to 500 atoms including H). Making the 3D structure takes a few to about 20 seconds, so press Build"))
         add_row(form, "ポリマー", self.pl_unit); form.addRow(label(""), p2); form.addRow(label(""), p3)

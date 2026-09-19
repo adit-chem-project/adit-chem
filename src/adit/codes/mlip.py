@@ -23,9 +23,9 @@ MACE_LAMMPS_DOC = "https://mace-docs.readthedocs.io/en/latest/guide/lammps.html"
 CHGNET_URL = "https://github.com/CederGroupHub/chgnet"
 
 SCRIPT = r'''#!/usr/bin/env python3
-"""adit が生成: 機械学習ポテンシャル (ASE の calculator) で 1 つの計算を実行する。設定の値は mlip_settings.json にある。
+"""ADIT が生成: 機械学習ポテンシャル (ASE の calculator) で 1 つの計算を実行する。設定の値は mlip_settings.json にある。
 実行する環境に ase と、選んだモデルのパッケージ (mace-torch か chgnet。どちらも PyTorch を使う) が要る。ADIT は要らない。
-結果: results.json (エネルギー [eV]、力の最大値 [eV/Å]、応力 [eV/Å³]、振動数 [cm^-1])、final.extxyz (最後の構造)、
+結果: results.json (エネルギー [eV]、力の最大値 [eV/Å]、応力 [eV/Å³]、振動数 [cm⁻¹])、final.extxyz (最後の構造)、
       trajectory.extxyz (最適化の各ステップ / MD の dump の間隔ごとの構造)、opt.log / md.log。"""
 import json
 from importlib import metadata
@@ -289,7 +289,7 @@ class MlipGenerator(InputGenerator):
             prep += [L(f"  モデル: chgnet のバージョンごとの既定 (使ったバージョンは output.log の adit-mlip: の行)。chgnet のライセンスは配布元 ({CHGNET_URL}) の LICENSE を見てください。",
                        f"  Model: the default of the installed chgnet version (on the adit-mlip: line of output.log). See the LICENSE at {CHGNET_URL}.")]
         prep += [L("  同じ MACE のモデルを LAMMPS で使うには (ADIT の LAMMPS の生成器の欄で書けます):",
-                   "  To use the same MACE model in LAMMPS (the adit LAMMPS generator has fields for this):"),
+                   "  To use the same MACE model in LAMMPS (the ADIT LAMMPS generator has fields for this):"),
                  L(f"    1. mace の create_lammps_model.py でモデルを LAMMPS 用 (*.model-lammps.pt) に変換します ({MACE_LAMMPS_DOC})",
                    f"    1. convert the model for LAMMPS (*.model-lammps.pt) with mace's create_lammps_model.py ({MACE_LAMMPS_DOC})"),
                  L("    2. LAMMPS の生成器で units = metal、atom_style = atomic、pair_style = mace no_domain_decomposition、",
@@ -305,7 +305,7 @@ class MlipGenerator(InputGenerator):
             "geometry_optimization": [L("  trajectory.extxyz / opt.log   最適化の各ステップの構造と、ASE の最適化の記録", "  trajectory.extxyz / opt.log   structure at each optimization step and the ASE optimizer log")],
             "molecular_dynamics": [L("  trajectory.extxyz / md.log    MD の軌跡 (dump の間隔ごと) と、時刻・エネルギー・温度の記録 (ASE の MDLogger)",
                                      "  trajectory.extxyz / md.log    MD trajectory (every dump interval) and time, energies and temperature (ASE MDLogger)")],
-            "vibrations": [L("  vib_summary.txt / vib/   振動数の表 (ASE の Vibrations) と、変位ごとの力。振動数 [cm^-1] は results.json にも (虚数は負の数)",
+            "vibrations": [L("  vib_summary.txt / vib/   振動数の表 (ASE の Vibrations) と、変位ごとの力。振動数 [cm⁻¹] は results.json にも (虚数は負の数)",
                              "  vib_summary.txt / vib/   frequency table (ASE Vibrations) and forces per displacement; frequencies [cm^-1] also in results.json (imaginary as negative)")],
         }.get(t, [])
         return ReadmeNotes(program="python3", files=files, prepare=prep, outputs=out)

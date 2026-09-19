@@ -120,7 +120,7 @@ def count_series(frames, donor_acceptor_A: float, angle_deg: float, donors=DEFAU
                       "条件は利用者が入れた値で、ADIT は既定値を持ちません。"
                       "本数が多い・少ないの判定もしていません。",
                       "the number of D-H...A pairs that satisfy the distance and angle you gave; "
-                      "adit has no default criteria and makes no judgement about the count.")}
+                      "ADIT has no default criteria and makes no judgment about the count.")}
 
 
 def _too_large(n_frames: int, n_pairs: int, budget_mb: float, what: str) -> HydrogenBondError:
@@ -254,7 +254,7 @@ def distance_angle_map(frames, rmax_A: float, donors=DEFAULT_DONORS, bins=MAP_BI
             "peak": None if peak is None else {"distance_A": float(dist.x_centers[peak[0]]), "angle_deg": float(dist.y_centers[peak[1]])},
             "note": L("D–H···A の全部の組 (距離の上限以内、角度は制限なし) の 2 次元ヒストグラム。密度は面積で割って全体を 1 にした値。"
                       "しきい値の候補を見るためのもので、ADIT はしきい値を決めません",
-                      "2D histogram of every D-H...A triplet within the upper distance, any angle; the density is normalised to 1 over the area. "
+                      "2D histogram of every D-H...A triplet within the upper distance, any angle; the density is normalized to 1 over the area. "
                       "It is meant for choosing the thresholds; ADIT does not choose them")}
 
 

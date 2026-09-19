@@ -103,7 +103,7 @@ class ComparabilityAudit:
 
     def summary_text(self) -> str:
         head = L(
-            f"コードをまたぐ比較の点検 ({self.mode}): {len(self.runs)} 計算、結果: {'通過' if self.comparable else '不通過'}",
+            f"コードをまたぐ比較の点検 ({self.mode}): {len(self.runs)} 計算、結果: {'問題なし' if self.comparable else '問題あり'}",
             f"cross-code check ({self.mode}): {len(self.runs)} runs, result: {'passed' if self.comparable else 'failed'}",
         )
         lines = [head]

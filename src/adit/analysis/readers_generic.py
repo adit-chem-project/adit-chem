@@ -77,7 +77,7 @@ def read_generic(run_dir: Path, code: str):
             f"{run_dir} には、ADIT が読める出力がありません ({code} には専用の読み取りがなく、"
             "ASE が読める軌跡・構造のファイルも見つかりませんでした)。"
             "extxyz や xyz など ASE が読める形で軌跡を書き出すと、構造から出せる解析はできます",
-            f"{run_dir} has no output adit can read (there is no dedicated reader for {code}, and no "
+            f"{run_dir} has no output ADIT can read (there is no dedicated reader for {code}, and no "
             "trajectory or structure file that ASE can read). Write the trajectory in a format ASE reads "
             "(extxyz, xyz, ...) to enable the structure-based analyses"))
     frames, kind, path = found

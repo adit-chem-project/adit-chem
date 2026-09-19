@@ -65,10 +65,10 @@
     <div class="actions"><button type="submit">{{ T("対応項目を照合", "Check mapped fields") }}</button></div>
   </form>
   {% if verification %}
-  <div class="{{ 'message-banner' if verification_ok else 'error-banner' }}" role="{{ 'status' if verification_ok else 'alert' }}">{{ T("対応項目のみの点検結果: 通過", "Mapped-field check only: passed") if verification_ok else T("対応項目のみの点検結果: 不通過", "Mapped-field check only: failed") }}<br>{{ T("一致", "Matched") }}: {{ verification.preserved|length }} / {{ T("不一致", "Mismatched") }}: {{ verification.mismatched|length }} / {{ T("未確認", "Unverified") }}: {{ verification.unverifiable|length }}</div>
+  <div class="{{ 'message-banner' if verification_ok else 'error-banner' }}" role="{{ 'status' if verification_ok else 'alert' }}">{{ T("対応項目のみの点検結果: 問題なし", "Mapped-field check only: passed") if verification_ok else T("対応項目のみの点検結果: 問題あり", "Mapped-field check only: failed") }}<br>{{ T("一致", "Matched") }}: {{ verification.preserved|length }} / {{ T("不一致", "Mismatched") }}: {{ verification.mismatched|length }} / {{ T("未確認", "Unverified") }}: {{ verification.unverifiable|length }}</div>
   {% if verification.mismatched %}<div class="subhead">{{ T("不一致", "Mismatched fields") }}</div><ul>{% for item in verification.mismatched[:20] %}<li>{{ item.field }}</li>{% endfor %}</ul>{% endif %}
   {% if verification.unverifiable %}<div class="subhead">{{ T("未確認", "Unverified fields") }}</div><ul>{% for item in verification.unverifiable[:20] %}<li>{{ item.field }}{% if item.get('reason') %} — {{ item.reason }}{% endif %}</li>{% endfor %}</ul>{% endif %}
-  <p class="hint">{{ T("通過しても未確認項目は検証済みになりません。", "Passing this check does not verify any unverified fields.") }}</p>
+  <p class="hint">{{ T("問題なしでも、未確認の項目は検証済みになりません。", "Passing this check does not verify any unverified fields.") }}</p>
   {% endif %}
 </fieldset>
 </div>

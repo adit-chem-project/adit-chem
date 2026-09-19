@@ -23,7 +23,7 @@ _HINTS = {
     "adsorb": ("高さ (height) を上げるか、置き場所を変えてください。スラブの上に真空が無いと、周期の像のスラブの下面に当たります",
                "raise the height or move the site; without vacuum above the slab it hits the periodic image"),
     "remove": ("", ""), "substitute": ("", ""),
-    "solvent_layer": ("間隙 (gap) か最短距離を大きくしてください", "increase the gap or the minimum distance"),
+    "solvent_layer": ("隙間 (gap) か最短距離を大きくしてください", "increase the gap or the minimum distance"),
     "solvate": ("最短距離を大きくしてください", "increase the minimum distance"), "fix": ("", ""),
 }
 
@@ -101,7 +101,7 @@ def order_notes(steps: list) -> dict[int, str]:
                   "repeating keeps the plane and widens the cross-section)"))
     for k in slabs[1:]:
         notes.setdefault(k, []).append(
-            L(f"注意: 面で切る手順が {len(slabs)} つあります (手順 {'、'.join(str(j) for j in slabs)})。このミラー指数は、手順 {slabs[0]} で切った板のセルに対する指数です",
+            L(f"注意: 面で切る手順が {len(slabs)} 個あります (手順 {'、'.join(str(j) for j in slabs)})。このミラー指数は、手順 {slabs[0]} で切ったスラブのセルに対する指数です",
               f"note: there are {len(slabs)} slab steps (steps {', '.join(str(j) for j in slabs)}); these Miller indices refer to the "
               f"cell of the slab made in step {slabs[0]}"))
     return {k: L("、".join(v), ", ".join(v)) for k, v in notes.items()}

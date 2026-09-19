@@ -194,7 +194,7 @@ def test_english_page(web):
     try:
         page = h.unescape(_post(base + "/preview", _base(app, code="xtb")))
         for text in ("Solvation model (--alpb / --gbsa)", "Staged calculation", "Continue a previous calculation", "Group templates",
-                     "Provenance: adit"):
+                     "Provenance: ADIT"):
             assert text in page, text
     finally:
         lang.set_language("ja")

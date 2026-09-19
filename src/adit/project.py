@@ -219,7 +219,7 @@ def _path_hint(code: str, program: str) -> list[str]:
                 L("     あるディレクトリを PATH に足してから、もう一度確かめます。例: export PATH=<VASP の実行ファイルのあるディレクトリ>:$PATH",
                   "     with a VASP license) to PATH, then check again. e.g. export PATH=<directory with the VASP executables>:$PATH")]
     if code == "dcdftbmd":
-        return [L("     DCDFTBMD 本体は開発元から入手してください。配布物には含まれません。実行ファイルの場所はご自身の環境設定に指定します。",
+        return [L("     DCDFTBMD 本体は開発元から入手してください。配布物には含まれません。実行ファイルの場所は自分の環境設定に指定します。",
                   "     Obtain DCDFTBMD from its developers; it is not bundled. Set the executable path in your own settings.")]
     if code == "orca":
         return [L("     何も出なければ、入手した ORCA を展開したディレクトリを PATH に足してから、もう一度確かめます。",
@@ -229,7 +229,7 @@ def _path_hint(code: str, program: str) -> list[str]:
     if code == "mlip":
         return [L("     python3 が出ても、ase とモデルのパッケージが入っていなければ走りません。下の「実行する前に用意すること」の pip の行で入れます。",
                   "     Even if python3 is found, it runs only when ase and the model package are installed; see the pip line under 'Before running'.")]
-    return [L("     何も出なければ、計算ソフトを入れた conda 環境 (ソフトごとに分けたインストール先) を有効にしてから、",
+    return [L("     何も出なければ、計算コードを入れた conda 環境 (コードごとに分けたインストール先) を有効にしてから、",
               "     If nothing appears, activate the conda environment (a separate install location per program) that has it,"),
             L(f"     もう一度確かめます。例: conda activate <環境名>  (入れていなければ: conda install -c conda-forge {_CONDA_PKG.get(code, code)})",
               f"     then check again. e.g. conda activate <env name>  (if it is not installed: conda install -c conda-forge {_CONDA_PKG.get(code, code)})")]
@@ -247,7 +247,7 @@ def _cluster_profile_example(code: str) -> list[str]:
         L('       header_extra = ["#PBS -q <キュー名>"]        # Slurm なら ["#SBATCH --partition=<パーティション名>"]',
           '       header_extra = ["#PBS -q <queue>"]           # Slurm: ["#SBATCH --partition=<partition>"]'),
         "       [profiles.remote.code_modules]",
-        L(f'       {code} = ["<module 名>"]                   # 計算ソフトを使えるようにする module の名前 (クラスタで module avail と打つと一覧が出ます)',
+        L(f'       {code} = ["<module 名>"]                   # 計算コードを使えるようにする module の名前 (クラスタで module avail と打つと一覧が出ます)',
           f'       {code} = ["<module name>"]                 # module that makes the program available (module avail on the cluster lists them)'),
     ]
 
@@ -386,7 +386,7 @@ def _readme(spec: CalculationSpec, profile, notes: ReadmeNotes, output_dir: Path
             f"       {settings_path or config_path()}",
             L("     いちばん短い書き方は次のとおりです。ファイルの最後に書き足し、<...> を自分の値に置き換えます (# から行末までは説明で、",
               "     The shortest form is below. Append it to the end of the file and replace <...> with your values (from # to the end of a line"),
-            L("     消してもかまいません)。キュー名や module 名 (クラスタで計算ソフトを使えるようにするための名前) はクラスタごとに違うので、",
+            L("     消してもかまいません)。キュー名や module 名 (クラスタで計算コードを使えるようにするための名前) はクラスタごとに違うので、",
               "     is a comment and may be removed). Queue names and module names (the names that make a program available on the cluster) differ"),
             L("     管理者か研究室の先輩に確かめてください。",
               "     between clusters, so ask the administrator or a senior member of your group."),
@@ -441,7 +441,7 @@ def _readme(spec: CalculationSpec, profile, notes: ReadmeNotes, output_dir: Path
         lines += [
             L(f"     計算の記録は output.log、submit.sh 自体のエラー (module が読めない等) は {joblog} に書かれます",
               f"     the calculation log is output.log; errors of submit.sh itself (e.g. a module that fails to load) go to {joblog}"),
-            L(f"     リソース: ノード数 {r.nodes}、ノードあたりのコア数 {r.ncpus}、MPI プロセス数 {r.mpiprocs}、OpenMP スレッド数 {r.omp_threads}、制限時間 {r.walltime}",
+            L(f"     リソース: ノード数 {r.nodes}、ノードあたりのコア数 {r.ncpus}、ノードあたりの MPI プロセス数 {r.mpiprocs}、OpenMP スレッド数 {r.omp_threads}、制限時間 {r.walltime}",
               f"     Resources: nodes {r.nodes}, cores/node {r.ncpus}, MPI processes/node {r.mpiprocs}, OpenMP threads {r.omp_threads}, walltime {r.walltime}"),
         ]
     lines += [

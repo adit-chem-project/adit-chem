@@ -60,7 +60,7 @@ class Cp2kMethodPanel(QWidget):
         self.ot_extra = QPlainTextEdit(); self.ot_extra.setMaximumHeight(60)
         self.surface_dipole = QCheckBox(L("有効にする", "Enable")); self.surf_dip_dir = QComboBox(); self.surf_dip_dir.addItems(["", "X", "Y", "Z"])
         self.extra = QPlainTextEdit(); self.extra.setMaximumHeight(90)
-        self.extra.setPlaceholderText("[節の道筋] の行のあとに、その節の末尾に足す行 (例\n[FORCE_EVAL/DFT/SCF]\nSCF_GUESS ATOMIC)")
+        self.extra.setPlaceholderText("[セクションのパス] の行のあとに、その節の末尾に足す行 (例\n[FORCE_EVAL/DFT/SCF]\nSCF_GUESS ATOMIC)")
         note = QLabel("基底関数と擬ポテンシャルは CP2K の data ディレクトリのファイルから読み、使う項目だけを生成したファイルに写します。"
                       "data ディレクトリの場所は環境設定 (cp2k_data) に書きます")
         note.setObjectName("hint"); note.setWordWrap(True)

@@ -79,7 +79,7 @@ def test_broken_toml_is_not_saved_and_told_in_japanese(app, tmp_path, shown, ja)
     assert len(shown) == 1
     title, text = shown[0]
     assert title == "保存できません"
-    assert "設定ファイルの 1 行目 11 文字目が TOML の書き方として正しくありません" in text
+    assert "環境設定ファイルの 1 行目 11 文字目が TOML の書き方として正しくありません" in text
     assert ".tmp" not in text and "cluster.toml" not in text
 
 

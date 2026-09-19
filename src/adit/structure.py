@@ -72,7 +72,7 @@ def from_preset(name: str) -> Atoms:
         from adit.lang import L
         near = difflib.get_close_matches(name, list(g2.names), n=5, cutoff=0.5)
         near_s = L(f" 近い名前: {', '.join(near)}。", f" Close names: {', '.join(near)}.") if near else ""
-        raise StructureError(L(f"プリセットに {name!r} はありません (プリセットは ASE の g2 分子集の名前で、H2O、CH3CH2OH のような分子式が中心)。{near_s}"
+        raise StructureError(L(f"プリセットに {name!r} はありません (プリセットは ASE の g2 セットの名前で、H2O、CH3CH2OH のような分子式が中心)。{near_s}"
                                f"一覧に無い分子は、種類を SMILES にして書くと作れます (例 エタノール = CCO)",
                                f"no preset named {name!r} (presets are the names of ASE's g2 set, mostly formulas such as H2O, CH3CH2OH).{near_s} "
                                f"For other molecules, switch the kind to SMILES (e.g. ethanol = CCO)"))
@@ -118,7 +118,7 @@ def from_file(path: Path | str | None) -> Atoms:
         raise StructureError(L("構造ファイルを指定してください", "choose a structure file"))
     path = Path(str(path).strip()).expanduser()
     if not path.is_file():
-        what = L("ディレクトリで、ファイルではありません", "is a directory, not a file") if path.is_dir() else L("がありません", "was not found")
+        what = L("はディレクトリで、ファイルではありません", "is a directory, not a file") if path.is_dir() else L("がありません", "was not found")
         raise StructureError(L(f"構造ファイル {path} {what}", f"structure file {path} {what}"))
     try:
         result = read(path)

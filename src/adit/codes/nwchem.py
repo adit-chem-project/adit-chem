@@ -37,12 +37,12 @@ class NwchemGenerator(InputGenerator):
     def validate(self, spec: CalculationSpec, cfg: Config) -> list[ValidationError]:
         m, st, task = spec.method, spec.structure, spec.task
         if not isinstance(m, NwchemMethod):
-            return [ValidationError("method.code", L("NWChem の条件ではありません", "not a NWChem method"))]
+            return [ValidationError("method.code", L("NWChem の条件ではありません", "the settings are not for NWChem"))]
         errors: list[ValidationError] = []
         if st.periodic or any(st.atoms.pbc):
             errors.append(ValidationError("structure.atoms", L("この NWChem 生成器は分子の計算だけに対応します", "this NWChem generator supports molecular calculations only")))
         if st.fixed_atoms or st.fixed_axes:
-            errors.append(ValidationError("structure.fixed_atoms", L("この NWChem 生成器では固定原子・固定軸を入力へ写せません", "this NWChem generator cannot write fixed atoms or axes")))
+            errors.append(ValidationError("structure.fixed_atoms", L("この NWChem 生成器では固定原子・固定軸を入力に書けません", "this NWChem generator cannot write fixed atoms or axes")))
         if spec.handoff is not None and spec.handoff.files:
             errors.append(ValidationError("handoff.files", L("この NWChem 生成器は前の計算のファイルを引き継げません", "this NWChem generator cannot carry over restart files")))
         if task.type != "single_point":
@@ -50,15 +50,15 @@ class NwchemGenerator(InputGenerator):
         if ((spec.runtime.mpiprocs > 1 or spec.runtime.omp_threads > 1)
                 and spec.runtime.profile in cfg.profiles
                 and not cfg.profile(spec.runtime.profile).commands.get(self.code)):
-            errors.append(ValidationError("runtime.profile", L("並列実行では環境設定の commands.nwchem に実行コマンドを明示してください", "for parallel execution, explicitly set commands.nwchem in your settings")))
+            errors.append(ValidationError("runtime.profile", L("並列実行では環境設定の commands.nwchem に実行コマンドを指定してください", "for parallel execution, explicitly set commands.nwchem in your settings")))
         if m.theory is None:
-            errors.append(ValidationError("method.theory", L("SCF または DFT を明示してください", "explicitly select SCF or DFT")))
+            errors.append(ValidationError("method.theory", L("SCF または DFT を指定してください", "explicitly select SCF or DFT")))
         if not _TOKEN.fullmatch(m.basis):
             errors.append(ValidationError("method.basis", L("NWChem の basis library にある基底関数名を、空白や改行のない 1 語で指定してください", "provide a one-token basis name from your NWChem basis library, without spaces or line breaks")))
         if m.theory == "dft" and not _TOKEN.fullmatch(m.xc):
-            errors.append(ValidationError("method.xc", L("DFT の XC キーワードを空白や改行のない 1 語で明示してください", "explicitly provide a one-token DFT XC keyword without spaces or line breaks")))
+            errors.append(ValidationError("method.xc", L("DFT の XC キーワードを空白や改行のない 1 語で指定してください", "explicitly provide a one-token DFT XC keyword without spaces or line breaks")))
         if m.theory == "scf" and m.xc:
-            errors.append(ValidationError("method.xc", L("SCF では XC キーワードを使用しません。空にしてください", "SCF does not use an XC keyword; leave it empty")))
+            errors.append(ValidationError("method.xc", L("SCF では XC キーワードを使いません。空にしてください", "SCF does not use an XC keyword; leave it empty")))
         if m.theory == "scf" and st.multiplicity != 1:
             errors.append(ValidationError("structure.multiplicity", L("この生成器の SCF は閉殻一重項だけです。開殻では DFT を選ぶか、別の入力を用意してください", "this generator's SCF subset is closed-shell singlet only; select DFT for an open-shell system or prepare a separate input")))
         if m.theory is not None:
@@ -93,9 +93,9 @@ class NwchemGenerator(InputGenerator):
         return ReadmeNotes(
             program="nwchem",
             files=[L("  nwchem.nw    NWChem の分子一点計算の入力", "  nwchem.nw    NWChem molecular single-point input")],
-            prepare=[L("  指定した基底関数と XC キーワードが、ご自身の NWChem で使えるか確認してください。ADIT は基底関数の内容を用意・照合しません。",
+            prepare=[L("  指定した基底関数と XC キーワードが、自分の NWChem で使えるか確認してください。ADIT は基底関数の内容を用意・照合しません。",
                        "  Check that your NWChem installation provides the selected basis and XC keyword. ADIT does not supply or verify basis-set contents."),
-                     L("  並列実行では環境設定の commands.nwchem に、ご自身の NWChem に合う起動コマンドを指定します。",
+                     L("  並列実行では環境設定の commands.nwchem に、自分の NWChem に合う起動コマンドを指定します。",
                        "  For parallel runs, set commands.nwchem in your settings to the launch command appropriate for your NWChem installation.")],
             outputs=[L("  output.log   NWChem の標準出力。Total SCF/DFT energy は Hartree 単位です。ADIT はこの値だけを読みます。",
                        "  output.log   NWChem standard output. Total SCF/DFT energy is in hartree; ADIT reads only this value.")],

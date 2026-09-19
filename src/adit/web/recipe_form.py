@@ -226,7 +226,7 @@ def _merge(k: int, s, f: dict):
     elif op in ("remove", "substitute"):
         frac = g("pmode") == "fraction"
         u = {"where": where(s.where), "count": None if frac else num("count", L("個数", "count"), integer=True),
-             "fraction": num("fraction", L("割合", "fraction")) if frac else None, "seed": num("seed", L("乱数シード", "seed"), integer=True)}
+             "fraction": num("fraction", L("割合", "fraction")) if frac else None, "seed": num("seed", L("乱数の種", "seed"), integer=True)}
         if op == "substitute":
             u["to"] = g("to")
     elif op == "adsorb":
@@ -237,11 +237,11 @@ def _merge(k: int, s, f: dict):
              "xy": (num("x", "x"), num("y", "y")) if place == "xy" else None,
              "height": num("height", L("高さ", "height")), "down_atom": num("down", L("下に向ける原子", "atom facing down"), integer=True) - 1}
     elif op in ("solvent_layer", "solvate"):
-        u = {"components": comps(), "min_distance": num("mind", L("分子間の最短距離", "min. distance")), "seed": num("seed", L("乱数シード", "seed"), integer=True),
+        u = {"components": comps(), "min_distance": num("mind", L("分子間の最短距離", "min. distance")), "seed": num("seed", L("乱数の種", "seed"), integer=True),
              "density_g_cm3": num("density", L("密度", "density"))}
         if op == "solvent_layer":
             u.update(thickness=num("thickness", L("厚み", "thickness")) if g("tmode") == "thickness" else None,
-                     gap=num("gap", L("間隙", "gap")), vacuum=num("vacuum", L("真空", "vacuum")))
+                     gap=num("gap", L("隙間", "gap")), vacuum=num("vacuum", L("真空", "vacuum")))
         else:
             u["padding"] = num("padding", L("余白", "padding"))
     elif op == "fix":
@@ -361,7 +361,7 @@ def base_ref(f: dict, src: str) -> dict:
     unit = s("pl_unit")
     if not unit:
         raise ValueError(L("繰り返し単位の SMILES を入力してください (例 *CC*)", "enter the SMILES of the repeat unit (e.g. *CC*)"))
-    d.update(unit=unit, n=_pos_int(f, "pl_n", L("重合度", "units"), 10), seed=_pos_int(f, "pl_seed", L("乱数シード", "seed"), 0))
+    d.update(unit=unit, n=_pos_int(f, "pl_n", L("重合度", "units"), 10), seed=_pos_int(f, "pl_seed", L("乱数の種", "seed"), 0))
     return _compact(PolymerRef.model_validate(d), ex)
 
 
@@ -570,7 +570,7 @@ def fill_count(step: SolventLayer, row: int, conc: float, area: float | None) ->
             n = counts[row] = new
         if n < 1:
             return step, L(f"帯の体積 {v:.0f} Å³ では {conc:g} mol/L は 1 個未満です。成分を増やすか濃度を上げてください",
-                           f"{conc:g} mol/L is less than one ion in a band of {v:.0f} Å³; add more solvent or raise the concentration"), False
+                           f"{conc:g} mol/L is less than one ion in a band of {v:.0f} Å³; add more components or raise the concentration"), False
         actual = salt_count(conc, v)[1]
     except Exception as ex:
         return step, str(ex), False

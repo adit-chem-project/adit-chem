@@ -4,7 +4,7 @@
 {#- 組にして比べる表 (adit.analysis.compare)。行は (反応の名前, 係数, ディレクトリ)。名前が空の行は上の行と同じ反応。JS なし: 行を増やすのも送信ボタン -#}
 <form method="post" action="/compare">
 <fieldset><legend>{{ T("組にして比べる", "Compare runs") }}</legend>
-  <p class="hint">{{ T("係数 ν は生成したファイルを正、反応物を負にします (ΔE = ΣνE)。ディレクトリは基準のディレクトリからの相対パスか絶対パス。反応の名前が空の行は、上の行と同じ反応に入ります。",
+  <p class="hint">{{ T("係数 ν は生成物を正、反応物を負にします (ΔE = ΣνE)。ディレクトリは基準のディレクトリからの相対パスか絶対パス。反応の名前が空の行は、上の行と同じ反応に入ります。",
     "The coefficient ν is positive for products and negative for reactants (ΔE = ΣνE). Directories are relative to the base directory or absolute. A row with an empty reaction name belongs to the reaction above it.") }}</p>
   {% set h = hlp("compare_base") %}
   <div class="row"><label for="base"{% if h and h.required %} class="required"{% endif %}{% if h %} title="{{ h.text() }}"{% endif %}>{{ lab("compare_base") }}</label>

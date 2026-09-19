@@ -79,7 +79,7 @@ def parse_extra_namelist(text: str) -> dict[str, dict]:
         if not line:
             continue
         if "=" not in line or "." not in line.split("=", 1)[0]:
-            raise ValueError(L(f"「名前空間.変数 = 値」の形ではありません (例 system.nbnd = 20): {raw!r}",
+            raise ValueError(L(f"「ネームリスト.変数 = 値」の形ではありません (例 system.nbnd = 20): {raw!r}",
                                f"not of the form namelist.variable = value (e.g. system.nbnd = 20): {raw!r}"))
         k, _, v = line.partition("=")
         ns, _, key = k.strip().partition(".")

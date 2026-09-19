@@ -71,7 +71,7 @@ PLACE_LABELS: dict[str, tuple[str, str]] = {
     "method.irc_direction": ("IRC の向き", "IRC direction"),
     "method.model_family": ("機械学習ポテンシャルの種類", "Machine-learning potential"),
     "method.model": ("モデル", "Model"),
-    "method.device": ("計算に使う装置 (device)", "Device"),
+    "method.device": ("計算に使うデバイス (device)", "Device"),
     "method.dtype": ("数値の精度 (dtype)", "Precision (dtype)"),
     "compare": ("比べる計算の組", "Set of runs to compare"),
     "conformers": ("配座の候補", "Conformer candidates"),

@@ -62,7 +62,7 @@ class NamdGenerator(InputGenerator):
     def validate(self, spec: CalculationSpec, cfg: Config) -> list[ValidationError]:
         m, st, task = spec.method, spec.structure, spec.task
         if not isinstance(m, NamdMethod):
-            return [ValidationError("method.code", L("NAMD の条件ではありません", "not a NAMD method"))]
+            return [ValidationError("method.code", L("NAMD の条件ではありません", "the settings are not for NAMD"))]
         errors: list[ValidationError] = []
         if task.type != "molecular_dynamics" or task.md.ensemble != "NVE":
             errors.append(ValidationError("task.type", L(
@@ -70,7 +70,7 @@ class NamdGenerator(InputGenerator):
                 "this NAMD generator supports NVE molecular dynamics only")))
         if st.fixed_atoms or st.fixed_axes:
             errors.append(ValidationError("structure.fixed_atoms", L(
-                "この NAMD 生成器は固定原子・固定軸を入力へ写せません",
+                "この NAMD 生成器は固定原子・固定軸を入力に書けません",
                 "this NAMD generator cannot write fixed atoms or axes")))
         if st.periodic and not all(st.atoms.pbc):
             errors.append(ValidationError("structure.atoms", L(
@@ -78,7 +78,7 @@ class NamdGenerator(InputGenerator):
                 "this NAMD generator supports only fully periodic or nonperiodic systems")))
         if spec.kpoints is not None:
             errors.append(ValidationError("kpoints", L(
-                "NAMD は k 点を使用しません。指定を外してください",
+                "NAMD は k 点を使いません。指定を外してください",
                 "NAMD does not use k-points; remove this setting")))
         if spec.handoff is not None:
             errors.append(ValidationError("handoff", L(
@@ -121,13 +121,13 @@ class NamdGenerator(InputGenerator):
                     f"パラメータファイルがありません: {path_value}", f"parameter file not found: {path_value}")))
         if not m.exclude:
             errors.append(ValidationError("method.exclude", L(
-                "exclude の規則を明示してください", "explicitly set the exclude rule")))
+                "exclude の規則を指定してください", "explicitly set the exclude rule")))
         if m.one_four_scaling is None or m.one_four_scaling < 0:
             errors.append(ValidationError("method.one_four_scaling", L(
-                "oneFourScaling を 0 以上の値で明示してください", "explicitly set a non-negative oneFourScaling")))
+                "oneFourScaling を 0 以上の値で指定してください", "explicitly set a non-negative oneFourScaling")))
         if m.switching is None:
             errors.append(ValidationError("method.switching", L(
-                "switching を使うかどうか明示してください", "explicitly choose whether switching is enabled")))
+                "switching を使うかどうか指定してください", "explicitly choose whether switching is enabled")))
         if m.cutoff_ang <= 0 or m.pairlistdist_ang <= m.cutoff_ang:
             errors.append(ValidationError("method.cutoff_ang", L(
                 "cutoff は正、pairlistdist は cutoff より大きい Å 値にしてください",
@@ -187,7 +187,7 @@ class NamdGenerator(InputGenerator):
             "  namd.conf / topology.psf / coordinates.pdb / parameter_*.prm   NAMD NVE input and user-supplied force field")],
             prepare=[L("  PSF の原子電荷と、PSF・PDB・パラメータの原子順・力場を確認してください。NAMD は初速度を指定した温度と seed から作ります。ADIT は力場を作りません。",
                        "  Check atom order, charges and force field across PSF, PDB and parameter files. NAMD draws initial velocities from the specified temperature and seed. ADIT does not build force fields."),
-                     L("  NVE では共通 Spec の熱浴・結合時定数・圧力・圧力浴時定数は使用しません。",
+                     L("  NVE では共通 Spec の熱浴・結合時定数・圧力・圧力浴時定数は使いません。",
                        "  NVE does not use the common thermostat, coupling time, pressure, or barostat time.")],
             outputs=[L("  output.log / adit.dcd   NAMD の出力。ADIT はまだ内容を解析しません。",
                        "  output.log / adit.dcd   NAMD outputs; ADIT does not yet parse them.")])

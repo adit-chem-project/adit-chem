@@ -42,7 +42,7 @@ class MlipMethodPanel(QWidget):
         form = QFormLayout(self); form.setVerticalSpacing(ROW_SPACING)
         add_row(form, "機械学習ポテンシャルの種類", self.family)
         add_row(form, "モデル", self.model)
-        add_row(form, "計算に使う装置 (device)", self.device)
+        add_row(form, "計算に使うデバイス (device)", self.device)
         add_row(form, "数値の精度 (dtype)", self.dtype)
         add_row(form, "分散補正", self.dispersion)
         add_row(form, "乱数の種", self.seed)

@@ -22,7 +22,7 @@ def progress_text(step: int, total: int | None, elapsed_s: float) -> str:
     done = step + 1
     rate = elapsed_s / done if done > 0 else 0.0
     head = L(f"ステップ {done}", f"step {done}") + (f" / {total} ({100 * done / total:.0f} %)" if total else "")
-    speed = L(f"、測定 {rate:.2g} 秒/ステップ", f", measured {rate:.2g} s/step") if elapsed_s > 0 else ""
+    speed = L(f"、1 ステップ {rate:.2g} 秒", f", measured {rate:.2g} s/step") if elapsed_s > 0 else ""
     left = ""
     if total and elapsed_s > 0 and done < total:
         rest = rate * (total - done)

@@ -15,7 +15,7 @@
   {% call rrow("成分", "Components", p ~ "comps") %}<textarea name="{{ p }}comps" id="{{ p }}comps">{{ form.get(p ~ "comps", "") }}</textarea>
     <span class="hint">{{ T("1 行に 1 成分: 名前 (プリセット) / smiles:… / file:… * 個数 [charge=±n] [label=表示名]。全電荷は成分の電荷の合計になります", "One component per line: name (preset) / smiles:… / file:… * count [charge=±n] [label=name]. The total charge is the sum of the components") }}{% if auto %} {{ T("個数を 0 にした成分は「自動」(箱全体が指定の密度になる個数) です", "A count of 0 means auto (as many as needed for the whole box to reach the density)") }}{% endif %}</span>{% endcall %}
   {% call rrow("分子間の最短距離 [Å]", "Min. distance [Å]", p ~ "mind") %}{{ rtxt(p ~ "mind") }}{% endcall %}
-  {% call rrow("乱数シード", "Seed", p ~ "seed") %}{{ rtxt(p ~ "seed") }}{% endcall %}
+  {% call rrow("乱数の種", "Random seed", p ~ "seed") %}{{ rtxt(p ~ "seed") }}{% endcall %}
 {%- endmacro %}
 
 <div class="sub" title="{{ T('土台の構造に加工 (面で切る、溶液の層、原子を抜く・置換、吸着、固定、超格子、真空、直方体、溶媒和) を上から順に行います', 'processes the base structure from top to bottom: cut a slab, add a solvent layer, remove or substitute atoms, adsorb, fix, supercell, vacuum, box, solvate') }}">{{ T("組み立て手順", "Build steps") }}</div>
@@ -63,13 +63,13 @@
   {%- elif it.op in ("remove", "substitute") %}
   {{ selection(p) }}
   {% call rrow("選ぶ数", "Number to pick", p ~ "pmode") %}{{ rsel(p ~ "pmode", [("count", T("個数", "Count")), ("fraction", T("割合 (0〜1)", "Fraction (0-1)"))], "swsel") }}<input type="text" name="{{ p }}count" id="{{ p }}count" class="tiny swi" data-sw="count" value="{{ form.get(p ~ 'count', '') }}" aria-label="{{ T('個数', 'Count') }}"><input type="text" name="{{ p }}fraction" id="{{ p }}fraction" class="tiny swi" data-sw="fraction" value="{{ form.get(p ~ 'fraction', '') }}" aria-label="{{ T('割合 (0〜1)', 'Fraction (0-1)') }}">{% endcall %}
-  {% call rrow("乱数シード", "Seed", p ~ "seed") %}{{ rtxt(p ~ "seed") }}{% endcall %}
+  {% call rrow("乱数の種", "Random seed", p ~ "seed") %}{{ rtxt(p ~ "seed") }}{% endcall %}
   {%- if it.op == "substitute" %}
   {% call rrow("置き換え先の元素", "Replace with", p ~ "to") %}{{ rsel(p ~ "to", elements_opts) }}{% endcall %}
   {%- endif %}
   {%- elif it.op == "adsorb" %}
   {% call rrow("分子", "Molecule", p ~ "kind") %}{{ rsel(p ~ "kind", [("preset", T("プリセット", "Preset")), ("smiles", "SMILES"), ("file", T("ファイル", "File"))]) }}{{ rtxt(p ~ "ref", "", ph="H2O", aria=T("分子の指定", "Molecule")) }}{% endcall %}
-  {% call rrow("置き場所", "Position", p ~ "place") %}{{ rsel(p ~ "place", [("site", T("席の名前 (ASE の面)", "Site name (ASE surface)")), ("above_atom", T("原子の真上", "Above an atom")), ("xy", T("xy 座標", "xy position"))], "swsel") }}{% endcall %}
+  {% call rrow("置き場所", "Position", p ~ "place") %}{{ rsel(p ~ "place", [("site", T("吸着サイトの名前 (ASE の面)", "Site name (ASE surface)")), ("above_atom", T("原子の真上", "Above an atom")), ("xy", T("xy 座標", "xy position"))], "swsel") }}{% endcall %}
   {% call rrow("吸着サイトの名前", "Site", p ~ "site", "site") %}<input type="text" name="{{ p }}site" id="{{ p }}site" class="narrow" list="ads_sites" value="{{ form.get(p ~ 'site', '') }}" title="{{ T('土台が「スラブ」(ASE の面) のときだけ使えます。面ごとの席の名前は ASE と同じ', 'only for a Slab base (ASE surface); the site names are ASE\'s') }}">{% endcall %}
   {% call rrow("原子の番号 (1 始まり)", "Atom number (from 1)", p ~ "atom", "above_atom") %}{{ rtxt(p ~ "atom") }}{% endcall %}
   {% call rrow("xy 座標 [Å]", "x, y [Å]", p ~ "x", "xy") %}{{ rtxt(p ~ "x") }}{{ rtxt(p ~ "y", aria="y") }}{% endcall %}
@@ -78,7 +78,7 @@
   {%- elif it.op == "solvent_layer" %}
   {{ comps(p, False) }}
   {% call rrow("厚みの決め方", "Thickness from", p ~ "tmode") %}{{ rsel(p ~ "tmode", [("density", T("密度から [g/cm³]", "From density [g/cm³]")), ("thickness", T("厚みを指定 [Å]", "Thickness [Å]"))], "swsel") }}<input type="text" name="{{ p }}density" id="{{ p }}density" class="narrow swi" data-sw="density" value="{{ form.get(p ~ 'density', '') }}" aria-label="{{ T('密度 [g/cm³]', 'Density [g/cm³]') }}" title="{{ T('成分の総質量をこの密度で割った体積が、溶液の帯になります (板の断面は変えずに厚みが決まります)', 'the band volume is the total mass of the components divided by this density (the slab cross-section is kept; the thickness follows)') }}"><input type="text" name="{{ p }}thickness" id="{{ p }}thickness" class="narrow swi" data-sw="thickness" value="{{ form.get(p ~ 'thickness', '') }}" aria-label="{{ T('厚み [Å]', 'Thickness [Å]') }}" title="{{ T('分子の中心を置く帯の厚み。詰めすぎると入り切らないので、はじめは密度から決める方が確実です', 'thickness of the band where molecule centers are placed; too thin and the molecules will not fit, so starting from a density is safer') }}">{% endcall %}
-  {% call rrow("間隙 [Å]", "Gap [Å]", p ~ "gap") %}{{ rtxt(p ~ "gap") }}{% endcall %}
+  {% call rrow("隙間 [Å]", "Gap [Å]", p ~ "gap") %}{{ rtxt(p ~ "gap") }}{% endcall %}
   {% call rrow("真空 [Å] (0 なら両側が溶液)", "Vacuum [Å] (0 = solution on both sides)", p ~ "vacuum") %}{{ rtxt(p ~ "vacuum") }}{% endcall %}
   {% call rrow("濃度から個数", "Count from concentration", p ~ "conc") %}{{ rtxt(p ~ "conc", "tiny") }}<span>mol/L</span>{{ rsel(p ~ "conc_row", it.rows, aria=T("個数を決める行", "Row whose count is set")) }}<button type="submit" formaction="/recipe" name="recipe_action" value="conc:{{ it.k }}" title="{{ T('溶液の帯の体積と、この濃度 [mol/L] から個数を出し、選んだ行 (イオンなど) に入れます。塩なら陽イオンと陰イオンの行それぞれに', 'computes a count from the band volume and this concentration [mol/L] and puts it in the selected row (for a salt, do it for the cation and the anion rows)') }}">{{ T("選んだ行に入れる", "Fill selected row") }}</button>{% endcall %}
   {%- if it.note %}<div class="row"><span></span><div class="{{ 'hint' if it.note_ok else 'error recipe-error' }}">{{ it.note }}</div></div>{% endif %}

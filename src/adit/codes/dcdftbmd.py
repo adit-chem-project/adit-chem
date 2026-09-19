@@ -26,10 +26,10 @@ class DcdftbmdGenerator(InputGenerator):
     def validate(self, spec: CalculationSpec, cfg: Config) -> list[ValidationError]:
         m, st, t = spec.method, spec.structure, spec.task
         if not isinstance(m, DcdftbmdMethod):
-            return [ValidationError("method.code", L("DCDFTBMD の条件ではありません", "not a DCDFTBMD method"))]
+            return [ValidationError("method.code", L("DCDFTBMD の条件ではありません", "the settings are not for DCDFTBMD"))]
         errs = []
         if m.scc is None or m.divide_and_conquer is None:
-            errs.append(ValidationError("method.scc", L("SCC と分割統治法 (divide_and_conquer) を明示してください", "set both SCC and divide_and_conquer explicitly")))
+            errs.append(ValidationError("method.scc", L("SCC と分割統治法 (divide_and_conquer) を指定してください", "set both SCC and divide_and_conquer explicitly")))
         symbols = list(dict.fromkeys(st.atoms.symbols))
         expected_pairs = {f"{sym}-{other}" for sym in symbols for other in symbols}
         extra_pairs = sorted(set(m.sk_files) - expected_pairs)
@@ -40,7 +40,7 @@ class DcdftbmdGenerator(InputGenerator):
         if ((spec.runtime.mpiprocs > 1 or spec.runtime.omp_threads > 1)
                 and spec.runtime.profile in cfg.profiles
                 and not cfg.profile(spec.runtime.profile).commands.get(self.code)):
-            errs.append(ValidationError("runtime.profile", L("並列実行では環境設定の commands.dcdftbmd に対応する実行コマンドを明示してください", "for parallel execution, set the appropriate commands.dcdftbmd in your settings")))
+            errs.append(ValidationError("runtime.profile", L("並列実行では環境設定の commands.dcdftbmd に対応する実行コマンドを指定してください", "for parallel execution, set the appropriate commands.dcdftbmd in your settings")))
         for sym in symbols:
             if m.highest_angular_momentum.get(sym) not in (1, 2, 3, 4):
                 errs.append(ValidationError("method.highest_angular_momentum", L(f"{sym} の最高角運動量を 1 (s)〜4 (f) で指定してください", f"set the highest angular momentum for {sym} from 1 (s) to 4 (f)")))
@@ -59,14 +59,14 @@ class DcdftbmdGenerator(InputGenerator):
             errs.append(ValidationError("task.type", L("この生成器は一点計算・構造最適化・MD に対応します", "this generator supports single point, geometry optimization, and MD")))
         if t.type == "geometry_optimization":
             if t.optimizer not in ("SteepestDescent", "FIRE"):
-                errs.append(ValidationError("task.optimizer", L("この生成器では最急降下法と FIRE のみ、同じ名前の手法として写せます", "this generator can map only SteepestDescent and FIRE to the same-named methods")))
+                errs.append(ValidationError("task.optimizer", L("この生成器では最急降下法と FIRE のみ、同じ名前の手法として書けます", "this generator can map only SteepestDescent and FIRE to the same-named methods")))
             if t.relax_cell != "no":
                 errs.append(ValidationError("task.relax_cell", L("この生成器は格子最適化を書けません", "this generator cannot write lattice optimization")))
         if t.type == "molecular_dynamics":
             if t.md.ensemble == "NPT":
                 errs.append(ValidationError("task.md.ensemble", L("この生成器は NPT を書けません", "this generator cannot write NPT")))
             if t.md.ensemble == "NVT" and t.md.thermostat != "berendsen":
-                errs.append(ValidationError("task.md.thermostat", L("この生成器で時定数まで写せる NVT 熱浴は Berendsen だけです", "Berendsen is the only NVT thermostat whose coupling time this generator can map")))
+                errs.append(ValidationError("task.md.thermostat", L("この生成器で時定数まで書ける NVT 熱浴は Berendsen だけです", "Berendsen is the only NVT thermostat whose coupling time this generator can map")))
         if st.periodic and not all(st.atoms.pbc):
             errs.append(ValidationError("structure.atoms", L("DCDFTBMD の TV ベクトルは 3 方向の周期セルとして書きます。部分周期には対応していません", "DCDFTBMD TV vectors are written for a fully periodic cell; partial periodicity is unsupported")))
         return errs

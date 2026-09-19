@@ -280,7 +280,7 @@ def test_run_page_fits_at_1366(app, sk_root, tmp_path):
 
 def test_new_labels_have_help_and_english():
     keys = [ja for key, (ja, _en) in P.LABELS.items() if key != "out"]
-    keys += ["機械学習ポテンシャルの種類", "モデル", "計算に使う装置 (device)", "数値の精度 (dtype)",
+    keys += ["機械学習ポテンシャルの種類", "モデル", "計算に使うデバイス (device)", "数値の精度 (dtype)",
              "遷移状態の探索 (OptTS)", "最初にヘシアンを計算 (Calc_Hess)", "ヘシアンを計算し直す間隔 (Recalc_Hess)",
              "最後に振動数を計算 (Freq)", "反応座標をたどる (IRC)", "IRC の反復の上限", "IRC の向き"]
     for ja in keys:

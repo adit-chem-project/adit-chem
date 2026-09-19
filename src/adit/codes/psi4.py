@@ -44,7 +44,7 @@ class Psi4Generator(InputGenerator):
                 "この Psi4 生成器は分子 (非周期) だけに対応します", "this Psi4 generator supports molecules (nonperiodic) only")))
         if st.fixed_atoms or st.fixed_axes:
             errs.append(ValidationError("structure.fixed_atoms", L(
-                "この Psi4 生成器は固定原子・固定軸を入力へ写せません (optking の凍結座標は確かめていません)",
+                "この Psi4 生成器は固定原子・固定軸を入力に書けません (optking の凍結座標は確かめていません)",
                 "this Psi4 generator cannot write fixed atoms or axes (optking's frozen coordinates were not verified)")))
         if st.velocities is not None:
             errs.append(ValidationError("structure.velocities", L(
@@ -183,7 +183,7 @@ class Psi4Generator(InputGenerator):
                    L("  stdout.log    画面に出る分 (optking の途中経過など)。Psi4 が止まったときの理由もここに出ます",
                      "  stdout.log    what Psi4 prints to the screen (optking progress); the reason for a crash appears here too")]
         if t == "vibrations":
-            outputs.append(L("  results.json の frequencies_cm1   振動数 [cm^-1] (虚数は負の数で入ります)",
+            outputs.append(L("  results.json の frequencies_cm1   振動数 [cm⁻¹] (虚数は負の数で入ります)",
                              "  frequencies_cm1 in results.json   vibrational frequencies in cm^-1 (imaginary ones appear as negative)"))
         return ReadmeNotes(program=DEFAULT_COMMAND, files=files, prepare=prepare, outputs=outputs)
 

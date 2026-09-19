@@ -347,7 +347,7 @@ class _PickEditor(StepEditor):
         self.fraction = num(0.0, 1.0, 0.1, 0.05)
         self.seed = spin(0, 999999, 0, 96)
         add_row(self.form, "選ぶ数", hrow(self.mode, self.count, self.fraction))
-        add_row(self.form, "乱数シード", self.seed)
+        add_row(self.form, "乱数の種", self.seed)
         self.mode.currentIndexChanged.connect(self._show)
 
     def _show(self, *_):
@@ -416,7 +416,7 @@ class AdsorbEditor(StepEditor):
         self.place.addItem(L("xy 座標", "xy position"), "xy")
         limit_combo(self.place)
         self.site = QComboBox(); self.site.setEditable(True); self.site.addItems(["ontop", "bridge", "fcc", "hcp", "hollow", "shortbridge", "longbridge"])
-        self.site.setToolTip(L("土台が「スラブ」(ASE の面) のときだけ使えます。面ごとの席の名前は ASE と同じ", "only for a Slab base (ASE surface); the site names are ASE's"))
+        self.site.setToolTip(L("土台が「スラブ」(ASE の面) のときだけ使えます。面ごとの吸着サイトの名前は ASE と同じ", "only for a Slab base (ASE surface); the site names are ASE's"))
         self.atom = spin(1, 1000000, 1, 110)
         self.x = num(-1000.0, 1000.0, 0.0, 0.5); self.y = num(-1000.0, 1000.0, 0.0, 0.5)
         self.height = num(0.0, 50.0, 2.0, 0.1)
@@ -510,7 +510,7 @@ class SolventLayerEditor(_ComponentsEditor):
         self.mode = QComboBox(); self.mode.addItem(L("密度から [g/cm³]", "From density [g/cm³]"), "density"); self.mode.addItem(L("厚みを指定 [Å]", "Thickness [Å]"), "thickness")
         limit_combo(self.mode)
         self.density = num(0.01, 30.0, 1.0, 0.05)
-        self.density.setToolTip(L("成分の総質量をこの密度で割った体積が、溶液の帯になります (板の断面は変えずに厚みが決まります)",
+        self.density.setToolTip(L("成分の総質量をこの密度で割った体積が、溶液の帯になります (スラブの断面は変えずに厚みが決まります)",
                                   "the band volume is the total mass of the components divided by this density (the slab cross-section is kept; the thickness follows)"))
         self.thickness = num(0.1, 1000.0, 20.0, 1.0)
         self.thickness.setToolTip(L("分子の中心を置く帯の厚み。詰めすぎると入り切らないので、はじめは密度から決める方が確実です",
@@ -522,7 +522,7 @@ class SolventLayerEditor(_ComponentsEditor):
         self.btn_conc.setToolTip(L("溶液の帯の体積と、この濃度 [mol/L] から個数を出し、表で選んだ行 (イオンなど) に入れます。塩なら陽イオンと陰イオンの行それぞれに",
                                    "computes a count from the band volume and this concentration [mol/L] and puts it in the selected table row (for a salt, do it for the cation and the anion rows)"))
         add_row(self.form, "厚みの決め方", hrow(self.mode, self.density, self.thickness))
-        add_row(self.form, "間隙 [Å]", self.gap)
+        add_row(self.form, "隙間 [Å]", self.gap)
         add_row(self.form, "真空 [Å] (0 なら両側が溶液)", self.vacuum)
         add_row(self.form, "濃度から個数", hrow(self.conc, "mol/L", self.btn_conc))
         self.mode.currentIndexChanged.connect(self._show)
@@ -580,7 +580,7 @@ class SolventLayerEditor(_ComponentsEditor):
                 n = counts[r] = new
             if n < 1:
                 msg = L(f"帯の体積 {v:.0f} Å³ では {self.conc.value():g} mol/L は 1 個未満です。成分を増やすか濃度を上げてください",
-                        f"{self.conc.value():g} mol/L is less than one ion in a band of {v:.0f} Å³; add more solvent or raise the concentration")
+                        f"{self.conc.value():g} mol/L is less than one ion in a band of {v:.0f} Å³; add more components or raise the concentration")
                 self.mix.info.setText(msg); return msg
             actual = salt_count(self.conc.value(), v)[1]
         except Exception as ex:
@@ -676,13 +676,13 @@ class RecipeEditor(QWidget):
         for op in ADD_ORDER:
             self.add_kind.addItem(op_label(op), op)
         self.add_kind.insertSeparator(self.add_kind.count())
-        self.add_kind.addItem(icons.icon("slab"), L("電極と電解質の界面 (面 + 断面の自動調整 + 溶液 + 固定)", "Electrode–electrolyte interface (slab + auto-sized surface + electrolyte + fixed layer)"), INTERFACE)
+        self.add_kind.addItem(icons.icon("slab"), L("電極と電解質の界面 (面 + 断面の自動調整 + 溶液 + 固定)", "Electrode–electrolyte interface (surface cut + auto-sized cross-section + solution + fixed layer)"), INTERFACE)
         limit_combo(self.add_kind)
         self.add_kind.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
         self.add_kind.setMinimumContentsLength(12)
         self.add_kind.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.add_kind.view().setMinimumWidth(self.add_kind.view().sizeHintForColumn(0) + 32)
-        self.add_kind.setToolTip(L("足す手順の種類。「電極と電解質の界面」は、面で切る・断面を溶液に合わせて広げる・溶液の層を置く・下の層を固定する、の各手順をまとめて追加します。土台がすでに板なら、面で切る手順は省きます",
+        self.add_kind.setToolTip(L("足す手順の種類。「電極と電解質の界面」は、面で切る・断面を溶液に合わせて広げる・溶液の層を置く・下の層を固定する、の各手順をまとめて追加します。土台がすでにスラブなら、面で切る手順は省きます",
                                    "the kind of step to add. \"Electrode–electrolyte interface\" adds steps to cut a slab, widen its cross-section to fit the solution, add the electrolyte layer, and fix the bottom layer. The slab step is skipped when the base is already a slab"))
         self.btn_add = QPushButton(L("追加", "Add"))
         self.btn_up = QPushButton(L("上へ", "Up")); self.btn_down = QPushButton(L("下へ", "Down")); self.btn_del = QPushButton(L("削除", "Remove"))
@@ -759,7 +759,7 @@ class RecipeEditor(QWidget):
         for step in interface_steps(self.base_is_slab(), ELECTROLYTE_EXAMPLE):
             self.add_step(step, select=False, emit=False)
         self.list.setCurrentRow(self.editors.index(next(e for e in self.editors[::-1] if e.op == "solvent_layer")))
-        self.status.setText(L("溶液の成分は例です。個数と密度 (または厚み) を決めてから「作る」を押してください。板の断面は、成分が周期境界で重ならない広さまで自動的に広がります。イオンの個数は「濃度から個数」でも決められます",
+        self.status.setText(L("溶液の成分は例です。個数と密度 (または厚み) を決めてから「作る」を押してください。スラブの断面は、成分が周期境界で重ならない広さまで自動的に広がります。イオンの個数は「濃度から個数」でも決められます",
                               "the solution components are examples. Set their counts and the density (or thickness), then press Build. The slab cross-section is enlarged automatically until each component clears its periodic images. You can also set ion counts with \"Count from concentration\""))
         self.changed.emit()
 
