@@ -181,6 +181,10 @@ class WebApp:
         return WebApp._static_js("playback.js")
 
     @staticmethod
+    def isosurface_js() -> str:
+        return WebApp._static_js("isosurface.js")
+
+    @staticmethod
     def _static_js(name: str) -> str:
         from pathlib import Path as _Path
 
@@ -1177,6 +1181,18 @@ def make_handler(app: WebApp, token: str | None = None):
                 except Exception as ex:
                     self._send(str(ex), HTTPStatus.BAD_REQUEST, "text/plain"); return
                 self._send_bytes(body.encode("utf-8"), "application/json")
+            elif u.path == "/isosurface.json":
+                from adit.web.isosurface import isosurface_json
+
+                d = q.get("dir", "")
+                if not d or not app.analysis_dir or str(Path(d).expanduser()) != app.analysis_dir:
+                    self._send("not found", HTTPStatus.NOT_FOUND, "text/plain"); return
+                try:
+                    body = isosurface_json(app.analysis_dir, q.get("file", ""), level=q.get("level", ""),
+                                           stride=int(q.get("stride", "1") or 1))
+                except Exception as ex:
+                    self._send(str(ex), HTTPStatus.BAD_REQUEST, "text/plain"); return
+                self._send_bytes(body.encode("utf-8"), "application/json")
             elif u.path == "/file":
                 p = q.get("path", "")
                 allowed = set(app.figures.values())
@@ -1592,9 +1608,13 @@ def make_handler(app: WebApp, token: str | None = None):
             plain = res is not None and not scan
             export_dir, export_readme = AF.read_export_readme(res) if plain else ("", "")
             frames_url = "/frames.json?dir=" + quote(app.analysis_dir) if plain and app.analysis_dir else ""
+            from adit.web.isosurface import volumetric_files
+            iso_files = volumetric_files(app.analysis_dir) if plain and app.analysis_dir else []
+            iso_url = "/isosurface.json?dir=" + quote(app.analysis_dir) if iso_files else ""
             self._send(app.render("analysis.html", run_dir=run_dir, result=res, error=error, notice=notice, message=message, f=f,
-                                  frames_url=frames_url, viewer_js=app.viewer_js() if frames_url else "",
+                                  frames_url=frames_url, viewer_js=app.viewer_js() if (frames_url or iso_url) else "",
                                   playback_js=app.playback_js() if frames_url else "",
+                                  iso_files=iso_files, iso_url=iso_url, isosurface_js=app.isosurface_js() if iso_url else "",
                                   off=" disabled" if scan else "", more_open=bool(message or too_large) or AF.details_changed(f),
                                   sections=AF.result_sections(res) if plain else [], export_dir=export_dir, export_readme=export_readme,
                                   figure_files=_figure_files(res),
