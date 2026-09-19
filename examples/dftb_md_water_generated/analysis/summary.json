@@ -41,7 +41,7 @@
           "H2",
           "H3"
         ],
-        "file": "/home/ramut/agent/qc-gui/examples/dftb_md_water_generated/analysis/charges_Mulliken.csv"
+        "file": "analysis/charges_Mulliken.csv"
       }
     ],
     "trajectory": {
@@ -55,8 +55,8 @@
     }
   },
   "figures": {
-    "energy": "/home/ramut/agent/qc-gui/examples/dftb_md_water_generated/analysis/energy.png",
-    "temperature": "/home/ramut/agent/qc-gui/examples/dftb_md_water_generated/analysis/temperature.png"
+    "energy": "analysis/energy.png",
+    "temperature": "analysis/temperature.png"
   },
   "notes": [
     "MD の温度: 目標 300 K、平均 4281 K"

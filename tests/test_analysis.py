@@ -145,3 +145,26 @@ def test_read_vasp_real_outputs():
     assert r.code == "vasp" and len(r.energies_ev) == 5 and abs(r.energies_ev[-1] - (-14.222575)) < 1e-4
     assert r.final is not None and r.eigenvalues_ev is not None and r.fermi_ev is not None
     assert len(r.frames) == 5
+
+
+def test_summary_json_paths_are_relative_to_the_run_directory(tmp_path):
+    import shutil
+    d = tmp_path / "run"
+    shutil.copytree(EX / "dftb_md_water_generated", d)
+    res = run_analysis(d, AnalysisOptions(skip_frames=5))
+    assert all(Path(p).is_absolute() for p in res.figures.values())
+    js = json.loads((d / "analysis" / "summary.json").read_text(encoding="utf-8"))
+    assert js["figures"] and all(not Path(p).is_absolute() and (d / p).is_file() for p in js["figures"].values())
+    assert js["figures"]["energy"] == "analysis/energy.png"
+    charge_file = js["tables"]["charges"][0]["file"]
+    assert charge_file == "analysis/charges_Mulliken.csv" and (d / charge_file).is_file()
+    assert str(d) not in json.dumps(js["figures"]) + json.dumps(js["tables"])
+    elsewhere = tmp_path / "elsewhere"
+    run_analysis(d, AnalysisOptions(skip_frames=5, out_dir=elsewhere))
+    js = json.loads((elsewhere / "summary.json").read_text(encoding="utf-8"))
+    assert js["figures"]["energy"] == "energy.png" and (elsewhere / "energy.png").is_file()
+
+
+def test_shipped_example_summary_has_no_developer_paths():
+    for p in EX.glob("*/analysis/summary.json"):
+        assert "/home/" not in p.read_text(encoding="utf-8"), p
