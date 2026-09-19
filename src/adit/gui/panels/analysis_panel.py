@@ -702,7 +702,8 @@ class AnalysisPanel(QWidget):
             ok = self.playback.load_run(run_dir, skip=int(opts.skip_frames), stride=int(opts.stride), memory_mb=opts.memory_budget_mb)
         except Exception as ex:
             self.playback.note.setText(L(f"再生できません: {ex}", f"cannot play: {ex}")); ok = False
-        self.play_box.setVisible(ok or bool(self.playback.note.text()))
+        # A box with an empty 3D view only says there is nothing to play: hide it then.
+        self.play_box.setVisible(ok)
 
     def _show_export(self, res) -> None:
         d, text = AF.read_export_readme(res)
