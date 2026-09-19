@@ -16,7 +16,9 @@ from adit.lang import L
 COMPARE_FILE = "compare.json"
 EV_KJ_MOL = 96.485332123
 EV_KCAL_MOL = 23.060547830619
+EV_J_MOL_K = 96485.33212
 BALANCE_TOL = 1e-9
+THERMO_CSV = "thermo.csv"
 
 _SKIP_PREFIX = ("meta.created", "meta.comment", "meta.provenance.generated_utc", "meta.provenance.generated_files",
                 "meta.continued_from", "meta.template", "meta.stage", "handoff", "runtime", "structure")
@@ -167,6 +169,15 @@ class CompareResult:
             lines.append(f"{x['name']}: {x['terms']}   {val}")
             if x.get("delta_g_code_ev") is not None:
                 lines.append(L(f"  コードが出した G での差 ΣνG = {x['delta_g_code_ev']:+.6f} eV", f"  difference of the code-reported G: ΣνG = {x['delta_g_code_ev']:+.6f} eV"))
+            for th in x.get("thermo") or []:
+                lab = th["g_label"]
+                dh = "-" if th["delta_h_ev"] is None else f"{th['delta_h_kj_mol']:+.3f} kJ/mol"
+                ds = "-" if th["delta_s_ev_per_k"] is None else f"{th['delta_s_j_mol_k']:+.3f} J/(mol K)"
+                dg = "-" if th["delta_g_ev"] is None else f"{th['delta_g_kj_mol']:+.3f} kJ/mol"
+                lines.append(L(f"  熱化学 (ASE、{th['T_K']:g} K): ΔH = {dh}, ΔS = {ds}, Δ{lab} = {dg}",
+                               f"  thermochemistry (ASE, {th['T_K']:g} K): ΔH = {dh}, ΔS = {ds}, Δ{lab} = {dg}"))
+            if x.get("thermo_note"):
+                lines.append("  " + x["thermo_note"])
             if not x["balanced"]:
                 lines.append(L(f"  組成が釣り合っていません (Σν·組成 = {x['imbalance']})", f"  composition is not balanced (Σν·composition = {x['imbalance']})"))
             lines.append(L(f"  条件が違う項目: {len(x['differing'])} 個 {x['differing'][:10]}{' …' if len(x['differing']) > 10 else ''}"
@@ -182,13 +193,95 @@ def _formula(c: Counter) -> str:
     return "".join(f"{el}{'' if n == 1 else n}" for el, n in sorted(c.items()))
 
 
+def _thermo_rows(run_dir: Path, energy_ev: float | None) -> tuple[list[dict], str]:
+    # H, S and G (or F for the vibration-only models) per temperature, from the ASE thermochemistry
+    # that adit-analyze wrote (analysis/thermo.csv, else the thermo_ase table of analysis/summary.json)
+    raw: list[dict] = []
+    source = ""
+    csv_path = run_dir / "analysis" / THERMO_CSV
+    if csv_path.is_file():
+        try:
+            with open(csv_path, newline="", encoding="utf-8") as f:
+                for r in csv.DictReader(f):
+                    raw.append({k: (float(v) if v not in ("", None) else None) for k, v in r.items()})
+            source = f"analysis/{THERMO_CSV}"
+        except (OSError, ValueError):
+            raw = []
+    if not raw:
+        js_path = run_dir / "analysis" / "summary.json"
+        if js_path.is_file():
+            try:
+                th = json.loads(js_path.read_text(encoding="utf-8")).get("tables", {}).get("thermo_ase") or {}
+                raw = list(th.get("rows") or []) if th.get("computed") else []
+                source = "analysis/summary.json (thermo_ase)" if raw else ""
+            except (OSError, ValueError):
+                raw = []
+    rows = []
+    for r in raw:
+        if r.get("T_K") is None:
+            continue
+        gas = r.get("g_corr_ev") is not None
+
+        def total(key: str):
+            if r.get(f"{key}_total_ev") is not None:
+                return float(r[f"{key}_total_ev"])
+            if energy_ev is not None and r.get(f"{key}_corr_ev") is not None:
+                return energy_ev + float(r[f"{key}_corr_ev"])
+            return None
+
+        rows.append({"T_K": float(r["T_K"]), "P_Pa": None if r.get("P_Pa") is None else float(r["P_Pa"]),
+                     "h_ev": total("h") if gas else None, "s_ev_per_k": None if r.get("s_ev_per_k") is None else float(r["s_ev_per_k"]),
+                     "g_ev": total("g") if gas else total("f"), "g_label": "G" if gas else "F"})
+    return rows, source
+
+
+def _thermo_key(t: dict) -> tuple:
+    return (round(t["T_K"], 6), None if t["P_Pa"] is None else round(t["P_Pa"], 6))
+
+
+def _reaction_thermo(rows: dict[str, dict], terms: list[tuple[float, str]]) -> tuple[list[dict], str]:
+    missing = [d for _, d in terms if not rows[d].get("thermo")]
+    if missing:
+        return [], L(f"熱化学の表 (analysis/{THERMO_CSV}) が無い計算があるので ΔH・ΔS・ΔG は出していません: {', '.join(missing)}",
+                     f"no ΔH, ΔS or ΔG: some runs have no thermochemistry table (analysis/{THERMO_CSV}): {', '.join(missing)}")
+    labels = {t["g_label"] for _, d in terms for t in rows[d]["thermo"]}
+    if len(labels) > 1:
+        return [], L("理想気体 (G) と振動だけのモデル (F) が混ざっているので、差は出していません",
+                     "the ideal-gas model (G) and a vibration-only model (F) are mixed; no difference is given")
+    keys = [sorted(_thermo_key(t) for t in rows[d]["thermo"]) for _, d in terms]
+    if any(k != keys[0] for k in keys[1:]):
+        temps = " / ".join(", ".join(f"{t['T_K']:g}" for t in rows[d]["thermo"]) for _, d in terms)
+        same_t = all({k[0] for k in ks} == {k[0] for k in keys[0]} for ks in keys[1:])
+        if same_t:
+            pres = " / ".join(", ".join("-" if t["P_Pa"] is None else f"{t['P_Pa']:g}" for t in rows[d]["thermo"]) for _, d in terms)
+            return [], L(f"圧力が揃っていません ({pres})", f"the pressures do not match ({pres})")
+        return [], L(f"温度が揃っていません ({temps})", f"the temperatures do not match ({temps})")
+    out = []
+    for k in keys[0]:
+        per = [next(t for t in rows[d]["thermo"] if _thermo_key(t) == k) for _, d in terms]
+        hs, ss, gs = [t["h_ev"] for t in per], [t["s_ev_per_k"] for t in per], [t["g_ev"] for t in per]
+        dh = float(sum(nu * h for (nu, _), h in zip(terms, hs))) if all(h is not None for h in hs) else None
+        ds = float(sum(nu * s for (nu, _), s in zip(terms, ss))) if all(s is not None for s in ss) else None
+        dg = float(sum(nu * g for (nu, _), g in zip(terms, gs))) if all(g is not None for g in gs) else None
+        out.append({"T_K": per[0]["T_K"], "P_Pa": per[0]["P_Pa"], "g_label": per[0]["g_label"],
+                    "delta_h_ev": dh, "delta_h_kj_mol": None if dh is None else dh * EV_KJ_MOL,
+                    "delta_h_kcal_mol": None if dh is None else dh * EV_KCAL_MOL,
+                    "delta_s_ev_per_k": ds, "delta_s_j_mol_k": None if ds is None else ds * EV_J_MOL_K,
+                    "delta_g_ev": dg, "delta_g_kj_mol": None if dg is None else dg * EV_KJ_MOL,
+                    "delta_g_kcal_mol": None if dg is None else dg * EV_KCAL_MOL})
+    note = ""
+    if labels == {"F"}:
+        note = L("振動だけのモデルなので H は無く、G の代わりに F = U − TS の差です", "vibration-only model: no H, and the G column is the difference of F = U - TS")
+    return out, note
+
+
 def _run_row(base: Path, d: str) -> tuple[dict, dict | None]:
     from adit import lang
     from adit.analysis.readers import load_run
 
     p = Path(d) if Path(d).is_absolute() else base / d
     row = {"dir": d, "path": str(p), "code": "", "task": "", "natoms": None, "formula": "", "composition": {}, "energy_ev": None,
-           "energy_source": "", "code_g_ev": None, "code_g_label": "", "note": ""}
+           "energy_source": "", "code_g_ev": None, "code_g_label": "", "note": "", "thermo": [], "thermo_source": ""}
     cond = None
     if not p.is_dir():
         row["note"] = L("ディレクトリがありません", "directory not found")
@@ -223,6 +316,7 @@ def _run_row(base: Path, d: str) -> tuple[dict, dict | None]:
             atoms = run.final
         except Exception:
             atoms = None
+    row["thermo"], row["thermo_source"] = _thermo_rows(p, row["energy_ev"])
     if atoms is None and spec is not None:
         atoms = spec.structure.atoms.to_ase()
     if atoms is not None:
@@ -277,7 +371,9 @@ def analyze_compare(base: Path | str, reactions: list[Reaction] | None = None) -
                 bal[el] += nu * n
         imb = {el: v for el, v in sorted(bal.items()) if abs(v) > BALANCE_TOL}
         differing, partial, _ = _diff_keys(conds, [d for _, d in r.terms])
-        rx.append({"name": r.name, "terms": r.text(), "terms_list": [{"nu": nu, "dir": d} for nu, d in r.terms],
+        th, th_note = _reaction_thermo(rows, r.terms)
+        rx.append({"thermo": th, "thermo_note": th_note,
+                   "name": r.name, "terms": r.text(), "terms_list": [{"nu": nu, "dir": d} for nu, d in r.terms],
                    "delta_e_ev": de, "delta_e_kj_mol": de * EV_KJ_MOL if de is not None else None,
                    "delta_e_kcal_mol": de * EV_KCAL_MOL if de is not None else None, "delta_g_code_ev": dg,
                    "delta_g_code_kj_mol": dg * EV_KJ_MOL if dg is not None else None,
@@ -294,7 +390,8 @@ def analyze_compare(base: Path | str, reactions: list[Reaction] | None = None) -
     (base / "compare_summary.json").write_text(json.dumps({
         "runs": rel(res.runs), "reactions": res.reactions, "differing": res.differing, "partial": res.partial,
         "n_differing": len(res.differing), "n_partial": len(res.partial), "files": rel(res.files), "figures": rel(res.figures), "notes": res.notes,
-        "units": {"energy": "eV", "kj_mol_per_ev": EV_KJ_MOL, "kcal_mol_per_ev": EV_KCAL_MOL},
+        "units": {"energy": "eV", "kj_mol_per_ev": EV_KJ_MOL, "kcal_mol_per_ev": EV_KCAL_MOL, "j_mol_k_per_ev_k": EV_J_MOL_K,
+                  "thermo": "delta_h/delta_s/delta_g = sum(nu * H/S/G) from analysis/thermo.csv of each run; only when every run has the same temperatures (and pressures)"},
         "rule": L("違う = その項目を持つ計算のあいだで値が 2 種類以上。一部だけ = その項目を持たない計算がある",
                   "differing = two or more distinct values among runs that have the setting; partial = some runs do not have the setting"),
     }, ensure_ascii=False, indent=2, default=str) + "\n", encoding="utf-8")
@@ -322,7 +419,7 @@ def _cell(v) -> str:
 
 
 def _write(base: Path, res: CompareResult) -> None:
-    cols = ["dir", "code", "task", "natoms", "formula", "energy_ev", "energy_source", "code_g_ev", "code_g_label", "note"]
+    cols = ["dir", "code", "task", "natoms", "formula", "energy_ev", "energy_source", "code_g_ev", "code_g_label", "thermo_source", "note"]
     extra = res.differing + [k for k in res.partial if k not in res.differing]
     with open(base / "compare_runs.csv", "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f); w.writerow(cols + extra)
@@ -331,11 +428,19 @@ def _write(base: Path, res: CompareResult) -> None:
     with open(base / "compare_reactions.csv", "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["name", "terms", "delta_e_ev", "delta_e_kj_mol", "delta_e_kcal_mol", "delta_g_code_ev", "balanced", "imbalance",
-                    "n_differing", "differing", "n_partial"])
+                    "n_differing", "differing", "n_partial", "thermo_T_K", "delta_h_ev", "delta_h_kj_mol", "delta_s_ev_per_k",
+                    "delta_s_j_mol_k", "delta_g_ev", "delta_g_kj_mol", "delta_g_label", "thermo_note"])
         for x in res.reactions:
+            th = x.get("thermo") or []
+
+            def col(k: str) -> str:
+                return ";".join(_cell(t[k]) for t in th)
+
             w.writerow([x["name"], x["terms"], _cell(x["delta_e_ev"]), _cell(x["delta_e_kj_mol"]), _cell(x["delta_e_kcal_mol"]),
                         _cell(x["delta_g_code_ev"]), x["balanced"], x["imbalance"] if not x["balanced"] else "", x["n_differing"],
-                        " ".join(x["differing"]), x["n_partial"]])
+                        " ".join(x["differing"]), x["n_partial"], col("T_K"), col("delta_h_ev"), col("delta_h_kj_mol"),
+                        col("delta_s_ev_per_k"), col("delta_s_j_mol_k"), col("delta_g_ev"), col("delta_g_kj_mol"), col("g_label"),
+                        x.get("thermo_note", "")])
     dirs = [r["dir"] for r in res.runs]
     with open(base / "compare_conditions.csv", "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f); w.writerow(["setting", *dirs, "differs", "partial"])

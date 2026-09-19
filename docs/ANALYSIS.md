@@ -31,7 +31,7 @@ GUI の「解析」タブ、ウェブ版の「解析」ページ、`adit-analyze
 | UV-Vis | ORCA の TD-DFT の吸収の表 | 遷移の表 (uvvis_transitions.csv) と、広げたスペクトル (uvvis.png) |
 | 空間群 | 最終構造 (spglib が入っているとき) | 許容誤差ごとの空間群 |
 | フォノン分散・DOS | phonopy の band.yaml、total_dos.dat | phonon_bands.png、phonon_dos.png |
-| 組にして比べる表 | 複数の計算のディレクトリ | ΣνE、組成の釣り合い、条件が違う項目 (compare_*.csv、compare_energy.png) |
+| 組にして比べる表 | 複数の計算のディレクトリ (それぞれの analysis/thermo.csv があれば熱化学も) | ΣνE、組成の釣り合い、条件が違う項目 (compare_*.csv、compare_energy.png)。各計算に ASE の熱化学の表があれば ΔH・ΔS・ΔG (温度と圧力が揃っているときだけ) |
 | CREST の配座 | crest_conformers.xyz (コメント行の全エネルギー [Eh])、crest.energies、crest.log の最後の表 (縮退度) | 配座ごとの相対エネルギー (kcal/mol、kJ/mol、eV)、縮退度、最低配座との重原子 RMSD。温度を入れたときだけ Boltzmann の重み (crest_conformers.csv、crest_conformers.png) |
 
 `adit-analyze` の主なオプション (`adit-analyze --help-all` に全部):
@@ -58,6 +58,22 @@ adit-analyze out/vib --thermo ideal_gas --temperature 298.15 --pressure 100000 -
 adit-analyze runs/ --compare "ads=1:slab_mol,-1:slab,-1:mol"
 adit-analyze out/conformers/crest --conformer-temperature 298.15
 ```
+
+### 反応式の ΔH・ΔS・ΔG (組にして比べる表)
+
+組にして比べる表は、各計算のディレクトリに `analysis/thermo.csv` (`--thermo` で ASE が書いた熱化学の表。無ければ
+`analysis/summary.json` の `thermo_ase`) があると、係数 ν で次を足し合わせます。
+
+    ΔH = Σ ν_i H_i      ΔS = Σ ν_i S_i      ΔG = Σ ν_i G_i      (H_i = E_i + H補正_i、G_i = E_i + G補正_i、E_i は出力の最終エネルギー)
+
+- 出すのは、組の全部の計算が同じ温度 (と圧力) の行を持つときだけ。揃っていなければ「温度が揃っていません (298.15 / 300)」と書いて値は出しません
+- 理想気体 (`ideal_gas`) は H・S・G。調和・準調和・準 RRHO は H が無いので、ΔS と ΔF (F = U − TS) だけを出し、G の列に F と書きます。
+  理想気体と振動だけのモデルが混ざった組は出しません
+- 列は `compare_reactions.csv` の `thermo_T_K`、`delta_h_ev` / `delta_h_kj_mol`、`delta_s_ev_per_k` / `delta_s_j_mol_k`、
+  `delta_g_ev` / `delta_g_kj_mol`、`delta_g_label` (G か F)、`thermo_note`。温度が複数あるときは `;` で並べます。
+  `compare_summary.json` では反応ごとの `thermo` (温度ごとの辞書の一覧) と `thermo_note`
+- 単位の換算は 1 eV = 96.485332123 kJ/mol = 23.060547830619 kcal/mol、1 eV/K = 96485.33212 J/(mol K)
+- 画面 (デスクトップ版の「組にして比べる…」、ウェブ版の `/compare`) の反応ごとの表にも同じ列が出ます
 
 ### CREST の配座の読み方と重み
 
