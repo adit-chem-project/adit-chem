@@ -114,6 +114,15 @@ class AbinitGenerator(InputGenerator):
             errs.append(ValidationError("method.pseudos", L(
                 "擬ポテンシャルのファイル名が重なっています。生成したファイルでは同じ名前で写すので、名前を分けてください",
                 "two pseudopotential files share a name; they are copied under the same names, so rename them")))
+        if st.fixed_axes and all(st.atoms.pbc):
+            from adit.vasp_constraints import VaspConstraintError
+
+            try:
+                self._reduced_axis_masks(spec)
+            except VaspConstraintError as ex:
+                errs.append(ValidationError("structure.fixed_axes", L(
+                    f"ABINIT の iatfixx/y/z は格子ベクトル方向 (還元座標) の固定です。{ex}",
+                    f"ABINIT's iatfixx/y/z fix lattice-vector (reduced) directions. {ex}")))
         if spec.kpoints is None:
             errs.append(ValidationError("kpoints", L("周期系では k 点を指定してください", "give the k-points for a periodic system")))
         elif any(x <= 0 for x in spec.kpoints.resolved_mesh(st.atoms.cell)):
@@ -201,16 +210,29 @@ class AbinitGenerator(InputGenerator):
         lines.append("")
         return {INPUT_FILE: "\n".join(lines)}
 
-    def _fixed_lines(self, spec: CalculationSpec) -> list[str]:
+    @staticmethod
+    def _reduced_axis_masks(spec: CalculationSpec) -> dict[int, np.ndarray]:
+        # iatfixx/y/z act on reduced coordinates for ionmov /= 1 (docs.abinit.org iatfix), so the
+        # Cartesian masks are converted the same way as VASP's Selective dynamics flags.
+        from adit.vasp_constraints import cartesian_to_direct_mask
+
         st = spec.structure
-        full = sorted(set(st.fixed_atoms))
-        per_axis: dict[int, list[int]] = {0: [], 1: [], 2: []}
+        full = set(st.fixed_atoms)
+        masks: dict[int, np.ndarray] = {}
         for key, move in st.fixed_axes.items():
             index = int(key)
             if index in full:
                 continue
-            for axis, can_move in enumerate(move):
-                if not can_move:
+            masks[index] = cartesian_to_direct_mask(st.atoms.cell, [not c for c in move])
+        return masks
+
+    def _fixed_lines(self, spec: CalculationSpec) -> list[str]:
+        st = spec.structure
+        full = sorted(set(st.fixed_atoms))
+        per_axis: dict[int, list[int]] = {0: [], 1: [], 2: []}
+        for index, mask in self._reduced_axis_masks(spec).items():
+            for axis in range(3):
+                if mask[axis]:
                     per_axis[axis].append(index)
         lines = []
         if full:
