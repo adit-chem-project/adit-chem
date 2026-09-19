@@ -55,3 +55,12 @@ def test_slurm_script():
     assert all(not l.startswith("#SBATCH") for l in lines[first_cmd:])
     assert "sbatch submit.sh" in s and 'export VASP_PP_PATH="/pp"' in s and "module load dftbplus/25.1 ||" in s
     assert s.rstrip().endswith("srun vasp_std > output.log 2>&1")
+
+
+def test_queue_is_read_from_header_extra():
+    from adit.scripts.render import queue_of
+
+    assert queue_of(Profile(kind="pbs", header_extra=["#PBS -q normal"])) == "normal"
+    assert queue_of(Profile(kind="slurm", header_extra=["#SBATCH --partition=short"])) == "short"
+    assert queue_of(Profile(kind="slurm", header_extra=["#SBATCH -p gpu", "#SBATCH --account=x"])) == "gpu"
+    assert queue_of(Profile(kind="pbs")) == ""

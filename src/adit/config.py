@@ -34,6 +34,9 @@ class Profile(BaseModel):
     host: str = ""          # cluster host name, for the transfer and submit commands
     user: str = ""          # login name on that host (empty: the local one)
     remote_dir: str = ""    # work directory on that host
+    cores_max: int = 0      # 0: no limit. Checked against nodes * ncpus before generating
+    nodes_max: int = 0
+    walltime_max: str = ""  # HH:MM:SS; empty: no limit
 
     def modules_for(self, code: str) -> list[str]:
         return list(self.modules) + list(self.code_modules.get(code, []))

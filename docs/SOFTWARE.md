@@ -194,3 +194,10 @@ It does **not** decide whether the two methods' energies or MSDs are
 scientifically comparable.
 Direct energy comparison across different engines fails the check because the
 contributions included in their reported energies have not been matched.
+
+## 出力ログの警告と失敗の印の走査
+
+解析の要約 (`adit-analyze`、解析タブ、ウェブ版の解析ページ、`analysis/summary.json` の `tables.diagnostics`) には、出力ログにある警告の件数と、失敗の原因の候補が載ります。
+探す文字列は各コードが実際に書くものだけで、対応するコードは DFTB+、VASP、Quantum ESPRESSO (pw.x)、xtb、ORCA、CP2K、LAMMPS、GROMACS です。
+ほかのコードでは、ジョブスケジューラ (PBS / Slurm) と MPI と OS の印 (制限時間、メモリ不足、MPI の異常終了) だけを探します。
+見つけた行を写して分類するだけで、対処は判断しません。各コードの文書が挙げる対処は、生成した `README.txt` の末尾に出典付きで載せています。詳しくは [解析の詳細](ANALYSIS.md)。
