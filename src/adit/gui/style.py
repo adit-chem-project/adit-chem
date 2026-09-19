@@ -66,7 +66,7 @@ THEME_COLORS = {
 
 def qss(t: Tokens) -> str:
     r, rs = RADIUS, RADIUS_SMALL
-    group_css = "\n".join(f"QGroupBox#{k} {{ border-left: 5px solid {v}; }}" for k, v in GROUP_COLORS.items())
+    group_css = "\n".join(f"QGroupBox#{k} {{ border-left: 3px solid {v}; }}" for k, v in GROUP_COLORS.items())
     ground = f"qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 {t.bg_top}, stop:1 {t.bg_bottom})"
     primary = f"qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 {t.accent_top}, stop:1 {t.accent})"
     return f"""
@@ -86,7 +86,7 @@ QGroupBox {{
     font-size: 12.5pt;
     background: {t.glass};
     border: 1px solid {t.glass_edge};
-    border-left: 5px solid {t.line};
+    border-left: 3px solid {t.line};
     border-radius: {r}px;
     margin-top: 0px;
     padding: 34px {PANEL_MARGIN}px 12px {PANEL_MARGIN}px;
