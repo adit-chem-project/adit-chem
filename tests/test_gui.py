@@ -605,3 +605,53 @@ def test_generating_points_at_the_terminal(app, quiet, sk_root, tmp_path, monkey
     win.runtime.profile.setCurrentText("cluster"); win.refresh_preview(); win.generate()
     assert "transfer_and_submit.sh" in win.run_hint.text()
     win.workspace.close_session()
+
+
+def test_generate_waits_for_the_pending_preview(app, quiet, sk_root, tmp_path, monkeypatch):
+    """出力ディレクトリを空にした直後 (250 ms の待ち中) に Ctrl+G を押しても、カレントディレクトリに書かない。"""
+    win = make_window(sk_root, tmp_path)
+    win.method.sk_set.setCurrentText("fake-1-0"); win.refresh_preview()
+    cwd = tmp_path / "cwd"; cwd.mkdir(); monkeypatch.chdir(cwd)
+    win.runtime.outdir.setText("")
+    assert win._timer.isActive() and win.btn_generate.isEnabled()      # the preview has not caught up yet
+    win.generate()
+    assert sorted(p.name for p in cwd.iterdir()) == [] and not win.btn_generate.isEnabled()
+    win.workspace.close_session()
+
+
+def test_closing_the_window_asks_about_unsaved_edits(app, quiet, sk_root, tmp_path, monkeypatch):
+    win = make_window(sk_root, tmp_path)
+    note = tmp_path / "note.txt"; note.write_text("orig", encoding="utf-8")
+    assert win.workspace.open_file(note) == ""
+    win.workspace.editor.appendPlainText("more")
+    assert win.workspace.editor.dirty
+    monkeypatch.setattr(QMessageBox, "question", staticmethod(lambda *a, **k: QMessageBox.StandardButton.No))
+    assert not win.close()                                             # kept open
+    session = win.workspace.terminal.current.session
+    assert session is not None and session.alive
+    monkeypatch.setattr(QMessageBox, "question", staticmethod(lambda *a, **k: QMessageBox.StandardButton.Yes))
+    assert win.close()
+    assert note.read_text(encoding="utf-8") == "orig" and not session.alive   # discarded, shell ended
+
+
+def test_ctrl_s_saves_the_file_in_the_workspace_and_the_spec_elsewhere(app, quiet, sk_root, tmp_path, monkeypatch):
+    from PySide6.QtCore import Qt
+    from PySide6.QtTest import QTest
+
+    win = make_window(sk_root, tmp_path)
+    calls = []
+    monkeypatch.setattr(win, "save_spec", lambda: calls.append("spec"))
+    monkeypatch.setattr(win.workspace, "save", lambda: calls.append("file") or "")
+    win.act_save.triggered.disconnect(); win.act_save.triggered.connect(win.save_spec)
+    from PySide6.QtGui import QShortcut
+    for sc in win.workspace.findChildren(QShortcut):
+        sc.activated.disconnect(); sc.activated.connect(win.workspace.save)
+    win.show(); app.processEvents()
+    win.set_mode(win.MODE_WORKSPACE); win.workspace.editor.setFocus(); app.processEvents()
+    QTest.keyClick(win.workspace.editor, Qt.Key.Key_S, Qt.KeyboardModifier.ControlModifier); app.processEvents()
+    assert calls == ["file"]
+    calls.clear()
+    win.set_mode(win.MODE_STRUCTURE); win.structure.setFocus(); app.processEvents()
+    QTest.keyClick(win.structure, Qt.Key.Key_S, Qt.KeyboardModifier.ControlModifier); app.processEvents()
+    assert calls == ["spec"]
+    win.workspace.close_session()

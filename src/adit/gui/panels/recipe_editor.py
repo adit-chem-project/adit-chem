@@ -15,6 +15,7 @@ from adit.gui.panels.mixture_editor import KINDS, MixtureEditor, RefCell
 from adit.gui.style import ROW_SPACING
 from adit.gui.widgets import SciDoubleSpinBox, add_row, label, limit_combo, narrow
 from adit.lang import L
+from adit.textparse import short_number
 from adit.mixture import Component
 from adit.structure import pretty_formula
 
@@ -94,7 +95,7 @@ def _float_or_none(text: str, what: str) -> float | None:
 
 
 def _fmt(x: float | None) -> str:
-    return "" if x is None else f"{x:g}"
+    return "" if x is None else short_number(x)
 
 
 class StepEditor(QWidget):

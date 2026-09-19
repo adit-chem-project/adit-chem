@@ -88,6 +88,10 @@ def build(req: ReportRequest) -> ReportOutcome:
                               methods_markdown, results_csv, write_bundle)
 
     out = ReportOutcome()
+    for path in (req.methods_path, req.conditions_csv, req.results_csv):
+        if path is not None and path.exists():
+            raise ReportError(L(f"すでにあります: {path} (別の名前を指定してください。上書きはしません)",
+                                f"already exists: {path} (choose another name; nothing is overwritten)"))
     reports = [load_run_report(d) for d in req.run_dirs]
     out.methods_text = methods_markdown(reports, req.language)
     if req.methods_path is not None:

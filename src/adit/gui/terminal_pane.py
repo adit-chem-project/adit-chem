@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QHBoxLayout, QPushButton, QScrollBar, QTabWidget, QVBoxLayout, QWidget
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtWidgets import QHBoxLayout, QMessageBox, QPushButton, QScrollBar, QTabWidget, QVBoxLayout, QWidget
 
 from adit.gui.terminal import TerminalWidget
 from adit.lang import L
@@ -62,6 +62,8 @@ class TerminalView(QWidget):
 class TerminalTabs(QWidget):
     """Terminals in tabs: one per remote host, or one per calculation."""
 
+    tab_added = Signal(object)
+
     def __init__(self, cwd=None, dark: bool = False, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.cwd = Path(cwd).expanduser() if cwd else Path.home()
@@ -85,11 +87,19 @@ class TerminalTabs(QWidget):
         view = TerminalView(cwd=cwd or self.cwd, dark=self.dark)
         index = self.tabs.addTab(view, str(self.tabs.count() + 1))
         self.tabs.setCurrentIndex(index)
+        self.tab_added.emit(view)
         return view
 
     def close_tab(self, index: int) -> None:
         view = self.tabs.widget(index)
         if isinstance(view, TerminalView):
+            session = view.terminal.session
+            if session is not None and session.busy():
+                ans = QMessageBox.question(self, L("計算が走っています", "A program is running"),
+                                           L("このターミナルでは計算が走っています。閉じますか?",
+                                             "A program is still running in this terminal. Close it?"))
+                if ans != QMessageBox.StandardButton.Yes:
+                    return
             view.close_session()
         self.tabs.removeTab(index)
         if self.tabs.count() == 0:

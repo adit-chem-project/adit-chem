@@ -4,7 +4,7 @@ from __future__ import annotations
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QFormLayout, QGridLayout, QLabel, QLineEdit, QPlainTextEdit, QSpinBox, QWidget)
 
-from adit.textparse import parse_extra_incar
+from adit.textparse import parse_extra_incar, short_number
 from adit.lang import L
 from adit.codes.potcar import PotcarError, PotcarLibrary
 from adit.codes.potcar_names import MP_POTCAR_NAMES
@@ -14,6 +14,13 @@ from adit.gui.prep_widgets import ElementValues, HubbardTable
 from adit.gui.style import ROW_SPACING
 from adit.gui.widgets import SciDoubleSpinBox, add_row, label, narrow
 from adit.spec import VaspMethod
+
+
+def _pick_text(combo: QComboBox, text: str) -> None:
+    # A value that is not in the list is added rather than silently replaced by the current one.
+    if combo.findText(text) < 0:
+        combo.addItem(text)
+    combo.setCurrentText(text)
 
 
 class VaspMethodPanel(QWidget):
@@ -178,14 +185,16 @@ class VaspMethodPanel(QWidget):
 
     def set_method(self, m: VaspMethod) -> None:
         self.potcar_set.setText(m.potcar_set); self.binary.setCurrentText(m.binary); self.encut.setValue(m.encut)
-        self.ibrion.setCurrentIndex(max(0, self.ibrion.findData(m.ibrion)))
-        self.prec.setCurrentText(m.prec); self.algo.setCurrentText(m.algo); self.ediff.setValue(m.ediff); self.nelm.setValue(m.nelm)
+        if self.ibrion.findData(m.ibrion) < 0:
+            self.ibrion.addItem(str(m.ibrion), m.ibrion)
+        self.ibrion.setCurrentIndex(self.ibrion.findData(m.ibrion))
+        _pick_text(self.prec, m.prec); _pick_text(self.algo, m.algo); self.ediff.setValue(m.ediff); self.nelm.setValue(m.nelm)
         self.nelmin.setValue(m.nelmin); self.lasph.setChecked(m.lasph); self.lmaxmix.setValue(m.lmaxmix); self.nbands.setValue(m.nbands)
         self.isym.setText("" if m.isym is None else str(m.isym)); self.idipol.setCurrentIndex(self.idipol.findData(m.idipol))
         self.ldipol.setChecked(m.ldipol); self.dipol.setText(m.dipol)
         self.ismear.setValue(m.ismear); self.sigma.setValue(m.sigma); self.ispin.setCurrentText(str(m.ispin))
-        self.magmom.setText(" ".join(f"{x:g}" for x in m.magmom) if m.magmom else "")
-        self.ivdw.setCurrentText("none" if m.ivdw is None else str(m.ivdw)); self.lreal.setCurrentText(str(m.lreal))
+        self.magmom.setText(" ".join(short_number(x) for x in m.magmom) if m.magmom else "")
+        _pick_text(self.ivdw, "none" if m.ivdw is None else str(m.ivdw)); _pick_text(self.lreal, str(m.lreal))
         self.kpoints_centering.setCurrentIndex(max(0, self.kpoints_centering.findData(m.kpoints_centering)))
         self.extra.setPlainText("\n".join(f"{k} = {'.TRUE.' if v is True else '.FALSE.' if v is False else v}" for k, v in m.extra_incar.items()))
         self.mag.set_values(m.magmom_by_element); self.hubbard.set_hubbard(m.hubbard)

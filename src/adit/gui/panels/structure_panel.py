@@ -69,6 +69,7 @@ class StructurePanel(QGroupBox):
         self._file_restored: tuple[str, str] | None = None
         self._sha_cache: dict[tuple, str] = {}
         self._before_cache: dict[str, object] = {}
+        self._restore_problems: list[str] = []
 
         self.source = QComboBox()
         self.source.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
@@ -362,7 +363,11 @@ class StructurePanel(QGroupBox):
         return self._building
 
     def set_structure(self, s: Structure) -> None:
+        if s.source != "recipe" and s.source not in SOURCES:
+            raise StructureError(L(f"構造の作り方 {s.source} は画面では編集できません。CLI で spec.json を使ってください",
+                                   f"structures made by {s.source} cannot be edited here; use spec.json with the CLI"))
         self._token += 1; self._building = False
+        self._restore_problems: list[str] = []
         rec = None
         if s.source == "recipe":
             try:
@@ -385,11 +390,20 @@ class StructurePanel(QGroupBox):
                 parts = [str(i + 1) for i in s.fixed_atoms]
                 parts += [f"{int(k) + 1}:{''.join(c for c, m in zip('xyz', v) if not m)}" for k, v in s.fixed_axes.items()]
                 self.fixed.setText(",".join(parts))
-            self.box.setChecked(False)
+            edge = self._box_edge(s)
+            self.box.setChecked(edge is not None)
+            if edge is not None:
+                self.box_size.setValue(edge)
             self.charge.setValue(s.charge)
             self.multiplicity.setValue(s.multiplicity)
         finally:
             self._restoring = False
+        if self._restore_problems:
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.warning(self, L("一部を読めません", "Some settings could not be read"),
+                                L("次の指定は画面に戻せませんでした (座標はそのまま使います):\n",
+                                  "These settings could not be restored (the coordinates are used as they are):\n")
+                                + "\n".join(self._restore_problems))
         self._raw, self._built_ref = None, ""
         if rec is not None:
             self._raw = s
@@ -407,6 +421,17 @@ class StructurePanel(QGroupBox):
         self._show()
         self.changed.emit()
 
+    @staticmethod
+    def _box_edge(s: Structure) -> float | None:
+        # "Put in a periodic cell" leaves no field of its own: recognize the cubic cell it makes.
+        if s.source not in ("preset", "smiles", "file") or not all(s.atoms.pbc):
+            return None
+        cell = np.asarray(s.atoms.cell, dtype=float)
+        diag = np.diag(cell)
+        if diag[0] <= 0 or not np.allclose(diag, diag[0]) or not np.allclose(cell, np.diag(diag)):
+            return None
+        return float(diag[0])
+
     def _restore_base(self, base: Base) -> None:
         src, ref = base.source, base.ref
         self.set_source(src)
@@ -414,8 +439,8 @@ class StructurePanel(QGroupBox):
         if src in NEW_BASES and isinstance(ref, dict):
             try:
                 self._load_new_base(src, ref)
-            except ValueError:
-                pass
+            except ValueError as ex:
+                self._restore_problems.append(f"{SOURCES.get(src, src)}: {ex}")
             return
         if not isinstance(ref, str):
             return
@@ -423,14 +448,20 @@ class StructurePanel(QGroupBox):
             from adit.mixture import MixtureError, MixtureSpec
             try:
                 self.mixture.blockSignals(True); self.mixture.set_spec(MixtureSpec.from_ref(ref))
-            except MixtureError:
-                pass
+            except MixtureError as ex:
+                self._restore_problems.append(f"{SOURCES['mixture']}: {ex}")
             finally:
                 self.mixture.blockSignals(False)
         elif src == "preset":
+            from PySide6.QtCore import QSignalBlocker
+            if self.preset_search.text():
+                with QSignalBlocker(self.preset_search):      # a leftover filter would hide the preset
+                    self.preset_search.clear()
+                self._filter_presets("")
             self.preset.setCurrentIndex(max(0, self.preset.findData(ref)))
         elif src == "smiles":
             self.smiles.setText(ref)
+            self._smiles_timer.stop()                          # keep the saved coordinates, do not rebuild
         elif src == "file":
             self.file.setText(ref)
             if base.sha256:
@@ -454,8 +485,8 @@ class StructurePanel(QGroupBox):
             self.bulk_struct.setCurrentIndex(0)
         try:
             self.bulk_a.setValue(float(rest[0]) if rest else 0.0)
-        except ValueError:
-            pass
+        except ValueError as ex:
+            self._restore_problems.append(f"{SOURCES['bulk']}: {ex}")
 
     def _load_surface(self, ref: str) -> None:
         tokens = ref.split()
@@ -469,8 +500,8 @@ class StructurePanel(QGroupBox):
                 k, _, v = t.partition("=")
                 if k == "vacuum":
                     self.surf_vac.setValue(float(v))
-        except ValueError:
-            pass
+        except ValueError as ex:
+            self._restore_problems.append(f"{SOURCES['surface']}: {ex}")
 
     def set_source(self, key: str) -> None:
         self.source.setCurrentIndex(max(0, self.source.findData(key)))

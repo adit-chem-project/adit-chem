@@ -248,6 +248,9 @@ class MainWindow(QMainWindow):
         self.main_stack.setCurrentIndex(index)
         self.right_tabs.setVisible(index != self.MODE_WORKSPACE)   # the workspace uses the whole width
         self.mode_bar.set_current(index)
+        if hasattr(self, "act_save"):
+            # In the workspace Ctrl+S saves the edited file; two shortcuts on one key would cancel each other.
+            self.act_save.setShortcut("" if index == self.MODE_WORKSPACE else "Ctrl+S")
         if hasattr(self, "_mode_actions"):
             self._mode_actions[index].setChecked(True)
 
@@ -432,8 +435,8 @@ class MainWindow(QMainWindow):
 
 
     def generate(self) -> None:
-        if self._timer.isActive():
-            self._timer.stop(); self.refresh_preview()
+        if not self._flush():
+            return
         out = Path(self.runtime.output_dir()).expanduser()
         try:
             spec = self.current_spec()
@@ -444,13 +447,13 @@ class MainWindow(QMainWindow):
                     return
                 overwrite = True
             written = write_project(spec, self.cfg, out, overwrite=overwrite)
-        except (ProjectError, ConfigError, ValueError) as ex:
+        except (ProjectError, ConfigError, ValueError, OSError) as ex:
             QMessageBox.critical(self, tr("生成できません"), str(ex))
             return
         self.last_written = out
         self.analysis.set_run_dir(out, spec.elements)
         self.workspace.set_root(out)          # point the tree and the terminal at the directory just written
-        self.workspace.terminal.send(f"cd {shlex.quote(str(out))}\n")
+        self.workspace.terminal.send(f"cd {shlex.quote(str(out))}\r")
         self.last_written_kind = self.cfg.profiles[spec.runtime.profile].kind
         from adit.codes import GENERATORS
         self.last_written_exe = self._executable_of(GENERATORS[spec.method.code].run_command(spec, self.cfg.profiles[spec.runtime.profile]))
@@ -484,9 +487,11 @@ class MainWindow(QMainWindow):
         self.analysis.set_run_dir(out)
         self.statusBar().showMessage(L(f"値ごとの入力を {out} に作りました", f"wrote the scan inputs to {out}"))
 
-    def _flush(self) -> None:
+    def _flush(self) -> bool:
+        # The preview may still be pending (250 ms debounce): settle it before acting on the button state.
         if self._timer.isActive():
             self._timer.stop(); self.refresh_preview()
+        return self.btn_generate.isEnabled()
 
     def continue_dialog(self):
         from adit.gui.prep_dialogs import ContinueDialog
@@ -761,7 +766,10 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, tr("生成できません"), str(ex)); return
         path, _ = QFileDialog.getSaveFileName(self, "spec.json", "spec.json", "JSON (*.json)")
         if path:
-            Path(path).write_text(spec.model_dump_json(indent=2), encoding="utf-8")
+            try:
+                Path(path).write_text(spec.model_dump_json(indent=2), encoding="utf-8")
+            except OSError as ex:
+                QMessageBox.critical(self, L("保存できません", "Cannot save"), str(ex)); return
             self.statusBar().showMessage(L(f"{path} に保存しました", f"saved to {path}"))
 
     def _insert_structure_file(self) -> None:
@@ -803,18 +811,26 @@ class MainWindow(QMainWindow):
     def apply_spec(self, spec: CalculationSpec, *, origin: bool = True) -> None:
         if origin:
             self.origin = PrepOrigin(spec)
+        from adit.structure import StructureError
         self._applying = True
         try:
-            self.structure.set_structure(spec.structure)
+            try:
+                self.structure.set_structure(spec.structure)
+            except StructureError as ex:
+                QMessageBox.critical(self, tr("読めません"), str(ex)); return
             self._on_context()
             self.method.set_method(spec.method)
-            if spec.kpoints is not None:
-                self.kpoints.set_kpoints(spec.kpoints)
+            from adit.spec import KPoints
+            self.kpoints.set_kpoints(spec.kpoints if spec.kpoints is not None else KPoints())
             self.task.set_task(spec.task)
             self.runtime.set_runtime(spec.runtime)
         finally:
             self._applying = False
         self.refresh_preview()
+        unshown = [*self.method.unshown, *self.runtime.unshown]
+        if unshown:
+            self.statusBar().showMessage(L("次の欄は画面で表せないので変わりました: " + "、".join(unshown),
+                                           "These fields cannot be shown here and were changed: " + ", ".join(unshown)))
 
     def _record_history(self) -> None:
         if self._applying:
@@ -865,8 +881,17 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, tr("設定を読めません"), str(ex)); return
         self.method.reload_sets(self.cfg.sk_root, self.cfg)
         self.runtime.reload_profiles(self.cfg)
+        self._on_context()                       # the code panels keep their own cfg (POTCAR root etc.)
         self._sync_menu_checks()
         self.refresh_preview()
+
+    def closeEvent(self, event) -> None:  # noqa: N802 (Qt)
+        if self.workspace.editor.dirty and not self.workspace._ask_discard():
+            event.ignore()
+            return
+        self.workspace.editor.discard()          # do not ask again when Qt closes the window a second time
+        self.workspace.close_session()
+        super().closeEvent(event)
 
     def _sync_menu_checks(self) -> None:
         for items, value in ((self._lang_actions, self.cfg.language), (self._theme_actions, self.cfg.theme), (self._frame_actions, self.cfg.window_frame)):

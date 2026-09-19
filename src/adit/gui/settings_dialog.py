@@ -89,10 +89,12 @@ def set_top_level(text: str, values: dict) -> str:
             continue
         new_line = tomli_w.dumps({key: value}).strip()
         end = _top_region_end(lines)
-        pat = re.compile(rf"^\s*{re.escape(key)}\s*=")
+        # Same shape as config.set_top_level_value: replace the value, keep a trailing comment.
+        pat = re.compile(rf"""^(\s*{re.escape(key)}\s*=\s*)("[^"]*"|'[^']*'|[^\s#]+)(.*)$""")
         idx = next((i for i in range(end) if pat.match(lines[i])), None)
         if idx is not None:
-            lines[idx] = new_line
+            m = pat.match(lines[idx])
+            lines[idx] = m.group(1) + new_line.split("=", 1)[1].strip() + m.group(3)
         else:
             at = end
             while at > 0 and not lines[at - 1].strip():
@@ -127,7 +129,12 @@ class SettingsDialog(QDialog):
         lay = QVBoxLayout(self); lay.setContentsMargins(16, 16, 16, 16); lay.setSpacing(10)
         lay.addWidget(self.tabs, 1); lay.addWidget(where); lay.addLayout(buttons)
 
-        self.editor.setPlainText(self.path.read_bytes().decode("utf-8-sig", errors="replace") if self.path.is_file() else "")
+        try:
+            self.editor.setPlainText(self.path.read_bytes().decode("utf-8-sig", errors="replace") if self.path.is_file() else "")
+        except OSError as ex:
+            self.editor.setPlainText("")
+            self.last_error = str(ex)
+            self.raw_note.setObjectName("status_ng"); self.raw_note.setText(L(f"設定ファイルを読めません: {ex}", f"cannot read the settings file: {ex}"))
         problem = describe_problem(self.editor.toPlainText())
         if problem:
             self.tabs.setCurrentIndex(1); self._tab = 1
@@ -360,5 +367,9 @@ class SettingsDialog(QDialog):
             tmp.unlink(missing_ok=True)
             msg = str(ex).replace(str(tmp), L("設定ファイル", "the settings file"))
             self._show_problem(L("保存できません", "Cannot save"), msg); return
-        tmp.replace(self.path)
+        try:
+            tmp.replace(self.path)
+        except OSError as ex:
+            tmp.unlink(missing_ok=True)
+            self._show_problem(L("保存できません", "Cannot save"), str(ex)); return
         self.accept()
