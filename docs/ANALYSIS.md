@@ -33,7 +33,7 @@ GUI の「解析」タブ、ウェブ版の「解析」ページ、`adit-analyze
 | フォノン分散・DOS | phonopy の band.yaml、total_dos.dat | phonon_bands.png、phonon_dos.png |
 | 組にして比べる表 | 複数の計算のディレクトリ | ΣνE、組成の釣り合い、条件が違う項目 (compare_*.csv、compare_energy.png) |
 
-`adit-analyze` の主なオプション (`adit-analyze --help` に全部):
+`adit-analyze` の主なオプション (`adit-analyze --help-all` に全部):
 
 | オプション | 意味 |
 |---|---|
@@ -62,10 +62,8 @@ z 方向の密度分布、時系列の統計、熱化学の各欄、UV-Vis の�
 長い表は先頭 20 行だけを出し、全体のファイルの場所を添えます。
 
 - 軌跡が大きすぎて止まったときは、理由の文と「間引きを N にする」ボタンが出ます。押すと間引きの欄に N が入るので、もう一度「解析を実行」を押します
-- MSD では周期境界を越えた移動を最小像から復元します。間引き後の隣接フレーム間で移動が最短セル幅の40 %以上になった場合は、移動方向を一意に復元できなくなる半セル幅へ近いため、要約と`summary.json`に注意を残します。
+- MSD では周期境界を越えた移動を最小像から復元します。間引き後の隣接フレーム間で移動が最短セル幅の 40 % 以上になった場合は、移動方向を一意に復元できなくなる半セル幅へ近いため、要約と `summary.json` に注意を残します。
 - MSD の D は指定した時間範囲の直線フィットから求めます。ブロックごとの D を使う参考誤差は、すべてのブロックで同じ時間範囲を使える場合だけ表示します。短い軌跡では D が出てもブロック誤差は出ないことがあります。参考誤差はブロック D の平均の標準誤差であり、全軌跡から求めた D の厳密な誤差ではありません。
-
-The MSD-derived D comes from a linear fit over the stated time range. A reference block-based error is shown only when every block can use that same range. A short trajectory may yield D without a block error. This error is the standard error of the mean block D, not a rigorous error on D fitted from the full trajectory.
 - 「TRAVIS・VMD・OVITO 用に書き出す」で `analysis/export/` に書き出し、export_README.txt の中身を表示します。
   デスクトップ版は「書き出したフォルダを開く」でファイルマネージャを開きます (ウェブ版は場所を表示するだけ)
 - 「組にして比べる…」で、比べる計算のディレクトリと係数を行で入れます (名前が空の行は上の行と同じ反応)。
@@ -136,12 +134,4 @@ adit-web --open        # http://127.0.0.1:8765/
 - 通信は暗号化されません (http)。合言葉も平文で流れます。
 - `--host 0.0.0.0` (すべてのアドレス) で起動すると、自分用の URL と他の PC 用の URL の 2 行が表示されます。`--host ::` なら IPv6 でも待ち受けます。
 
-## 開発
-
-```bash
-pip install ".[dev]"
-pytest -q            # dftb+ / xtb / pw.x が PATH にあれば、実際に実行するテストも走ります
-```
-
-
-新しい計算コードを追加するには、`codes/<name>.py` に `InputGenerator` を実装して `register()` し、`spec.py` に Method を追加し、GUI にパネルを追加します。
+開発に加わる人向けの手順 (試験の走らせ方、計算コードの追加) は [CONTRIBUTING.md](../CONTRIBUTING.md) にあります。
