@@ -18,7 +18,7 @@ DEFAULT_COMMAND = "orca"
 
 
 def _guest_xyz_error(path: Path, *, allow_default_charge: bool) -> bool:
-    """Stream a single- or multi-frame GUEST XYZ without changing it."""
+    # Stream a single- or multi-frame GUEST XYZ without changing it.
     from ase.data import atomic_numbers
 
     try:

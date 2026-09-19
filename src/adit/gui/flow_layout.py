@@ -1,9 +1,4 @@
-"""横に並べ、入りきらない分を次の行へ回す並べ方 (2026-09-15)。
-
-Qt に標準の部品が無いので、公式の例 (Flow Layout Example) と同じ作りにしてあります。
-3D 表示の上のボタン列で使います。Windows の既定フォントは幅が広く、横一列に固定すると
-右側の面がその幅を要求し、左側の入力欄が押し潰されるためです。
-"""
+"""Wrap widgets onto the next row when they do not fit (Qt's Flow Layout example); a fixed row squeezed the inputs on Windows."""
 
 from __future__ import annotations
 
@@ -18,7 +13,7 @@ class FlowLayout(QLayout):
         self.setContentsMargins(QMargins(margin, margin, margin, margin))
         self.setSpacing(spacing)
 
-    def addItem(self, item) -> None:  # noqa: N802 (Qt の名前)
+    def addItem(self, item) -> None:  # noqa: N802 (Qt name)
         self._items.append(item)
 
     def count(self) -> int:
@@ -60,7 +55,7 @@ class FlowLayout(QLayout):
         for item in self._items:
             hint = item.sizeHint()
             step = hint.width() + self.spacing()
-            if row_height and x + hint.width() > area.right() + 1:   # 入りきらないので次の行へ
+            if row_height and x + hint.width() > area.right() + 1:
                 x = area.x(); y += row_height + self.spacing(); row_height = 0
             if apply:
                 item.setGeometry(QRect(QPoint(x, y), hint))

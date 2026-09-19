@@ -1,8 +1,6 @@
-"""Mechanical, field-level audit of a code-to-code CalculationSpec retarget.
-
-The audit describes where settings came from. It does not assert that two
-engines use the same equations of motion or electronic-structure model.
-"""
+"""Mechanical, field-level audit of a code-to-code CalculationSpec retarget."""
+# The audit describes where settings came from. It does not assert that two
+# engines use the same equations of motion or electronic-structure model.
 
 from __future__ import annotations
 
@@ -37,11 +35,9 @@ def _json_value(value: Any) -> Any:
 
 
 def field_audit(source, target_template, converted, report: dict) -> dict:
-    """Describe provenance and input applicability without chemical claims.
-
-    Atom arrays are deliberately summarized to keep conversion.json bounded;
-    their exact values remain in spec.json and the generated structure files.
-    """
+    """Describe provenance and input applicability without chemical claims."""
+    # Atom arrays are deliberately summarized to keep conversion.json bounded;
+    # their exact values remain in spec.json and the generated structure files.
     from adit.lang import L
 
     entries: list[dict] = []

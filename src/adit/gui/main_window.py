@@ -246,7 +246,7 @@ class MainWindow(QMainWindow):
         if not 0 <= index < self.main_stack.count():
             return
         self.main_stack.setCurrentIndex(index)
-        self.right_tabs.setVisible(index != self.MODE_WORKSPACE)   # ワークスペースは画面を広く使う
+        self.right_tabs.setVisible(index != self.MODE_WORKSPACE)   # the workspace uses the whole width
         self.mode_bar.set_current(index)
         if hasattr(self, "_mode_actions"):
             self._mode_actions[index].setChecked(True)
@@ -449,7 +449,7 @@ class MainWindow(QMainWindow):
             return
         self.last_written = out
         self.analysis.set_run_dir(out, spec.elements)
-        self.workspace.set_root(out)          # ツリーとターミナルを、いま作った場所へ
+        self.workspace.set_root(out)          # point the tree and the terminal at the directory just written
         self.workspace.terminal.send(f"cd {shlex.quote(str(out))}\n")
         self.last_written_kind = self.cfg.profiles[spec.runtime.profile].kind
         from adit.codes import GENERATORS

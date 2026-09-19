@@ -82,7 +82,7 @@ def test_series_follow_the_motion():
     assert len(d) == 4 and np.all(np.diff(d) < 0)
 
 
-# ---- RMSD・RMSF ----
+# ---- RMSD, RMSF ----
 def test_rmsd_removes_rotation_when_superposing():
     w = molecule("H2O")
     rotated = w.copy(); rotated.rotate(37, "z")

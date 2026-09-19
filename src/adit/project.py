@@ -49,9 +49,7 @@ def version_trap(probe: tuple[str, str]) -> str:
 
 
 def _transfer_commands(profile, output_dir) -> str:
-    """The copy-and-paste commands for sending this directory to the cluster and submitting it there.
-
-    ADIT never runs them: the person does, in a terminal."""
+    # The copy-and-paste commands for sending this directory to the cluster and submitting it there.
     here = Path(output_dir).expanduser().resolve() if output_dir else None
     name = shlex.quote(here.name) if here else L("<このディレクトリの名前>", "<directory name>")
     host = profile.target or L("<ユーザー名>@<クラスタのホスト名>", "<user>@<cluster host name>")

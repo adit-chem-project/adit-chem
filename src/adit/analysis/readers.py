@@ -174,10 +174,8 @@ def _grep(p: Path, pattern: str, group: int = 1) -> list[str]:
 
 
 def _read_nwchem(d: Path) -> RunData:
-    """Read only the total energy; NWChem geometry/frequency parsing is not validated.
-
-    Output label: https://nwchemgit.github.io/Sample.html
-    """
+    # Read only the total energy; NWChem geometry/frequency parsing is not validated.
+    # Output label: https://nwchemgit.github.io/Sample.html
     result = RunData("nwchem", d)
     energy = re.compile(r"^\s*Total (?:SCF|DFT) energy\s*=\s*([+-]?(?:\d+\.?\d*|\.\d+)(?:[EeDd][+-]?\d+)?)\s*$")
     for line in _lines(d / "output.log"):

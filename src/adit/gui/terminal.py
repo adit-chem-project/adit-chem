@@ -12,7 +12,7 @@ from adit.lang import L
 POLL_MS = 30
 PADDING = 6
 
-# xterm の 8 色 + 既定。pyte は色名か 6 桁の 16 進で返す
+# xterm's 8 colours plus the default; pyte gives a name or 6 hex digits
 NAMED = {"black": "#2e3436", "red": "#cc0000", "green": "#4e9a06", "brown": "#c4a000", "yellow": "#c4a000",
          "blue": "#3465a4", "magenta": "#75507b", "cyan": "#06989a", "white": "#d3d7cf"}
 BRIGHT = {"black": "#555753", "red": "#ef2929", "green": "#8ae234", "brown": "#fce94f", "yellow": "#fce94f",
@@ -43,7 +43,7 @@ class TerminalWidget(QWidget):
         self.dark = dark
         self.session: ShellSession | None = None
         self.error = ""
-        self._sel_from: tuple[int, int] | None = None   # (行, 桁)
+        self._sel_from: tuple[int, int] | None = None   # (row, column)
         self._sel_to: tuple[int, int] | None = None
         self._selecting = False
         self.setMouseTracking(True)
@@ -71,7 +71,7 @@ class TerminalWidget(QWidget):
         self._ch = max(1.0, self._metrics.height())
 
     def set_font_size(self, points: float) -> None:
-        """文字の大きさを変える (Ctrl+= / Ctrl+- / Ctrl+0)。"""
+        """Change the font size (Ctrl+= / Ctrl+- / Ctrl+0)."""
         font = self.font()
         font.setPointSizeF(max(6.0, min(36.0, points)))
         self.setFont(font)
@@ -137,14 +137,14 @@ class TerminalWidget(QWidget):
             x = 0
             while x < len(row):
                 cell = row[x]
-                if cell.text == "":            # 全角文字が使っている 2 桁目
+                if cell.text == "":            # second cell of a wide character
                     x += 1
                     continue
                 run, start = cell.text, x
                 x += 1
                 while x < len(row) and row[x].fg == cell.fg and row[x].bg == cell.bg and row[x].bold == cell.bold \
                         and row[x].reverse == cell.reverse:
-                    run += row[x].text         # 空文字ならそのまま (全角の 2 桁目は詰めない)
+                    run += row[x].text         # keep the empty second cell of a wide character
                     x += 1
                 fg = _color(cell.fg, fore, cell.bold)
                 bg = _color(cell.bg, back.name())
@@ -186,7 +186,7 @@ class TerminalWidget(QWidget):
             return
         mods, key = event.modifiers(), event.key()
         if mods & Qt.KeyboardModifier.ControlModifier and mods & Qt.KeyboardModifier.ShiftModifier and key == Qt.Key.Key_C:
-            self.copy()                                               # 選んだ範囲、無ければ画面全体
+            self.copy()                                               # the selection, or the whole screen
             return
         if mods & Qt.KeyboardModifier.ControlModifier and mods & Qt.KeyboardModifier.ShiftModifier and key == Qt.Key.Key_V:
             self.paste()
@@ -204,7 +204,7 @@ class TerminalWidget(QWidget):
             self.send(self.KEYS[key])
             return
         if mods & Qt.KeyboardModifier.ControlModifier and Qt.Key.Key_A <= key <= Qt.Key.Key_Z:
-            self.send(chr(key - Qt.Key.Key_A + 1))                    # Ctrl+C なら \x03
+            self.send(chr(key - Qt.Key.Key_A + 1))                    # Ctrl+C sends \x03
             return
         if event.text():
             self.send(event.text())
@@ -255,7 +255,7 @@ class TerminalWidget(QWidget):
         self._selecting = False
 
     def selected_text(self) -> str:
-        """選んだ範囲の文字。選んでいなければ空。"""
+        """The selected text, or "" when nothing is selected."""
         if self.session is None or self._sel_from is None or self._sel_to is None:
             return ""
         (r1, c1), (r2, c2) = sorted([self._sel_from, self._sel_to])
@@ -277,7 +277,7 @@ class TerminalWidget(QWidget):
 
     def contextMenuEvent(self, event) -> None:  # noqa: N802 (Qt)
         if self.session is not None and self.session.mouse_wanted():
-            return                                  # プログラムが右クリックを使う
+            return                                  # the program handles right clicks itself
         from PySide6.QtWidgets import QMenu
 
         menu = QMenu(self)
@@ -294,7 +294,7 @@ class TerminalWidget(QWidget):
             self.paste()
 
     def wheelEvent(self, event) -> None:  # noqa: N802 (Qt)
-        """ホイール: 文字の拡大縮小 (Ctrl)、プログラムへの通知、履歴をさかのぼる。"""
+        """Zoom with Ctrl, report to the program, or scroll the history."""
         if self.session is None:
             return
         steps = event.angleDelta().y()
@@ -310,7 +310,7 @@ class TerminalWidget(QWidget):
         self.update()
 
     def restart(self, cwd=None) -> None:
-        """終わったシェルを、もう一度起動する。"""
+        """Start the shell again after it exited."""
         self.close_session()
         try:
             self.session = ShellSession(cwd=cwd, rows=self.rows(), cols=self.cols())

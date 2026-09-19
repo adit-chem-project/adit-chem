@@ -1,9 +1,7 @@
-"""Amber/sander energy-minimization input with user-supplied topology and restart.
-
-Official command and &cntrl example:
-https://ambermd.org/tutorials/basic/tutorial5/index.php
-Reference manuals: https://ambermd.org/Manuals.php
-"""
+"""Amber/sander energy-minimization input with user-supplied topology and restart."""
+# Official command and &cntrl example:
+# https://ambermd.org/tutorials/basic/tutorial5/index.php
+# Reference manuals: https://ambermd.org/Manuals.php
 
 from __future__ import annotations
 
@@ -21,7 +19,7 @@ from adit.validate_types import ValidationError
 
 
 def _prmtop_natoms(path: Path) -> int | None:
-    """Read only the first POINTERS value (NATOM), without loading a large topology."""
+    # Read only the first POINTERS value (NATOM), without loading a large topology.
     try:
         with path.open(encoding="ascii", errors="replace") as stream:
             for line in stream:
@@ -47,7 +45,7 @@ _NUMBER = re.compile(r"[-+]?(?:\d+\.\d*|\.\d+|\d+)(?:[EeDd][-+]?\d+)?")
 
 
 def _rst7_positions(path: Path, count: int) -> list[tuple[float, float, float]] | None:
-    """Read only the coordinate prefix of a text restart; later velocities are untouched."""
+    # Read only the coordinate prefix of a text restart; later velocities are untouched.
     try:
         values: list[float] = []
         with path.open(encoding="ascii", errors="replace") as stream:
@@ -65,7 +63,7 @@ def _rst7_positions(path: Path, count: int) -> list[tuple[float, float, float]] 
 
 
 def _rst7_box(path: Path, count: int) -> tuple[float, ...] | None:
-    """A text restart has coordinates, optional velocities, then six cell parameters."""
+    # A text restart has coordinates, optional velocities, then six cell parameters.
     try:
         remaining: list[float] = []
         seen = 0

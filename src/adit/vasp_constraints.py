@@ -1,10 +1,8 @@
-"""Preserve Cartesian constraints when writing VASP lattice-direction flags.
-
-Selective dynamics always refers to direct lattice vectors, including when
-positions are written in Cartesian coordinates: https://vasp.at/wiki/POSCAR
-ASE's VASP writer supports FixScaled, but omits FixCartesian:
-https://docs.ase-lib.org/_modules/ase/io/vasp.html
-"""
+"""Preserve Cartesian constraints when writing VASP lattice-direction flags."""
+# Selective dynamics always refers to direct lattice vectors, including when
+# positions are written in Cartesian coordinates: https://vasp.at/wiki/POSCAR
+# ASE's VASP writer supports FixScaled, but omits FixCartesian:
+# https://docs.ase-lib.org/_modules/ase/io/vasp.html
 
 from __future__ import annotations
 
@@ -20,12 +18,7 @@ class VaspConstraintError(AditValueError):
 
 
 def _direct_mask(cell, forbidden, dimension: int) -> np.ndarray:
-    """Find lattice vectors spanning the permitted Cartesian displacement space.
-
-    For an invertible cell, its rows are independent. A subset spans the permitted
-    space exactly iff every selected row lies in it and their count equals its
-    dimension. Normalizing rows makes the round-off tolerance independent of Å.
-    """
+    # Find lattice vectors spanning the permitted Cartesian displacement space.
     vectors = np.asarray(cell, dtype=float)
     lengths = np.linalg.norm(vectors, axis=1)
     if np.any(lengths == 0) or not np.isfinite(vectors).all() or np.linalg.matrix_rank(vectors) != 3:

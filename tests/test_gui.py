@@ -142,7 +142,7 @@ def test_gui_vasp_bulk_flow(app, quiet, sk_root, tmp_path):
     win.generate()
     out = tmp_path / "out"
     assert (out / "INCAR").is_file() and (out / "make_potcar.sh").is_file() and not (out / "POTCAR").exists()
-    assert "transfer_and_submit.sh" in win.run_hint.text()   # クラスタ向けの案内
+    assert "transfer_and_submit.sh" in win.run_hint.text()   # the hint for a cluster profile
     spec = load_project(out)
     assert spec.method.code == "vasp" and spec.kpoints.mesh == (4, 4, 4) and spec.structure.source == "bulk"
     win2 = make_window(sk_root, tmp_path / "b")

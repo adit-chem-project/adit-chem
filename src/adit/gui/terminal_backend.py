@@ -1,8 +1,6 @@
-"""Shell session behind the terminal widget: a pseudo terminal plus a screen model.
-
-No Qt here, so the behaviour can be tested without a display. POSIX uses ptyprocess,
-Windows uses pywinpty (ConPTY); pyte turns the byte stream into a screen of characters.
-"""
+"""Shell session behind the terminal widget: a pseudo terminal plus a screen model."""
+# No Qt here, so the behaviour can be tested without a display. POSIX uses ptyprocess,
+# Windows uses pywinpty (ConPTY); pyte turns the byte stream into a screen of characters.
 
 from __future__ import annotations
 
@@ -41,7 +39,7 @@ class TerminalError(RuntimeError):
 
 @dataclass
 class Cell:
-    text: str          # "" は、直前の全角文字が使っている桁
+    text: str          # "" is the second cell of the wide character before it
     fg: str
     bg: str
     bold: bool

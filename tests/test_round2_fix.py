@@ -85,7 +85,7 @@ def test_the_generated_directory_is_cleared_on_code_change(sk_root, tmp_path, ja
     app.preview(f); msg, err = app.generate(False)
     assert not err and app.written is not None
     app.preview({**f, "code": "xtb"})
-    assert app.written is None      # 計算コードを変えたら、生成し直すまで「生成済み」は消える
+    assert app.written is None      # changing the code clears "written" until regenerated
 
 
 def test_analysis_page_not_run_notice_and_md_defaults(sk_root, tmp_path, ja):

@@ -65,7 +65,7 @@ class Editor(QPlainTextEdit):
             text = path.read_text(encoding="utf-8", errors="replace")
         except OSError as ex:
             return str(ex)
-        self.path = None                      # 読み込み中の textChanged を「変更」と数えない
+        self.path = None                      # textChanged while loading is not a modification
         self.setPlainText(text)
         self.path, self._dirty = path, False
         self.dirty_changed.emit(False)
@@ -84,7 +84,7 @@ class Editor(QPlainTextEdit):
 
 
 class FileIcons(QFileSystemModel):
-    """ファイルの種類が見て分かるように、拡張子ごとにしるしを付ける。"""
+    """A mark per kind of file, chosen by extension."""
 
     KIND = {
         ".hsd": ("in", "#2f7ae5"), ".in": ("in", "#2f7ae5"), ".inp": ("in", "#2f7ae5"), ".gjf": ("in", "#2f7ae5"),
@@ -157,7 +157,7 @@ class WorkspacePanel(QWidget):
         self.tree.setStyleSheet("QTreeView { show-decoration-selected: 1; }")
         self.tree.setUniformRowHeights(True)
         self.model.directoryLoaded.connect(self._expand_new)
-        self.tree.setDragDropMode(QTreeView.DragDropMode.InternalMove)   # ドラッグで移動できる
+        self.tree.setDragDropMode(QTreeView.DragDropMode.InternalMove)
         self.tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.tree.customContextMenuRequested.connect(self._menu)
         self.tree.doubleClicked.connect(self._open_index)
@@ -226,7 +226,7 @@ class WorkspacePanel(QWidget):
         self.split.addWidget(left); self.split.addWidget(self.right)
         self.split.setStretchFactor(0, 0); self.split.setStretchFactor(1, 1)
         left.setMinimumWidth(150)
-        self.split.setSizes([230, 1070])            # ツリーは細く、エディタとターミナルを広く
+        self.split.setSizes([230, 1070])
         lay = QVBoxLayout(self)
         lay.setContentsMargins(PANEL_MARGIN, 8, PANEL_MARGIN, PANEL_MARGIN); lay.setSpacing(GROUP_SPACING)
         lay.addWidget(self.split)
@@ -234,7 +234,7 @@ class WorkspacePanel(QWidget):
 
     # ---- layout ----
     def apply_layout(self) -> None:
-        """並べ方 (上下・左右・入れ替え) と、畳む指定を反映する。"""
+        """Apply the orientation, the swap and the fold flags."""
         choice = self.layout_choice.currentData() or "v"
         vertical = choice.startswith("v")
         reverse = choice.endswith("_rev")
@@ -244,7 +244,7 @@ class WorkspacePanel(QWidget):
             self.right.insertWidget(0, first)
             self.right.insertWidget(1, second)
         fold_editor, fold_terminal = self.btn_fold_editor.isChecked(), self.btn_fold_terminal.isChecked()
-        if fold_editor and fold_terminal:           # 両方は畳めない (どちらかは残す)
+        if fold_editor and fold_terminal:           # never fold both
             self.btn_fold_terminal.setChecked(False)
             fold_terminal = False
         self.editor.setVisible(not fold_editor)
@@ -262,7 +262,6 @@ class WorkspacePanel(QWidget):
             self.right.setSizes([total // 2, total - total // 2])
 
     def _expand_new(self, path: str) -> None:
-        """読み込めたフォルダを、根から 3 階層まで開く。"""
         index = self.model.index(path)
         if not index.isValid():
             return
@@ -297,7 +296,6 @@ class WorkspacePanel(QWidget):
         self.terminal.set_dark(dark)
 
     def _watch_terminal(self) -> None:
-        """いま見えているターミナルのシェルが終わったら、起動し直す案内を出す。"""
         current = self.terminal.current
         if current is not None:
             current.finished.connect(lambda: self.btn_restart.setVisible(True))
