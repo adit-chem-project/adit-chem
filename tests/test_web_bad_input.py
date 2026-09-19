@@ -187,7 +187,7 @@ def test_unreadable_directory_is_reported_not_500(web, tmp_path):
     locked = tmp_path / "locked"; inner = locked / "inner"
     inner.mkdir(parents=True); locked.chmod(0)
     try:
-        page = urllib.request.urlopen(base + "/analysis?dir=" + urllib.parse.quote(str(inner)), timeout=60).read().decode()
+        page = _post(base + "/analysis", {"run_dir": str(inner), "action": "run"})
         assert "内部エラー" not in page and "解析できません" in h.unescape(page)
         page = _post(base + "/compare", {"base": str(inner), "action": "compare"})
         assert "ディレクトリがありません" in _error(page)

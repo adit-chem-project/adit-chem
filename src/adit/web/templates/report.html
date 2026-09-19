@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}ADIT — {{ T("報告をまとめる", "Build a report") }}{% endblock %}
 {#- 欄と中身はデスクトップ版の報告の画面 (gui/report_dialog.py) と共通 (gui/report_fields.py)。JS は使わない -#}
-{% macro rrow(key, for_id) -%}{% set h = hlp(key) %}<div class="row"><label for="{{ for_id }}"{% if h and h.required %} class="required"{% endif %}{% if h %} title="{{ h.text() }}"{% endif %}>{{ lab(key) }}</label><div class="inline">{{ caller() }}</div></div>{%- endmacro %}
+{% macro rrow(key, for_id) -%}{% set h = hlp(key) %}<div class="row"><label for="{{ for_id }}"{% if h and h.required %} class="required"{% endif %}{% if h %} title="{{ h.text() }}"{% endif %}>{{ lab(key) }}{% if h and h.required %}<span class="pill">{{ T("必須", "required") }}</span>{% endif %}</label><div class="inline">{{ caller() }}</div></div>{%- endmacro %}
 {% block body %}
 <form method="post" action="/report">
 {% if error %}<div class="error-banner" role="alert">{{ error }}</div>{% endif %}

@@ -731,6 +731,11 @@ class WebApp:
         return res
 
 
+def not_run_message() -> str:
+    return L("解析はまだ実行していません。欄を確かめて「解析を実行」を押してください。",
+             "The analysis has not been run yet. Check the fields and press \"Run analysis\".")
+
+
 def _is_md(run_dir: str) -> bool:
     try:
         return load_project(run_dir).task.type == "molecular_dynamics"
@@ -1141,9 +1146,11 @@ def make_handler(app: WebApp, token: str | None = None):
                     self._send(L("先にプレビューしてください", "Preview first"), HTTPStatus.NOT_FOUND, "text/plain; charset=utf-8"); return
                 self._send_bytes(app.spec.model_dump_json(indent=2).encode(), "application/json", "spec.json")
             elif u.path == "/analysis":
+                # GET only fills the form; the analysis (which writes figures) runs on POST.
                 d = q.get("dir") or str(app.written or "")
                 md = _is_md(d) if d else False
-                self._analysis_page(d, AnalysisOptions(rdf=md, msd=md) if d else None, "")
+                self._analysis_page(d, None, "", form=AF.fields_from_options(AnalysisOptions(rdf=md, msd=md)) if d else None,
+                                    message=not_run_message() if d else "")
             elif u.path == "/structure.svg":
                 from adit.export_image import scene_to_svg
                 from adit.web.structure3d import scene_from_atoms
