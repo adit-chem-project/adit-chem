@@ -63,7 +63,10 @@ class Viewer3D(QWidget):
 
     def set_atoms(self, atoms: Atoms | None) -> None:
         self._atoms = atoms
+        had = bool(self.selected)
         self.selected = []
+        if had:
+            self.selectionChanged.emit([])
         if atoms is None or len(atoms) == 0:
             self._pos = np.zeros((0, 3)); self._sym = []; self._num = []; self._bonds = []; self._cell_lines = []
             self._xy = np.zeros((0, 2)); self._r = np.zeros(0); self._depth = np.zeros(0)
