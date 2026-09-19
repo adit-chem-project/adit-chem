@@ -157,8 +157,8 @@ def test_find_files_lists_cubes_and_vasp_grids(tmp_path):
     from adit.analysis.volumetric import find_files
 
     _write_cube(tmp_path / "wp-1-1-3-real.cube", _gaussian_grid(n=6))
-    (tmp_path / "CHGCAR").write_text("")
-    (tmp_path / "output.log").write_text("")
+    (tmp_path / "CHGCAR").write_text("", encoding="utf-8")
+    (tmp_path / "output.log").write_text("", encoding="utf-8")
     assert [p.name for p in find_files(tmp_path)] == ["CHGCAR", "wp-1-1-3-real.cube"]
 
 
