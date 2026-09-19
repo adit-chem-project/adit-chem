@@ -172,6 +172,9 @@ QPushButton#error_badge {{ background: {t.ng}; color: #FFFFFF; border: none; bor
 QPushButton#error_badge:hover {{ background: {t.ng}; color: #FFFFFF; border: none; }}
 /* The reason, in red, under the field it belongs to; the row is hidden when there is no error */
 QLabel#field_error {{ color: {t.ng}; font-size: 10pt; }}
+/* Value differs from the code default (labels paint the same bar themselves, see widgets.FieldLabel) */
+QCheckBox[adit_changed="user"] {{ border-left: 2px solid {t.accent}; padding-left: 6px; }}
+QCheckBox[adit_changed="template"] {{ border-left: 2px solid {t.muted}; padding-left: 6px; }}
 
 QToolBar {{ background: transparent; border: none; spacing: 8px; padding: 8px {PANEL_MARGIN}px 4px {PANEL_MARGIN}px; }}
 QToolBar QToolButton {{ border-radius: {rs}px; padding: 5px 12px; background: transparent; }}

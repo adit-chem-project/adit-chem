@@ -247,6 +247,9 @@ class ModeBar(QWidget):
         if 0 <= index < len(self.buttons):
             self.buttons[index].setText(text)
 
+    def add_trailing(self, widget: QWidget) -> None:
+        self.layout().addWidget(widget)
+
 
 class QuickAccessBar(QWidget):
 
