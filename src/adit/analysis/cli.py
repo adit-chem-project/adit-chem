@@ -467,6 +467,10 @@ def main(argv: list[str] | None = None) -> int:
         note = failure_note(a.run_dir)
         if note:
             print(note, file=sys.stderr)
+        from adit.analysis.diagnostics import diagnostics_lines
+
+        for line in diagnostics_lines(a.run_dir):
+            print(line, file=sys.stderr)
         return 1
     print(res.summary_text())
     if a.eyring:
