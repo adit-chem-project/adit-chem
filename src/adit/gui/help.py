@@ -424,6 +424,8 @@ HELP: dict[str, Help] = {
          "Computes the structure factor S(q) from the radial distribution function (the RDF is required). The note gives the q where truncation starts to matter."),
     "水素結合 (距離 [Å], 角度 [度])": Help(O, "水素結合を数えます。しきい値は必須です。GROMACS・VMD・cpptraj の既定値を注に並べますが、どれを採るかは利用者が決めます。",
          "Counts hydrogen bonds. The thresholds are required. The notes list the defaults used by GROMACS, VMD and cpptraj, but the choice is yours."),
+    "CREST の配座の重みの温度 [K]": Help(O, "CREST の結果 (crest_conformers.xyz) を読むとき、この温度で Boltzmann の重み g·exp(−ΔE/kT)/Σ を出します。空欄なら相対エネルギーだけを出します。",
+         "When a CREST result (crest_conformers.xyz) is read, Boltzmann weights g·exp(−ΔE/kT)/Σ are computed at this temperature. Empty = relative energies only."),
     "慣性半径 Rg の時系列": Help(O, "慣性半径と慣性主値の時系列を出します。大小の判定はしません。",
          "Time series of the radius of gyration and the principal moments. ADIT does not judge the values."),
     "3 次元の数密度の格子": Help(O, "軌跡を通した数密度を積んで cube に書き出します (VMD・VESTA・OVITO で開けます)。等値面は描きません。",

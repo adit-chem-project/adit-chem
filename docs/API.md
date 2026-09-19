@@ -48,6 +48,7 @@ print(methods_markdown([load_run_report("out/run1")], "ja"))   # 論文の「方
 | 距離・角・二面角・RMSD・Rg の時系列 | `adit.analysis.geometry_series.*` | `numpy` の配列 |
 | 配位数・中心対称性・Steinhardt・かたまり・S(q) | `adit.analysis.local_order.*` | `numpy` の配列 / `dict` |
 | 水素結合を数える | `adit.analysis.hbond.count_series(frames, distance, angle)` | 1 フレームごとの本数 (しきい値は必須) |
+| CREST の配座を読む・重みを付ける | `adit.analysis.crest.analyze_crest(crest_dir, out_dir, temperature_k=None)` / `read_ensemble` / `read_energies` / `boltzmann_weights(relative_ev, degeneracy, temperature_k)` | 配座の表 (`dict`) / `list[(E [Eh], Atoms)]` / `dict` / 重みの配列 (温度を渡したときだけ) |
 | 速度自己相関と振動スペクトル | `adit.analysis.vacf.vacf(velocities, dt_fs, *, max_lag_fraction=0.5, source="velocities", window="hann")` (`velocities` は (フレーム, 原子, 3) の配列、Å/fs) | `VacfResult` |
 | 有効質量 | `adit.analysis.effective_mass.at_band_edges(kdist, energies, fermi)` | `list[EffectiveMass]` |
 | 射影バンド (QE の projwfc.x) | `adit.analysis.projected_bands.read_filproj(path)` | `ProjectedBands` |

@@ -50,6 +50,7 @@ def figure_title(name: str) -> str:
         "compare_energy": L("組にした計算のエネルギー差", "Energy differences of the compared runs"),
         "elastic_stress_strain": L("応力と歪み (弾性定数の当てはめ)", "Stress vs. strain (elastic constant fits)"),
         "conformers": L("配座ごとの相対エネルギー", "Relative energy of each conformer"),
+        "crest_conformers": L("CREST の配座の相対エネルギーと重み", "Relative energy and weight of the CREST conformers"),
     }.get(name, name)
 
 
@@ -147,6 +148,7 @@ class AnalysisOptions:
     xrd: str = ""
     xrd_range: tuple[float, float] = (5.0, 90.0)
     xrd_measured: Path | str | None = None
+    conformer_temperature_k: float = 0.0
 
 
 @dataclass
@@ -326,9 +328,11 @@ class AnalysisResult:
             lines.append(L(f"DOS (状態密度): {t['dos']['n_eigen']} 個の固有値", f"DOS (density of states): {t['dos']['n_eigen']} eigenvalues") + ef)
         from adit.analysis import neb as _neb, pdos as _pdos, phonons as _ph, symmetry as _sym, thermo as _th, uvvis as _uv
         from adit.analysis import collections as _coll
+        from adit.analysis import crest as _crest
         for key, fn in (("thermo_ase", _th.summary_lines), ("pdos", _pdos.summary_lines), ("neb", _neb.summary_lines),
                         ("uvvis", _uv.summary_lines), ("spacegroup", _sym.summary_lines), ("phonopy", _ph.summary_lines),
-                        ("phonon_set", _coll.phonon_set_lines), ("elastic", _coll.elastic_lines), ("conformers", _coll.conformer_lines)):
+                        ("phonon_set", _coll.phonon_set_lines), ("elastic", _coll.elastic_lines), ("conformers", _coll.conformer_lines),
+                        ("crest_conformers", _crest.summary_lines)):
             if key in t:
                 lines += fn(t[key])
         if "mlip" in t:
@@ -1993,6 +1997,7 @@ def _add_collections(res: AnalysisResult, run_dir: Path, out: Path, opts: Analys
         res.tables["conformers"] = t
         if t.get("figure"):
             res.figures["conformers"] = t["figure"]
+    _add_crest(res, run_dir, out, opts)
     if opts.compare and (run_dir / coll.COMPARE_FILE).is_file():
         from adit.analysis.compare import CompareError, analyze_compare
         try:
@@ -2005,6 +2010,22 @@ def _add_collections(res: AnalysisResult, run_dir: Path, out: Path, opts: Analys
                                  "partial": c.partial, "files": c.files, "figures": c.figures, "notes": c.notes,
                                  "summary": c.summary_text()}
         res.figures.update(c.figures)
+
+
+def _add_crest(res: AnalysisResult, run_dir: Path, out: Path, opts: AnalysisOptions) -> None:
+    from adit.analysis import crest
+
+    crest_dir = crest.find_crest_dir(run_dir)
+    if crest_dir is None:
+        return
+    try:
+        t = crest.analyze_crest(crest_dir, out, opts.conformer_temperature_k or None)
+    except crest.CrestError as ex:
+        res.notes.append(L(f"CREST の配座を読めません: {ex}", f"cannot read the CREST conformers: {ex}"))
+        return
+    res.tables["crest_conformers"] = t
+    if t.get("figure"):
+        res.figures["crest_conformers"] = t["figure"]
 
 
 XTB_MD_DEFAULTS = {"hmass": "4", "shake": "2", "sccacc": "2.0"}

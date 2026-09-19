@@ -32,6 +32,7 @@ GUI の「解析」タブ、ウェブ版の「解析」ページ、`adit-analyze
 | 空間群 | 最終構造 (spglib が入っているとき) | 許容誤差ごとの空間群 |
 | フォノン分散・DOS | phonopy の band.yaml、total_dos.dat | phonon_bands.png、phonon_dos.png |
 | 組にして比べる表 | 複数の計算のディレクトリ | ΣνE、組成の釣り合い、条件が違う項目 (compare_*.csv、compare_energy.png) |
+| CREST の配座 | crest_conformers.xyz (コメント行の全エネルギー [Eh])、crest.energies、crest.log の最後の表 (縮退度) | 配座ごとの相対エネルギー (kcal/mol、kJ/mol、eV)、縮退度、最低配座との重原子 RMSD。温度を入れたときだけ Boltzmann の重み (crest_conformers.csv、crest_conformers.png) |
 
 `adit-analyze` の主なオプション (`adit-analyze --help-all` に全部):
 
@@ -48,13 +49,38 @@ GUI の「解析」タブ、ウェブ版の「解析」ページ、`adit-analyze
 | `--uvvis SHAPE:FWHM` | ORCA の UV-Vis を広げる形と半値全幅 [eV] (例 `gauss:0.3`) |
 | `--pdos` | PDOS のファイルが無いときも理由を書く (あれば指定しなくても描く) |
 | `--symprec Å[,Å…]` | 空間群の許容誤差 (既定は 1e-5、1e-3、1e-1 を並べる) |
+| `--conformer-temperature K` | CREST の配座の Boltzmann の重みを出す温度。省くと相対エネルギーだけを出す (既定の温度は無い) |
 
 ```bash
 adit-analyze out/md --msd --stride 10 --msd-fit 1000 5000 --zdens 0.5
 adit-analyze out/md --export --unwrap-molecules
 adit-analyze out/vib --thermo ideal_gas --temperature 298.15 --pressure 100000 --symmetry-number 2 --geometry nonlinear --spin 0
 adit-analyze runs/ --compare "ads=1:slab_mol,-1:slab,-1:mol"
+adit-analyze out/conformers/crest --conformer-temperature 298.15
 ```
+
+### CREST の配座の読み方と重み
+
+`adit-gen --conformers` が書いた `crest/run_crest.sh` を実行すると、その場所に CREST の結果ができます。
+そのディレクトリ (か、その親の配座の集合のディレクトリ) を `adit-analyze` に渡すと、次を読みます。
+
+- `crest_conformers.xyz`: 重複を除いた配座。各構造のコメント行が全エネルギー [Eh] (CREST の `cregen.f90` が `f18.8` で書く)
+- `crest.energies`: `番号  E − E(最低) [kcal/mol]` (同じく `cregen.f90`。表の `crest_energies_kcal_mol` 列にそのまま載せる)
+- `crest.log` の最後の表 (`Erel/kcal  Etot  weight/tot  conformer  set  degen`) の `degen` 列: 配座ごとの縮退度 g (回転異性体の数)。
+  表が無ければ全部 1 として、その旨を注に書く
+
+相対エネルギーはコメント行の全エネルギーから出し (無ければ `crest.energies`)、kcal/mol・kJ/mol・eV で並べます。
+RMSD は最も低い配座 (1 番) との重原子の Kabsch 重ね合わせで、対称な原子の並べ替えは考えていません。
+
+温度 T を `--conformer-temperature` (画面では「CREST の配座の重みの温度 [K]」) で入れたときだけ、重みを出します。
+
+    w_i = g_i exp(−ΔE_i / k_B T) / Σ_j g_j exp(−ΔE_j / k_B T)      ΔE_i = E_i − E(最低)、k_B = 8.617333262e-5 eV/K
+
+温度の既定値は置きません (CREST 自身は 298.15 K で `weight/tot` を出しますが、ADIT はその値を写しません)。
+出典: CREST の文書 (https://crest-lab.github.io/crest-docs/page/examples/example_1.html の出力例) と、
+ソースの `src/cregen.f90` (`crest.energies` の書式 `(2x,i0,2x,f12.3)`、コメント行の `(2x,f18.8)`)。
+配座ごとに別のディレクトリで計算した振動や UV-Vis を重み付きで足し合わせる機能はまだありません
+(CREST の配座と ADIT の計算ディレクトリを結ぶ情報が無いため)。
 
 画面では、解析タブ (ウェブ版は解析のページ) の「詳しい条件」を開くと、上のオプションと同じ欄があります (間引き、MSD の当てはめ範囲、
 z 方向の密度分布、時系列の統計、熱化学の各欄、UV-Vis の広げ方、空間群の許容誤差)。熱化学の欄には既定値を入れていません。

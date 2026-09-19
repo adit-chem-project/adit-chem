@@ -198,6 +198,7 @@ class AnalysisPanel(QWidget):
         self.cluster = narrow(QLineEdit()); self.cluster.setPlaceholderText(AF.PLACEHOLDERS["cluster"][0])
         self.fes = narrow(QLineEdit()); self.fes.setPlaceholderText(AF.PLACEHOLDERS["fes"][0])
         self.fes_bins = narrow(QLineEdit()); self.fes_bins.setPlaceholderText(AF.PLACEHOLDERS["fes_bins"][0])
+        self.conformer_temperature = narrow(QLineEdit()); self.conformer_temperature.setPlaceholderText(AF.PLACEHOLDERS["conformer_temperature"][0])
         self.fes_unit = _combo(AF.FES_UNITS)
         self.bands_window = narrow(QLineEdit()); self.bands_window.setPlaceholderText(AF.PLACEHOLDERS["bands_window"][0])
         self.effective_mass_points = narrow(QLineEdit())
@@ -284,7 +285,8 @@ class AnalysisPanel(QWidget):
                             ("conductivity_temperature", self.conductivity_temperature),
                             ("displacement", self.displacement), ("strain", self.strain),
                             ("pca", self.pca), ("cluster", self.cluster),
-                            ("fes", self.fes), ("fes_bins", self.fes_bins), ("fes_unit", self.fes_unit)):
+                            ("fes", self.fes), ("fes_bins", self.fes_bins), ("fes_unit", self.fes_unit),
+                            ("conformer_temperature", self.conformer_temperature)):
             add_row(mform, AF.LABELS[key][0], widget)
         mform.addRow(self.cb_rmsf); mform.addRow(self.cb_vacf); mform.addRow(self.cb_viscosity)
         mform.addRow(self._subhead(L("電子・回折・体積データ", "Electronic structure, diffraction and volumetric data")))
@@ -544,6 +546,7 @@ class AnalysisPanel(QWidget):
                 "displacement": self.displacement.text(), "strain": self.strain.text(),
                 "pca": self.pca.text(), "cluster": self.cluster.text(),
                 "fes": self.fes.text(), "fes_bins": self.fes_bins.text(), "fes_unit": data(self.fes_unit),
+                "conformer_temperature": self.conformer_temperature.text(),
                 "bands_window": self.bands_window.text(), "effective_mass_points": self.effective_mass_points.text(),
                 "bader": self.bader.text(), "bader_valence": self.bader_valence.text(),
                 "xrd": self.xrd.text(), "xrd_range": self.xrd_range.text(), "xrd_measured": self.xrd_measured.text(),

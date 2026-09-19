@@ -309,6 +309,9 @@ def main(argv: list[str] | None = None) -> int:
         "(各ディレクトリの出力を読んで band.yaml や C_ij を書くだけで、計算は実行しません)",
         "run the phonon (phonon_collect.py) and elastic (elastic_collect.py) collections here if it has not been done "
         "(it only reads the outputs of each directory and writes band.yaml or C_ij; no calculation is started)"))
+    ap.add_argument("--conformer-temperature", type=float, default=0.0, metavar="K", help=L(
+        "CREST の配座 (crest_conformers.xyz) の Boltzmann の重みを出す温度 [K]。省くと相対エネルギーだけを出し、重みは出しません",
+        "temperature in K for the Boltzmann weights of the CREST conformers (crest_conformers.xyz); without it only relative energies are given"))
     ap.add_argument("--no-compare", action="store_true", help=L(
         "compare.json があっても、組にして比べる表を出しません (既定は、あれば出します)",
         "do not write the comparison table even if compare.json is present (by default it is written when the file exists)"))
@@ -447,7 +450,8 @@ def main(argv: list[str] | None = None) -> int:
                                                       export=a.export or a.unwrap_molecules, export_unwrap=a.unwrap_molecules,
                                                       memory_budget_mb=a.memory_mb if a.memory_mb else MEMORY_BUDGET_MB,
                                                       thermo=thermo_opts, uvvis_broadening=uv, pdos=a.pdos, symprecs=symprecs,
-                                                      compare=not a.no_compare, collect=a.collect))
+                                                      compare=not a.no_compare, collect=a.collect,
+                                                      conformer_temperature_k=a.conformer_temperature))
     except Exception as ex:
         print(str(ex), file=sys.stderr)
         from adit.results import failure_note
