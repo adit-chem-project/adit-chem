@@ -11,6 +11,7 @@ LANGUAGE = "ja"
 
 _EN: dict[str, str] = {
     "構造": "Structure", "プリセット": "Preset", "ファイル": "File", "バルク": "Bulk", "スラブ": "Slab",
+    "データベースから取得": "Fetch from a database", "データベース": "Database", "取得": "Fetch",
     "3D 構造を生成": "Build 3D structure", "参照…": "Browse…", "全電荷": "Total charge", "スピン多重度": "Spin multiplicity",
     "固定原子": "Fixed atoms", "立方晶セル": "Cubic cell", "層": "layers", "真空層 [Å]": "Vacuum [Å]",
     "周期セルに入れる": "Put in a periodic cell", "分子を立方体の周期セルに置きます。VASP と pw.x では周期セルが必須です": "Place the molecule in a cubic periodic cell. VASP and pw.x require a periodic cell", "一辺 [Å]": "edge [Å]",
