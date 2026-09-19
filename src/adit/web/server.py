@@ -87,6 +87,8 @@ class WebApp:
         self.written_exe: str = ""
         self.written_code: str = ""
         self.figures: dict[str, str] = {}
+        self.analysis_dir: str = ""
+        self.analysis_opts: AnalysisOptions | None = None
         self.upload_dir = Path.home() / "adit_runs" / "uploads"
         self.scan_out: Path | None = None
         self._scan_auto = ""
@@ -170,9 +172,17 @@ class WebApp:
 
     @staticmethod
     def viewer_js() -> str:
+        return WebApp._static_js("viewer3d.js")
+
+    @staticmethod
+    def playback_js() -> str:
+        return WebApp._static_js("playback.js")
+
+    @staticmethod
+    def _static_js(name: str) -> str:
         from pathlib import Path as _Path
 
-        path = _Path(__file__).with_name("static") / "viewer3d.js"
+        path = _Path(__file__).with_name("static") / name
         try:
             return path.read_text(encoding="utf-8")
         except OSError:
@@ -676,6 +686,7 @@ class WebApp:
     def analyze(self, run_dir: str, opts: AnalysisOptions):
         res = run_analysis(run_dir, opts)
         self.figures = dict(res.figures)
+        self.analysis_dir, self.analysis_opts = str(Path(run_dir).expanduser()), opts
         return res
 
 
@@ -1109,6 +1120,19 @@ def make_handler(app: WebApp, token: str | None = None):
             elif u.path == "/compare":
                 base = q.get("dir") or ""
                 self._compare_page(base, compare_rows_from_json(base), None, "")
+            elif u.path == "/frames.json":
+                from adit.web.frames import frames_json
+
+                d = q.get("dir", "")
+                if not d or not app.analysis_dir or str(Path(d).expanduser()) != app.analysis_dir:
+                    self._send("not found", HTTPStatus.NOT_FOUND, "text/plain"); return
+                o = app.analysis_opts
+                try:
+                    body = frames_json(app.analysis_dir, stride=o.stride if o else 1, skip=o.skip_frames if o else 0,
+                                       memory_mb=o.memory_budget_mb if o else None)
+                except Exception as ex:
+                    self._send(str(ex), HTTPStatus.BAD_REQUEST, "text/plain"); return
+                self._send_bytes(body.encode("utf-8"), "application/json")
             elif u.path == "/file":
                 p = q.get("path", "")
                 allowed = set(app.figures.values())
@@ -1520,7 +1544,10 @@ def make_handler(app: WebApp, token: str | None = None):
             f = analysis_form_values(opts, form)
             plain = res is not None and not scan
             export_dir, export_readme = AF.read_export_readme(res) if plain else ("", "")
+            frames_url = "/frames.json?dir=" + quote(app.analysis_dir) if plain and app.analysis_dir else ""
             self._send(app.render("analysis.html", run_dir=run_dir, result=res, error=error, notice=notice, message=message, f=f,
+                                  frames_url=frames_url, viewer_js=app.viewer_js() if frames_url else "",
+                                  playback_js=app.playback_js() if frames_url else "",
                                   off=" disabled" if scan else "", more_open=bool(message or too_large) or AF.details_changed(f),
                                   sections=AF.result_sections(res) if plain else [], export_dir=export_dir, export_readme=export_readme,
                                   figure_files=_figure_files(res),

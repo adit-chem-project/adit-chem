@@ -624,6 +624,11 @@ button.link:hover { text-decoration:underline; background:none; }
     <button type="button" data-view="-1.5708,0">{{ T("y 軸から", "Along y") }}</button>
   </div>
   <div class="hint">{{ T("左ドラッグで回転、ホイールで拡大縮小、右ドラッグで移動、ダブルクリックで戻す", "Drag to rotate, scroll to zoom, right-drag to pan, double-click to reset") }}</div>
+  <div class="hint" id="adit3d-measure">{{ T("原子をクリックで選択、Shift+クリックで追加 (2 個で距離、3 個で角度、4 個で二面角。周期系は最も近い像で測ります)",
+                                             "Click an atom to select it, Shift+click to add (2 atoms give the distance, 3 the angle, 4 the dihedral; periodic cells use the nearest image)") }}</div>
+  <div class="actions"><button type="button" id="adit3d-clear" disabled>{{ T("選択を消す", "Clear selection") }}</button>
+    <button type="button" id="adit3d-send-fixed" disabled title="{{ T('選んだ原子の番号 (1 始まり) を固定原子の欄に足します', 'Adds the picked atoms (1-based) to the fixed-atoms field') }}">{{ T("固定原子の欄へ", "To the fixed-atoms field") }}</button>
+    <span class="hint">{{ T("解析ページの「原子の選び方」や距離・角度の欄には、この番号を貼ってください", "Paste these numbers into the analysis page's atom selection or distance/angle fields") }}: <code id="adit3d-indices">-</code></span></div>
   <div class="hint">{{ scene_note }}</div>
   <div class="actions"><a class="btn" href="/structure.svg" title="{{ T('Word や PowerPoint に貼れます (拡大しても粗くなりません)', 'Paste into Word or PowerPoint; stays sharp when enlarged') }}">{{ T("SVG で保存", "Save as SVG") }}</a></div>
   <noscript><div class="hint">{{ T("この絵はブラウザの中の小さなプログラム (JavaScript) で描いています。ブラウザで JavaScript を切っていると出ません。デスクトップ版の「構造」タブでも同じものが見られます。",
@@ -657,7 +662,7 @@ button.link:hover { text-decoration:underline; background:none; }
 </div>
 </div>
 </form>
-{% if scene_json %}<script>window.ADIT_SCENE = {{ scene_json | safe }};</script>
+{% if scene_json %}<script>window.ADIT_SCENE = {{ scene_json | safe }}; window.ADIT_LANG = "{{ lang }}";</script>
 <script>{{ viewer_js | safe }}</script>{% endif %}
 <script>
 /* Field visibility is handled by CSS (:has() above); this only switches the preview tabs. */
