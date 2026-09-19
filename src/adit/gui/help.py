@@ -51,6 +51,12 @@ HELP: dict[str, Help] = {
     "周期の像との隙間 [Å]": Help(O, "その方向で、構造の端と周期の像の端のあいだを何 Å 空けるか (いまの隙間は置き換えます)。", "Gap between the structure and its periodic image along this axis (replaces the current gap)."),
     "余白 [Å]": Help(O, "分子やナノ粒子の端から箱の面までの距離。周期の像どうしの距離はこの 2 倍になります。", "Distance from the outermost atoms to the box faces; periodic images end up twice this apart."),
     "倍数の上限": Help(O, "周期の構造を直交するセルに取り直すとき、元のセルの何倍まで大きくしてよいか。", "When re-cutting a periodic structure into an orthogonal cell, the largest allowed multiple of the original cell."),
+    "欄に送る": Help(O, "3D 表示で選んだ原子の番号 (1 始まり) を、固定原子の欄、解析の「原子の選び方」(index 1,2 の形)、"
+                       "または距離・角度・二面角の時系列の欄 (選んだ順で 1,2 の形) に入れます。繰り返して表示している周期系では、基本セルの番号に直します。",
+                    "Puts the atoms picked in the 3D view (1-based) into the fixed-atoms field, the analysis \"Atom selection\" field "
+                    "(as index 1,2) or a distance/angle/dihedral series field (as 1,2 in click order). "
+                    "For a periodic cell shown repeated, the indices refer to the base cell."),
+    "選択を消す": Help(O, "3D 表示で選んだ原子の印と測った値を消します。", "Clears the picked atoms and the measured value in the 3D view."),
     "元素 (条件)": Help(O, "選ぶ原子の元素 (空白かカンマで区切って複数可)。空欄なら元素で絞りません。", "Elements to select (several separated by spaces or commas). Empty = any element."),
     "z の範囲 [Å]": Help(O, "選ぶ原子の z 座標 (デカルト座標) の下限と上限。空欄ならその側は制限なし。条件はすべて「かつ」です。", "Lower and upper bounds on the Cartesian z of the selected atoms; empty = no bound on that side. All conditions must hold."),
     "選ぶ数": Help(R, "条件に合う原子から無作為に選ぶ数。個数か、合う原子に対する割合 (0〜1) のどちらか。", "How many of the matching atoms are picked at random: a count, or a fraction (0-1) of the matching atoms."),

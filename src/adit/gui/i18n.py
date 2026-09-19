@@ -70,6 +70,12 @@ _EN: dict[str, str] = {
     "Draw: 分子を描いて SMILES にします (RDKit が要ります)": "Draw: sketch the molecule and turn it into SMILES (needs RDKit)", "構造の作り方": "Source", "共通設定": "Common settings", "環境設定…": "Preferences…",
     "元に戻す (1 つ前の設定)": "Undo (previous settings)", "やり直す": "Redo", "環境設定ファイル (cluster.toml) を編集": "Open and edit the settings file (cluster.toml)",
     "左ドラッグで回転、ホイールで拡大縮小、右ドラッグで移動、ダブルクリックでリセット": "Left-drag to rotate, wheel to zoom, right-drag to pan, double-click to reset",
+    "左ドラッグで回転、ホイールで拡大縮小、右ドラッグで移動、ダブルクリックでリセット。原子をクリックで選択、Shift+クリックで追加 (2 個で距離、3 個で角度、4 個で二面角)":
+        "Left-drag to rotate, wheel to zoom, right-drag to pan, double-click to reset. Click an atom to select it, Shift+click to add "
+        "(2 atoms give the distance, 3 the angle, 4 the dihedral)",
+    "選択を消す": "Clear selection", "欄に送る": "Send to a field", "固定原子の欄へ": "To the fixed-atoms field",
+    "解析の「原子の選び方」へ": "To the analysis \"Atom selection\" field",
+    "解析の時系列の欄へ (距離・角度・二面角)": "To the analysis series field (distance, angle, dihedral)",
     "分子系 (非周期) では使いません": "Not used for molecules", "生成ファイル": "Generated files", "実行": "Run",
     "この PC で実行": "Run on this PC", "視点": "Viewpoint", "繰り返し数": "Repeat", "ASE GUI で開く": "Open in ASE GUI", "斜め": "oblique", "z 軸から": "along z",
     "y 軸から": "along y", "x 軸から": "along x", "まだ実行していません": "Not run yet", "(元素の既定値)": "(element default)",

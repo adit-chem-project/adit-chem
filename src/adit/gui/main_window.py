@@ -145,6 +145,7 @@ class MainWindow(QMainWindow):
         for p in (self.structure, self.method, self.kpoints, self.task, self.runtime):
             p.changed.connect(self._timer.start)
         self.structure.changed.connect(self._on_context)
+        self.structure_view.send_selection.connect(self._on_send_selection)
         self.runtime.changed.connect(self._on_context)
         self._on_context()
         self.method.dftb.root_chosen.connect(lambda p: self._set_root("sk_root", p))
@@ -270,6 +271,26 @@ class MainWindow(QMainWindow):
         if scroll is not None and event.type() in (QEvent.Type.Resize, QEvent.Type.LayoutRequest) and obj in (scroll.viewport(), self._left):
             self._fit_left_columns()
         return super().eventFilter(obj, event)
+
+    def _on_send_selection(self, dest: str, indices: list) -> None:
+        from adit.gui.atom_select import destination_name, merge_fixed_text, merge_select_text, series_text
+
+        shown = ",".join(str(i) for i in indices)
+        if dest == "fixed":
+            if not self.structure.fixed.isEnabled():
+                self.structure_view.measure.setText(L("固定原子の欄は組み立て手順の「固定」が使っているので送れません",
+                                                      "the fixed-atoms field is controlled by the fix step, so nothing was sent"))
+                return
+            self.structure.fixed.setText(merge_fixed_text(self.structure.fixed.text(), indices))
+            self.structure.fixed.editingFinished.emit()
+            self.set_mode(self.MODE_STRUCTURE)
+        else:
+            field = getattr(self.analysis, dest)
+            field.setText(merge_select_text(field.text(), indices) if dest == "select" else series_text(field.text(), indices))
+            self.analysis.more.set_expanded(True)
+            self.set_mode(self.MODE_ANALYSIS)
+        self.structure_view.measure.setText(L(f"原子 {shown} を「{destination_name(dest)}」の欄に入れました",
+                                              f"atoms {shown} were put into the \"{destination_name(dest)}\" field"))
 
     def _on_context(self, *_) -> None:
         st = self.structure.structure()
