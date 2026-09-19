@@ -319,9 +319,9 @@ def diffusion_blocks(pos: np.ndarray, dt_fs: float, dim: int, frac: tuple[float,
         span = (length_k - 1) * dt_fs
         hint = ""
         if span > rng[0] + 1e-9 and length_k >= min_block:
-            hint = L(f" 区間を 2 つ取るなら {rng[0]:g}〜{span:g} fs までが入ります (`--msd-fit {rng[0]:g},{span:g}`)。"
+            hint = L(f" ブロックを 2 つ取るなら {rng[0]:g}〜{span:g} fs までが入ります (--msd-fit {rng[0]:g},{span:g})。"
                      "ただし上の D とは当てはめ範囲が変わります",
-                     f" With two blocks, {rng[0]:g}-{span:g} fs would fit (`--msd-fit {rng[0]:g},{span:g}`), "
+                     f" With two blocks, {rng[0]:g}-{span:g} fs would fit (--msd-fit {rng[0]:g},{span:g}), "
                      "but that is a different fit range from the D above")
         out.update(n_blocks=0, reason_code="fit_range_not_available_in_all_blocks", reason=L(
             f"主当てはめ範囲 {rng[0]:g}〜{rng[1]:g} fs を含むブロックを 2 つ取れません (使ったフレーム {T})。",

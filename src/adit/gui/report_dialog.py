@@ -19,7 +19,7 @@ class ReportDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle(R.lab("report"))
         self.dirs = QPlainTextEdit("\n".join(run_dirs or []))
-        self.dirs.setPlaceholderText(L("1 行に 1 つ。複数 入れると 1 枚の表にまとめます",
+        self.dirs.setPlaceholderText(L("1 行に 1 つ。複数入れると 1 枚の表にまとめます",
                                        "one per line; several directories are combined into one table"))
         self.dirs.setFixedHeight(80)
         self.browse = QPushButton(L("参照…", "Browse…"))
@@ -44,7 +44,7 @@ class ReportDialog(QDialog):
             add_row(form, R.LABELS[key][0], widget, help_text=_help(R.LABELS[key][0]))
         form.addRow(self.check)
         self.note = QLabel(L("コマンドの adit-report と同じものを作ります。判定はしません "
-                             "(ハッシュの照合だけは 一致 / 不一致 / 記録なし を出します)。",
+                             "(ハッシュの照合だけは「一致 / 不一致 / 記録なし」を出します)。",
                              "This produces the same output as the adit-report command. Nothing is judged "
                              "(only the fingerprint check reports match / differ / no record)."))
         self.note.setObjectName("hint"); self.note.setWordWrap(True)

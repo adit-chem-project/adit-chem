@@ -6,14 +6,14 @@
 <form method="post" action="/report">
 {% if error %}<div class="error-banner" role="alert">{{ error }}</div>{% endif %}
 <fieldset><legend>{{ T("報告をまとめる", "Build a report") }}</legend>
-  {% call rrow("rep_dirs", "rep_dirs") %}<textarea id="rep_dirs" name="rep_dirs" rows="4" cols="60" placeholder="{{ T('1 行に 1 つ。複数 入れると 1 枚の表にまとめます', 'one per line; several directories are combined into one table') }}">{{ f.rep_dirs }}</textarea>{% endcall %}
+  {% call rrow("rep_dirs", "rep_dirs") %}<textarea id="rep_dirs" name="rep_dirs" rows="4" cols="60" placeholder="{{ T('1 行に 1 つ。複数入れると 1 枚の表にまとめます', 'one per line; several directories are combined into one table') }}">{{ f.rep_dirs }}</textarea>{% endcall %}
   {% call rrow("rep_lang", "rep_lang") %}<select id="rep_lang" name="rep_lang">{% for v, t in languages %}<option value="{{ v }}"{% if f.rep_lang == v %} selected{% endif %}>{{ t }}</option>{% endfor %}</select>{% endcall %}
   {% call rrow("rep_methods", "rep_methods") %}<input type="text" id="rep_methods" name="rep_methods" value="{{ f.rep_methods }}" placeholder="{{ T('空欄なら作りません (例 methods.md)', 'empty = not created (e.g. methods.md)') }}">{% endcall %}
   {% call rrow("rep_conditions", "rep_conditions") %}<input type="text" id="rep_conditions" name="rep_conditions" value="{{ f.rep_conditions }}" placeholder="{{ T('空欄なら作りません (例 conditions.csv)', 'empty = not created (e.g. conditions.csv)') }}">{% endcall %}
   {% call rrow("rep_results", "rep_results") %}<input type="text" id="rep_results" name="rep_results" value="{{ f.rep_results }}" placeholder="{{ T('空欄なら作りません (例 results.csv)', 'empty = not created (e.g. results.csv)') }}">{% endcall %}
   {% call rrow("rep_bundle", "rep_bundle") %}<input type="text" id="rep_bundle" name="rep_bundle" value="{{ f.rep_bundle }}" placeholder="{{ T('空欄なら作りません (例 pack.zip)', 'empty = not created (e.g. pack.zip)') }}">{% endcall %}
   <div class="row"><label></label><div class="inline">{% set h = hlp("rep_check") %}<label{% if h %} title="{{ h.text() }}"{% endif %}><input type="checkbox" name="rep_check"{% if f.rep_check %} checked{% endif %}> {{ lab("rep_check") }}</label></div></div>
-  <p class="hint">{{ T("コマンドの adit-report と同じものを作ります。判定はしません (ハッシュの照合だけは 一致 / 不一致 / 記録なし を出します)。ファイルの場所は、このサーバーを動かしている機械の中です。",
+  <p class="hint">{{ T("コマンドの adit-report と同じものを作ります。判定はしません (ハッシュの照合だけは「一致 / 不一致 / 記録なし」を出します)。ファイルの場所は、このサーバーを動かしている機械の中です。",
                        "This produces the same output as the adit-report command. Nothing is judged (only the fingerprint check reports match / differ / no record). The paths are on the machine running this server.") }}</p>
   <div class="actions"><button type="submit" class="primary">{{ lab("rep_run") }}</button></div>
 </fieldset>

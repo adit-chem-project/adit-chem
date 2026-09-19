@@ -245,14 +245,14 @@ class AnalysisResult:
             last_msd = f"{m['last_A2']:.3g}"
             diff = ""
             if m.get("D_cm2_s") is not None:
-                diff = L(f"、拡散係数 {m['D_cm2_s']:.3e} cm^2/s", f", diffusion coefficient {m['D_cm2_s']:.3e} cm^2/s")
+                diff = L(f"、拡散係数 {m['D_cm2_s']:.3e} cm²/s", f", diffusion coefficient {m['D_cm2_s']:.3e} cm^2/s")
             lines.append(L(f"MSD (平均二乗変位。{m['species'] or '全原子'}、{m['n_frames']} フレーム): 最終 {last_msd} Å²",
                            f"MSD (mean squared displacement; {m['species'] or 'all atoms'}, {m['n_frames']} frames): last {last_msd} Å²") + diff)
             per = [f"{el} {v['D_cm2_s']:.3e}"
                    for el, v in m.get("by_element", {}).items() if v.get("D_cm2_s") is not None]
             if len(m.get("by_element", {})) > 1 and per:
-                label = (L("  参考・全元素の拡散係数 [cm^2/s]: ", "  for reference, diffusion coefficients for all elements [cm^2/s]: ")
-                         if m.get("species") else L("  元素ごとの拡散係数 [cm^2/s]: ", "  diffusion coefficient by element [cm^2/s]: "))
+                label = (L("  参考・全元素の拡散係数 [cm²/s]: ", "  for reference, diffusion coefficients for all elements [cm^2/s]: ")
+                         if m.get("species") else L("  元素ごとの拡散係数 [cm²/s]: ", "  diffusion coefficient by element [cm^2/s]: "))
                 lines.append(label + ", ".join(per))
             if m.get("formula"):
                 lines.append(L(f"  使った式: {m['formula']} ({m['dimension']} 次元、成分 {m['axes']}、複数の時間原点で平均した MSD)",
@@ -277,7 +277,7 @@ class AnalysisResult:
                 counts = e.get("block_frame_counts") or [e["block_frames"]] * e["n_blocks"]
                 sizes = ", ".join(str(x) for x in counts)
                 a, b = e.get("fit_range_fs") or m["fit_range_fs"]
-                lines.append(L(f"  参考・ブロック D 平均の標準誤差: {e['d_err_cm2_s']:.2e} cm^2/s。"
+                lines.append(L(f"  参考・ブロック D 平均の標準誤差: {e['d_err_cm2_s']:.2e} cm²/s。"
                                f"全 {sum(counts)} フレームを {e['n_blocks']} ブロック ({sizes} フレーム) に分け、各ブロックの {a:g}〜{b:g} fs を当てはめ、"
                                f"ブロックごとの D の標本標準偏差 ÷ √{e['n_blocks']} としました。全軌跡から出した D 自体の厳密な誤差ではありません",
                                f"  for reference, standard error of the mean block D: {e['d_err_cm2_s']:.2e} cm^2/s. "
@@ -306,7 +306,7 @@ class AnalysisResult:
             f = [x for x in t["frequencies"] if x > 50]
             neg = [x for x in t["frequencies"] if x < -50]
             top = ", ".join(f"{x:.0f}" for x in f[-8:]) + " cm^-1"
-            lines.append(L(f"振動数 (振動の速さ): {len(f)} 本 (50 cm^-1 超)。高い順に 8 本まで: ",
+            lines.append(L(f"振動数 (振動の速さ): {len(f)} 本 (50 cm⁻¹ 超)。高い順に 8 本まで: ",
                                f"frequencies: {len(f)} above 50 cm^-1; up to the eight highest: ") + top
                          + (L(f"。虚振動 {len(neg)} 本", f". {len(neg)} imaginary") if neg else ""))
         if "bands" in t:

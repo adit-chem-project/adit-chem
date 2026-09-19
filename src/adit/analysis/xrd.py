@@ -55,8 +55,8 @@ def _hkl_text(hkls) -> str:
 def powder_pattern(atoms: Atoms, radiation: str = DEFAULT_RADIATION,
                    two_theta_range: tuple[float, float] = DEFAULT_RANGE) -> Pattern:
     if not has_pymatgen():
-        raise XrdError(L("pymatgen が入っていないので粉末回折は計算できません (`pip install pymatgen`)",
-                         "pymatgen is not installed, so no powder pattern can be computed (`pip install pymatgen`)"))
+        raise XrdError(L("pymatgen が入っていないので粉末回折は計算できません (pip install pymatgen)",
+                         "pymatgen is not installed, so no powder pattern can be computed (pip install pymatgen)"))
     from pymatgen.analysis.diffraction.xrd import XRDCalculator
     from pymatgen.io.ase import AseAtomsAdaptor
 

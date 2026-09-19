@@ -1401,7 +1401,7 @@ def make_handler(app: WebApp, token: str | None = None):
                     atom["x"] += 360.0
                     atom["y"] += 200.0
                 self._draw_page(_json.dumps(data), from_smiles=text,
-                                message=L(f"SMILES から {len(data['atoms'])} 原子 を読み込みました",
+                                message=L(f"SMILES から {len(data['atoms'])} 原子を読み込みました",
                                           f"loaded {len(data['atoms'])} atoms from the SMILES"))
                 return
             try:

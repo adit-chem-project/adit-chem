@@ -62,7 +62,7 @@ def _paths(text: str) -> list[Path]:
 def request_from_fields(f: dict) -> ReportRequest:
     dirs = _paths(f.get("rep_dirs", ""))
     if not dirs:
-        raise ReportFieldError(L(f"{lab('rep_dirs')}: 計算ディレクトリを 1 つ以上 入れてください",
+        raise ReportFieldError(L(f"{lab('rep_dirs')}: 計算ディレクトリを 1 つ以上入れてください",
                                  f"{lab('rep_dirs')}: give at least one run directory"))
     missing = [str(d) for d in dirs if not d.is_dir()]
     if missing:

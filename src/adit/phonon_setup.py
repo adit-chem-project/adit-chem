@@ -81,7 +81,7 @@ def _check_dos(unit, backend: str, dos_mesh, dos_width_thz) -> None:
             raise PhononError(L("DOS の幅を使うには、q 点のメッシュ (--phonon-dos-mesh) も要ります", "a DOS width needs a q-point mesh too (--phonon-dos-mesh)"))
         return
     if len(dos_mesh) != 3 or any(int(k) < 1 for k in dos_mesh):
-        raise PhononError(L("DOS の q 点のメッシュは 1 以上の整数を 3 つ", "the DOS q-point mesh needs three positive integers"))
+        raise PhononError(L("DOS の q 点のメッシュは 1 以上の整数を 3 つ書いてください", "the DOS q-point mesh needs three positive integers"))
     if backend == "phonopy" and dos_width_thz is not None:
         raise PhononError(L("phonopy の DOS はテトラヘドロン法 (phonopy の既定) で、幅を使いません。--phonon-dos-width を外してください",
                             "the phonopy DOS uses the tetrahedron method (phonopy default) without a width; drop --phonon-dos-width"))

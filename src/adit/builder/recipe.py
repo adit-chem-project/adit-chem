@@ -101,7 +101,7 @@ def order_notes(steps: list) -> dict[int, str]:
                   "repeating keeps the plane and widens the cross-section)"))
     for k in slabs[1:]:
         notes.setdefault(k, []).append(
-            L(f"注意: 面で切る手順が {len(slabs)} つあります (手順 {'、'.join(str(j) for j in slabs)})。このミラー指数は、手順 {slabs[0]} で切った板のセルに対する指数です",
+            L(f"注意: 面で切る手順が {len(slabs)} 個あります (手順 {'、'.join(str(j) for j in slabs)})。このミラー指数は、手順 {slabs[0]} で切ったスラブのセルに対する指数です",
               f"note: there are {len(slabs)} slab steps (steps {', '.join(str(j) for j in slabs)}); these Miller indices refer to the "
               f"cell of the slab made in step {slabs[0]}"))
     return {k: L("、".join(v), ", ".join(v)) for k, v in notes.items()}

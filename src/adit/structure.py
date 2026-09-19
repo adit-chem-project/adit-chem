@@ -118,7 +118,7 @@ def from_file(path: Path | str | None) -> Atoms:
         raise StructureError(L("構造ファイルを指定してください", "choose a structure file"))
     path = Path(str(path).strip()).expanduser()
     if not path.is_file():
-        what = L("ディレクトリで、ファイルではありません", "is a directory, not a file") if path.is_dir() else L("がありません", "was not found")
+        what = L("はディレクトリで、ファイルではありません", "is a directory, not a file") if path.is_dir() else L("がありません", "was not found")
         raise StructureError(L(f"構造ファイル {path} {what}", f"structure file {path} {what}"))
     try:
         result = read(path)

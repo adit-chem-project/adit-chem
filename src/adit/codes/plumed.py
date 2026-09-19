@@ -113,7 +113,7 @@ def readme_lines(spec: CalculationSpec) -> list[str]:
                         "it stopped with 'not available' unless the PLUMED_KERNEL environment variable pointed at libplumedKernel.so."),
            "openmm": L("実行する環境に openmm-plumed が要ります (conda install -c conda-forge openmm-plumed)。",
                        "the environment needs openmm-plumed (conda install -c conda-forge openmm-plumed).")}.get(code, "")
-    return [L(f"  PLUMED の入力 {PLUMED_FILE} は利用者が書いたものです。ADIT は集合変数もバイアスも作らず、内容も確かめていません"
+    return [L(f"  PLUMED の入力 {PLUMED_FILE} は利用者が書いたものです。ADIT は集合変数もバイアスも作らず、内容も確かめていません "
               "(読めるかどうかだけ、plumed があるときに確かめています)。",
               f"  The PLUMED input {PLUMED_FILE} is yours. ADIT invents no collective variables or bias and does not check the physics "
               "(only whether PLUMED can parse it, and only when plumed is installed)."),

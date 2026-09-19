@@ -134,7 +134,7 @@ def test_the_readme_shows_how_to_start():
 
 def test_the_web_form_says_the_detailed_fields_are_optional():
     html = (REPO / "src" / "adit" / "web" / "templates" / "analysis.html").read_text(encoding="utf-8")
-    assert "すべて 任意です" in html
+    assert "すべて任意です" in html
     index = (REPO / "src" / "adit" / "web" / "templates" / "index.html").read_text(encoding="utf-8")
     assert "ADIT は計算を投入しません" in index
 
