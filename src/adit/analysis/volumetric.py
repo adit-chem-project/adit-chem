@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from adit.errors import AditValueError
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import numpy as np
@@ -25,6 +25,8 @@ class Grid:
     kind: str            # "potential" / "density" / "unknown"
     unit: str
     source: Path
+    origin: np.ndarray = field(default_factory=lambda: np.zeros(3))   # Å; grid point (0,0,0)
+    periodic: bool = False                                              # True: the grid covers one cell without the end point
 
     @property
     def cell(self):
@@ -49,22 +51,28 @@ def read_grid(path: Path | str, cube_unit: str = "") -> Grid:
     if not p.is_file():
         raise VolumetricError(L(f"ファイルがありません: {p}", f"file not found: {p}"))
     if p.suffix.lower() in CUBE_SUFFIXES:
-        from ase.io.cube import read_cube_data
+        from ase.io import read
 
         try:
-            values, atoms = read_cube_data(str(p))
+            with open(p, encoding="utf-8", errors="replace") as f:
+                head = f.readline() + f.readline()
+            dct = read(str(p), format="cube", read_data=True, full_output=True)
+            values, atoms, origin = dct["data"], dct["atoms"], dct["origin"]
         except Exception as ex:
             raise VolumetricError(L(f"{p.name} を cube として読めません: {ex}",
                                     f"cannot read {p.name} as a cube file: {ex}")) from ex
         values = np.asarray(values, dtype=float)
+        # pp.x (Quantum ESPRESSO, PP/src/cube.f90) writes the whole FFT grid, nr points at a/nr, without the end point
+        periodic = _cube_is_periodic(head)
+        extra = {"origin": np.asarray(origin, dtype=float), "periodic": periodic}
         if cube_unit:
             key = cube_unit.strip().lower()
             if key not in CUBE_UNITS:
                 raise VolumetricError(L(f"cube の単位は {' / '.join(sorted(CUBE_UNITS))} から選んでください: {cube_unit!r}",
                                         f"the cube unit must be one of {' / '.join(sorted(CUBE_UNITS))}: {cube_unit!r}"))
             unit, factor = CUBE_UNITS[key]
-            return Grid(values=values * factor, atoms=atoms, kind="potential", unit=unit, source=p)
-        return Grid(values=values, atoms=atoms, kind="unknown", unit="", source=p)
+            return Grid(values=values * factor, atoms=atoms, kind="potential", unit=unit, source=p, **extra)
+        return Grid(values=values, atoms=atoms, kind="unknown", unit="", source=p, **extra)
     if p.name.startswith(VASP_NAMES):
         from ase.calculators.vasp import VaspChargeDensity
 
@@ -79,10 +87,18 @@ def read_grid(path: Path | str, cube_unit: str = "") -> Grid:
         values = np.asarray(vcd.chg[-1], dtype=float)
         if p.name.startswith("LOCPOT"):
             values = values * atoms.get_volume()
-            return Grid(values=values, atoms=atoms, kind="potential", unit="eV", source=p)
-        return Grid(values=values, atoms=atoms, kind="density", unit="e/Å³", source=p)
+            return Grid(values=values, atoms=atoms, kind="potential", unit="eV", source=p, periodic=True)
+        return Grid(values=values, atoms=atoms, kind="density", unit="e/Å³", source=p, periodic=True)
     raise VolumetricError(L(f"{p.name} は ADIT が読める体積データではありません (cube / LOCPOT / CHGCAR)",
                             f"{p.name} is not volumetric data ADIT can read (cube / LOCPOT / CHGCAR)"))
+
+
+PERIODIC_CUBE_MARKS = ("pwscf", "quantum espresso")
+
+
+def _cube_is_periodic(comment_lines: str) -> bool:
+    text = comment_lines.lower()
+    return any(mark in text for mark in PERIODIC_CUBE_MARKS)
 
 
 def plane_average(grid: Grid, axis: int = 2) -> tuple[np.ndarray, np.ndarray]:
@@ -192,10 +208,10 @@ class DensityGrid:
         voxel = abs(float(np.linalg.det(self.cell))) / float(np.prod(self.shape))
         values = self.counts / (self.n_frames * voxel)
         return {"values": values, "shape": self.shape, "n_frames": self.n_frames, "voxel_A3": voxel,
-                "note": L("軌跡を通した数密度 [Å⁻³] です。分割数は利用者の指定で、等値面は描きません "
-                          "(cube に書き出して VMD・VESTA・OVITO で見てください)。",
-                          "number density in Å⁻³ accumulated over the trajectory; the grid is yours and no isosurface "
-                          "is drawn (write a cube file and view it in VMD, VESTA or OVITO).")}
+                "note": L("軌跡を通した数密度 [Å⁻³] です。分割数は利用者の指定です。cube に書き出すと、解析タブの「等値面」の枠や "
+                          "VMD・VESTA・OVITO で等値面を見られます。",
+                          "number density in Å⁻³ accumulated over the trajectory; the grid is yours. Written as a cube file, "
+                          "the Isosurface box of the analysis tab, VMD, VESTA or OVITO can draw its isosurface.")}
 
     def write_cube(self, path, comment: str = "") -> "Path":
         from ase.io.cube import write_cube

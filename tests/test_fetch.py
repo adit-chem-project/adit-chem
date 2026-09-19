@@ -148,7 +148,7 @@ def test_materials_project_rejects_key_and_partial_occupancy(routes):
             F.fetch("mp:mp-149", mp_api_key="bad")
     finally:
         ur.urlopen = real
-    doc = json.loads((DATA / "mp_summary_mp-149.json").read_text())
+    doc = json.loads((DATA / "mp_summary_mp-149.json").read_text(encoding="utf-8"))
     doc["data"][0]["structure"]["sites"][0]["species"] = [{"element": "Si", "occu": 0.5}, {"element": "Ge", "occu": 0.5}]
     extra[next(u for u in ROUTES if "materialsproject" in u)] = json.dumps(doc).encode()
     with pytest.raises(FetchError, match="部分占有"):

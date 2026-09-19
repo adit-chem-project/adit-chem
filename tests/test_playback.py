@@ -19,7 +19,7 @@ DATA = REPO / "tests" / "data"
 
 def test_dftb_hessian_gives_the_same_frequencies_and_unit_scaled_vectors():
     water = read(EX / "water_generated" / "geom.out.gen")
-    h = np.array((DATA / "water_hessian.out").read_text().split(), dtype=float)
+    h = np.array((DATA / "water_hessian.out").read_text(encoding="utf-8").split(), dtype=float)
     freqs, vec = modes_from_hessian(h, water)
     assert freqs == pytest.approx(frequencies_from_hessian(h, water), abs=1e-3)   # cm-1; eigh vs eigvalsh differ only in the ~0 modes
     assert vec.shape == (9, 3, 3)
