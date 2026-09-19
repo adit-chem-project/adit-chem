@@ -129,7 +129,8 @@ def file_row(edit, title: str, filters: str = "", *, append: bool = False) -> QW
 
 
 def narrow(w: QWidget) -> QWidget:
-    w.setFixedWidth(NARROW_FIELD)
+    """Numeric field: grows to the shared width in a form column, may shrink when the column is narrow."""
+    w.setMaximumWidth(NARROW_FIELD)
     return w
 
 
@@ -137,7 +138,7 @@ def unit_row(field: QWidget, unit: str) -> QWidget:
     """A fixed-width numeric field followed by its unit in gray."""
     from PySide6.QtWidgets import QHBoxLayout
 
-    narrow(field)
+    field.setFixedWidth(NARROW_FIELD)
     row = QWidget(); row.setObjectName("rowbox")
     h = QHBoxLayout(row); h.setContentsMargins(0, 0, 0, 0); h.setSpacing(6)
     u = QLabel(unit); u.setObjectName("unit")
