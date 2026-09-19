@@ -205,7 +205,7 @@ def _path_hint(code: str, program: str) -> list[str]:
                 L("     あるディレクトリを PATH に足してから、もう一度確かめます。例: export PATH=<VASP の実行ファイルのあるディレクトリ>:$PATH",
                   "     with a VASP license) to PATH, then check again. e.g. export PATH=<directory with the VASP executables>:$PATH")]
     if code == "dcdftbmd":
-        return [L("     DCDFTBMD 本体は開発元から入手してください。配布物には含まれません。実行ファイルの場所はご自身の環境設定に指定します。",
+        return [L("     DCDFTBMD 本体は開発元から入手してください。配布物には含まれません。実行ファイルの場所は自分の環境設定に指定します。",
                   "     Obtain DCDFTBMD from its developers; it is not bundled. Set the executable path in your own settings.")]
     if code == "orca":
         return [L("     何も出なければ、入手した ORCA を展開したディレクトリを PATH に足してから、もう一度確かめます。",

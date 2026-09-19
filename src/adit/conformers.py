@@ -162,9 +162,9 @@ def write_conformers(spec: CalculationSpec, cfg, out_dir: Path | str, *, n: int,
     if spec.structure.fixed_atoms:
         mine = [a.GetSymbol() for a in mol.GetAtoms()]
         if list(spec.structure.atoms.symbols) != mine:
-            raise ConformerError(L(f"固定原子の番号が、配座の原子の並びと合いません (spec.json は {len(spec.structure.atoms.symbols)} 原子 "
-                                   f"{''.join(list(spec.structure.atoms.symbols)[:8])}…、配座は {len(mine)} 原子 {''.join(mine[:8])}…。"
-                                   "RDKit は SMILES から水素を足した順に原子を並べるので、番号が違うことがあります)",
+            raise ConformerError(L(f"固定原子の番号が、配座の原子の並びと合いません。spec.json は {len(spec.structure.atoms.symbols)} 原子 ("
+                                   f"{''.join(list(spec.structure.atoms.symbols)[:8])}…)、配座は {len(mine)} 原子 ({''.join(mine[:8])}…) です。"
+                                   "RDKit は SMILES から水素を足した順に原子を並べるので、番号が違うことがあります",
                                    f"the fixed-atom indices do not match the conformer atom order (spec.json has {len(spec.structure.atoms.symbols)} atoms "
                                    f"{''.join(list(spec.structure.atoms.symbols)[:8])}..., the conformers have {len(mine)} atoms {''.join(mine[:8])}...; "
                                    "RDKit orders atoms as SMILES plus added hydrogens, so the indices can differ)"))

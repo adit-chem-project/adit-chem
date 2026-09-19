@@ -50,7 +50,7 @@ def _msd_fit_range(values, parser):
         parser.error(L("--msd-fit は数を 2 つ (例 --msd-fit 10 45 または --msd-fit 10,45) にしてください",
                        "--msd-fit takes two numbers (e.g. --msd-fit 10 45 or --msd-fit 10,45)"))
     if len(nums) != 2:
-        parser.error(L(f"--msd-fit は数を 2 つ にしてください ({len(nums)} 個 受け取りました。例 --msd-fit 10,45)",
+        parser.error(L(f"--msd-fit は数を 2 つにしてください ({len(nums)} 個受け取りました。例 --msd-fit 10,45)",
                        f"--msd-fit takes two numbers (got {len(nums)}; e.g. --msd-fit 10,45)"))
     if not nums[0] < nums[1]:
         parser.error(L(f"--msd-fit の始め ({nums[0]:g}) は終わり ({nums[1]:g}) より小さくしてください",
@@ -66,8 +66,8 @@ def main(argv: list[str] | None = None) -> int:
         prog="adit-analyze",
         description=L("計算結果のディレクトリを解析し、analysis/ に図と要約を書きます",
                       "analyze a calculation directory and write figures and a summary to analysis/"),
-        epilog=L("ここに出ているのは よく使う指定 だけです。細かい指定 (配位数・Voronoi・自由エネルギー面など) は "
-                 "adit-analyze --help-all で全部 出ます。何も付けずに実行しても、エネルギー・温度・結合長・"
+        epilog=L("ここに出ているのはよく使う指定だけです。細かい指定 (配位数・Voronoi・自由エネルギー面など) は "
+                 "adit-analyze --help-all で全部出ます。何も付けずに実行しても、エネルギー・温度・結合長・"
                  "振動数・バンドは解析します。",
                  "Only the common options are listed here; run adit-analyze --help-all for every option. "
                  "With no options at all, the energy, temperature, bond lengths, frequencies and bands are still analyzed."))
@@ -104,26 +104,26 @@ def main(argv: list[str] | None = None) -> int:
                     help=L("拡散係数の誤差を出すために軌跡を分けるブロックの数 (既定 5。0 なら誤差を出しません)",
                            "number of equal blocks of the trajectory used for the error on the diffusion coefficient (default 5; 0 disables it)"))
     ap.add_argument("--coordination", type=float, default=0.0, metavar="Å", help=L(
-        "原子ごとの配位数 (カットオフ [Å] を指定。ADIT は既定値を持ちません)",
+        "原子ごとの配位数を数えます (カットオフ [Å] を指定します。ADIT は既定値を持ちません)",
         "coordination number per atom within the cutoff in Å (ADIT has no default)"))
     ap.add_argument("--centrosymmetry", nargs="?", const=12, type=int, default=0, metavar="N", help=L(
-        "中心対称性パラメータ (相手の数。FCC なら 12、BCC なら 8)。欠陥かどうかは判定しません",
+        "中心対称性パラメータを出します (相手の数。FCC なら 12、BCC なら 8)。欠陥かどうかは判定しません",
         "centrosymmetry parameter with N neighbors (12 for FCC, 8 for BCC); no defect judgement is made"))
     ap.add_argument("--steinhardt", type=float, default=0.0, metavar="Å", help=L(
-        "Steinhardt の q4・q6 (カットオフ [Å])。どの値がどの構造かは言いません",
+        "Steinhardt の q4・q6 を出します (カットオフ [Å])。どの値がどの構造かは言いません",
         "Steinhardt q4 and q6 within the cutoff in Å; ADIT does not say which structure a value means"))
     ap.add_argument("--clusters", type=float, default=0.0, metavar="Å", help=L(
-        "カットオフ以内でつながった原子のかたまりの数と大きさ", "number and sizes of clusters connected within the cutoff in Å"))
+        "カットオフ以内でつながった原子のかたまりの数と大きさを出します", "number and sizes of clusters connected within the cutoff in Å"))
     ap.add_argument("--adf", nargs="?", const="", default=None, metavar="中心[,外側]", help=L(
-        "結合角の分布 (--adf O や --adf O,H)。カットオフは --adf-cutoff で指定します",
+        "結合角の分布を出します (--adf O や --adf O,H)。カットオフは --adf-cutoff で指定します",
         "angle distribution (e.g. --adf O or --adf O,H); give the cutoff with --adf-cutoff"))
     ap.add_argument("--adf-cutoff", type=float, default=0.0, metavar="Å", help=L("結合角の分布のカットオフ [Å]", "cutoff in Å for the angle distribution"))
     ap.add_argument("--sq", action="store_true", help=L(
-        "RDF から構造因子 S(q) を出す (--rdf が要ります)", "structure factor S(q) from the RDF (needs --rdf)"))
+        "RDF から構造因子 S(q) を出します (--rdf が要ります)", "structure factor S(q) from the RDF (needs --rdf)"))
     ap.add_argument("--hbond", default="", metavar="距離,角度", help=L(
-        "水素結合の本数 (例 --hbond 3.5,150)。**距離 [Å] と角度 [度] は必須**で、ADIT は既定値を持ちません",
+        "水素結合の本数を数えます (例 --hbond 3.5,150)。距離 [Å] と角度 [度] は必須で、ADIT は既定値を持ちません",
         "count hydrogen bonds (e.g. --hbond 3.5,150); the distance in Å and the angle in degrees are required, with no defaults"))
-    ap.add_argument("--rg", action="store_true", help=L("慣性半径 Rg の時系列", "time series of the radius of gyration"))
+    ap.add_argument("--rg", action="store_true", help=L("慣性半径 Rg の時系列を出します", "time series of the radius of gyration"))
     ap.add_argument("--no-effective-mass", action="store_true", help=L(
         "バンドの端の有効質量を出しません (既定はバンド図があれば出します)",
         "do not compute the effective mass at the band edges (done by default when a band structure is present)"))
@@ -136,7 +136,7 @@ def main(argv: list[str] | None = None) -> int:
         "振動数に掛ける補正係数 (例 0.96)。ADIT は既定値を持たず、使った値を図と要約に書きます",
         "scaling factor applied to the frequencies (e.g. 0.96); ADIT has no default and records the value you used"))
     ap.add_argument("--spectrum-measured", default="", metavar="FILE", help=L(
-        "赤外・ラマンの図に重ねる測定の表 (1 列目 波数 [cm⁻¹]、2 列目 強度)。強度は最大値で規格化して重ねます",
+        "赤外・ラマンの図に、測定の表 (1 列目 波数 [cm⁻¹]、2 列目 強度) を重ねます。強度は最大値で規格化して重ねます",
         "measured spectrum to overlay on the IR and Raman plots (column 1 wavenumber in cm^-1, column 2 intensity); "
         "both are normalized to their maximum"))
     ap.add_argument("--plot-colors", default="", metavar="色,色,...", help=L(
@@ -162,32 +162,32 @@ def main(argv: list[str] | None = None) -> int:
         "その価電子数 (原子の順に。VASP なら POTCAR の ZVAL、QE なら UPF の z_valence)。ADIT は推測しません",
         "valence electrons per atom in order (ZVAL in the POTCAR, z_valence in the UPF); ADIT does not guess them"))
     ap.add_argument("--displacement", nargs="?", const=1, type=int, default=0, metavar="N", help=L(
-        "N 番目のフレームから最後までの変位 (既定は 1 番目)。原子の並びが同じ順であることが前提です",
+        "N 番目のフレームから最後までの変位を出します (既定は 1 番目)。原子の並びが同じ順であることが前提です",
         "displacement from frame N to the last one (default 1); this assumes the atom order is unchanged"))
     ap.add_argument("--strain", type=float, default=0.0, metavar="Å", help=L(
-        "局所ひずみ (近傍のカットオフ [Å])。--displacement と一緒に使います",
+        "局所ひずみを出します (近傍のカットオフ [Å])。--displacement と一緒に使います",
         "local strain within the cutoff in Å; use it together with --displacement"))
     ap.add_argument("--voronoi", action="store_true", help=L(
-        "Voronoi 多面体の体積と面の数 (最後の構造)", "Voronoi cell volumes and face counts for the last structure"))
+        "Voronoi 多面体の体積と面の数を出します (最後の構造)", "Voronoi cell volumes and face counts for the last structure"))
     ap.add_argument("--voronoi-face-threshold", type=float, default=0.0, metavar="Å²", help=L(
         "数える面の面積の下限 [Å²] (小さい面を数えるかで面の数が変わります)",
         "smallest face area in Å² to count (the face count depends on this)"))
     ap.add_argument("--sasa", nargs="?", const="bondi,1.4", default="", metavar="表,プローブ", help=L(
-        "溶媒接触表面積 (例 --sasa bondi,1.4)。半径の表とプローブ半径 [Å] は利用者が選びます",
+        "溶媒接触表面積を出します (例 --sasa bondi,1.4)。半径の表とプローブ半径 [Å] は利用者が選びます",
         "solvent-accessible surface area (e.g. --sasa bondi,1.4); you choose the radii set and the probe radius in Å"))
     ap.add_argument("--pca", nargs="?", const=3, type=int, default=0, metavar="N", help=L(
-        "フレームの主成分分析 (成分の数。既定 3)。重ね合わせてから計算します",
+        "フレームの主成分分析をします (成分の数。既定 3)。重ね合わせてから計算します",
         "PCA over the frames with N components (default 3), after superposition"))
     ap.add_argument("--cluster", type=int, default=0, metavar="K", help=L(
-        "主成分の上で k-means。群の数 K は利用者が決めます (ADIT はいくつが正しいか言いません)",
+        "主成分の上で k-means をします。群の数 K は利用者が決めます (ADIT はいくつが正しいか言いません)",
         "k-means on the principal components; you choose the number of groups K"))
     ap.add_argument("--fes", type=float, default=0.0, metavar="K", help=L(
-        "距離・角度・二面角の時系列から自由エネルギー面 A = -kT ln P (温度 [K] を渡します)。1 つなら 1 次元、2 つなら 2 次元",
+        "距離・角度・二面角の時系列から自由エネルギー面 A = -kT ln P を出します (温度 [K] を渡します)。1 つなら 1 次元、2 つなら 2 次元になります",
         "free-energy surface A = -kT ln P from the requested distance/angle/dihedral series at the given temperature in K"))
     ap.add_argument("--fes-bins", type=int, default=50, metavar="N", help=L("自由エネルギー面の区間の数 (既定 50)", "number of bins for the free-energy surface (default 50)"))
     ap.add_argument("--fes-unit", choices=("kJ/mol", "kcal/mol", "eV"), default="kJ/mol", help=L("自由エネルギーの単位 (既定 kJ/mol)", "unit for the free energy (default kJ/mol)"))
     ap.add_argument("--density-grid", nargs="?", const="48,48,48", default="", metavar="Nx,Ny,Nz", help=L(
-        "3 次元の数密度を積んで cube に書き出す (VMD・VESTA・OVITO 用)", "accumulate a 3D number density and write a cube file (for VMD, VESTA, OVITO)"))
+        "3 次元の数密度を積んで cube に書き出します (VMD・VESTA・OVITO 用)", "accumulate a 3D number density and write a cube file (for VMD, VESTA, OVITO)"))
     ap.add_argument("--zdens-axis", choices=("a", "b", "c"), default="c", help=L(
         "密度分布を取る軸 (既定 c)。界面が a 面や b 面に平行な系で使います",
         "axis for the density profile (default c); use it when the interface is normal to a or b"))
@@ -195,36 +195,36 @@ def main(argv: list[str] | None = None) -> int:
         "原子の選び方 (例: \"element O\"、\"index 1-10\"、\"z < 10\"、\"within 5 of index 3\"、and / or / not)。MSD・変位の分布・VACF に効きます",
         "how to select atoms (e.g. \"element O\", \"index 1-10\", \"z < 10\", \"within 5 of index 3\", and/or/not); applies to MSD, the displacement distribution and the VACF"))
     ap.add_argument("--distance", action="append", default=[], metavar="i,j", help=L(
-        "2 原子の距離の時系列 (1 始まりの番号。複数回書けます)", "time series of the distance between two atoms (1-based indices; repeatable)"))
+        "2 原子の距離の時系列を出します (1 始まりの番号。複数回書けます)", "time series of the distance between two atoms (1-based indices; repeatable)"))
     ap.add_argument("--angle", action="append", default=[], metavar="i,j,k", help=L(
-        "3 原子の角度の時系列 (j が頂点)", "time series of the angle i-j-k (j is the vertex)"))
+        "3 原子の角度の時系列を出します (j が頂点)", "time series of the angle i-j-k (j is the vertex)"))
     ap.add_argument("--dihedral", action="append", default=[], metavar="i,j,k,l", help=L(
-        "4 原子の二面角の時系列", "time series of the dihedral i-j-k-l"))
+        "4 原子の二面角の時系列を出します", "time series of the dihedral i-j-k-l"))
     ap.add_argument("--rmsd", nargs="?", const=1, type=int, default=0, metavar="基準", help=L(
-        "基準のフレーム (1 始まり、既定 1) からの RMSD の時系列 (Kabsch で重ね合わせ)",
+        "基準のフレーム (1 始まり、既定 1) からの RMSD の時系列を出します (Kabsch で重ね合わせます)",
         "time series of the RMSD from a reference frame (1-based, default 1), after a Kabsch superposition"))
     ap.add_argument("--rmsf", action="store_true", help=L(
-        "原子ごとの揺らぎ RMSF", "per-atom fluctuation (RMSF)"))
+        "原子ごとの揺らぎ RMSF を出します", "per-atom fluctuation (RMSF)"))
     ap.add_argument("--msd-per-atom", action="store_true", help=L(
-        "原子 1 個ごとの拡散係数も出す (イオン伝導体で「どの原子が動くか」を見るとき)。速い・遅いの判定はしません",
+        "原子 1 個ごとの拡散係数も出します (イオン伝導体で「どの原子が動くか」を見るとき)。速い・遅いの判定はしません",
         "also report a diffusion coefficient for each atom (useful for ion conductors); no fast/slow judgement is made"))
     ap.add_argument("--vacf", action="store_true", help=L(
-        "速度自己相関 (VACF) と振動スペクトルを出す (軌跡に速度が無ければ座標の差分で作ります)",
+        "速度自己相関 (VACF) と振動スペクトルを出します (軌跡に速度が無ければ座標の差分で作ります)",
         "compute the velocity autocorrelation (VACF) and the vibrational spectrum (velocities are made by finite differences if absent)"))
     ap.add_argument("--conductivity", type=float, default=0.0, metavar="電荷", help=L(
-        "拡散係数からイオン伝導度 (Nernst-Einstein) を出す。イオンの電荷を指定します (Na なら 1)。ADIT は酸化数を決めません",
+        "拡散係数からイオン伝導度 (Nernst-Einstein) を出します。イオンの電荷を指定します (Na なら 1)。ADIT は酸化数を決めません",
         "compute the ionic conductivity (Nernst-Einstein) from the diffusion coefficient; give the ionic charge (1 for Na). ADIT does not assign oxidation states"))
     ap.add_argument("--conductivity-temperature", type=float, default=0.0, metavar="K", help=L(
         "伝導度の温度 [K] (省くと入力の設定温度、無ければ出力の平均温度)",
         "temperature in K for the conductivity (default: the target temperature in the input, else the mean temperature in the output)"))
     ap.add_argument("--vanhove", nargs="?", const=100, type=int, default=0, metavar="N", help=L(
-        "変位の分布 (van Hove の自己相関) から D(τ) と非ガウス因子を出す。N は見る遅れ時間の点数 (既定 100)",
+        "変位の分布 (van Hove の自己相関) から D(τ) と非ガウス因子を出します。N は見る遅れ時間の点数です (既定 100)",
         "obtain D(tau) and the non-Gaussian parameter from the displacement distribution (van Hove self-part); N is the number of lag times (default 100)"))
     ap.add_argument("--write-msd-job", nargs="?", const=".", default=None, metavar="DIR", help=L(
-        "重い解析を実行用のファイル一式 (msd_worker.py と msd_run.sh) を書き出して終わる (既定はこのディレクトリ)",
+        "重い解析を実行するためのファイル一式 (msd_worker.py と msd_run.sh) を書き出して終わります (既定はこのディレクトリ)",
         "write the files to run the heavy analysis (msd_worker.py and msd_run.sh) and stop (default: this directory)"))
     ap.add_argument("--vanhove-here", action="store_true", help=L(
-        "重くてもこの場で計算する (既定は、見積もりが 60 秒を超えたら実行用のファイルを置くだけ)",
+        "重くてもこの場で計算します (既定では、見積もりが 60 秒を超えたら実行用のファイルを置くだけです)",
         "compute it here even when heavy (by default, files to run it are written when the estimate exceeds 60 s)"))
     ap.add_argument("--heavy-limit", type=float, default=60.0, metavar="秒", help=L(
         "この場で計算してよい見積もりの上限 [秒] (既定 60)", "limit in seconds for computing here (default 60)"))
@@ -232,7 +232,7 @@ def main(argv: list[str] | None = None) -> int:
         "変位の測り方: mic = 折り返した座標の最小像 (セルの幅の半分で頭打ち)、unwrapped = 巻き戻した座標の差",
         "how displacements are measured: mic = minimum image of the wrapped coordinates (capped at half the cell width), unwrapped = difference of unwrapped coordinates"))
     ap.add_argument("--zdens", nargs="?", const=0.2, default=None, type=float, metavar="Å",
-                    help=L("z 方向 (a-b 面に垂直な方向) の元素ごとの密度分布を描きます。数を続けると区間の幅 [Å] (既定 0.2)。周期系だけ",
+                    help=L("z 方向 (a-b 面に垂直な方向) の元素ごとの密度分布を描きます。数を続けると区間の幅 [Å] になります (既定 0.2)。周期系だけに使えます",
                            "density profile of each element along z (normal to the a-b plane); an optional number sets the bin width in Å (default 0.2); periodic systems only"))
     ap.add_argument("--viscosity", action="store_true", help=L(
         "圧力テンソルの非対角成分から、Green-Kubo の式で粘度を求めます (いま対応しているのは LAMMPS だけ。"
@@ -243,22 +243,22 @@ def main(argv: list[str] | None = None) -> int:
         "体積データ (VASP の LOCPOT・CHGCAR、*.cube) を、軸に垂直な面で平均した分布にします (既定は c 軸)。図と CSV を書きます",
         "average volumetric data (VASP LOCPOT/CHGCAR, *.cube) over planes normal to an axis (default c); writes a figure and a CSV"))
     ap.add_argument("-o", "--out-dir", default=None, metavar="DIR", help=L(
-        "図・表・要約の書き出し先 (既定は <計算のディレクトリ>/analysis/)。計算のディレクトリを変えずに解析したいときに使う",
+        "図・表・要約の書き出し先 (既定は <計算のディレクトリ>/analysis/)。計算のディレクトリを変えずに解析したいときに使います",
         "where to write figures, tables and the summary (default <run directory>/analysis/); use it to leave the run directory untouched"))
     ap.add_argument("--eyring", action="append", default=[], metavar="kJ/mol", help=L(
-        "活性化自由エネルギー ΔG‡ [kJ/mol] から Eyring の式で速度定数を出す (複数回書ける)。どの差が ΔG‡ かは利用者が決める",
+        "活性化自由エネルギー ΔG‡ [kJ/mol] から Eyring の式で速度定数を出します (複数回書けます)。どの差が ΔG‡ かは利用者が決めます",
         "compute a rate constant from an activation free energy dG# in kJ/mol using the Eyring equation (repeatable); you decide which difference is the barrier"))
     ap.add_argument("--eyring-temperature", type=float, default=298.15, metavar="K", help=L("Eyring の式の温度 [K] (既定 298.15)", "temperature in K for the Eyring equation (default 298.15)"))
-    ap.add_argument("--eyring-kappa", type=float, default=1.0, metavar="KAPPA", help=L("透過係数 κ (既定 1。トンネル効果は入れない)", "transmission coefficient kappa (default 1; no tunneling correction)"))
+    ap.add_argument("--eyring-kappa", type=float, default=1.0, metavar="KAPPA", help=L("透過係数 κ (既定 1。トンネル効果は入れません)", "transmission coefficient kappa (default 1; no tunneling correction)"))
     ap.add_argument("--xrd", nargs="?", const="CuKa", default="", metavar="RADIATION", help=L(
-        "最終構造 (周期系) から粉末 X 線回折のパターンを計算する (既定の線源 CuKa。pymatgen が要る)",
+        "最終構造 (周期系) から粉末 X 線回折のパターンを計算します (既定の線源は CuKa。pymatgen が要ります)",
         "compute a powder XRD pattern from the final (periodic) structure (default radiation CuKa; needs pymatgen)"))
     ap.add_argument("--xrd-range", default="5,90", metavar="LO,HI", help=L("粉末回折の 2θ の範囲 [度]", "2-theta range for the powder pattern, in degrees"))
     ap.add_argument("--xrd-measured", default=None, metavar="FILE", help=L(
-        "重ねて描く測定のパターン (1 列目 2θ [度]、2 列目 強度。カンマか空白区切り)。一致は判定しない",
+        "測定のパターン (1 列目 2θ [度]、2 列目 強度。カンマか空白区切り) を重ねて描きます。一致は判定しません",
         "a measured pattern to overlay (column 1: 2-theta in degrees, column 2: intensity); agreement is not assessed"))
     ap.add_argument("--cube-unit", choices=("ev", "ry", "hartree"), default="", help=L(
-        "cube の値の単位 (ファイルには書かれていません。QE の pp.x は Ry、Gaussian は Hartree のことが多い)。"
+        "cube の値の単位 (ファイルには書かれていません。QE の pp.x は Ry、Gaussian は Hartree のことが多いです)。"
         "指定すると仕事関数も出せます",
         "unit of the values in a cube file (not recorded in the file; QE pp.x usually writes Ry, Gaussian Hartree); "
         "giving it also enables the work function"))
@@ -285,13 +285,13 @@ def main(argv: list[str] | None = None) -> int:
         "--audit-with の点検対象: msd (既定) または energy",
         "what --audit-with checks: msd (default) or energy"))
     ap.add_argument("--compare", nargs="?", const="", default=None, metavar="REACTIONS", help=L(
-        "組にして比べる表。「名前=係数:ディレクトリ,…」(係数は生成物が正、反応物が負。反応は ; で区切る。ディレクトリは run_dir からの相対パス)。"
-        "値を省くと run_dir/compare.json を読む。例 --compare \"ads=1:slab_mol,-1:slab,-1:mol\"",
+        "組にして比べる表を出します。「名前=係数:ディレクトリ,…」の形で書きます (係数は生成物が正、反応物が負。反応は ; で区切ります。ディレクトリは run_dir からの相対パス)。"
+        "値を省くと run_dir/compare.json を読みます。例 --compare \"ads=1:slab_mol,-1:slab,-1:mol\"",
         "table comparing runs: name=coef:dir,... (products positive, reactants negative; separate reactions with ;; dirs relative to run_dir). "
         "Without a value, run_dir/compare.json is read. e.g. --compare \"ads=1:slab_mol,-1:slab,-1:mol\""))
     from adit.analysis.thermo import GEOMETRIES, MODELS
     ap.add_argument("--thermo", choices=MODELS, default=None, help=L(
-        "振動数から熱化学を ASE で計算するモデル。温度などは下の欄で指定する (既定は置きません。足りなければ理由を出して計算しません)",
+        "振動数から熱化学を ASE で計算するモデル。温度などは下の欄で指定します (既定は置きません。足りなければ理由を出して計算しません)",
         "model for thermochemistry from the frequencies (ASE); give the inputs below (no defaults; if something is missing, the reason is shown)"))
     ap.add_argument("--temperature", default=None, metavar="K[,K...]", help=L("熱化学の温度 [K] (カンマで複数)", "temperature(s) for thermochemistry in K (comma separated)"))
     ap.add_argument("--pressure", type=float, default=None, metavar="Pa", help=L("理想気体の圧力 [Pa] (1 atm = 101325、1 bar = 100000)", "ideal-gas pressure in Pa (1 atm = 101325, 1 bar = 100000)"))
@@ -303,7 +303,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--qh-cutoff", type=float, default=None, metavar="cm-1", help=L("準調和の下限の振動数 [cm^-1]", "quasi-harmonic cutoff frequency in cm^-1"))
     ap.add_argument("--msrrho-tau", type=float, default=None, metavar="cm-1", help=L("準 RRHO (Grimme) の減衰の τ [cm^-1]", "quasi-RRHO (Grimme) damping tau in cm^-1"))
     ap.add_argument("--uvvis", default=None, metavar="SHAPE:FWHM", help=L("ORCA の TD-DFT の吸収を広げる形と半値全幅 [eV] (例 gauss:0.3、lorentz:0.2)", "shape and FWHM in eV for broadening ORCA TD-DFT absorption (e.g. gauss:0.3, lorentz:0.2)"))
-    ap.add_argument("--pdos", action="store_true", help=L("PDOS が描けないときも理由を要約に書く (ファイルがあれば、指定しなくても描きます)", "report why no PDOS is drawn (PDOS is drawn whenever the files exist)"))
+    ap.add_argument("--pdos", action="store_true", help=L("PDOS が描けないときも理由を要約に書きます (ファイルがあれば、指定しなくても描きます)", "report why no PDOS is drawn (PDOS is drawn whenever the files exist)"))
     ap.add_argument("--collect", action="store_true", help=L(
         "フォノン (phonon_collect.py) と弾性定数 (elastic_collect.py) の集計を、まだしていなければここから行います "
         "(各ディレクトリの出力を読んで band.yaml や C_ij を書くだけで、計算は実行しません)",
@@ -312,7 +312,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--no-compare", action="store_true", help=L(
         "compare.json があっても、組にして比べる表を出しません (既定は、あれば出します)",
         "do not write the comparison table even if compare.json is present (by default it is written when the file exists)"))
-    ap.add_argument("--symprec", default=None, metavar="Å[,Å...]", help=L("空間群の許容誤差 [Å] (カンマで複数。既定 1e-5,1e-3,1e-1 を並べる)", "space-group tolerance(s) in Å (comma separated; default lists 1e-5,1e-3,1e-1)"))
+    ap.add_argument("--symprec", default=None, metavar="Å[,Å...]", help=L("空間群の許容誤差 [Å] (カンマで複数。既定は 1e-5,1e-3,1e-1 の 3 つ)", "space-group tolerance(s) in Å (comma separated; default lists 1e-5,1e-3,1e-1)"))
     import sys as _sys
 
     if "--help-all" in (argv if argv is not None else _sys.argv[1:]):

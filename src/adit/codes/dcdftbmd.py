@@ -29,7 +29,7 @@ class DcdftbmdGenerator(InputGenerator):
             return [ValidationError("method.code", L("DCDFTBMD の条件ではありません", "the settings are not for DCDFTBMD"))]
         errs = []
         if m.scc is None or m.divide_and_conquer is None:
-            errs.append(ValidationError("method.scc", L("SCC と分割統治法 (divide_and_conquer) を明示してください", "set both SCC and divide_and_conquer explicitly")))
+            errs.append(ValidationError("method.scc", L("SCC と分割統治法 (divide_and_conquer) を指定してください", "set both SCC and divide_and_conquer explicitly")))
         symbols = list(dict.fromkeys(st.atoms.symbols))
         expected_pairs = {f"{sym}-{other}" for sym in symbols for other in symbols}
         extra_pairs = sorted(set(m.sk_files) - expected_pairs)
@@ -40,7 +40,7 @@ class DcdftbmdGenerator(InputGenerator):
         if ((spec.runtime.mpiprocs > 1 or spec.runtime.omp_threads > 1)
                 and spec.runtime.profile in cfg.profiles
                 and not cfg.profile(spec.runtime.profile).commands.get(self.code)):
-            errs.append(ValidationError("runtime.profile", L("並列実行では環境設定の commands.dcdftbmd に対応する実行コマンドを明示してください", "for parallel execution, set the appropriate commands.dcdftbmd in your settings")))
+            errs.append(ValidationError("runtime.profile", L("並列実行では環境設定の commands.dcdftbmd に対応する実行コマンドを指定してください", "for parallel execution, set the appropriate commands.dcdftbmd in your settings")))
         for sym in symbols:
             if m.highest_angular_momentum.get(sym) not in (1, 2, 3, 4):
                 errs.append(ValidationError("method.highest_angular_momentum", L(f"{sym} の最高角運動量を 1 (s)〜4 (f) で指定してください", f"set the highest angular momentum for {sym} from 1 (s) to 4 (f)")))

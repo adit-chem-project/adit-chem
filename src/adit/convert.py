@@ -270,7 +270,7 @@ def retarget_spec(source: CalculationSpec, target_conditions: CalculationSpec, *
                 "--use-target-thermostat requires an NVT or NPT MD source calculation"))
         if "thermostat" not in target_conditions.task.md.model_fields_set:
             raise ConversionError(L(
-                "変換先の雛形に task.md.thermostat を明示してください。熱浴の種類を ADIT が選ぶことはしません",
+                "変換先の雛形に task.md.thermostat を指定してください。熱浴の種類を ADIT が選ぶことはしません",
                 "Set task.md.thermostat explicitly in the target template; ADIT does not choose a thermostat"))
         thermostat = target_conditions.task.md.thermostat
         task = task.model_copy(update={"md": task.md.model_copy(update={"thermostat": thermostat})})
@@ -485,7 +485,7 @@ def _parser() -> argparse.ArgumentParser:
         "初速度を明示的に除外し、その事実を変換記録に残します",
         "omit initial velocities and record the omission in the conversion report"))
     calc.add_argument("--accept-import-defaults", action="store_true", help=L(
-        "読み込んだ下書きの計算設定 (draft_spec.json) の元入力にない既定値を確認済みとして、変換を続けます",
+        "読み込んだ下書き (draft_spec.json) の既定値のうち、元の入力に無かったものを確認済みとみなして、変換を続けます",
         "continue after reviewing defaults absent from an imported draft spec"))
     calc.add_argument("--overwrite", action="store_true", help=L("空でない出力ディレクトリを上書きします", "overwrite a non-empty output directory"))
     return ap

@@ -244,8 +244,8 @@ class AnalysisPanel(QWidget):
         mform.addRow(self.cb_vanhove)
         add_row(mform, AF.LABELS["vanhove_taus"][0], self.vanhove_taus)
         add_row(mform, AF.LABELS["vanhove_displacement"][0], self.vanhove_displacement)
-        mform.addRow(hint_label(L("変位の分布は重いので、見積もりが 60 秒を超えると、その場では計算せずに実行用のファイル "
-                                  "(msd_worker.py と msd_run.sh) を計算のディレクトリに置きます。実行したあと、もう一度「解析を実行」すると図になります",
+        mform.addRow(hint_label(L("変位の分布は重い解析です。見積もりが 60 秒を超えると、その場では計算せず、実行用のファイル "
+                                  "(msd_worker.py と msd_run.sh) を計算のディレクトリに置きます。それを実行したあと、もう一度「解析を実行」すると図になります",
                                   "The displacement distribution is heavy: if the estimate exceeds 60 s, files to run it (msd_worker.py, msd_run.sh) "
                                   "are written to the run directory instead; run them and press Run analysis again to get the figures")))
         add_row(mform, AF.LABELS["memory_mb"][0], self.memory_mb)
@@ -493,7 +493,7 @@ class AnalysisPanel(QWidget):
             QMessageBox.warning(self, L("保存できません", "Cannot save"), str(ex))
             return
         note = "" if suffix in others else L(
-            "  (ベクタ形式で保存するには、詳しい条件の「図の追加の形式」に svg と入れて解析し直します)",
+            "  (ベクタ形式で保存するには、詳しい条件の「図の追加の形式」に svg と入れて、もう一度解析してください)",
             "  (to save a vector version, set \"Extra figure formats\" to svg and run the analysis again)")
         self.summary.setText(L(f"図を保存しました: {target}", f"saved the figure: {target}") + note)
 

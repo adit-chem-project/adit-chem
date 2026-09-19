@@ -117,7 +117,7 @@ class AmberGenerator(InputGenerator):
                 "this Amber generator supports only fully periodic or nonperiodic systems")))
         if spec.kpoints is not None:
             errors.append(ValidationError("kpoints", L(
-                "Amber は k 点を使用しません。指定を外してください",
+                "Amber は k 点を使いません。指定を外してください",
                 "Amber does not use k-points; remove this setting")))
         if spec.handoff is not None:
             errors.append(ValidationError("handoff", L(
@@ -171,10 +171,10 @@ class AmberGenerator(InputGenerator):
                             "the spec and rst7/inpcrd cells differ; load the cell actually used for the run")))
         if m.cutoff_ang <= 0:
             errors.append(ValidationError("method.cutoff_ang", L(
-                "cut を正の Å 値で明示してください", "explicitly set a positive cut in Å")))
+                "cut を正の Å 値で指定してください", "explicitly set a positive cut in Å")))
         if (not st.periodic and m.igb is None) or (m.igb is not None and (m.igb < 0 or (st.periodic and m.igb != 0))):
             errors.append(ValidationError("method.igb", L(
-                "非周期系では igb を明示してください (真空は 0)。周期系では 0 か空欄にしてください",
+                "非周期系では igb を指定してください (真空は 0)。周期系では 0 か空欄にしてください",
                 "explicitly set igb for a nonperiodic system (0 for vacuum); use 0 or leave it empty for a periodic system")))
         if ((spec.runtime.mpiprocs > 1 or spec.runtime.omp_threads > 1)
                 and spec.runtime.profile in cfg.profiles
