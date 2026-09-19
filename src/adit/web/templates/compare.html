@@ -7,7 +7,7 @@
   <p class="hint">{{ T("係数 ν は生成物を正、反応物を負にします (ΔE = ΣνE)。ディレクトリは基準のディレクトリからの相対パスか絶対パス。反応の名前が空の行は、上の行と同じ反応に入ります。",
     "The coefficient ν is positive for products and negative for reactants (ΔE = ΣνE). Directories are relative to the base directory or absolute. A row with an empty reaction name belongs to the reaction above it.") }}</p>
   {% set h = hlp("compare_base") %}
-  <div class="row"><label for="base"{% if h and h.required %} class="required"{% endif %}{% if h %} title="{{ h.text() }}"{% endif %}>{{ lab("compare_base") }}</label>
+  <div class="row"><label for="base"{% if h and h.required %} class="required"{% endif %}{% if h %} title="{{ h.text() }}"{% endif %}>{{ lab("compare_base") }}{% if h and h.required %}<span class="pill">{{ T("必須", "required") }}</span>{% endif %}</label>
     <div class="inline"><input type="text" id="base" name="base" value="{{ base }}"></div></div>
   <div class="table-wrap"><table class="scan compare-rows">
     <thead><tr><th scope="col">{{ lab("rx_name") }}</th><th scope="col">{{ lab("rx_nu") }}</th><th scope="col">{{ lab("rx_dir") }}</th></tr></thead>

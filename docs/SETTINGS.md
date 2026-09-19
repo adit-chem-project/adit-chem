@@ -16,6 +16,7 @@ enable_run = true                    # false にすると、この PC では計�
 language = "ja"                      # "ja" または "en" (環境変数 ADIT_LANG が優先)
 theme = "auto"                       # "auto" / "light" / "dark" (環境変数 ADIT_THEME が優先)
 window_frame = "auto"                # ウィンドウの枠。"auto" (Linux では ADIT が描く) / "custom" (ADIT が描く) / "native" (OS に任せる)。環境変数 ADIT_FRAME が優先
+ribbon_collapsed = true              # リボンを畳んだ状態で始めるか。画面の ˄ / ˅ ボタンか Ctrl+F1 で変えると、ここに保存されます
 
 [profiles.local]
 kind = "direct"

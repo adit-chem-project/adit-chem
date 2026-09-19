@@ -13,7 +13,7 @@
     送る順は文書の順で、サーバーは同じ名前の最後の値を使う (印があれば "on"、無ければ "") -#}
 {% macro chk(name) -%}<input type="hidden" name="{{ name }}" value=""><input type="checkbox" name="{{ name }}" id="{{ name }}"{% if form.get(name) %} checked{% endif %}>{%- endmacro %}
 {#- 雛形の値のままの欄は、ラベルの下に「雛形 xx の値」と小さく出す (tmarks: 日本語のラベル → 雛形の名前。codefields.template_marks) -#}
-{% macro row(ja, en, for_id, cls="") -%}{% set h = HELP(ja) %}{% set tm = tmarks.get(ja) %}<div class="row {{ cls }}"><label for="{{ for_id }}"{% if h and h.required %} class="required"{% endif %}{% if h %} title="{{ h.text() }}"{% endif %}>{{ T(ja, en) }}{% if tm %}<small class="tmark">{{ T("雛形 " ~ tm ~ " の値", "value from template " ~ tm) }}</small>{% endif %}</label><div class="inline">{{ caller() }}</div></div>{%- endmacro %}
+{% macro row(ja, en, for_id, cls="") -%}{% set h = HELP(ja) %}{% set tm = tmarks.get(ja) %}<div class="row {{ cls }}"><label for="{{ for_id }}"{% if h and h.required %} class="required"{% endif %}{% if h %} title="{{ h.text() }}"{% endif %}>{{ T(ja, en) }}{% if h and h.required %}<span class="pill">{{ T("必須", "required") }}</span>{% endif %}{% if tm %}<small class="tmark">{{ T("雛形 " ~ tm ~ " の値", "value from template " ~ tm) }}</small>{% endif %}</label><div class="inline">{{ caller() }}</div></div>{%- endmacro %}
 {#- 準備の第 1 段階の部品: DFT+U の表 (元素はいまの構造のものだけ。U に既定値は無い)、元素ごとの値、溶媒のプルダウン -#}
 {% macro hubtable(prefix, with_j=True) -%}
 <div class="table-wrap"><table class="hub"><thead><tr><th>{{ T("元素", "Element") }}</th><th>{{ T("殻", "Shell") }}</th><th>U [eV]</th>{% if with_j %}<th>J [eV]</th>{% endif %}</tr></thead><tbody>
@@ -133,8 +133,8 @@ table.rx { border-collapse:collapse; width:100%; font-size:13px; }
 table.rx th { font-weight:600; color:var(--muted); text-align:left; padding:2px 4px; white-space:nowrap; }
 table.rx td { padding:2px 4px; } table.rx input { width:100%; min-width:0; }
 table.rx { min-width:520px; }  /* 5 列を詰めすぎない (狭い窓では .table-wrap が横にスクロールする) */
-button.link { border:none; background:none; color:var(--accent); padding:0 4px; font-size:12px; }
-button.link:hover { text-decoration:underline; background:none; }
+button.link { border:none; background:none; color:var(--accent); padding:0 4px; font-size:12px; text-decoration:underline; }
+button.link:hover { background:none; }
 </style>
 {% endblock %}
 {% block body %}
@@ -145,7 +145,6 @@ button.link:hover { text-decoration:underline; background:none; }
 {% if error_head %}<div class="error-banner" role="alert">{{ error_head }}</div>{% endif %}
 {% if message_head %}<div class="message-banner" role="status">{{ message_head }}{% if scan_link %}
 <a class="btn" href="{{ scan_link }}">{{ T("解析へ進む", "Go to analysis") }}</a>{% endif %}</div>{% endif %}
-<p class="hint lead">{{ T("青字は必須です。最初から入っている値は、説明に出典がない限り ADIT が置いた値です。ラベルにカーソルを合わせると説明が表示されます", "Blue fields are required. A pre-filled value was supplied by ADIT unless its explanation names another source. Hover a label for details.") }}</p>
 <div class="cols">
 <div>
 <fieldset><legend>{{ T("構造", "Structure") }}</legend>
@@ -506,7 +505,7 @@ button.link:hover { text-decoration:underline; background:none; }
 {#- まとめて作る (準備の第 2・3 段階)。欄と文言はデスクトップ版 gui/prep23_dialogs.py と同じ (名前と解釈は web/prep23.py) -#}
 <details class="scan" id="batch"{% if prep.get("batch_open") %} open{% endif %}>
   <summary>{{ T("まとめて作る (比べる組・配座・反応経路・フォノン・弾性・遷移状態)", "Batch generation (sets, conformers, paths, phonons, elastic constants, transition states)") }}</summary>
-  <div class="row"><label for="batch_kind" class="required">{{ T("作るもの", "What to generate") }}</label><div class="inline">{{ sel("batch_kind", batch_kinds, form.get("batch_kind","compare")) }}</div></div>
+  <div class="row"><label for="batch_kind" class="required">{{ T("作るもの", "What to generate") }}<span class="pill">{{ T("必須", "required") }}</span></label><div class="inline">{{ sel("batch_kind", batch_kinds, form.get("batch_kind","compare")) }}</div></div>
   {% for k, title in batch_kinds %}<p class="hint only" data-batch="{{ k }}">{{ batch_notes[k] }}</p>{% endfor %}
 
   <div class="only" data-batch="compare">
@@ -610,7 +609,7 @@ button.link:hover { text-decoration:underline; background:none; }
   </select><button type="submit" formaction="/template_load">{{ T("読み込む", "Load") }}</button></div></div>
   {% else %}<p class="hint">{{ T("雛形がまだありません。下の「今の設定を雛形として保存」で作れます。置き場所は環境設定ファイルの templates_dir で変えられます。", "No templates yet. Create one with \"Save the current settings as a template\" below; the folder can be set as templates_dir in the settings file.") }}</p>{% endif %}
   {% set h_tn = T("ファイル名になります (名前.json)。英数字で始め、英数字と . _ - だけを使います。", "Becomes the file name (name.json); starts with a letter or digit and uses only letters, digits, . _ -.") %}
-  <div class="row"><label for="tmpl_save_name" class="required" title="{{ h_tn }}">{{ T("雛形の名前", "Template name") }}</label><div class="inline">{{ txt("tmpl_save_name", ph=T("例 lab-vasp-pbe (英数字と . _ -)", "e.g. lab-vasp-pbe (letters, digits, . _ -)")) }}</div></div>
+  <div class="row"><label for="tmpl_save_name" class="required" title="{{ h_tn }}">{{ T("雛形の名前", "Template name") }}<span class="pill">{{ T("必須", "required") }}</span></label><div class="inline">{{ txt("tmpl_save_name", ph=T("例 lab-vasp-pbe (英数字と . _ -)", "e.g. lab-vasp-pbe (letters, digits, . _ -)")) }}</div></div>
   <div class="row"><label for="tmpl_comment">{{ T("説明", "Description") }}</label><div class="inline">{{ txt("tmpl_comment", ph=T("雛形の説明 (任意)", "description (optional)")) }}</div></div>
   <p class="hint">{{ T("構造と、前の計算から引き継いだものは保存しません。計算コード・手法・計算の種類・k 点・実行環境の値を保存します。", "The structure and anything carried over from a previous run are not saved; the code, method, task, k-points and target are.") }}</p>
   <div class="actions"><button type="submit" formaction="/template_save">{{ T("今の設定を雛形として保存", "Save the current settings as a template") }}</button>

@@ -54,16 +54,38 @@ class ScanDialog(QDialog):
         add_row(self.form, L("保存先", "Output directory"), row,
                 help_text=L("この中に値ごとのディレクトリ (例 ecutwfc_30) を作ります。",
                             "One directory per value (e.g. ecutwfc_30) is created inside it."))
+        from adit.gui.progress import EmptyState
+        self.empty = EmptyState(L("値ごとの入力はまだありません", "No inputs yet"),
+                                L("値をカンマで区切って書き、「生成」を押すと、保存先の中に値ごとのディレクトリを作ります",
+                                  "Type the values separated by commas and press Generate; one directory per value is made in the output directory"),
+                                L("例の値を入れる", "Use the example values"))
+        self.empty.clicked.connect(self.use_example)
         buttons = QHBoxLayout(); buttons.addStretch(); buttons.addWidget(self.btn_cancel); buttons.addWidget(self.btn_ok)
         lay = QVBoxLayout(self); lay.setContentsMargins(PANEL_MARGIN, PANEL_MARGIN, PANEL_MARGIN, PANEL_MARGIN); lay.setSpacing(GROUP_SPACING)
-        lay.addLayout(self.form); lay.addWidget(self.cost); lay.addLayout(buttons)
+        lay.addLayout(self.form); lay.addWidget(self.empty, 1); lay.addWidget(self.cost); lay.addLayout(buttons)
         self.setMinimumWidth(680)
 
         self.item.currentIndexChanged.connect(self._on_item)
         self.browse.clicked.connect(self._browse)
         self.btn_cancel.clicked.connect(self.reject)
         self.btn_ok.clicked.connect(self.generate)
+        self.values.textChanged.connect(self._on_values)
         self._on_item()
+
+    def _on_values(self, *_) -> None:
+        n = len([v for v in self.values.text().split(",") if v.strip()])
+        if n == 0:
+            self.empty.set_texts(L("値ごとの入力はまだありません", "No inputs yet"),
+                                 L("値をカンマで区切って書き、「生成」を押すと、保存先の中に値ごとのディレクトリを作ります",
+                                   "Type the values separated by commas and press Generate; one directory per value is made in the output directory"),
+                                 L("例の値を入れる", "Use the example values"))
+        else:
+            self.empty.set_texts(L(f"{n} 個の値 → {n} 個のディレクトリ", f"{n} values → {n} directories"),
+                                 L("「生成」を押すと、保存先の中に値ごとのディレクトリを作ります",
+                                   "Press Generate to make one directory per value in the output directory"), "")
+
+    def use_example(self) -> None:
+        self.values.setText(self.current_choice().example)
 
     def current_choice(self) -> Choice:
         return self.choices[max(0, self.item.currentIndex())]
