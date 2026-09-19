@@ -179,6 +179,7 @@ def test_superscript_digits_do_not_crash_the_recipe_page(web):
     assert "内部エラー" not in page
 
 
+@pytest.mark.skipif(os.name == "nt", reason="chmod does not lock a directory on Windows")
 def test_unreadable_directory_is_reported_not_500(web, tmp_path):
     if os.geteuid() == 0:
         pytest.skip("root can read everything")
