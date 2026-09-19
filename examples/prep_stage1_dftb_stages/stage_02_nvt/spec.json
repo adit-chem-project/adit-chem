@@ -78,6 +78,7 @@
     "dispersion": "none",
     "d3_params": null,
     "filling_temperature": 0.0,
+    "seed": 12345,
     "solvation_param_file": ""
   },
   "kpoints": null,
@@ -121,9 +122,10 @@
     "velocities": false,
     "files": {}
   },
+  "plumed": null,
   "provenance": {
-    "adit_version": "0.0.1",
-    "generated_utc": "2026-09-11T17:59:19+00:00",
+    "adit_version": "0.1.0a1",
+    "generated_utc": "2026-09-19T05:32:37+00:00",
     "python": "3.14.7",
     "ase": "3.29.0",
     "files": [
@@ -165,6 +167,21 @@
       }
     ],
     "generated_files": [],
+    "inputs": [
+      {
+        "name": "dftb_in.hsd",
+        "sha256": "553a7cb3bdca81d1bd5e7e66719721ad3ac4d77949264c4e2c7ea665ba3f5c34"
+      },
+      {
+        "name": "geometry.gen",
+        "sha256": "81481b9f5fb8c88b6c6a35ba3d380c94f88649896ba9d25037036a924d3eceb8",
+        "replaced_at_run": true
+      },
+      {
+        "name": "submit.sh",
+        "sha256": "f5d1ffea3208d51037d5b0be85aedc568a8bb59748abd3e5bf536ce857fe28a3"
+      }
+    ],
     "code_version_file": "code_version.txt"
   }
 }

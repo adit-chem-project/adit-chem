@@ -22,17 +22,21 @@ from adit.gui import icons
 from adit.gui.i18n import tr
 from adit.gui.panels.mixture_editor import MixtureEditor
 from adit.gui.panels.recipe_editor import Num, RecipeEditor, hint, hrow, spin
-from adit.gui.widgets import SciDoubleSpinBox, add_row, label, limit_combo, narrow
+from adit.gui.widgets import SciDoubleSpinBox, add_row, label, limit_combo, narrow, unit_row
 from adit.spec import AtomsData, Structure
 from adit.textparse import parse_constraints, parse_indices  # noqa: F401  
-from adit.structure import (CRYSTAL_STRUCTURES, SURFACE_FUNCTIONS, StructureError, build_structure, default_bulk,  # noqa: F401
+from adit.structure import (CRYSTAL_STRUCTURES, FETCH_DATABASES, SURFACE_FUNCTIONS, StructureError, build_structure, default_bulk,  # noqa: F401
                              has_rdkit, preset_matches, preset_names, pretty_formula)
 
 ELEMENTS = [s for s in chemical_symbols[1:104]]
 
 
 SOURCES = {"preset": "プリセット", "smiles": "SMILES", "file": "ファイル", "bulk": "バルク", "surface": "スラブ", "mixture": "溶液・混合物",
-           "2d": "2 次元材料・ナノチューブ", "cluster": "ナノ粒子", "polymer": "ポリマー"}
+           "2d": "2 次元材料・ナノチューブ", "cluster": "ナノ粒子", "polymer": "ポリマー", "fetch": "データベースから取得"}
+FETCH_HINTS = {"pubchem": ("名前か CID (例 water、962)", "name or CID (e.g. water, 962)"),
+               "cod": ("COD の ID (例 1000041)", "COD ID (e.g. 1000041)"),
+               "mp": ("mp-ID (例 mp-149)。API キーは環境設定の mp_api_key", "mp-ID (e.g. mp-149); the API key is mp_api_key in the settings"),
+               "optimade": ("組成 (例 SiO2) か データベース:ID (例 oqmd:4061352)", "formula (e.g. SiO2) or database:ID (e.g. oqmd:4061352)")}
 NEW_BASES = ("2d", "cluster", "polymer")
 SLOW_BASES = ("polymer",)
 TWOD_KINDS = {"graphene": "グラフェン型 (C₂、BN)", "mx2": "MX₂ 型 (MoS₂ など)", "nanoribbon": "ナノリボン", "nanotube": "ナノチューブ"}
@@ -52,6 +56,7 @@ class StructurePanel(QGroupBox):
     changed = Signal()
     built = Signal()
     _build_done = Signal(int, object, object, str)
+    _fetch_done = Signal(int, object, str)
 
     def __init__(self, parent: QWidget | None = None):
         super().__init__("構造", parent)
@@ -70,6 +75,11 @@ class StructurePanel(QGroupBox):
         self._sha_cache: dict[tuple, str] = {}
         self._before_cache: dict[str, object] = {}
         self._restore_problems: list[str] = []
+        self._fetched: dict | None = None            # record of the structure fetched last (adit.fetch), with its file path
+        self._fetched_pending: dict | None = None
+        self._fetch_token = 0
+        self.fetch_dir: Path | None = None           # None: adit.fetch.default_fetch_dir()
+        self.fetch_in_thread = True
 
         self.source = QComboBox()
         self.source.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
@@ -87,6 +97,13 @@ class StructurePanel(QGroupBox):
         self.smiles_go = QPushButton("3D 構造を生成")
         self.file = QLineEdit()
         self.file_browse = QPushButton("参照…")
+        self.fetch_db = QComboBox()
+        for key, (name, _url) in FETCH_DATABASES.items():
+            self.fetch_db.addItem(name, key)
+        self.fetch_query = QLineEdit()
+        self.fetch_go = QPushButton("取得")
+        self.fetch_go.setToolTip(L("押したときだけ、選んだデータベースに問い合わせます", "contacts the chosen database only when pressed"))
+        self.fetch_note = QLabel(""); self.fetch_note.setObjectName("hint"); self.fetch_note.setWordWrap(True)
         self.mixture = MixtureEditor()
         self.smiles_draw = QPushButton("Draw"); self.smiles_draw.setToolTip("Draw: 分子を描いて SMILES にします (RDKit が要ります)")
         self.bulk_el = QComboBox(); self.bulk_el.addItems(ELEMENTS); self.bulk_el.setCurrentText("Si")
@@ -95,11 +112,7 @@ class StructurePanel(QGroupBox):
         self.bulk_cubic = QCheckBox("立方晶セル")
         self.surf_facet = QComboBox(); self.surf_facet.addItems(SURFACE_FUNCTIONS); self.surf_facet.setCurrentText("fcc111")
         self.surf_el = QComboBox(); self.surf_el.addItems(ELEMENTS); self.surf_el.setCurrentText("Al")
-        self.surf_n = [narrow(QSpinBox()) for _ in range(3)]
-        for w in self.surf_n:
-            w.setMaximumWidth(64)
-        for w, v in zip(self.surf_n, (2, 2, 3)):
-            w.setRange(1, 50); w.setValue(v); w.setMaximumWidth(60)
+        self.surf_n = [spin(1, 50, v, 60) for v in (2, 2, 3)]
         self.surf_vac = narrow(SciDoubleSpinBox(0.0, 100.0, 10.0, 1.0))
         self._build_new_base_widgets()
         self.box = QCheckBox("周期セルに入れる"); self.box.setToolTip("分子を立方体の周期セルに置きます。VASP と pw.x では周期セルが必須です")
@@ -137,11 +150,15 @@ class StructurePanel(QGroupBox):
         row_w = QWidget(); row_w.setObjectName("rowbox"); row = QHBoxLayout(row_w); row.setContentsMargins(0, 0, 0, 0); row.addWidget(self.file); row.addWidget(self.file_browse)
         add_row(form, "ファイル", row_w); self._source_rows["file"] = [row_w]
         row_w = QWidget(); row_w.setObjectName("rowbox"); row = QHBoxLayout(row_w); row.setContentsMargins(0, 0, 0, 0)
+        row.addWidget(self.fetch_db); row.addWidget(self.fetch_query, 1); row.addWidget(self.fetch_go)
+        add_row(form, "データベース", row_w)
+        form.addRow(label(""), self.fetch_note); self._source_rows["fetch"] = [row_w, self.fetch_note]
+        row_w = QWidget(); row_w.setObjectName("rowbox"); row = QHBoxLayout(row_w); row.setContentsMargins(0, 0, 0, 0)
         for w in (self.bulk_el, self.bulk_struct):
             row.addWidget(w)
         row.addStretch(); add_row(form, "バルク", row_w)
         row_b2 = QWidget(); row_b2.setObjectName("rowbox"); row = QHBoxLayout(row_b2); row.setContentsMargins(0, 0, 0, 0)
-        for w in (QLabel("a [Å]"), self.bulk_a, self.bulk_cubic):
+        for w in (QLabel("a"), unit_row(self.bulk_a, "Å"), self.bulk_cubic):
             row.addWidget(w)
         row.addStretch(); form.addRow(label(""), row_b2); self._source_rows["bulk"] = [row_w, row_b2]
         row_w = QWidget(); row_w.setObjectName("rowbox"); row = QHBoxLayout(row_w); row.setContentsMargins(0, 0, 0, 0)
@@ -149,7 +166,7 @@ class StructurePanel(QGroupBox):
             row.addWidget(w)
         row.addStretch(); add_row(form, "スラブ", row_w)
         row_w2 = QWidget(); row_w2.setObjectName("rowbox"); row = QHBoxLayout(row_w2); row.setContentsMargins(0, 0, 0, 0)
-        for w in (QLabel("層"), self.surf_n[2], QLabel("真空層 [Å]"), self.surf_vac):
+        for w in (QLabel("層"), self.surf_n[2], QLabel(L("真空層", "vacuum")), unit_row(self.surf_vac, "Å")):
             row.addWidget(w)
         row.addStretch(); form.addRow(label(""), row_w2); self._source_rows["surface"] = [row_w, row_w2]
         form.addRow(self.mixture); self._source_rows["mixture"] = [self.mixture]
@@ -161,7 +178,7 @@ class StructurePanel(QGroupBox):
         self.recipe = RecipeEditor(); form.addRow(self.recipe)
         sub = QLabel("共通設定"); sub.setObjectName("subtitle"); form.addRow(sub)
         row_w = QWidget(); row_w.setObjectName("rowbox"); row = QHBoxLayout(row_w); row.setContentsMargins(0, 0, 0, 0)
-        row.addWidget(self.box); row.addWidget(QLabel("一辺 [Å]")); row.addWidget(self.box_size); row.addStretch()
+        row.addWidget(self.box); row.addWidget(QLabel(L("一辺", "edge"))); row.addWidget(unit_row(self.box_size, "Å")); row.addStretch()
         add_row(form, "周期セルに入れる", row_w); self._box_row = row_w
         self.box.setText("")
         add_row(form, "固定原子", self.fixed)
@@ -197,6 +214,11 @@ class StructurePanel(QGroupBox):
         self.smiles.textChanged.connect(lambda *_: self._smiles_timer.start())
         self.file.editingFinished.connect(self._on_file_edited)
         self.file_browse.clicked.connect(self._browse)
+        self.fetch_go.clicked.connect(self._fetch)
+        self.fetch_query.returnPressed.connect(self._fetch)
+        self.fetch_db.currentIndexChanged.connect(self._fetch_placeholder)
+        self._fetch_placeholder()
+        self._fetch_done.connect(self._on_fetched, Qt.ConnectionType.QueuedConnection)
         self.charge.valueChanged.connect(self._rebuild)
         self.multiplicity.valueChanged.connect(self._rebuild)
         self.asegui.clicked.connect(self._open_ase_gui)
@@ -375,6 +397,7 @@ class StructurePanel(QGroupBox):
             except StructureError:
                 rec = None
         self._restoring = True
+        self._fetched_pending = dict(s.fetched) if s.fetched else None
         try:
             if rec is not None:
                 self._restore_base(rec.base)
@@ -463,7 +486,16 @@ class StructurePanel(QGroupBox):
             self.smiles.setText(ref)
             self._smiles_timer.stop()                          # keep the saved coordinates, do not rebuild
         elif src == "file":
-            self.file.setText(ref)
+            rec = self._fetched_pending
+            if rec and str(rec.get("file", "")) == ref:
+                self._fetched = dict(rec)
+                self.set_source("fetch")
+                self.fetch_db.setCurrentIndex(max(0, self.fetch_db.findData(rec.get("database"))))
+                self.fetch_query.setText(str(rec.get("query", "")))
+                from adit.fetch import summary_line
+                self.fetch_note.setText(summary_line(rec))
+            else:
+                self.file.setText(ref)
             if base.sha256:
                 self._file_restored = (ref, base.sha256)
         elif src == "bulk":
@@ -530,24 +562,32 @@ class StructurePanel(QGroupBox):
             path = self.file.text().strip()
             if not path:
                 raise StructureError(L("構造ファイルを指定してください", "choose a structure file"))
-            if self._file_restored and self._file_restored[0] == path:
-                return Base(source="file", ref=path, sha256=self._file_restored[1])
-            p = Path(path).expanduser()
-            if not p.is_file():
-                raise StructureError(L(f"構造ファイル {p} がありません", f"structure file {p} was not found"))
-            stat = p.stat(); key = (str(p.resolve()), stat.st_mtime_ns, stat.st_size)
-            if key not in self._sha_cache:
-                from adit.builder import file_sha256
-                self._sha_cache[key] = file_sha256(p)
-            return Base(source="file", ref=path, sha256=self._sha_cache[key])
+            return self._file_base(path)
+        if src == "fetch":
+            if not self._fetched:
+                raise StructureError(self._empty_message("fetch"))
+            return self._file_base(str(self._fetched.get("file", "")))
         source, ref = self._source()
         if not ref:
             raise StructureError(self._empty_message(source))
         return Base(source=source, ref=ref)
 
+    def _file_base(self, path: str) -> Base:
+        if self._file_restored and self._file_restored[0] == path:
+            return Base(source="file", ref=path, sha256=self._file_restored[1])
+        p = Path(path).expanduser()
+        if not p.is_file():
+            raise StructureError(L(f"構造ファイル {p} がありません", f"structure file {p} was not found"))
+        stat = p.stat(); key = (str(p.resolve()), stat.st_mtime_ns, stat.st_size)
+        if key not in self._sha_cache:
+            from adit.builder import file_sha256
+            self._sha_cache[key] = file_sha256(p)
+        return Base(source="file", ref=path, sha256=self._sha_cache[key])
+
     @staticmethod
     def _empty_message(source: str) -> str:
         empty = {"file": L("構造ファイルを指定してください", "choose a structure file"),
+                 "fetch": L("データベースを選び、名前か ID を入れて「取得」を押してください", "choose a database, enter a name or ID and press Fetch"),
                  "smiles": L("SMILES を入力するか、「Draw」で描いてください", "enter a SMILES string, or draw the molecule with \"Draw\""),
                  "mixture": L("成分を 1 つ以上追加してください", "add at least one component")}
         return empty.get(source, L("構造が指定されていません", "no structure specified"))
@@ -574,6 +614,8 @@ class StructurePanel(QGroupBox):
         if kind == "surface":
             n = "x".join(str(w.value()) for w in self.surf_n)
             return "surface", f"{self.surf_facet.currentText()} {self.surf_el.currentText()} {n} vacuum={self.surf_vac.value():g}"
+        if kind == "fetch":
+            return "file", str((self._fetched or {}).get("file", ""))
         return "file", self.file.text().strip()
 
     def _rebuild(self, *_) -> None:
@@ -591,7 +633,7 @@ class StructurePanel(QGroupBox):
             if self.charge.value() != total:
                 self.charge.blockSignals(True); self.charge.setValue(total); self.charge.blockSignals(False)
         if not ref:
-            self._structure, self._error = None, self._empty_message(source)
+            self._structure, self._error = None, self._empty_message(self.current_source())
         else:
             try:
                 st = build_structure(source, ref, charge=self.charge.value(), multiplicity=self.multiplicity.value())
@@ -614,6 +656,7 @@ class StructurePanel(QGroupBox):
         if use_field:
             fixed_atoms, fixed_axes = parse_constraints(self.fixed.text(), len(atoms))
             upd.update(fixed_atoms=fixed_atoms, fixed_axes=fixed_axes)
+        upd["fetched"] = dict(self._fetched) if self._fetched and self.current_source() == "fetch" else None
         return st.model_copy(update=upd)
 
     def _rebuild_recipe(self) -> None:
@@ -763,12 +806,12 @@ class StructurePanel(QGroupBox):
         src = self.current_source()
         if src in ("surface", "2d"):
             return True
-        if src != "file":
+        if src not in ("file", "fetch"):
             return False
         from adit.builder import slab_cell_problem
         from adit.structure import from_file
         try:
-            atoms = from_file(self.file.text().strip())
+            atoms = from_file(self._source()[1])
         except StructureError:
             return False
         if slab_cell_problem(atoms) is not None:
@@ -838,6 +881,64 @@ class StructurePanel(QGroupBox):
             self.set_source("file")
             self.file.setText(path)
             self._rebuild()
+
+    def _fetch_placeholder(self, *_) -> None:
+        ja, en = FETCH_HINTS.get(self.fetch_db.currentData() or "", ("", ""))
+        self.fetch_query.setPlaceholderText(L(ja, en))
+
+    def _fetch(self, *_) -> None:
+        query = self.fetch_query.text().strip()
+        if not query:
+            self.fetch_note.setText(self._empty_message("fetch")); return
+        self._start_fetch(f"{self.fetch_db.currentData()}:{query}")
+
+    def _start_fetch(self, ref: str) -> None:
+        from adit.config import ConfigError, load_config
+        try:
+            key = load_config().mp_api_key
+        except (ConfigError, OSError, ValueError):
+            key = ""
+        self._fetch_token += 1
+        self.fetch_go.setEnabled(False)
+        self.fetch_note.setText(L(f"{ref} を取得しています…", f"fetching {ref}…"))
+        if self.fetch_in_thread:
+            threading.Thread(target=self._fetch_worker, args=(self._fetch_token, ref, key), daemon=True).start()
+        else:
+            self._fetch_worker(self._fetch_token, ref, key)
+
+    def _fetch_worker(self, token: int, ref: str, key: str) -> None:
+        from adit.fetch import FetchError, default_fetch_dir, fetch
+        try:
+            result = fetch(ref, mp_api_key=key)
+            if result.fetched is not None:
+                result.fetched.save(self.fetch_dir or default_fetch_dir())
+            self._fetch_done.emit(token, result, "")
+        except FetchError as ex:
+            self._fetch_done.emit(token, None, str(ex))
+        except Exception as ex:
+            self._fetch_done.emit(token, None, L(f"取得できません: {type(ex).__name__}: {ex}", f"cannot fetch: {type(ex).__name__}: {ex}"))
+
+    def _on_fetched(self, token: int, result, error: str) -> None:
+        if token != self._fetch_token:
+            return
+        self.fetch_go.setEnabled(True)
+        if error:
+            self.fetch_note.setText(error); return
+        if result.fetched is None:
+            from PySide6.QtWidgets import QInputDialog
+            labels = [c.label for c in result.candidates]
+            chosen, ok = QInputDialog.getItem(self, L("候補を選ぶ", "Choose a candidate"),
+                                              L(f"候補が {len(labels)} 件あります。使うものを選んでください (どれを使うかは ADIT は判断しません)",
+                                                f"{len(labels)} candidates; choose the one to use (ADIT does not choose for you)"), labels, 0, False)
+            if not ok or chosen not in labels:
+                self.fetch_note.setText(L("取得を取りやめました (候補から選びませんでした)", "fetch cancelled (no candidate chosen)")); return
+            self._start_fetch(result.candidates[labels.index(chosen)].ref); return
+        from adit.fetch import summary_line
+        self._fetched = dict(result.fetched.record)
+        self._file_restored = None
+        self.fetch_note.setText(summary_line(self._fetched) + ("".join("\n" + n for n in result.notes)))
+        self.set_source("fetch")
+        self._rebuild()
 
     def _open_ase_gui(self) -> None:
         if self._structure is None:

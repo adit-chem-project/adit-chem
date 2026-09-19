@@ -5,60 +5,60 @@ MD step: 20
 
 ********************************************************************************
  iSCC Total electronic   Diff electronic      SCC error    
-    4   -0.41510510E+01   -0.19910510E-07    0.78163012E-06
+    4   -0.41518865E+01   -0.27721558E-08    0.39313427E-07
 ********************************************************************************
 
 Coordinates of moved atoms (au):
-    1      0.00216938     -1.31996008      0.07170505
-    2     -0.56915354      0.36347864      0.52209478
-    3      0.53469759     -1.42663376     -1.66098152
+    1     -0.09622306     -1.29155407      0.05741797
+    2      1.33835804     -0.45080434      0.81256657
+    3      0.18994681     -1.06352165     -1.72453265
 
- Total charge:     0.00000000
+ Total charge:    -0.00000000
 
  Atomic gross charges (e)
  Atom           Charge
-    1      -0.60213355
-    2       0.30021842
-    3       0.30191514
+    1      -0.58695811
+    2       0.29310989
+    3       0.29384822
 
 Nr. of electrons (up):      8.00000000
 Atom populations (up)
  Atom       Population
-    1       6.60213355
-    2       0.69978158
-    3       0.69808486
+    1       6.58695811
+    2       0.70689011
+    3       0.70615178
 
 l-shell populations (up)
  Atom Sh.   l       Population
-    1   1   0       1.72727002
-    1   2   1       4.87486353
-    2   1   0       0.69978158
-    3   1   0       0.69808486
+    1   1   0       1.73794753
+    1   2   1       4.84901058
+    2   1   0       0.70689011
+    3   1   0       0.70615178
 
 Orbital populations (up)
  Atom Sh.   l   m       Population  Label
-    1   1   0   0       1.72727002  s
-    1   2   1  -1       1.53666648  p_y
-    1   2   1   0       1.44892238  p_z
-    1   2   1   1       1.88927467  p_x
-    2   1   0   0       0.69978158  s
-    3   1   0   0       0.69808486  s
+    1   1   0   0       1.73794753  s
+    1   2   1  -1       1.88748892  p_y
+    1   2   1   0       1.28753719  p_z
+    1   2   1   1       1.67398447  p_x
+    2   1   0   0       0.70689011  s
+    3   1   0   0       0.70615178  s
 
-Fermi level:                         0.0816183438 H            2.2209 eV
-Band energy:                        -3.6630397263 H          -99.6764 eV
+Fermi level:                         0.0642560247 H            1.7485 eV
+Band energy:                        -3.6820575899 H         -100.1939 eV
 TS:                                  0.0000000000 H            0.0000 eV
-Band free energy (E-TS):            -3.6630397263 H          -99.6764 eV
-Extrapolated E(0K):                 -3.6630397263 H          -99.6764 eV
+Band free energy (E-TS):            -3.6820575899 H         -100.1939 eV
+Extrapolated E(0K):                 -3.6820575899 H         -100.1939 eV
 Input / Output electrons (q):      8.0000000000      8.0000000000
 
-Energy H0:                          -4.1694856874 H         -113.4575 eV
-Energy SCC:                          0.0184347106 H            0.5016 eV
-Total Electronic energy:            -4.1510509768 H         -112.9558 eV
-Repulsive energy:                    0.0736842195 H            2.0050 eV
-Total energy:                       -4.0773667573 H         -110.9508 eV
-Extrapolated to 0:                  -4.0773667573 H         -110.9508 eV
-Total Mermin free energy:           -4.0773667573 H         -110.9508 eV
-Force related energy:               -4.0773667573 H         -110.9508 eV
+Energy H0:                          -4.1702175565 H         -113.4774 eV
+Energy SCC:                          0.0183310329 H            0.4988 eV
+Total Electronic energy:            -4.1518865236 H         -112.9786 eV
+Repulsive energy:                    0.0743778847 H            2.0239 eV
+Total energy:                       -4.0775086388 H         -110.9547 eV
+Extrapolated to 0:                  -4.0775086388 H         -110.9547 eV
+Total Mermin free energy:           -4.0775086388 H         -110.9547 eV
+Force related energy:               -4.0775086388 H         -110.9547 eV
 
 Non-constrained calculation
 
@@ -67,22 +67,22 @@ SCC converged
 Full geometry written in geo_end.{xyz|gen}
 
 Total Forces
-    1     -0.002919162501     -0.003175079318      0.012873367514
-    2      0.002755189935     -0.002654237917     -0.007077248375
-    3      0.000163972565      0.005829317235     -0.005796119140
+    1      0.004710140258      0.002814076400      0.000760317465
+    2     -0.000560830839     -0.000533250539      0.006259025402
+    3     -0.004149309419     -0.002280825861     -0.007019342866
 
-Maximal derivative component:        0.128734E-01 au
-Max force for moved atoms::          0.128734E-01 au
+Maximal derivative component:        0.701934E-02 au
+Max force for moved atoms::          0.701934E-02 au
 
-MD Kinetic Energy:                   0.0026198993 H
-Total MD Energy:                    -4.0747468580 H
-MD Temperature:                      0.0008732998 H          275.7659 K
-MD Kinetic Energy:                   0.0026198993 H
-Total MD Energy:                    -4.0747468580 H         -110.8795 eV
-MD Temperature:                      0.0008732998 H          275.7659 K
+MD Kinetic Energy:                   0.0027125180 H
+Total MD Energy:                    -4.0747961209 H
+MD Temperature:                      0.0009041727 H          285.5148 K
+MD Kinetic Energy:                   0.0027125180 H
+Total MD Energy:                    -4.0747961209 H         -110.8808 eV
+MD Temperature:                      0.0009041727 H          285.5148 K
 
-Dipole moment:   -0.01074333    0.47319291   -0.38790902 au
-Dipole moment:   -0.02730683    1.20273650   -0.98596646 Debye
+Dipole moment:    0.50458042    0.31343899   -0.30228149 au
+Dipole moment:    1.28251561    0.79668251   -0.76832297 Debye
 
 Molecular dynamics completed
 

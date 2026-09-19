@@ -94,10 +94,7 @@ class MainWindow(QMainWindow):
         self.gen_hint_action.setVisible(False)
         tb.addWidget(self.btn_generate)
         self.statusBar().addWidget(self.run_hint)
-        self.legend = QLabel(L("青字は必須です。最初から入っている値は、説明に出典がない限り ADIT が置いた値です。ラベルにカーソルを合わせると説明が表示されます",
-                               "Blue fields are required. A pre-filled value was supplied by ADIT unless its explanation names another source. Hover a label for details.")); self.legend.setObjectName("hint")
         self.statusBar().addPermanentWidget(self.cfg_label)
-        self.statusBar().addPermanentWidget(self.legend)
         self.act_back.triggered.connect(self.go_back); self.act_forward.triggered.connect(self.go_forward)
         self.act_settings.triggered.connect(self.open_settings)
         self._update_history_buttons()

@@ -1,6 +1,7 @@
 &CONTROL
    calculation      = 'md'
    nstep            = 20
+   iprint           = 1
    tstress          = .true.
    tprnfor          = .true.
    dt               = 41.34110546116003

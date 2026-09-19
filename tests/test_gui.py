@@ -212,8 +212,8 @@ def test_analysis_tab(app, quiet, sk_root, tmp_path):
 def test_structure_source_is_one_dropdown_with_icons(app, quiet, sk_root, tmp_path):
     win = make_window(sk_root, tmp_path)
     src = win.structure.source
-    assert src.count() == 9 and src.currentData() == "preset"
-    assert [src.itemData(i) for i in range(6, 9)] == ["2d", "cluster", "polymer"]
+    assert src.count() == 10 and src.currentData() == "preset"
+    assert [src.itemData(i) for i in range(6, 10)] == ["2d", "cluster", "polymer", "fetch"]
     assert all(not src.itemIcon(i).isNull() for i in range(src.count())), "すべての項目に絵記号"
     form = win.structure._form
     assert form.isRowVisible(win.structure.preset) and not form.isRowVisible(win.structure.mixture)

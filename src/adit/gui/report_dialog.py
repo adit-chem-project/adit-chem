@@ -52,7 +52,7 @@ class ReportDialog(QDialog):
         self.note.setObjectName("hint"); self.note.setWordWrap(True)
         buttons = QDialogButtonBox()
         self.run_button = buttons.addButton(R.lab("rep_run"), QDialogButtonBox.ButtonRole.ActionRole)
-        buttons.addButton(QDialogButtonBox.StandardButton.Close)
+        buttons.addButton(L("閉じる", "Close"), QDialogButtonBox.ButtonRole.RejectRole)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(PANEL_MARGIN, PANEL_MARGIN, PANEL_MARGIN, PANEL_MARGIN)
         layout.addLayout(form); layout.addWidget(self.note); layout.addWidget(self.out); layout.addWidget(buttons)

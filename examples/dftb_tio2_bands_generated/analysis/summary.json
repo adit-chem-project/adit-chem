@@ -1,6 +1,30 @@
 {
   "code": "dftbplus",
   "tables": {
+    "diagnostics": {
+      "code": "dftbplus",
+      "supported": true,
+      "files": [
+        "output.log"
+      ],
+      "n_warnings": 2,
+      "warnings": [
+        {
+          "file": "output.log",
+          "line": 37,
+          "text": "WARNING! -> Dipole printed for extended system : value printed is not well defined",
+          "cause": null
+        },
+        {
+          "file": "output.log",
+          "line": 42,
+          "text": "WARNING! -> Current stacksize not set to unlimited or hard limit, which might cause",
+          "cause": null
+        }
+      ],
+      "errors": [],
+      "causes": []
+    },
     "energy": {
       "n": 1,
       "last_ev": -425.0711,
@@ -10,40 +34,66 @@
     "bonds": [
       [
         "Ti1-Ti2",
-        3.08862189632328
+        3.08862189655309
       ],
       [
         "Ti1-O3",
-        2.006052853000506
+        2.006052852853982
       ],
       [
         "Ti1-O4",
-        1.9110526590865173
+        1.9110526591009755
       ],
       [
         "Ti1-O5",
-        2.006054451998129
+        2.0060544521665946
       ],
       [
         "Ti1-O6",
-        1.9110509655984234
+        1.9110509655409555
       ],
       [
         "Ti2-O3",
-        1.9110588170666183
+        1.911058816738541
       ],
       [
         "Ti2-O4",
-        2.006081779582459
+        2.0060817792587553
       ],
       [
         "Ti2-O5",
-        1.9110572227121079
+        1.9110572227459397
       ],
       [
         "Ti2-O6",
-        2.0060792048106704
+        2.0060792053774636
       ]
+    ],
+    "charges": [
+      {
+        "definition": "Mulliken",
+        "values": [
+          0.96347853,
+          0.96350849,
+          -0.48174668,
+          -0.4817472,
+          -0.48174664,
+          -0.48174649
+        ],
+        "source": "detailed.out:13",
+        "unit": "e",
+        "note": "DFTB+ の Mulliken 電荷 (価電子の数 − Mulliken の電子数。負なら電子が多い)",
+        "sum": 1.0000000161269895e-08,
+        "atoms": [
+          "Ti1",
+          "Ti2",
+          "O3",
+          "O4",
+          "O5",
+          "O6"
+        ],
+        "file": "examples/dftb_tio2_bands_generated/analysis/charges_Mulliken.csv"
+      }
     ],
     "bands": {
       "n_kpoints": 60,
@@ -64,12 +114,78 @@
         "P"
       ],
       "gap_ev": 3.2602,
-      "fermi_ev": -0.4531
+      "fermi_ev": -0.4531,
+      "reference_level": "fermi",
+      "gap_details": {
+        "gap_ev": 3.2602,
+        "vbm_ev": -2.0875,
+        "cbm_ev": 1.1727,
+        "vbm_kpoint_index": 27,
+        "cbm_kpoint_index": 0,
+        "vbm_label": "Z",
+        "cbm_label": "G",
+        "direct": false,
+        "direct_gap_ev": 3.3686999999999996,
+        "direct_gap_kpoint_index": 24,
+        "direct_gap_label": "",
+        "note": "VBM と CBM が同じ k 点にあるかどうかを「直接」と書いています (機械的な事実)。k 点は与えた経路の中での番号で、経路の外により低い CBM があるかどうかは分かりません。",
+        "vbm_kpoint_frac": [
+          0.5,
+          0.5,
+          -0.5
+        ],
+        "cbm_kpoint_frac": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "effective_mass": [
+      {
+        "kind": "hole",
+        "m_over_me": -1.7350628469134635,
+        "band_index": 14,
+        "kpoint_index": 27,
+        "n_points": 5,
+        "r_squared": 0.982578024688991,
+        "k_window_inv_ang": 0.5378695131421947
+      }
+    ],
+    "spacegroup": {
+      "results": [
+        {
+          "symprec_A": 1e-05,
+          "international": "P1",
+          "number": 1,
+          "hall": "P 1",
+          "pointgroup": "1"
+        },
+        {
+          "symprec_A": 0.001,
+          "international": "Fdd2",
+          "number": 43,
+          "hall": "F 2 -2d",
+          "pointgroup": "mm2"
+        },
+        {
+          "symprec_A": 0.1,
+          "international": "Fdd2",
+          "number": 43,
+          "hall": "F 2 -2d",
+          "pointgroup": "mm2"
+        }
+      ],
+      "spglib": "2.7.0",
+      "structure": "最終構造",
+      "angle_tolerance": "spglib の既定"
     }
   },
   "figures": {
-    "energy": "<作業ディレクトリ>/dftb_bands/analysis/energy.png",
-    "bands": "<作業ディレクトリ>/dftb_bands/analysis/bands.png"
+    "bands": "examples/dftb_tio2_bands_generated/analysis/bands.png"
   },
-  "notes": []
+  "notes": [
+    "バンドギャップ 3.260 eV: 価電子帯の頂上は Z (k 点 28)、伝導帯の底は G (k 点 1)。別の k 点です (間接遷移)。同じ k 点で最小の間隔は 3.369 eV。与えた経路の中での話で、経路の外はこの計算では分かりません",
+    "有効質量 正孔 (価電子帯の頂上): m*/m_e = -1.735 (5 点、幅 0.5379 1/Å、決定係数 0.9826)。経路に沿った向きの値で、テンソルではありません"
+  ]
 }

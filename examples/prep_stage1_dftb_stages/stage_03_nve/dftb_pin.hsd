@@ -1,9 +1,9 @@
 Geometry = GenFormat {
 3 C
 O H
-1 1 0.000327470000 -0.711816610000 0.029170260000
-2 2 -0.197253020000 0.135158550000 0.434298250000
-3 2 0.192051900000 -0.486135550000 -0.897607610000
+1 1 -0.036717090000 -0.698438500000 0.018752950000
+2 2 0.510766000000 -0.155377430000 0.591891770000
+3 2 0.072409280000 -0.408083240000 -0.889743740000
 }
 Driver = VelocityVerlet {
   MovedAtoms = 1:-1
@@ -12,9 +12,9 @@ Driver = VelocityVerlet {
   MDRestartFrequency = 1
   OutputPrefix = "geo_end"
   Velocities [AA/ps] = {
-0.0873611900 1.4326729400 0.6958450400
--12.6317275400 8.7629326400 -8.8782010100
-11.2441753200 -31.5179859200 -2.1738615700
+-2.4381426000 0.6491887300 1.2718783300
+28.2867951000 -0.3833259800 -20.5593631700
+10.4380690400 -9.9276973800 0.3582004600
   }
   Thermostat = None {}
   KeepStationary = Yes
@@ -71,12 +71,12 @@ Hamiltonian = DFTB {
   }
 }
 Options = {
+  RandomSeed = 12345
   WriteResultsTag = Yes
   WriteDetailedOut = Yes
   WriteAutotestTag = No
   WriteDetailedXML = No
   MDOutput = {}
-  RandomSeed = 0
   WriteHS = No
   WriteRealHS = No
   MinimiseMemoryUsage = No

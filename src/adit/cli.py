@@ -29,6 +29,29 @@ def _apply_sets(spec: CalculationSpec, sets: list[str]) -> CalculationSpec:
     return spec
 
 
+class FetchStop(Exception):
+    pass
+
+
+def _fetch_structure(spec: CalculationSpec, ref: str, cfg) -> CalculationSpec:
+    from adit.fetch import FetchError, candidates_text, default_fetch_dir, fetch, summary_line
+    from adit.structure import from_fetched
+
+    try:
+        result = fetch(ref, mp_api_key=cfg.mp_api_key)
+        if result.fetched is None:
+            raise FetchStop(candidates_text(result))
+        result.fetched.save(default_fetch_dir())
+        st = from_fetched(result.fetched, charge=spec.structure.charge, multiplicity=spec.structure.multiplicity)
+    except FetchError as ex:
+        raise FetchStop(str(ex)) from ex
+    print(L(f"構造を取得しました: {summary_line(st.fetched)}", f"fetched the structure: {summary_line(st.fetched)}"), file=sys.stderr)
+    print(L(f"  保存先: {st.source_ref}", f"  saved to: {st.source_ref}"), file=sys.stderr)
+    for note in result.notes:
+        print(f"  {note}", file=sys.stderr)
+    return spec.model_copy(update={"structure": st})
+
+
 def _run_group(args, spec: CalculationSpec, cfg, output_dir) -> int | None:
     if not (args.compare_set or args.conformers is not None or args.neb or args.phonons or args.elastic or args.ts or args.sella):
         return None
@@ -103,6 +126,11 @@ def main(argv: list[str] | None = None) -> int:
         "1 つのファイルに複数フレームがあれば、フレームごとに 1 つの計算にします。例 --structures \"mols/*.xyz\"",
         "generate one calculation per structure, with all other settings unchanged (a file name or a pattern; repeatable). "
         "A file with several frames gives one calculation per frame. e.g. --structures \"mols/*.xyz\""))
+    ap.add_argument("--fetch", metavar="DB:NAME_OR_ID", help=L(
+        "構造をデータベースから取得して spec.json の構造と入れ替えます (pubchem:water / pubchem:962 / cod:1000041 / mp:mp-149 / optimade:SiO2 / optimade:<db>:<id>)。"
+        "候補が複数なら一覧を出して止まります。取得したファイルは ~/adit_runs/fetched/ に置き、出力ディレクトリにも写します",
+        "fetch the structure from a database and use it instead of the one in spec.json (pubchem:water / pubchem:962 / cod:1000041 / mp:mp-149 / "
+        "optimade:SiO2 / optimade:<db>:<id>). With several candidates it lists them and stops. The files go to ~/adit_runs/fetched/ and are copied to the output"))
     ap.add_argument("--core", metavar="SMILES", help=L(
         "骨格の SMILES ([*:1] のような印を置く)。--substituent と一緒に使い、置換基の組み合わせごとに計算を作ります",
         "SMILES of the core with attachment points such as [*:1]; use with --substituent to enumerate combinations"))
@@ -294,7 +322,12 @@ def main(argv: list[str] | None = None) -> int:
             spec = CalculationSpec.load(args.spec)
             if args.template:
                 spec = load_template(args.template, spec, cfg)
+        if args.fetch:
+            spec = _fetch_structure(spec, args.fetch, cfg)
         spec = _apply_sets(spec, args.sets)
+    except FetchStop as ex:
+        print(str(ex), file=sys.stderr)
+        return 1
     except TemplateError as ex:
         print(str(ex), file=sys.stderr)
         return 1
