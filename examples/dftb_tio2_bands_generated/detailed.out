@@ -1,6 +1,6 @@
  Fermi distribution function
 
-Geometry optimization step: 0
+Calculation with static geometry
 
 
 ********************************************************************************
@@ -103,8 +103,6 @@ Non-constrained calculation
 
 SCC converged
 
-Full geometry written in geom.out.{xyz|gen}
-
 Total Forces
     1     -0.000009256947      0.000009382977      0.000000779441
     2     -0.000010747982      0.000009571925     -0.000003249289
@@ -132,5 +130,4 @@ Warning: dipole moment is not defined absolutely!
 Dipole moment:   -1.86965179    1.86970871   -4.42891024 au
 Dipole moment:   -4.75218122    4.75232588  -11.25716787 Debye
 
-Geometry converged
 

@@ -73,6 +73,7 @@ class Structure(BaseModel):
     fixed_atoms: list[int] = Field(default_factory=list)
     fixed_axes: dict[str, tuple[bool, bool, bool]] = Field(default_factory=dict)
     velocities: list[Vec3] | None = None
+    fetched: dict | None = None  # provenance of a structure fetched from a database (adit.fetch)
 
     @property
     def periodic(self) -> bool:

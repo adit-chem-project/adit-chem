@@ -10,6 +10,7 @@ sk_root = "/home/<ユーザー名>/slakos"   # Slater-Koster パラメータの�
 pseudo_root = "/home/<ユーザー名>/pseudo" # Quantum ESPRESSO の擬ポテンシャル (直下に <セット名>/*.UPF)
 cp2k_data = ""                       # CP2K の data ディレクトリ (BASIS_MOLOPT など)。空なら CP2K_DATA_DIR、cp2k の隣の share/cp2k/data の順に探します
 templates_dir = ""                   # 研究室の雛形 (構造を除いた spec.json) の置き場所。空なら、このファイルと同じ場所の templates/ だけを見ます
+mp_api_key = ""                      # Materials Project の API キー (構造を mp-ID で取得するときだけ使います。https://next-gen.materialsproject.org/dashboard で発行)
 default_profile = "local"
 enable_run = true                    # false にすると、この PC では計算を実行しない設定になります (生成と解析はできます)
 language = "ja"                      # "ja" または "en" (環境変数 ADIT_LANG が優先)
@@ -106,7 +107,7 @@ ssh <クラスタ> 'qstat -u $USER'                                      # 3. �
 
 ### CP2K・LAMMPS・GROMACS の画面
 
-計算コードのプルダウンで選ぶと、そのコードの欄が出ます。青字は必須の欄です (ラベルにカーソルを合わせると説明が出ます)。
+計算コードのプルダウンで選ぶと、そのコードの欄が出ます。「必須」の印が付いた青字のラベルは必須の欄です (ラベルにカーソルを合わせると説明が出ます)。
 
 - **CP2K**: 汎関数、カットオフと相対カットオフ [Ry] は既定を持たないので、自分で決めます (CP2K のマニュアルの「CUTOFF と REL_CUTOFF の収束」の手順)。元素ごとの基底と擬ポテンシャルは、data ディレクトリのファイルから読んだ候補がプルダウンに並びます。候補が 1 つだけの元素は空欄のままでそれを使います。分子や表面のように周期でない方向があるときは「ポアソン方程式の解き方」を選び、箱の無い分子なら「分子の箱の一辺」を入れます。画面に無い設定は「追加の行 (節ごと)」に `[FORCE_EVAL/DFT/SCF]` のような見出しを書き、その下に行を書きます。
 - **LAMMPS**: 単位系 (metal / real) と pair_style、pair_coeff を書き、力場のファイルを「写すファイル」に入れます (入力の中ではファイル名だけで書きます)。data ファイルを空にすると構造から `data.lammps` を書きます (atomic か charge 形式)。外部の data ファイルを使うときは、型番号の元素を順に入れ、構造の群にも同じ系を読み込みます。k 点の群は出ません。

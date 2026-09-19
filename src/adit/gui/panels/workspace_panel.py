@@ -9,7 +9,7 @@ from PySide6.QtGui import QColor, QFont, QFontDatabase, QIcon, QKeySequence, QPa
 from PySide6.QtWidgets import (QComboBox, QFileSystemModel, QHBoxLayout, QInputDialog, QLabel, QLineEdit, QMenu, QMessageBox,
                                QPlainTextEdit, QPushButton, QSplitter, QTreeView, QVBoxLayout, QWidget)
 
-from adit.gui.style import GROUP_SPACING, PANEL_MARGIN
+from adit.gui.style import DARK, GROUP_SPACING, LIGHT, PANEL_MARGIN
 from adit.gui.terminal_pane import TerminalTabs
 from adit.lang import L
 
@@ -108,21 +108,23 @@ class Editor(QPlainTextEdit):
 
 
 class FileIcons(QFileSystemModel):
-    """A mark per kind of file, chosen by extension."""
+    """A mark per kind of file, chosen by extension: what you write is in the accent color, what a run writes is gray."""
 
     KIND = {
-        ".hsd": ("in", "#2f7ae5"), ".in": ("in", "#2f7ae5"), ".inp": ("in", "#2f7ae5"), ".gjf": ("in", "#2f7ae5"),
-        ".nw": ("in", "#2f7ae5"), ".dat": ("in", "#2f7ae5"), ".mdp": ("in", "#2f7ae5"), ".conf": ("in", "#2f7ae5"),
-        ".log": ("out", "#12876f"), ".out": ("out", "#12876f"), ".tag": ("out", "#12876f"),
-        ".xyz": ("st", "#d2691e"), ".gen": ("st", "#d2691e"), ".cif": ("st", "#d2691e"), ".pdb": ("st", "#d2691e"),
-        ".gro": ("st", "#d2691e"), ".extxyz": ("st", "#d2691e"),
-        ".json": ("cfg", "#7b4fd0"), ".toml": ("cfg", "#7b4fd0"), ".yaml": ("cfg", "#7b4fd0"),
-        ".sh": ("run", "#b8860b"), ".py": ("py", "#3776ab"), ".j2": ("cfg", "#7b4fd0"),
-        ".png": ("img", "#c2185b"), ".svg": ("img", "#c2185b"), ".csv": ("tbl", "#12876f"), ".md": ("doc", "#555f6d"),
+        ".hsd": "in", ".in": "in", ".inp": "in", ".gjf": "in", ".nw": "in", ".dat": "in", ".mdp": "in", ".conf": "in",
+        ".log": "out", ".out": "out", ".tag": "out",
+        ".xyz": "st", ".gen": "st", ".cif": "st", ".pdb": "st", ".gro": "st", ".extxyz": "st",
+        ".json": "cfg", ".toml": "cfg", ".yaml": "cfg", ".j2": "cfg",
+        ".sh": "run", ".py": "py",
+        ".png": "img", ".svg": "img", ".csv": "tbl", ".md": "doc",
     }
-    NAMED = {"INCAR": ("in", "#2f7ae5"), "POSCAR": ("st", "#d2691e"), "CONTCAR": ("st", "#d2691e"),
-             "KPOINTS": ("in", "#2f7ae5"), "POTCAR": ("in", "#2f7ae5"), "OUTCAR": ("out", "#12876f"),
-             "README.txt": ("doc", "#555f6d"), "submit.sh": ("run", "#b8860b")}
+    NAMED = {"INCAR": "in", "POSCAR": "st", "CONTCAR": "st", "KPOINTS": "in", "POTCAR": "in", "OUTCAR": "out",
+             "README.txt": "doc", "submit.sh": "run"}
+    INPUT_KINDS = {"in", "st", "cfg", "run", "py"}
+
+    def __init__(self, parent=None, dark: bool = False) -> None:
+        super().__init__(parent)
+        self.dark = dark
 
     def data(self, index, role=Qt.ItemDataRole.DisplayRole):
         if role == Qt.ItemDataRole.DecorationRole and index.column() == 0:
@@ -131,30 +133,32 @@ class FileIcons(QFileSystemModel):
                 return super().data(index, role)
             kind = self.NAMED.get(path.name) or self.KIND.get(path.suffix.lower())
             if kind is not None:
-                return self._badge(*kind)
+                return self._badge(kind, self.dark)
         return super().data(index, role)
 
-    _CACHE: dict[tuple[str, str], QIcon] = {}
+    _CACHE: dict[tuple[str, bool], QIcon] = {}
 
     @classmethod
-    def _badge(cls, text: str, color: str) -> QIcon:
-        got = cls._CACHE.get((text, color))
+    def _badge(cls, text: str, dark: bool = False) -> QIcon:
+        got = cls._CACHE.get((text, dark))
         if got is not None:
             return got
+        t = DARK if dark else LIGHT
+        back, fore = (t.accent, "#FFFFFF") if text in cls.INPUT_KINDS else (t.pill_bg, t.pill_fg)
         size = 16
         pix = QPixmap(size, size)
         pix.fill(Qt.GlobalColor.transparent)
         p = QPainter(pix)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
         p.setPen(Qt.PenStyle.NoPen)
-        p.setBrush(QColor(color))
+        p.setBrush(QColor(back))
         p.drawRoundedRect(1, 2, size - 2, size - 4, 3, 3)
         font = QFont(); font.setPointSizeF(5.5); font.setBold(True)
-        p.setFont(font); p.setPen(QColor("#ffffff"))
+        p.setFont(font); p.setPen(QColor(fore))
         p.drawText(QRect(1, 2, size - 2, size - 4), int(Qt.AlignmentFlag.AlignCenter), text)
         p.end()
         icon = QIcon(pix)
-        cls._CACHE[(text, color)] = icon
+        cls._CACHE[(text, dark)] = icon
         return icon
 
 
@@ -165,7 +169,7 @@ class WorkspacePanel(QWidget):
         super().__init__(parent)
         self.root = Path(root).expanduser() if root else Path.home()
 
-        self.model = FileIcons(self)
+        self.model = FileIcons(self, dark=dark)
         self.model.setRootPath(str(self.root))
         self.model.setFilter(QDir.Filter.AllEntries | QDir.Filter.NoDotAndDotDot | QDir.Filter.Hidden)
         self.tree = QTreeView()
@@ -320,6 +324,8 @@ class WorkspacePanel(QWidget):
 
     def set_dark(self, dark: bool) -> None:
         self.terminal.set_dark(dark)
+        self.model.dark = dark
+        self.tree.viewport().update()
 
     def _watch_terminal(self) -> None:
         for i in range(self.terminal.tabs.count()):

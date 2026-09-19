@@ -39,7 +39,7 @@ WARNING!
 WARNING!
 -> Dipole printed for extended system : value printed is not well defined
 OpenMP threads:              4
-Chosen random seed:          705143406
+Specified random seed:       12345
 Current stacksize:           8 [Mb] (recommended: unlimited)
 WARNING!
 -> Current stacksize not set to unlimited or hard limit, which might cause
@@ -211,12 +211,11 @@ Pressure:                            0.721965E-04 au     0.212409E+10 Pa
 --------------------------------------------------------------------------------
 DFTB+ running times                          cpu [s]             wall clock [s]
 --------------------------------------------------------------------------------
-Global initialisation                  +       0.01 (  1.9%)       0.00 (  1.7%)
-Pre-SCC initialisation                 +       0.10 ( 13.6%)       0.02 ( 13.9%)
-SCC                                    +       0.43 ( 61.1%)       0.07 ( 62.6%)
-Post-SCC processing                    +       0.12 ( 17.0%)       0.02 ( 16.5%)
-Post-geometry optimisation             +       0.04 (  6.3%)       0.00 (  4.3%)
+Pre-SCC initialisation                 +       0.12 (  9.7%)       0.02 (  9.7%)
+SCC                                    +       0.52 ( 40.7%)       0.09 ( 44.2%)
+Post-SCC processing                    +       0.59 ( 45.7%)       0.09 ( 41.3%)
+Post-geometry optimisation             +       0.05 (  3.8%)       0.01 (  3.9%)
 --------------------------------------------------------------------------------
-Missing                                +       0.00 (  0.1%)       0.00 (  0.9%)
-Total                                  =       0.70 (100.0%)       0.12 (100.0%)
+Missing                                +       0.00 (  0.1%)       0.00 (  1.0%)
+Total                                  =       1.29 (100.0%)       0.21 (100.0%)
 --------------------------------------------------------------------------------

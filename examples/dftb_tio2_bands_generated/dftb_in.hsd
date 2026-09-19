@@ -2,13 +2,7 @@ Geometry = GenFormat {
   <<< "geometry.gen"
 }
 
-Driver = GeometryOptimization {
-  Optimizer = Rational {}
-  MovedAtoms = 1:-1
-  MaxSteps = 200
-  OutputPrefix = "geom.out"
-  Convergence { GradElem [eV/AA] = 0.00514221 }
-}
+Driver {}
 
 Hamiltonian = DFTB {
   Scc = Yes
@@ -32,6 +26,7 @@ Hamiltonian = DFTB {
 }
 
 Options {
+  RandomSeed = 12345
   WriteResultsTag = Yes
 }
 

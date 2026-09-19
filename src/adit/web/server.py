@@ -36,7 +36,7 @@ from adit.gui.help import help_for
 from adit.lang import L
 from adit.project import OutputNotEmpty, ProjectError, ProjectFiles, build_project, load_project, write_project
 from adit.spec import CalculationSpec
-from adit.structure import CRYSTAL_STRUCTURES, SURFACE_FUNCTIONS, has_rdkit, preset_names, preset_search_text
+from adit.structure import CRYSTAL_STRUCTURES, FETCH_DATABASES, SURFACE_FUNCTIONS, has_rdkit, preset_names, preset_search_text
 from adit.web import forms
 from adit.web.forms import FormError, default_form, form_from_spec, spec_from_form
 
@@ -90,6 +90,8 @@ class WebApp:
         self.analysis_dir: str = ""
         self.analysis_opts: AnalysisOptions | None = None
         self.upload_dir = Path.home() / "adit_runs" / "uploads"
+        self.fetch_dir = Path.home() / "adit_runs" / "fetched"
+        self.fetch_candidates: list = []
         self.scan_out: Path | None = None
         self._scan_auto = ""
         self.built = None
@@ -213,6 +215,45 @@ class WebApp:
             self.spec = None
             return "", _unexpected(ex)
         return L("生成できます", "Ready to generate"), ""
+
+    def fetch_structure(self, form: dict[str, str]) -> tuple[str, str, str]:
+        """Fetch on the user's request only; the chosen entry then feeds the normal file route. Returns (status, error, message)."""
+        from adit.fetch import FetchError, candidates_text, fetch, summary_line
+
+        self.form = {**default_form(self.cfg.default_profile, self.form.get("output_dir", "")), **form}
+        self.form["source"] = "fetch"
+        pick = (form.get("fetch_pick") or "").strip()
+        db, query = (form.get("fetch_db") or "pubchem").strip(), (form.get("fetch_query") or "").strip()
+        if pick and self.fetch_candidates and any(c.ref == pick for c in self.fetch_candidates):
+            ref = pick
+        elif query:
+            ref = f"{db}:{query}"
+        else:
+            return "", L("データベースから取得: 名前か ID を入力してください", "Fetch from a database: enter a name or ID"), ""
+        try:
+            result = fetch(ref, mp_api_key=self.cfg.mp_api_key)
+        except FetchError as ex:
+            return "", str(ex), ""
+        if result.fetched is None:
+            self.fetch_candidates = list(result.candidates)
+            return "", candidates_text(result), ""
+        self.fetch_candidates = []
+        result.fetched.save(self.fetch_dir)
+        self.form["fetch_file"] = str(result.fetched.record["file"])
+        self.form["fetch_record"] = json.dumps(result.fetched.record, ensure_ascii=False)
+        self.form["file_sha_path"] = self.form["file_sha256"] = ""
+        status_text, err = self.preview(self.form)
+        note = L(f"構造を取得しました: {summary_line(result.fetched.record)}", f"Fetched the structure: {summary_line(result.fetched.record)}")
+        if result.notes:
+            note += "\n" + "\n".join(result.notes)
+        return status_text, err, note
+
+    def fetch_info(self) -> str:
+        from adit.fetch import summary_line
+        from adit.web.forms import fetch_record
+
+        rec = fetch_record(self.form)
+        return summary_line(rec) if rec else ""
 
     def generate(self, overwrite: bool) -> tuple[str, str]:
         if self.spec is None:
@@ -971,7 +1012,7 @@ def make_handler(app: WebApp, token: str | None = None):
             cfg_problem = app.config_error
             from adit.web import prep23 as P23
             from adit.web import recipe_form as R
-            only_rules = [("source", "source", ["preset", "smiles", "file", "bulk", "surface", "mixture", "2d", "cluster", "polymer"]),
+            only_rules = [("source", "source", ["preset", "smiles", "file", "bulk", "surface", "mixture", "2d", "cluster", "polymer", "fetch"]),
                           ("tdkind", "td_kind", [k for k, _, _ in R.TWOD_KINDS]), ("clkind", "cl_kind", [k for k, _, _ in R.CLUSTER_KINDS]),
                           ("task", "task_type", list(ch["types"])),
                           ("code", "code", list(ch["codes"])), ("kp", "kp_mode", list(ch["kp_modes"])), ("disp", "dispersion", ["dftd3"]),
@@ -1003,6 +1044,9 @@ def make_handler(app: WebApp, token: str | None = None):
                 "cl_kind_opts": [(k, ja_t if ja else en) for k, ja_t, en in R.CLUSTER_KINDS],
                 "elements_opts": [(x, x) for x in ELEMENTS],
                 "rc": app.recipe_view(),
+                "fetch_db_opts": [(k, name) for k, (name, _url) in FETCH_DATABASES.items()],
+                "fetch_candidates": app.fetch_candidates,
+                "fetch_info": app.fetch_info(),
             }
             from adit.web import codefields as CF
             f = app.form
@@ -1232,6 +1276,9 @@ def make_handler(app: WebApp, token: str | None = None):
                     self._page(status_text=status_text, error=err); return
                 msg, err = app.generate(overwrite=forms._b(fields.get("overwrite")))
                 self._page(status_text=status_text, error=err, message=msg)
+            elif u.path == "/fetch_structure":
+                status_text, err, msg = app.fetch_structure(fields)
+                self._page(status_text=status_text, error=err, message=msg, prefix="" if not msg else None)
             elif u.path == "/scan":
                 self._save_upload(fields, files)
                 status_text, err = app.preview(fields)

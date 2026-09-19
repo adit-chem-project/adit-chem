@@ -20,9 +20,13 @@ R, O = True, False  # required / optional
 
 HELP: dict[str, Help] = {
     "構造の作り方": Help(R, "計算する原子の並びをどこから作るか (土台)。プリセット (ASE の g2 セット)、SMILES (RDKit で 3 次元化)、ファイル、バルク結晶、表面スラブ、溶液・混合物、"
-                        "2 次元材料・ナノチューブ、ナノ粒子、ポリマーのいずれか 1 つ。下の「組み立て手順」で、この土台に加工を重ねられます。",
+                        "2 次元材料・ナノチューブ、ナノ粒子、ポリマー、データベースから取得のいずれか 1 つ。下の「組み立て手順」で、この土台に加工を重ねられます。",
                    "Where the atoms come from (the base): a preset (ASE molecule set), SMILES (3D via RDKit), a file, a bulk crystal, a surface slab, a solution / mixture, "
-                   "a 2D material / nanotube, a nanoparticle or a polymer. The build steps below can then modify this base."),
+                   "a 2D material / nanotube, a nanoparticle, a polymer, or an entry fetched from a database. The build steps below can then modify this base."),
+    "データベース": Help(R, "PubChem (名前か CID → 3D の SDF)、COD (ID → CIF)、Materials Project (mp-ID。環境設定の mp_api_key が要ります)、OPTIMADE (組成で複数のデータベースを横断検索) から構造を取得します。"
+                       "「取得」を押したときだけ通信します。候補が複数あれば一覧から選びます。取得元・ID・日時・応答の SHA-256・ライセンスは spec.json と README.txt に記録され、取得したファイルは出力ディレクトリにも写します。",
+                     "Fetches a structure from PubChem (name or CID -> 3D SDF), COD (ID -> CIF), the Materials Project (mp-ID; needs mp_api_key in the settings) or OPTIMADE (a formula searched across databases). "
+                     "The network is used only when Fetch is pressed. With several candidates you choose from a list. Database, ID, time, SHA-256 of the response and the license are recorded in spec.json and README.txt, and the fetched file is copied into the output directory."),
     "プリセット": Help(R, "ASE に収録された分子 (G2 集など) を名前で選びます。座標は ASE の値です。", "A molecule from ASE's built-in set (G2 etc.); coordinates are ASE's."),
     "SMILES": Help(R, "分子を文字列で表す記法 (例 CCO = エタノール)。RDKit が配座を作り、力場 (MMFF) で粗く整えます。", "Line notation for molecules (e.g. CCO = ethanol). RDKit builds a conformer and relaxes it with MMFF."),
     "ファイル": Help(R, "ASE が読める構造ファイル (xyz, cif, POSCAR, gen など)。周期セルが書かれていれば周期系として扱います。", "Any structure file ASE can read (xyz, cif, POSCAR, gen, ...). A cell in the file makes it periodic."),
