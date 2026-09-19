@@ -70,13 +70,12 @@ conda activate --stack xtb                   # adit の環境を有効にした�
 
 ### 4. ADIT を入れる
 
-ADIT の配布元の URL (git のリポジトリの場所) は、このソフトを紹介してくれた人 (配布元) に聞いてください。
-
 ```bash
-pip install "adit-chem[gui] @ git+<配布元の URL>"
+git clone https://github.com/adit-chem-project/adit-chem.git
+cd adit-chem && pip install -e ".[gui,smiles,analysis]"
 ```
 
-フォルダごと受け取った場合 (手元に複製した場合) は、そのフォルダに移動して `pip install ".[gui]"` を実行します。
+`[gui,smiles,analysis]` は、デスクトップ版の画面、SMILES と Draw、空間群の解析に要るパッケージをまとめて入れる指定です。
 
 ### 5. パラメータを入手して置く
 
@@ -112,7 +111,7 @@ ls ~/slakos/mio-1-1                                                 # H-H.skf �
     Si.pbe-n-rrkjus_psl.1.0.0.UPF  O.pbe-n-kjpaw_psl.0.1.UPF  …
 ```
 
-xtb は計算手法にパラメータが入っているので不要です。VASP の POTCAR と ORCA は、下の「各計算コードで用意するもの」を見てください。
+xtb は計算手法にパラメータが入っているので不要です。VASP の POTCAR と ORCA は、[環境設定](SETTINGS.md#各計算コードで用意するもの) の「各計算コードで用意するもの」を見てください。
 
 ### 6. 環境設定ファイルに置き場所を書く
 
@@ -150,9 +149,9 @@ python analyze.py                            # 図と要約を analysis/ に書�
 
 ## 実行ファイル (.exe / .app) を自分で作る
 
-配布している実行ファイルは、この手順で作っています。`v` で始まるタグ (例 `v0.1.0`) を押し上げると、
+配布している実行ファイルは、この手順で作っています。`v` で始まるタグ (例 `v0.1.0`) をプッシュすると、
 GitHub Actions が Windows の `.exe` と macOS の `.app` を作り、Releases に添付します。
-手元で作るときは、下の手順です。
+手元で作るときは、下の手順です。この設定は Linux で実際に作り、CLI が動くところまで確かめてあります (2026-09-13)。
 
 ### Windows
 
@@ -175,7 +174,7 @@ pyinstaller packaging\adit.spec --noconfirm
 | `adit-cli.exe` | CLI。`adit-cli.exe gen ...` / `analyze` / `report` / `convert` / `web` |
 
 2 つに分けるのは Windows の決まりのためです。画面用の実行ファイル (GUI サブシステム) には標準出力が無く、
-**1 つにすると CLI の表示が何も出ません** (2026-09-13 に実際に作って確かめました)。
+**1 つにすると CLI の表示が何も出ません** (実際に作って確かめました)。
 1 つの .exe にまとめたいときは `packaging/adit.spec` の `ONEFILE = False` を `True` に変えます
 (起動のたびに一時フォルダへ展開するので、開くまで数秒かかります)。
 
@@ -187,7 +186,7 @@ dist\adit\adit-cli.exe gen --list-samples      # サンプルの一覧が出る�
 dist\adit\adit-cli.exe gen --sample water_generated mine.json
 dist\adit\adit-cli.exe gen mine.json out\run1  # 入力・submit.sh・README.txt が書けるか
 dist\adit\adit-cli.exe analyze out\run1        # 実行していないディレクトリでは理由を言って止まるか (終了コード 2)
-dist\adit\adit-cli.exe web                     # ブラウザで http://127.0.0.1:8765 が開くか
+dist\adit\adit-cli.exe web --open              # ブラウザで http://127.0.0.1:8765 が開くか (--open が無いとブラウザは開きません)
 ```
 
 **画面の日本語が □ (豆腐) になるとき**は、フォントが同梱されていません。conda の環境で
@@ -204,30 +203,28 @@ dist\adit\adit-cli.exe web                     # ブラウザで http://127.0.0.
 
 | 同梱しない | 理由 |
 |---|---|
-| DFTB+・xtb・Quantum ESPRESSO などの計算ソフト | 配布条件が別。**Windows では実行ボタンが無効**なので、そもそも要らない |
+| DFTB+・xtb・Quantum ESPRESSO などの計算ソフト | 配布条件が別。**Windows では計算を実行しない** (生成した入力を Linux のサーバーへ転送して使う) ので、そもそも要らない |
 | Slater-Koster セット、擬ポテンシャル、POTCAR | ライセンス上、ADIT が配ってはいけない |
 
 #### 4 分かっている制限
 
-- **Windows では計算を実行できません。**実行ボタンは押せず、「生成した入力を Linux のサーバーに転送して使います」
-  と出ます (`gui/main_window.py`)。exe で出来るのは入力の生成と、手元にある出力の解析です
+- **Windows では計算を実行できません。**ワークスペースのターミナル (PowerShell) から `ssh` でクラスタに入り、
+  `transfer_and_submit.sh` のコマンドで転送して投入します。exe で出来るのは入力の生成と、手元にある出力の解析です
 - **大きさは 300〜500 MB** (PySide6 と matplotlib と SciPy を同梱するため)。`ONEFILE = True` でも縮みません
 - **署名していません。**SmartScreen が「発行元不明」と警告します。配るなら署名するか、受け取る人に
   「詳細情報 → 実行」を案内してください
 - **RDKit を入れた環境で作ると SMILES から構造を作れます**。入れずに作ると、その欄だけが使えません
-- この設定は **Linux で実際に作って、CLI が動くところまで確かめました** (2026-09-13)。
-  確かめたのは `gen --list-samples` / `--sample` / 入力の生成 / `analyze` (未実行のディレクトリで終了コード 2) /
+- Linux で確かめたのは `gen --list-samples` / `--sample` / 入力の生成 / `analyze` (未実行のディレクトリで終了コード 2) /
   `report` / `convert verify` の 6 つと、**画面が起動して窓を作るところまで** (`QT_QPA_PLATFORM=offscreen`)。
-  **Windows での生成したファイルは未確認**です (Windows の実行ファイルは Windows 上でしか作れないため)。
+  **Windows で生成したファイルは未確認**です (Windows の実行ファイルは Windows 上でしか作れないため)。
   上の「2 出来た実行ファイルの確認」を必ず通してください
-- 作ってみて分かったこと 2 つ (どちらも spec に入れてあります):
+- 作ってみて分かったこと 4 つ (どれも spec に入れてあります):
   1. **ASE は形式ごとのモジュールを名前で動的に読み込む**ので、`hiddenimports` に `ase.io` を入れないと
      `.gen` の書き出しが `UnknownFileTypeError` で落ちる
   2. Linux では **conda の `libOpenGL.so.0` を同梱しないと画面が起動しない** (Windows の PySide6 は
      OpenGL の DLL を自分で持っているので、この処理は Linux でだけ働く)
   3. **画面用の実行ファイルは標準出力を持たない**ので、CLI 用に console 版 (`adit-cli.exe`) を別に作る
   4. 窓の大きさの既定 (1800x1000) が **1536x864 の画面からはみ出した**ので、画面の 95 % に収めるようにした
-     (`gui/main_window.py`)
 
 
 ### macOS
@@ -236,7 +233,7 @@ dist\adit\adit-cli.exe web                     # ブラウザで http://127.0.0.
 
 GitHub の Actions から手で動かします。
 
-`v` で始まるタグ (例 `v0.1.0a1`) を押し上げると自動で作られ、Releases に `ADIT-arm64.zip` が添付されます。
+`v` で始まるタグ (例 `v0.1.0a1`) をプッシュすると自動で作られ、Releases に `ADIT-arm64.zip` が添付されます。
 手で動かすこともできます。
 
 1. リポジトリの **Actions** → **macos-app** → **Run workflow**
@@ -275,7 +272,7 @@ xcrun stapler staple dist/ADIT.app
 
 #### 確認 (実機で最初に通すこと)
 
-Windows と同じ 7 点です (上の節)。**通ったものに印を付けて、この文書を更新してください。**
+Windows の 6 点 (上の「2 出来た実行ファイルの確認」) に、別の Mac で確かめる 1 点を足した 7 点です。**通ったものに印を付けて、この文書を更新してください。**
 
 1. `ADIT.app` を二重クリックして画面が出る (日本語が豆腐 □ にならない)
 2. 構造を作り、入力を生成できる (`adit-cli gen --sample water_generated` → 生成 → `README.txt` がある)
@@ -293,15 +290,17 @@ Windows と同じ 7 点です (上の節)。**通ったものに印を付けて�
 終えたため、CI では作れません。Intel の Mac では pip で入れてください。
 1 つにまとめた universal2 は、PySide6 と RDKit が両対応の wheel を配っていないと作れないので、していません。
 
-#### インストールと起動 (Linux / macOS / 慣れている人向け)
+## インストールと起動 (Linux / macOS / 慣れている人向け)
 
 Python 3.11 以上が必要です。仮想環境 (conda か venv) を作り、pip でインストールします。Windows で初めての人は上の節から進めてください。
-依存パッケージは ASE、pydantic、Jinja2、matplotlib、SciPy、tomli-w と、デスクトップ版には PySide6 です。SMILES と Draw (分子を描く機能) を使うには RDKit も必要です。
+依存パッケージは ASE、pydantic、Jinja2、matplotlib、SciPy、tomli-w と、デスクトップ版には PySide6、pyqtdarktheme-fork、
+ワークスペースのターミナル用の pyte と ptyprocess (Windows は pywinpty) です。SMILES と Draw (分子を描く機能) を使うには RDKit も必要です。
 
 ```bash
 python3 -m venv adit-env                # conda を使うなら上の節の 3 のとおり
 source adit-env/bin/activate            # Windows (PowerShell) では  adit-env\Scripts\Activate.ps1
-pip install "adit-chem[gui] @ git+<配布元の URL>"   # URL は配布元に聞いてください。手元に複製したなら  pip install ".[gui]"
+git clone https://github.com/adit-chem-project/adit-chem.git
+cd adit-chem && pip install -e ".[gui,smiles,analysis]"
 ```
 
 配布名は `adit-chem` です (PyPI の `adit` は別のパッケージです)。インポート名とコマンド名は `adit` です。
@@ -314,14 +313,11 @@ pip install "adit-chem[gui] @ git+<配布元の URL>"   # URL は配布元に聞
 | コマンドライン (変換) | `adit-convert structure ...` / `adit-convert calculation ...` | 構造形式を変換するか、共通条件を保って別の計算コードの入力を生成します |
 | コマンドライン (解析) | `adit-analyze <計算結果のディレクトリ> --rdf --msd --dos` | 図と要約を `analysis/` に書きます |
 
-##### 構造形式と計算コードの変換
-
+### 構造形式と計算コードの変換
 
 構造ファイルは、ASE が対応する形式の間で変換できます。入力と出力の形式は通常、ファイル名から判定されます。
-デスクトップ版では「ファイル」タブの「変換」、ウェブ版では上部の「変換」から同じ機能を使えます。判定できないファイル名では、ASEの形式名を入力形式・出力形式の欄に指定できます。
-どちらの画面でも、準備画面でプレビューした現在の構造をextended XYZとして保存できます。セル、周期境界、固定原子・軸固定、設定済みの初速度も保持されます。CLI で `spec.json` や生成ディレクトリから構造を変換するときも同じ情報を読みます。
-
-Saving the current structure as extended XYZ preserves the cell, periodic boundaries, fixed atoms and axes, and any initial velocities. CLI structure conversion from `spec.json` or a generated directory reads these data as well.
+デスクトップ版では「ファイル」タブの「変換」、ウェブ版では上部の「変換」から同じ機能を使えます。判定できないファイル名では、ASE の形式名を入力形式・出力形式の欄に指定できます。
+どちらの画面でも、準備画面でプレビューした現在の構造を extended XYZ として保存できます。セル、周期境界、固定原子・軸固定、設定済みの初速度も保持されます。CLI で `spec.json` や生成ディレクトリから構造を変換するときも同じ情報を読みます。
 
 ```bash
 adit-convert structure data.lammps POSCAR
@@ -333,6 +329,4 @@ adit-convert openbabel source.sdf target.mol2 --input-format sdf --output-format
 adit-convert dock6 prepared/dock.in ready/
 ```
 
-GOAT、ORCA DOCKER、DCDFTBMD 2.0、DOCK6 の入力整理、Open Babel の変換入口は、[対応ソフトウェア](SOFTWARE.md)に日英の手順と制限を記載しています。これらの GUI/Web 欄はまだありません。
-
-See [Supported software](SOFTWARE.md) for bilingual instructions and limitations for GOAT, ORCA DOCKER, DCDFTBMD 2.0, DOCK6 input packaging, and Open Babel conversion. GUI/Web controls have not been added.
+GOAT、ORCA DOCKER、DCDFTBMD 2.0、DOCK6 の入力整理、Open Babel の変換入口は、[対応ソフトウェア](SOFTWARE.md) に手順と制限を書いています。これらはコマンドラインだけで、デスクトップ版とウェブ版の欄はまだありません。
