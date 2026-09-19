@@ -54,7 +54,7 @@ class TaskPanel(QGroupBox):
         self.vibration_note.setObjectName("hint"); self.vibration_note.setWordWrap(True)
         form.addRow(self.vibration_note)
         add_row(form, "最適化アルゴリズム", self.optimizer)
-        add_row(form, L("最大ステップ数 (MaxSteps)", "Maximum steps (MaxSteps)"), self.max_steps)
+        add_row(form, "最大ステップ数 (MaxSteps)", self.max_steps)
         add_row(form, "力の収束判定 [eV/Å]", self.force_tol)
         add_row(form, "セルの緩和 (周期系)", self.relax_cell)
         add_row(form, "アンサンブル", self.ensemble)

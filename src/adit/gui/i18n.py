@@ -204,9 +204,15 @@ _EN["設定"] = "Settings"
 
 from adit.gui import analysis_fields as _AF  # noqa: E402  
 
-for _ja, _en in [*_AF.LABELS.values(), *_AF.PLACEHOLDERS.values(),
+from adit.gui import report_fields as _RF  # noqa: E402
+from adit.web import prep23 as _P23  # noqa: E402
+
+for _ja, _en in [*_AF.LABELS.values(), *_AF.PLACEHOLDERS.values(), *_RF.LABELS.values(), *_P23.LABELS.values(),
                  *((ja, en) for items in (_AF.THERMO_MODELS, _AF.GEOMETRIES, _AF.IMAGINARY, _AF.UV_SHAPES) for _, ja, en in items)]:
     _EN.setdefault(_ja, _en)
+_EN.setdefault("最大ステップ数 (MaxSteps)", "Maximum steps (MaxSteps)")
+_EN.setdefault("SCC の収束判定 (SccTolerance)", "SCC tolerance (SccTolerance)")
+_EN.setdefault("SCC の反復上限 (MaxSccIterations)", "Maximum SCC iterations (MaxSccIterations)")
 
 
 def set_language(lang: str) -> None:
