@@ -28,6 +28,7 @@ class RunSummary:
     exit_code: int | None = None
     completion_assessed: bool = True
     convergence_assessed: bool = True
+    diagnostics: list[str] = field(default_factory=list)
 
     def status_line(self) -> str:
         code_ok = self.exit_code == 0 if self.exit_code is not None else None
@@ -66,6 +67,7 @@ class RunSummary:
             lines.append(L("全エネルギー (Mermin)", "total energy (Mermin)") + f": {e:.10f} Hartree = {e * HARTREE_EV:.4f} eV")
         lines.append(L("結合長 (共有結合半径の和 ×1.2 以内の原子対):", "bond lengths (atom pairs within 1.2 x the sum of covalent radii):"))
         lines += [f"  {n}: {d:.4f} Å" for n, d in self.bonds] or [L("  (該当なし)", "  (none)")]
+        lines += self.diagnostics
         return "\n".join(lines)
 
 
@@ -299,6 +301,9 @@ def summarize_run(run_dir: Path | str, exit_code: int | None = None) -> RunSumma
         if marker is None or (run_dir / marker).is_file():
             s = fn(run_dir)
             s.task_type, s.finished, s.exit_code = _task_type(run_dir), _finished(run_dir, code), exit_code
+            from adit.analysis.diagnostics import diagnostics_lines
+
+            s.diagnostics = diagnostics_lines(run_dir, code)
             return s
     raise AssertionError("unreachable")
 

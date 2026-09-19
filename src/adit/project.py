@@ -442,6 +442,9 @@ def _readme(spec: CalculationSpec, profile, notes: ReadmeNotes, output_dir: Path
                     "  analyze.py    writes figures and a summary to analysis/, the same as the ADIT analysis tab; run it with the Python that has ADIT installed"),
                   f"       {analyze}"]
     lines.append("")
+    from adit.analysis.diagnostics import remedy_lines
+
+    lines += remedy_lines(m.code)
     if prov:
         from adit.provenance import readme_lines
         lines += readme_lines(prov)

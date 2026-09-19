@@ -32,6 +32,7 @@ GUI の「解析」タブ、ウェブ版の「解析」ページ、`adit-analyze
 | 空間群 | 最終構造 (spglib が入っているとき) | 許容誤差ごとの空間群 |
 | フォノン分散・DOS | phonopy の band.yaml、total_dos.dat | phonon_bands.png、phonon_dos.png |
 | 組にして比べる表 | 複数の計算のディレクトリ | ΣνE、組成の釣り合い、条件が違う項目 (compare_*.csv、compare_energy.png) |
+| 出力ログの警告と失敗の印 | 各コードのログ (output.log、log.lammps、OUTCAR、md.log など) と、同じディレクトリにあるジョブスケジューラの出力 (`*.o<番号>`、`slurm-*.out`) | 警告の件数と先頭 3 件 (ファイル:行番号と本文)、失敗の原因の候補 (SCF や構造最適化の未収束、制限時間、メモリ不足、MPI の異常終了、対角化の失敗、LAMMPS の Lost atoms、GROMACS の LINCS など)。要約の 2 行目以降と `summary.json` の `tables.diagnostics`。対応するコードは DFTB+、VASP、Quantum ESPRESSO、xtb、ORCA、CP2K、LAMMPS、GROMACS (ほかは制限時間・メモリ・MPI の印だけ) |
 
 `adit-analyze` の主なオプション (`adit-analyze --help-all` に全部):
 
@@ -61,6 +62,8 @@ z 方向の密度分布、時系列の統計、熱化学の各欄、UV-Vis の�
 結果は要約の下に表 (原子の電荷、熱化学、電子状態、時系列の統計、軌跡、拡散係数、空間群、UV-Vis の遷移) と図で出ます。表は見出しを押すと畳めます。
 長い表は先頭 20 行だけを出し、全体のファイルの場所を添えます。
 
+- 出力ログの走査は、各コードが実際に書く文字列 (例: DFTB+ の `SCC is NOT converged`、pw.x の `convergence NOT achieved`、CP2K の `SCF run NOT converged`、LAMMPS の `Lost atoms`) と、スケジューラや MPI の文字列 (Slurm の `DUE TO TIME LIMIT`、PBS の `=>> PBS: job killed: walltime`、`MPI_ABORT was invoked`) を探すだけです。見つけた行をそのまま写し、原因の候補に分類します。良し悪しや対処は判断しません。
+  対処は、生成した `README.txt` の末尾「失敗したときに文献が挙げる対処」に、各コードの文書・FAQ・aiida-quantumespresso の実装から出典 URL 付きで写してあります (ADIT の推奨ではありません)。
 - 軌跡が大きすぎて止まったときは、理由の文と「間引きを N にする」ボタンが出ます。押すと間引きの欄に N が入るので、もう一度「解析を実行」を押します
 - MSD では周期境界を越えた移動を最小像から復元します。間引き後の隣接フレーム間で移動が最短セル幅の 40 % 以上になった場合は、移動方向を一意に復元できなくなる半セル幅へ近いため、要約と `summary.json` に注意を残します。
 - MSD の D は指定した時間範囲の直線フィットから求めます。ブロックごとの D を使う参考誤差は、すべてのブロックで同じ時間範囲を使える場合だけ表示します。短い軌跡では D が出てもブロック誤差は出ないことがあります。参考誤差はブロック D の平均の標準誤差であり、全軌跡から求めた D の厳密な誤差ではありません。
