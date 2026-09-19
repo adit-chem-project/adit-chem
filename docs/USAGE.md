@@ -81,6 +81,8 @@
 
 **分子を描く**: リボンの **挿入** → **Draw**。描いた分子はそのまま構造として使えます。SMILES からの読み込みもできます。
 
+**データベースから取得**: 構造の作り方で「データベースから取得」を選び、PubChem (名前か CID)、COD (ID)、Materials Project (mp-ID。環境設定の `mp_api_key` が要ります)、OPTIMADE (組成) のどれかと名前や ID を入れて「取得」を押します。通信するのはこのときだけです。候補が複数なら一覧から選びます。出どころ (取得元・ID・日時・応答の SHA-256・ライセンス) は spec.json と README.txt に残り、取得したファイルは出力ディレクトリにも写します。取得したデータを公開・再配布するときの条件 (COD は CC0、PubChem はパブリックドメイン (提供元の条件が付くことがある)、Materials Project は CC BY 4.0、OPTIMADE は提供元ごと) は [画面の説明](SCREENS.md) と [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) にあります。
+
 ![Draw](images/tutorial/10_draw.png)
 
 ## まとめて作る
@@ -174,6 +176,16 @@ adit-report runs/*/ -o methods.md             # 方法の節を書き出す
 adit-gen mine.json out/ --scan method.ecutwfc=30,40,50    # 1 つの値を振る
 adit-gen mine.json out/ --structures "mols/*.xyz"         # 構造だけ差し替えて一括
 adit-gen mine.json out/ --stages stages.json              # 段階に分けて生成
+```
+
+構造をデータベースから取得して差し替えるには `--fetch` を付けます (通信はこのときだけ。候補が複数なら一覧を出して止まります)。
+
+```bash
+adit-gen mine.json out/ --fetch pubchem:water             # PubChem の名前 (CID なら pubchem:962)
+adit-gen mine.json out/ --fetch cod:1000041               # COD の ID
+adit-gen mine.json out/ --fetch mp:mp-149                 # Materials Project (環境設定の mp_api_key が要ります)
+adit-gen mine.json out/ --fetch optimade:SiO2             # OPTIMADE で横断検索 → 候補の一覧
+adit-gen mine.json out/ --fetch optimade:oqmd:4061352     # 候補から選んだ 1 件
 ```
 
 詳しい一覧は `adit-gen --help`、解析は `adit-analyze --help-all` で出ます。
