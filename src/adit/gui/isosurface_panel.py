@@ -41,7 +41,7 @@ class IsosurfacePanel(QWidget):
         self.opacity_label = QLabel(L("透明度", "Opacity"))
         self.stride = QDoubleSpinBox(); self.stride.setDecimals(0); self.stride.setRange(1, 64); self.stride.setValue(1); self.stride.setFixedWidth(64)
         self.lbl_stride = QLabel(L("間引き (格子点)", "Stride (grid points)"))
-        self.btn_show = QPushButton(L("表示", "Show")); self.btn_show.setObjectName("primary")
+        self.btn_show = QPushButton(L("等値面を描く", "Draw the surface")); self.btn_show.setObjectName("primary")
         self.btn_clear = QPushButton(L("等値面を消す", "Remove the surface")); self.btn_clear.setObjectName("link")
         self.btn_use_stride = QPushButton(); self.btn_use_stride.hide()
         self.viewer = Viewer3D(); self.viewer.setMinimumHeight(300)
