@@ -9,9 +9,10 @@ import html
 import io
 import json
 import os
+import re
 import secrets
 import shutil
-import subprocess
+import socket
 
 from adit.compat import ensure_printable_stdio, upload_basename
 import sys
@@ -881,20 +882,37 @@ def _parse_body(handler: BaseHTTPRequestHandler) -> tuple[dict[str, str], dict[s
 
 
 LOCAL_HOSTS = ("127.0.0.1", "localhost", "::1")
-TOKEN_COOKIE = "adit_token"
+WILDCARD_HOSTS = ("", "0.0.0.0", "::")
+TOKEN_CHARS = re.compile(r"[A-Za-z0-9_-]+")
+
+
+def cookie_name(port: int) -> str:
+    # One cookie per port, so two servers on the same PC do not overwrite each other's login.
+    return f"adit_token_{port}"
 
 
 def new_token() -> str:
     return secrets.token_urlsafe(24)
 
 
+def redact_token(text: str) -> str:
+    return re.sub(r"token=[^&\s]*", "token=***", text)
+
+
 def make_handler(app: WebApp, token: str | None = None):
     class Handler(BaseHTTPRequestHandler):
         server_version = f"adit-web/{__version__}"
+        _pending_cookie: str | None = None
 
         def log_message(self, fmt, *args):
             if os.environ.get("ADIT_WEB_LOG"):
-                super().log_message(fmt, *args)
+                super().log_message(fmt, *[redact_token(str(a)) for a in args])
+
+        def end_headers(self) -> None:
+            if self._pending_cookie is not None:
+                self.send_header("Set-Cookie", self._pending_cookie)
+                self._pending_cookie = None
+            super().end_headers()
 
         def _send(self, text: str, status: HTTPStatus = HTTPStatus.OK, ctype: str = "text/html; charset=utf-8") -> None:
             data = text.encode("utf-8")
@@ -989,16 +1007,23 @@ def make_handler(app: WebApp, token: str | None = None):
         def _authorized(self) -> bool:
             if not token:
                 return True
+            want = token.encode("utf-8")
+            name = cookie_name(self.server.server_port)
             u = urlparse(self.path)
             given = parse_qs(u.query).get("token", [""])[-1]
-            if given and hmac.compare_digest(given, token):
+            if given and hmac.compare_digest(given.encode("utf-8"), want):
+                cookie = f"{name}={token}; Path=/; HttpOnly; SameSite=Lax"
+                if self.command == "POST":
+                    # A redirect would drop the request body; answer directly and set the cookie on that response.
+                    self._pending_cookie = cookie
+                    return True
                 rest = urlencode([(k, val) for k, vals in parse_qs(u.query, keep_blank_values=True).items() for val in vals if k != "token"])
                 self.send_response(HTTPStatus.SEE_OTHER)
-                self.send_header("Set-Cookie", f"{TOKEN_COOKIE}={token}; Path=/; HttpOnly; SameSite=Strict")
+                self.send_header("Set-Cookie", cookie)
                 self.send_header("Location", u.path + ("?" + rest if rest else "")); self.send_header("Content-Length", "0"); self.end_headers()
                 return False
             cookie = SimpleCookie(self.headers.get("Cookie", ""))
-            if TOKEN_COOKIE in cookie and hmac.compare_digest(cookie[TOKEN_COOKIE].value, token):
+            if name in cookie and hmac.compare_digest(cookie[name].value.encode("utf-8"), want):
                 return True
             self._send(L("この画面を開くには、adit-web を起動した端末に表示された URL (token=… 付き) を開いてください。",
                          "Open the URL (with token=...) printed in the terminal where adit-web was started."),
@@ -1486,17 +1511,46 @@ def make_handler(app: WebApp, token: str | None = None):
     return Handler
 
 
+class _ThreadingHTTPServer6(ThreadingHTTPServer):
+    address_family = socket.AF_INET6
+
+    def server_bind(self) -> None:
+        if self.server_address[0] in ("", "::"):
+            try:
+                self.socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
+            except (OSError, AttributeError):
+                pass
+        super().server_bind()
+
+
 def serve(app: WebApp, host: str = "127.0.0.1", port: int = 8765, open_browser: bool = False,
           token: str | None = None) -> ThreadingHTTPServer:
-    httpd = ThreadingHTTPServer((host, port), make_handler(app, token))
+    cls = _ThreadingHTTPServer6 if ":" in host else ThreadingHTTPServer
+    httpd = cls((host, port), make_handler(app, token))
     if open_browser:
-        threading.Timer(0.5, lambda: webbrowser.open(server_url(host, httpd.server_port, token))).start()
+        threading.Timer(0.5, lambda: webbrowser.open(server_url(browse_host(host), httpd.server_port, token))).start()
     return httpd
+
+
+def browse_host(host: str) -> str:
+    return "127.0.0.1" if host in WILDCARD_HOSTS else host
 
 
 def server_url(host: str, port: int, token: str | None = None) -> str:
     shown = f"[{host}]" if ":" in host else host
-    return f"http://{shown}:{port}/" + (f"?token={token}" if token else "")
+    return f"http://{shown}:{port}/" + (f"?token={quote(token, safe='')}" if token else "")
+
+
+def server_lines(host: str, port: int, token: str | None = None) -> list[str]:
+    stop = "(Ctrl-C で停止 / Ctrl-C to stop)"
+    if host not in WILDCARD_HOSTS:
+        return [f"adit-web {__version__}: {server_url(host, port, token)}  {stop}"]
+    return [f"adit-web {__version__}:",
+            L("  この PC で開く:   ", "  on this PC:       ") + server_url("127.0.0.1", port, token),
+            L("  他の PC から開く: ", "  from other PCs:   ") + server_url(socket.getfqdn(), port, token),
+            L("  (繋がらなければ、ホスト名をこの PC の IP アドレスに置き換えてください)",
+              "  (if it does not connect, replace the host name with this PC's IP address)"),
+            f"  {stop}"]
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -1512,6 +1566,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--config", help=L("cluster.toml のパス", "path to cluster.toml"))
     ap.add_argument("--open", action="store_true", help=L("起動後にブラウザを開きます", "open the browser after start"))
     args = ap.parse_args(argv)
+    if args.token is not None and not TOKEN_CHARS.fullmatch(args.token):
+        print(L("--token に使えるのは英数字と _ - だけです", "--token may contain only letters, digits, _ and -"), file=sys.stderr)
+        return 2
     try:
         cfg, path, created = ensure_config(Path(args.config).expanduser() if args.config else config_path())
     except ConfigError as ex:
@@ -1525,8 +1582,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.no_token and args.host not in LOCAL_HOSTS:
         print(L("警告: 合言葉なしのため、このアドレスに届く人は誰でも入力の生成と実行ができます", "warning: no token; anyone reaching this host can generate and run"), file=sys.stderr)
     app = WebApp(cfg, path)
-    httpd = serve(app, args.host, args.port, args.open, token)
-    print(f"adit-web {__version__}: {server_url(args.host, httpd.server_port, token)}  (Ctrl-C で停止 / Ctrl-C to stop)", file=sys.stderr)
+    try:
+        httpd = serve(app, args.host, args.port, args.open, token)
+    except OSError as ex:
+        print(L(f"そのアドレスでは待ち受けできません: {args.host}:{args.port} ({ex})", f"cannot listen on {args.host}:{args.port} ({ex})"), file=sys.stderr)
+        return 2
+    print("\n".join(server_lines(args.host, httpd.server_port, token)), file=sys.stderr)
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
