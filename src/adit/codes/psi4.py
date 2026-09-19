@@ -182,7 +182,7 @@ class Psi4Generator(InputGenerator):
                    L("  stdout.log    画面に出る分 (optking の途中経過など)。Psi4 が止まったときの理由もここに出ます",
                      "  stdout.log    what Psi4 prints to the screen (optking progress); the reason for a crash appears here too")]
         if t == "vibrations":
-            outputs.append(L("  results.json の frequencies_cm1   振動数 [cm^-1] (虚数は負の数で入ります)",
+            outputs.append(L("  results.json の frequencies_cm1   振動数 [cm⁻¹] (虚数は負の数で入ります)",
                              "  frequencies_cm1 in results.json   vibrational frequencies in cm^-1 (imaginary ones appear as negative)"))
         return ReadmeNotes(program=DEFAULT_COMMAND, files=files, prepare=prepare, outputs=outputs)
 

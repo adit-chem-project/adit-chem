@@ -227,7 +227,7 @@ class AnalysisPanel(QWidget):
         self.figure_format.setPlaceholderText(AF.PLACEHOLDERS["figure_format"][0])
         self.more = Collapsible(AF.LABELS["more"][0])
         mform = QFormLayout(); mform.setVerticalSpacing(ROW_SPACING)
-        mform.addRow(hint_label(L("ここの欄は すべて 任意です。空のままでも解析は走ります "
+        mform.addRow(hint_label(L("ここの欄はすべて任意です。空のままでも解析は走ります "
                                   "(エネルギー・温度・結合長・振動数・バンドは常に出ます)。必要な解析の欄だけ埋めてください。",
                                   "Every field here is optional: the analysis runs with all of them empty "
                                   "(energy, temperature, bond lengths, frequencies and bands are always produced). "

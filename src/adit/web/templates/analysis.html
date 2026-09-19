@@ -22,7 +22,7 @@
     {{ T("平衡化として捨てるフレーム数", "Frames to skip as equilibration") }} <input type="text" name="skip" class="tiny" value="{{ f.skip }}"{{ off }}>
   </div></div>
   <details class="more"{% if more_open %} open{% endif %}><summary>{{ lab("more") }}</summary>
-    <p class="hint">{{ T("ここの欄は すべて 任意です。空のままでも解析は走ります (エネルギー・温度・結合長・振動数・バンドは常に出ます)。必要な解析の欄だけ埋めてください。",
+    <p class="hint">{{ T("ここの欄はすべて任意です。空のままでも解析は走ります (エネルギー・温度・結合長・振動数・バンドは常に出ます)。必要な解析の欄だけ埋めてください。",
                          "Every field here is optional: the analysis runs with all of them empty (energy, temperature, bond lengths, frequencies and bands are always produced). Fill in only what you need.") }}</p>
     <div class="subhead">{{ T("軌跡", "Trajectory") }}</div>
     {% call arow("stride", "stride") %}{{ txt("stride") }}{% endcall %}

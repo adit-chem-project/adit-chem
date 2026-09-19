@@ -141,7 +141,7 @@ class GamessGenerator(InputGenerator):
                 "explicitly choose GBASIS from STO, N21, N31, N311")))
         if not 1 <= m.ngauss <= 6:
             errors.append(ValidationError("method.ngauss", L(
-                "NGAUSS を 1～6 の整数で指定してください", "explicitly set NGAUSS to an integer from 1 to 6")))
+                "NGAUSS を 1〜6 の整数で指定してください", "explicitly set NGAUSS to an integer from 1 to 6")))
         errors += _parallel_error(spec, cfg, self.code)
         return errors
 

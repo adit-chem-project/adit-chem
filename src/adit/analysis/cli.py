@@ -300,8 +300,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--spin", type=float, default=None, metavar="S", help=L("全スピン S (理想気体。一重項 0、二重項 0.5)", "total spin S (ideal gas; singlet 0, doublet 0.5)"))
     ap.add_argument("--imaginary", choices=("ignore", "stop"), default=None, help=L("使うモードに虚振動があるとき: 除いて計算 (ignore) / 計算しない (stop)", "if imaginary modes are among the modes used: drop them (ignore) / do not compute (stop)"))
     ap.add_argument("--exclude-lowest", type=int, default=None, metavar="N", help=L("調和・準調和・準 RRHO で除く低い振動の本数", "number of lowest modes to exclude (harmonic, quasi-harmonic, quasi-RRHO)"))
-    ap.add_argument("--qh-cutoff", type=float, default=None, metavar="cm-1", help=L("準調和の下限の振動数 [cm^-1]", "quasi-harmonic cutoff frequency in cm^-1"))
-    ap.add_argument("--msrrho-tau", type=float, default=None, metavar="cm-1", help=L("準 RRHO (Grimme) の減衰の τ [cm^-1]", "quasi-RRHO (Grimme) damping tau in cm^-1"))
+    ap.add_argument("--qh-cutoff", type=float, default=None, metavar="cm-1", help=L("準調和の下限の振動数 [cm⁻¹]", "quasi-harmonic cutoff frequency in cm^-1"))
+    ap.add_argument("--msrrho-tau", type=float, default=None, metavar="cm-1", help=L("準 RRHO (Grimme) の減衰の τ [cm⁻¹]", "quasi-RRHO (Grimme) damping tau in cm^-1"))
     ap.add_argument("--uvvis", default=None, metavar="SHAPE:FWHM", help=L("ORCA の TD-DFT の吸収を広げる形と半値全幅 [eV] (例 gauss:0.3、lorentz:0.2)", "shape and FWHM in eV for broadening ORCA TD-DFT absorption (e.g. gauss:0.3, lorentz:0.2)"))
     ap.add_argument("--pdos", action="store_true", help=L("PDOS が描けないときも理由を要約に書きます (ファイルがあれば、指定しなくても描きます)", "report why no PDOS is drawn (PDOS is drawn whenever the files exist)"))
     ap.add_argument("--collect", action="store_true", help=L(
