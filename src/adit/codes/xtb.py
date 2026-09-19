@@ -6,6 +6,7 @@ from pathlib import Path
 
 from ase.io import write
 
+from adit.citations import Citation
 from adit.codes.base import GenerationError, InputGenerator, ReadmeNotes, register
 from adit.config import Config, Profile
 from adit.spec import CalculationSpec, XtbMethod
@@ -168,3 +169,51 @@ class XtbGenerator(InputGenerator):
 
 
 register(XtbGenerator())
+
+
+# References from the "Citations" section of the xtb README; GFN_CITATIONS is keyed by method.gfn
+_XTB_CITE_URL = "https://github.com/grimme-lab/xtb#citations"
+CITATIONS = (
+    Citation("xtb_bannwarth2020", r"""@article{xtb_bannwarth2020,
+  author  = {Bannwarth, Christoph and Caldeweyher, Eike and Ehlert, Sebastian and Hansen, Andreas and Pracht, Philipp and Seibert, Jakob and Spicher, Sebastian and Grimme, Stefan},
+  title   = {Extended tight-binding quantum chemistry methods},
+  journal = {WIREs Computational Molecular Science},
+  volume  = {11},
+  number  = {2},
+  pages   = {e1493},
+  year    = {2020},
+  doi     = {10.1002/wcms.1493}
+}""", doi="10.1002/wcms.1493", source=_XTB_CITE_URL),
+)
+GFN_CITATIONS: dict[str, tuple[Citation, ...]] = {
+    "1": (Citation("xtb_grimme2017", r"""@article{xtb_grimme2017,
+  author  = {Grimme, Stefan and Bannwarth, Christoph and Shushkov, Philip},
+  title   = {A Robust and Accurate Tight-Binding Quantum Chemical Method for Structures, Vibrational Frequencies, and Noncovalent Interactions of Large Molecular Systems Parametrized for All spd-Block Elements ({Z} = 1--86)},
+  journal = {Journal of Chemical Theory and Computation},
+  volume  = {13},
+  number  = {5},
+  pages   = {1989--2009},
+  year    = {2017},
+  doi     = {10.1021/acs.jctc.7b00118}
+}""", doi="10.1021/acs.jctc.7b00118", source=_XTB_CITE_URL),),
+    "2": (Citation("xtb_bannwarth2019", r"""@article{xtb_bannwarth2019,
+  author  = {Bannwarth, Christoph and Ehlert, Sebastian and Grimme, Stefan},
+  title   = {{GFN2-xTB}---An Accurate and Broadly Parametrized Self-Consistent Tight-Binding Quantum Chemical Method with Multipole Electrostatics and Density-Dependent Dispersion Contributions},
+  journal = {Journal of Chemical Theory and Computation},
+  volume  = {15},
+  number  = {3},
+  pages   = {1652--1671},
+  year    = {2019},
+  doi     = {10.1021/acs.jctc.8b01176}
+}""", doi="10.1021/acs.jctc.8b01176", source=_XTB_CITE_URL),),
+    "ff": (Citation("xtb_spicher2020", r"""@article{xtb_spicher2020,
+  author  = {Spicher, Sebastian and Grimme, Stefan},
+  title   = {Robust Atomistic Modeling of Materials, Organometallic, and Biochemical Systems},
+  journal = {Angewandte Chemie International Edition},
+  volume  = {59},
+  number  = {36},
+  pages   = {15665--15673},
+  year    = {2020},
+  doi     = {10.1002/anie.202004239}
+}""", doi="10.1002/anie.202004239", source=_XTB_CITE_URL),),
+}

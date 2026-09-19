@@ -7,6 +7,7 @@ from pathlib import Path
 from ase.io import write
 
 from adit.bandpath import KPATH_FILE, band_path, dftb_klines, kpath_json
+from adit.citations import Citation
 from adit.codes.base import GenerationError, InputGenerator, ReadmeNotes, register
 from adit.codes.sk_sets import SKSet, SKSetError, discover_sets
 from adit.config import Config, Profile
@@ -416,3 +417,28 @@ class DftbPlusGenerator(InputGenerator):
 
 
 register(DftbPlusGenerator())
+
+
+# References the DFTB+ developers ask for (dftbplus.org names the 2025 paper, the GitHub README the 2020 one)
+CITATIONS = (
+    Citation("dftbplus_hourahine2025", r"""@article{dftbplus_hourahine2025,
+  author  = {Hourahine, B. and Berdakin, M. and Bich, J. A. and Bonaf{\'e}, F. P. and Camacho, C. and Cui, Q. and Deshaye, M. Y. and D{\'\i}az Mir{\'o}n, G. and Ehlert, S. and Elstner, M. and Frauenheim, T. and Goldman, N. and Gonz{\'a}lez Le{\'o}n, R. A. and van der Heide, T. and Irle, S. and Kowalczyk, T. and Kuba{\v{r}}, T. and Lee, I. S. and Lien-Medrano, C. R. and Maryewski, A. and Melson, T. and Min, S. K. and Niehaus, T. and Niklasson, A. M. N. and Pecchia, A. and Reuter, K. and S{\'a}nchez, C. G. and Scheurer, C. and Sentef, M. A. and Stishenko, P. V. and Vuong, V. Q. and Aradi, B.},
+  title   = {Recent Developments in {DFTB}+, a Software Package for Efficient Atomistic Quantum Mechanical Simulations},
+  journal = {The Journal of Physical Chemistry A},
+  volume  = {129},
+  number  = {24},
+  pages   = {5373--5390},
+  year    = {2025},
+  doi     = {10.1021/acs.jpca.5c01146}
+}""", doi="10.1021/acs.jpca.5c01146", source="https://dftbplus.org/about/index.html"),
+    Citation("dftbplus_hourahine2020", r"""@article{dftbplus_hourahine2020,
+  author  = {Hourahine, B. and Aradi, B. and Blum, V. and Bonaf{\'e}, F. and Buccheri, A. and Camacho, C. and Cevallos, C. and Deshaye, M. Y. and Dumitric{\u{a}}, T. and Dominguez, A. and Ehlert, S. and Elstner, M. and van der Heide, T. and Hermann, J. and Irle, S. and Kranz, J. J. and K{\"o}hler, C. and Kowalczyk, T. and Kuba{\v{r}}, T. and Lee, I. S. and Lutsker, V. and Maurer, R. J. and Min, S. K. and Mitchell, I. and Negre, C. and Niehaus, T. A. and Niklasson, A. M. N. and Page, A. J. and Pecchia, A. and Penazzi, G. and Persson, M. P. and {\v{R}}ez{\'a}{\v{c}}, J. and S{\'a}nchez, C. G. and Sternberg, M. and St{\"o}hr, M. and Stuckenberg, F. and Tkatchenko, A. and Yu, V. W.-z. and Frauenheim, T.},
+  title   = {{DFTB}+, a software package for efficient approximate density functional theory based atomistic simulations},
+  journal = {The Journal of Chemical Physics},
+  volume  = {152},
+  number  = {12},
+  pages   = {124101},
+  year    = {2020},
+  doi     = {10.1063/1.5143190}
+}""", doi="10.1063/1.5143190", source="https://github.com/dftbplus/dftbplus#citing"),
+)

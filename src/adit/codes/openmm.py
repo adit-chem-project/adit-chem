@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 from adit.codes.amber import _prmtop_natoms, _rst7_natoms
+from adit.citations import Citation
 from adit.codes.base import GenerationError, InputGenerator, ReadmeNotes, register
 from adit.codes.gromacs import _gro_atom_count, gmx_top_dir, scan_includes
 from adit.codes.plumed import PLUMED_FILE, output_lines as plumed_outputs, plumed_text, readme_lines as plumed_prepare
@@ -439,3 +440,18 @@ class OpenmmGenerator(InputGenerator):
 
 
 register(OpenmmGenerator())
+
+
+# The reference the current OpenMM user guide asks for ("Referencing OpenMM")
+CITATIONS = (
+    Citation("openmm_eastman2024", r"""@article{openmm_eastman2024,
+  author  = {Eastman, Peter and Galvelis, Raimondas and Pel{\'a}ez, Ra{\'u}l P. and Abreu, Charlles R. A. and Farr, Stephen E. and Gallicchio, Emilio and Gorenko, Anton and Henry, Michael M. and Hu, Frank and Huang, Jing and Kr{\"a}mer, Andreas and Michel, Julien and Mitchell, Joshua A. and Pande, Vijay S. and Rodrigues, Jo{\~a}o P. G. L. M. and Rodriguez-Guerra, Jaime and Simmonett, Andrew C. and Singh, Sukrit and Swails, Jason and Turner, Philip and Wang, Yuanqing and Zhang, Ivy and Chodera, John D. and De Fabritiis, Gianni and Markland, Thomas E.},
+  title   = {{OpenMM} 8: Molecular Dynamics Simulation with Machine Learning Potentials},
+  journal = {The Journal of Physical Chemistry B},
+  volume  = {128},
+  number  = {1},
+  pages   = {109--116},
+  year    = {2024},
+  doi     = {10.1021/acs.jpcb.3c06662}
+}""", doi="10.1021/acs.jpcb.3c06662", source="https://docs.openmm.org/latest/userguide/introduction.html"),
+)

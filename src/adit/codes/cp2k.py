@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 
+from adit.citations import Citation
 from adit.codes.base import GenerationError, InputGenerator, ReadmeNotes, register
 from adit.codes.cp2k_data import Cp2kData
 from adit.config import Config, Profile
@@ -432,3 +433,18 @@ def profile_program() -> str:
 
 
 register(Cp2kGenerator())
+
+
+# The review the CP2K FAQ names when the REFERENCES block of the output is not reproduced
+CITATIONS = (
+    Citation("cp2k_kuhne2020", r"""@article{cp2k_kuhne2020,
+  author  = {K{\"u}hne, Thomas D. and Iannuzzi, Marcella and Del Ben, Mauro and Rybkin, Vladimir V. and Seewald, Patrick and Stein, Frederick and Laino, Teodoro and Khaliullin, Rustam Z. and Sch{\"u}tt, Ole and Schiffmann, Florian and Golze, Dorothea and Wilhelm, Jan and Chulkov, Sergey and Bani-Hashemian, Mohammad Hossein and Weber, Val{\'e}ry and Bor{\v{s}}tnik, Urban and Taillefumier, Mathieu and Jakobovits, Alice Shoshana and Lazzaro, Alfio and Pabst, Hans and M{\"u}ller, Tiziano and Schade, Robert and Guidon, Manuel and Andermatt, Samuel and Holmberg, Nico and Schenter, Gregory K. and Hehn, Anna and Bussy, Augustin and Belleflamme, Fabian and Tabacchi, Gloria and Gl{\"o}{\ss}, Andreas and Lass, Michael and Bethune, Iain and Mundy, Christopher J. and Plessl, Christian and Watkins, Matt and VandeVondele, Joost and Krack, Matthias and Hutter, J{\"u}rg},
+  title   = {{CP2K}: An electronic structure and molecular dynamics software package -- {Quickstep}: Efficient and accurate electronic structure calculations},
+  journal = {The Journal of Chemical Physics},
+  volume  = {152},
+  number  = {19},
+  pages   = {194103},
+  year    = {2020},
+  doi     = {10.1063/5.0007045}
+}""", doi="10.1063/5.0007045", source="https://www.cp2k.org/faq:cite"),
+)
