@@ -34,7 +34,7 @@ from adit.config import (Config, ConfigError, config_path, ensure_config, env_va
                           set_top_level_value)
 from adit.gui.help import help_for
 from adit.lang import L
-from adit.project import OutputNotEmpty, ProjectError, ProjectFiles, build_project, load_project, write_project
+from adit.project import OutputNotEmpty, ProjectError, ProjectFiles, build_project, has_files, load_project, tree_files, write_project
 from adit.spec import CalculationSpec
 from adit.structure import CRYSTAL_STRUCTURES, FETCH_DATABASES, SURFACE_FUNCTIONS, has_rdkit, preset_names, preset_search_text
 from adit.web import forms
@@ -326,9 +326,9 @@ class WebApp:
             scan = parse_scan(f"{path}={f.get('scan_values') or ''}")
             if out.exists() and not out.is_dir():
                 return "", L(f"{out} は保存先にできません (同じ名前のファイルがあります)。", f"{out} cannot be used as the output directory (a file with that name exists).")
-            if out.is_dir() and any(out.iterdir()) and not overwrite:
-                return "", L(f"{out} は空ではありません。中のファイルを上書きしてよければ、一括生成の欄の「上書きを許可」に印を付けてから、もう一度「生成」を押してください。",
-                             f"{out} is not empty. To overwrite the files inside, tick \"Allow overwrite\" in the parameter scan box and press \"Generate\" again.")
+            if has_files(out) and not overwrite:
+                return "", L(f"{out} には {len(tree_files(out))} ファイルがあります。同じ名前のファイルを上書きしてよければ、一括生成の欄の「上書きを許可」に印を付けてから、もう一度「生成」を押してください。",
+                             f"{out} holds {len(tree_files(out))} files. To overwrite those with the same names, tick \"Allow overwrite\" in the parameter scan box and press \"Generate\" again.")
             dirs = write_scan(self.spec, self.cfg, out, scan, overwrite=overwrite)
         except (ScanError, ProjectError, ConfigError, ValueError, OSError) as ex:
             if isinstance(ex, PydanticError):
@@ -424,9 +424,9 @@ class WebApp:
                 return "", L("保存先を指定してください。", "Choose an output directory.")
             if out.exists() and not out.is_dir():
                 return "", L(f"{out} は保存先にできません (同じ名前のファイルがあります)。", f"{out} cannot be used as the output directory (a file with that name exists).")
-            if out.is_dir() and any(out.iterdir()) and not overwrite:
-                return "", L(f"{out} は空ではありません。中のファイルを上書きしてよければ、「まとめて作る」の欄の「上書きを許可」に印を付けてから、もう一度「生成」を押してください。",
-                             f"{out} is not empty. To overwrite the files inside, tick \"Allow overwrite\" in the batch generation box and press \"Generate\" again.")
+            if has_files(out) and not overwrite:
+                return "", L(f"{out} には {len(tree_files(out))} ファイルがあります。同じ名前のファイルを上書きしてよければ、「まとめて作る」の欄の「上書きを許可」に印を付けてから、もう一度「生成」を押してください。",
+                             f"{out} holds {len(tree_files(out))} files. To overwrite those with the same names, tick \"Allow overwrite\" in the batch generation box and press \"Generate\" again.")
             res = P.run_batch(kind, self.spec, self.cfg, out, self.form, overwrite=overwrite)
         except ImportError as ex:
             return "", L(f"必要なパッケージがありません: {ex}", f"a required package is missing: {ex}")
@@ -493,9 +493,9 @@ class WebApp:
             parsed = parse_stages({"stages": stages})
             if out.exists() and not out.is_dir():
                 return "", L(f"{out} は保存先にできません (同じ名前のファイルがあります)。", f"{out} cannot be used as the output directory (a file with that name exists).")
-            if out.is_dir() and any(out.iterdir()) and not overwrite:
-                return "", L(f"{out} は空ではありません。中のファイルを上書きしてよければ、段階の欄の「上書きを許可」に印を付けてから、もう一度「段階に分けて生成」を押してください。",
-                             f"{out} is not empty. To overwrite the files inside, tick \"Allow overwrite\" in the staged calculation box and press \"Generate stages\" again.")
+            if has_files(out) and not overwrite:
+                return "", L(f"{out} には {len(tree_files(out))} ファイルがあります。同じ名前のファイルを上書きしてよければ、段階の欄の「上書きを許可」に印を付けてから、もう一度「段階に分けて生成」を押してください。",
+                             f"{out} holds {len(tree_files(out))} files. To overwrite those with the same names, tick \"Allow overwrite\" in the staged calculation box and press \"Generate stages\" again.")
             dirs = write_stages(self.spec, self.cfg, out, parsed, overwrite=overwrite)
         except (StageError, ProjectError, ConfigError, ValueError, OSError) as ex:
             return "", forms._pydantic_text(ex) if isinstance(ex, ValueError) else str(ex)
