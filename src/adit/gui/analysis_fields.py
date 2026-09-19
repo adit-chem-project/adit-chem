@@ -670,14 +670,27 @@ def compare_sections(cres) -> list[Section]:
     for x in cres.reactions:
         de = x["delta_e_ev"]
         bal = L("釣り合う", "balanced") if x["balanced"] else (L("釣り合わない: ", "not balanced: ") + str(x["imbalance"]))
+        th = x.get("thermo") or []
+
+        def tcol(k: str, fmt: str, first: bool = False) -> str:
+            if th:
+                return "; ".join(_g(t.get(k), fmt) for t in th)
+            return (x.get("thermo_note") or "-") if first else "-"
+
         rows.append([x["name"], x["terms"], _g(de, "+.6f"), _g(x.get("delta_e_kj_mol"), "+.3f"), _g(x.get("delta_e_kcal_mol"), "+.3f"),
-                     _g(x.get("delta_g_code_ev"), "+.6f"), bal, f"{x['n_differing']}: " + " ".join(x["differing"]) if x["differing"] else "0"])
+                     _g(x.get("delta_g_code_ev"), "+.6f"), tcol("T_K", "g", True), tcol("delta_h_kj_mol", "+.3f"), tcol("delta_s_j_mol_k", "+.3f"),
+                     tcol("delta_g_kj_mol", "+.3f"), bal, f"{x['n_differing']}: " + " ".join(x["differing"]) if x["differing"] else "0"])
     out.append(_cut(Section("compare_reactions", L("反応ごと (ΔE = ΣνE)", "Per reaction (ΔE = ΣνE)"),
                             [L("名前", "Name"), L("組 (ν·ディレクトリ)", "Terms (ν·directory)"), "ΔE [eV]", "ΔE [kJ/mol]", "ΔE [kcal/mol]",
-                             L("コードの G の差 ΣνG [eV]", "Difference of code G, ΣνG [eV]"), L("組成の釣り合い", "Composition balance"),
+                             L("コードの G の差 ΣνG [eV]", "Difference of code G, ΣνG [eV]"), L("熱化学の T [K]", "Thermo T [K]"),
+                             "ΔH [kJ/mol]", "ΔS [J/(mol K)]", L("ΔG (F) [kJ/mol]", "ΔG (F) [kJ/mol]"), L("組成の釣り合い", "Composition balance"),
                              L("条件が違う項目", "Settings that differ")],
-                            rows, [False, False, True, True, True, True, False, False],
-                            [L("ν は生成したファイルが正、反応物が負。組成の釣り合いは Σν·(元素ごとの原子数)", "ν is positive for products and negative for reactants; balance is Σν·(atoms per element)")]),
+                            rows, [False, False, True, True, True, True, True, True, True, True, False, False],
+                            [L("ν は生成したファイルが正、反応物が負。組成の釣り合いは Σν·(元素ごとの原子数)", "ν is positive for products and negative for reactants; balance is Σν·(atoms per element)"),
+                             L("ΔH・ΔS・ΔG は各計算の analysis/thermo.csv (ASE の熱化学) の H・S・G の ΣνX。温度 (と圧力) が全部の計算で揃っているときだけ出します。"
+                               "振動だけのモデルでは H は無く、G の列は F = U − TS の差です",
+                               "ΔH, ΔS and ΔG are ΣνX of H, S and G from analysis/thermo.csv (ASE thermochemistry) of each run, given only when every run has the same temperatures (and pressures). "
+                               "Vibration-only models have no H, and the G column is then the difference of F = U − TS")]),
                     cres.files.get("reactions", "")))
     rows = [[r["dir"], r["code"] or "-", r["task"] or "-", r["formula"] or "-", "-" if r["natoms"] is None else str(r["natoms"]),
              _g(r["energy_ev"], ".6f"), r["energy_source"] or "-", r["note"] or ""] for r in cres.runs]
