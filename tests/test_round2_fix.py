@@ -98,9 +98,12 @@ def test_analysis_page_not_run_notice_and_md_defaults(sk_root, tmp_path, ja):
     httpd, base = _start(app)
     try:
         html = urllib.request.urlopen(base + "/analysis?dir=" + urllib.parse.quote(str(out))).read().decode()
-        assert "まだ実行していないようです" in html
-        assert html.index("まだ実行していない") < html.index("<fieldset>")
+        assert "解析はまだ実行していません" in html
+        assert html.index("まだ実行していません") < html.index("<fieldset>")
         assert re.search(r'name="rdf" checked', html) and re.search(r'name="msd" checked', html)
+        assert not (out / "analysis").exists()      # GET runs nothing
+        html = urllib.request.urlopen(base + "/analysis", data=urllib.parse.urlencode({"run_dir": str(out), "action": "run"}).encode()).read().decode()
+        assert "まだ実行していないようです" in html and (out / "analysis").is_dir()
     finally:
         httpd.shutdown(); httpd.server_close()
 

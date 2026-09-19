@@ -245,7 +245,10 @@ def _get_bytes(url: str) -> bytes:
 def test_analysis_get_link_and_scale_reference(web, tmp_path):
     app, base = web
     out = _scan_copy(tmp_path, "scale", ["0.99", "1.01"])
-    page = _get(base + "/analysis?dir=" + urllib.parse.quote(str(out)))
+    page = _get(base + "/analysis?dir=" + urllib.parse.quote(str(out)))   # GET only fills the form
+    assert "解析はまだ実行していません" in page and '<table class="scan">' not in page
+    assert f'name="run_dir" value="{out}"' in page and 'name="rdf" disabled' in page
+    page = _post(base + "/analysis", {"run_dir": str(out)})
     head, body = _table(page)
     assert head[2] == "最小値との差 [meV/原子]" and len(body) == 2
     assert "5 つ以上要ります" in h.unescape(page)
