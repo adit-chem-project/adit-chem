@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QSizePolicy, QStacke
                                QVBoxLayout, QWidget)
 
 from adit.gui import icons
+from adit.gui.flow_layout import FlowLayout
 from adit.lang import L
 
 LARGE_ICON = 16
@@ -85,16 +86,16 @@ class RibbonPage(QWidget):
         super().__init__(parent)
         self.setObjectName("ribbon_page")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self._lay = QHBoxLayout(self); self._lay.setContentsMargins(8, PAGE_PADDING, 8, PAGE_PADDING); self._lay.setSpacing(6)
-        self._lay.addStretch(1)
+        # Groups wrap onto a second row when the window is narrower than the row (1366 px with wide fonts).
+        self._lay = FlowLayout(self, spacing=6); self._lay.setContentsMargins(8, PAGE_PADDING, 8, PAGE_PADDING)
         self.groups: list[RibbonGroup] = []
 
     def add_group(self, title: str) -> RibbonGroup:
         g = RibbonGroup(title)
         if self.groups:
             sep = QFrame(); sep.setObjectName("ribbon_sep"); sep.setFixedWidth(1)
-            self._lay.insertWidget(self._lay.count() - 1, sep); g.separator = sep
-        self._lay.insertWidget(self._lay.count() - 1, g)
+            self._lay.addWidget(sep); g.separator = sep
+        self._lay.addWidget(g)
         g.triggered.connect(self.triggered.emit)
         self.groups.append(g)
         return g

@@ -46,6 +46,7 @@ def offline(monkeypatch):
 # ---- CLI ----
 def test_cli_fetch_replaces_the_structure(offline, sk_root, tmp_path, capsys, monkeypatch):
     monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path / "home"))      # Path.home() on Windows
     cfg_path = tmp_path / "cluster.toml"
     save_config(cfg_for(sk_root), cfg_path)
     spec_path = tmp_path / "spec.json"
@@ -84,6 +85,7 @@ def test_cli_fetch_candidates_and_failures_stop(offline, sk_root, tmp_path, caps
 
 def test_cli_fetch_uses_the_configured_mp_key(offline, sk_root, tmp_path, capsys, monkeypatch):
     monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path / "home"))      # Path.home() on Windows
     cfg = cfg_for(sk_root); cfg.mp_api_key = "KEY"
     cfg_path = tmp_path / "cluster.toml"; save_config(cfg, cfg_path)
     assert "mp_api_key" in cfg_path.read_text(encoding="utf-8")
