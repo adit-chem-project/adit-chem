@@ -292,7 +292,7 @@ HELP: dict[str, Help] = {
                         "Which displacement components are summed (xyz = 3D, xy = in-plane, z = normal). The divisor of the diffusion coefficient (6, 4, 2) follows."),
     "重心の流れを落とさない": Help(O, "普段は各フレームで全体の重心の動きを引いてから MSD を取ります。入れると引かずに数えます (外場で流れがある系など)。",
                           "Normally the center-of-mass motion is subtracted in every frame before the MSD. With this it is kept (e.g. systems driven by a field)."),
-    "誤差を出す区間の数": Help(O, "軌跡をこの数の区間 (ブロック) に分け、区間ごとの拡散係数のばらつきから誤差を出します。",
+    "誤差を出すブロックの数": Help(O, "軌跡をこの数のブロックに分け、ブロックごとの拡散係数のばらつきから誤差を出します。",
                           "The trajectory is split into this many blocks; the spread of the per-block diffusion coefficients gives the error."),
     "原子 1 個ごとの拡散係数も出す": Help(O, "元素ごとの平均に加えて、原子ごとの拡散係数を表に出します。原子数が多いと長い表になります。",
                                "Besides the per-element average, lists a diffusion coefficient for every atom; long tables for many atoms."),

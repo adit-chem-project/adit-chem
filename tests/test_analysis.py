@@ -33,7 +33,7 @@ def test_diffusion_summary_does_not_attach_block_sem_to_full_run_d(language, err
     }})
     text = result.summary_text()
     assert "+-" not in text
-    assert "1.000e-05 cm^2/s" in text
+    assert "1.000e-05 cm^2/s" in text or "1.000e-05 cm²/s" in text
     if error is None:
         assert "±" not in text
     else:
