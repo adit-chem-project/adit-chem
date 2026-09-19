@@ -205,6 +205,11 @@ _EN.update({
     "OT の追加行": "Additional OT lines", "SURFACE_DIPOLE_CORRECTION": "SURFACE_DIPOLE_CORRECTION", "SURF_DIP_DIR": "SURF_DIP_DIR",
     "SPRING (VASP)": "SPRING (VASP)", "K_SPRING (CP2K)": "K_SPRING (CP2K)", "opt_scheme (QE)": "opt_scheme (QE)",
 })
+_EN.update({
+    "等値面 (軌道・電子密度・静電ポテンシャル)": "Isosurface (orbitals, electron density, electrostatic potential)",
+    "等値": "Level", "正の色": "Positive colour", "負の色": "Negative colour", "透明度": "Opacity", "間引き (格子点)": "Stride (grid points)",
+    "表示": "Show", "等値面を消す": "Remove the surface", "等値面を表示": "Show the isosurface",
+})
 _EN["指定"] = "Molecule"
 _EN["設定"] = "Settings"
 
