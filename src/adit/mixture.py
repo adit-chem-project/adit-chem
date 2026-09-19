@@ -1,6 +1,8 @@
 
 from __future__ import annotations
 
+from adit.progress import report
+
 from adit.errors import AditError
 import json
 import math
@@ -201,6 +203,7 @@ def build_mixture(spec: MixtureSpec) -> Atoms:
             centers.append(sites[m_no % len(sites)] + rng.uniform(-0.3 * step, 0.3 * step, size=3))
             symbols += mol.get_chemical_symbols(); tags += [ci] * len(mol); mol_id += [m_no] * len(mol)
             m_no += 1
+            report(m_no, total, L("分子を置いています", "placing molecules"))
     local = np.vstack(local_parts)
     cen = np.array(centers)
     ids = np.array(mol_id)
@@ -379,6 +382,7 @@ def pack_molecules(mols: list[tuple[Atoms, int]], cell, rng: np.random.Generator
             local_parts.append(loc); centers.append(c)
             symbols += mol.get_chemical_symbols(); tags += [ci] * len(mol); mol_id += [m_no] * len(mol)
             m_no += 1
+            report(m_no, total, L("分子を置いています", "placing molecules"))
     local = np.vstack(local_parts); cen = np.array(centers); ids = np.array(mol_id)
     npos, nmol = len(local), m_no
     ids_all = np.concatenate([ids, np.full(len(obs), nmol)])
@@ -412,6 +416,7 @@ def pack_molecules(mols: list[tuple[Atoms, int]], cell, rng: np.random.Generator
     pos = local + cen[ids]
     ii = None
     for it in range(max(50, steps)):
+        report(it + 1, max(50, steps), L("分子の重なりをほどいています", "relaxing overlaps"))
         if ii is None or it % 8 == 0:
             cen = wrap(cen); pos = local + cen[ids]
             ii, jj, sv = pairs(pos, target + skin)

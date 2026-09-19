@@ -11,6 +11,7 @@ from adit.builder.bases import build_base, limit
 from adit.builder.model import Recipe, RecipeError, op_label
 from adit.builder.ops import OPS, make_molecules_whole, prepared, split_molecules
 from adit.lang import L
+from adit.progress import report
 
 _HINTS = {
     "base": ("土台の構造の時点で原子が重なっています。ファイルなら中身を、分子ならセルの大きさを確かめてください",
@@ -116,6 +117,7 @@ def build_recipe(recipe: Recipe) -> tuple[Atoms, list[StepLog]]:
     logs.append(log)
     notes = order_notes(recipe.steps)
     for k, step in enumerate(recipe.steps, start=1):
+        report(k, len(recipe.steps) + 1, L(f"手順 {k}: {op_label(step.op)}", f"step {k}: {op_label(step.op)}"))
         t0 = time.perf_counter()
         try:
             atoms = OPS[step.op](atoms, step)

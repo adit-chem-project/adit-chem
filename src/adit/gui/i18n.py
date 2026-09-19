@@ -68,6 +68,7 @@ _EN: dict[str, str] = {
     "成分の種類": "Kind", "指定 (名前 / SMILES / ファイル)": "Reference (name / SMILES / path)", "個数": "Count", "電荷": "Charge", "表示名": "Label",
     "密度から自動 [g/cm³]": "From density [g/cm³]", "一辺を指定 [Å]": "Edge [Å]", "セル": "Box", "分子間の最短距離 [Å]": "Min. distance [Å]",
     "Draw: 分子を描いて SMILES にします (RDKit が要ります)": "Draw: sketch the molecule and turn it into SMILES (needs RDKit)", "構造の作り方": "Source", "共通設定": "Common settings", "環境設定…": "Preferences…",
+    "1 つ前の設定に戻す": "Back to the previous settings", "探す": "Find",
     "元に戻す (1 つ前の設定)": "Undo (previous settings)", "やり直す": "Redo", "環境設定ファイル (cluster.toml) を編集": "Open and edit the settings file (cluster.toml)",
     "左ドラッグで回転、ホイールで拡大縮小、右ドラッグで移動、ダブルクリックでリセット": "Left-drag to rotate, wheel to zoom, right-drag to pan, double-click to reset",
     "左ドラッグで回転、ホイールで拡大縮小、右ドラッグで移動、ダブルクリックでリセット。原子をクリックで選択、Shift+クリックで追加 (2 個で距離、3 個で角度、4 個で二面角)":
@@ -243,6 +244,14 @@ def tr(text: str) -> str:
     return text
 
 
+def _tr_tip(action) -> str:
+    # Keep the " (Ctrl+Z)" suffix out of the lookup so the tooltip before it still translates.
+    from adit.gui.palette import split_shortcut
+
+    base, suffix = split_shortcut(action.toolTip(), action)
+    return tr(base) + suffix
+
+
 def translate_widgets(root: QWidget) -> None:
     if LANGUAGE != "en":
         return
@@ -264,10 +273,10 @@ def translate_widgets(root: QWidget) -> None:
                 w.setTabText(i, tr(w.tabText(i)))
         if isinstance(w, QToolButton) and w.defaultAction() is not None:
             a = w.defaultAction()
-            a.setText(tr(a.text())); a.setIconText(tr(a.iconText())); a.setToolTip(tr(a.toolTip()))
+            a.setText(tr(a.text())); a.setIconText(tr(a.iconText())); a.setToolTip(_tr_tip(a))
         if isinstance(w, (QToolBar, QMenu, QMenuBar)):
             for a in w.actions():
-                a.setText(tr(a.text())); a.setToolTip(tr(a.toolTip()))
+                a.setText(tr(a.text())); a.setToolTip(_tr_tip(a))
                 if a.menu() is not None:
                     a.menu().setTitle(tr(a.menu().title()))
         if w.toolTip():
