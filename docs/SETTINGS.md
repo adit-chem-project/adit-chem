@@ -10,6 +10,7 @@ sk_root = "/home/<ユーザー名>/slakos"   # Slater-Koster パラメータの�
 pseudo_root = "/home/<ユーザー名>/pseudo" # Quantum ESPRESSO の擬ポテンシャル (直下に <セット名>/*.UPF)
 cp2k_data = ""                       # CP2K の data ディレクトリ (BASIS_MOLOPT など)。空なら CP2K_DATA_DIR、cp2k の隣の share/cp2k/data の順に探します
 templates_dir = ""                   # 研究室の雛形 (構造を除いた spec.json) の置き場所。空なら、このファイルと同じ場所の templates/ だけを見ます
+mp_api_key = ""                      # Materials Project の API キー (構造を mp-ID で取得するときだけ使います。https://next-gen.materialsproject.org/dashboard で発行)
 default_profile = "local"
 enable_run = true                    # false にすると、この PC では計算を実行しない設定になります (生成と解析はできます)
 language = "ja"                      # "ja" または "en" (環境変数 ADIT_LANG が優先)
