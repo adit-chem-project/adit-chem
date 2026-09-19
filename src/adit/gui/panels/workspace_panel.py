@@ -196,6 +196,13 @@ class WorkspacePanel(QWidget):
         self.btn_up.clicked.connect(lambda: self.set_root(self.root.parent))
 
         self.editor = Editor()
+        from PySide6.QtWidgets import QStackedWidget
+        from adit.gui.progress import EmptyState
+        self.editor_empty = EmptyState(L("ファイルを開いていません", "No file is open"),
+                                       L("左の一覧でファイルを選ぶと、ここで編集できます", "Pick a file in the list on the left to edit it here"))
+        self.editor_empty.clicked.connect(self._open_suggested)
+        self.editor_stack = QStackedWidget()
+        self.editor_stack.addWidget(self.editor_empty); self.editor_stack.addWidget(self.editor)
         self.file_label = QLabel(L("ファイルを選ぶと、ここで編集できます", "pick a file to edit it here"))
         self.file_label.setObjectName("hint")
         self.btn_save = QPushButton(L("保存", "Save"))
@@ -237,7 +244,7 @@ class WorkspacePanel(QWidget):
         el = QVBoxLayout(self.edit_box); el.setContentsMargins(0, 0, 0, 0); el.setSpacing(4)
         head = QHBoxLayout()
         head.addWidget(self.file_label, 1); head.addWidget(self.btn_fold_editor); head.addWidget(self.btn_save)
-        el.addLayout(head); el.addWidget(self.editor, 1)
+        el.addLayout(head); el.addWidget(self.editor_stack, 1)
 
         self.term_box = QWidget()
         tl = QVBoxLayout(self.term_box); tl.setContentsMargins(0, 0, 0, 0); tl.setSpacing(4)
@@ -260,6 +267,7 @@ class WorkspacePanel(QWidget):
         lay.setContentsMargins(PANEL_MARGIN, 8, PANEL_MARGIN, PANEL_MARGIN); lay.setSpacing(GROUP_SPACING)
         lay.addWidget(self.split)
         self.apply_layout()
+        self._refresh_empty()
 
     # ---- layout ----
     def apply_layout(self) -> None:
@@ -276,7 +284,7 @@ class WorkspacePanel(QWidget):
         if fold_editor and fold_terminal:           # never fold both
             self.btn_fold_terminal.setChecked(False)
             fold_terminal = False
-        self.editor.setVisible(not fold_editor)
+        self.editor_stack.setVisible(not fold_editor)
         self.terminal.setVisible(not fold_terminal)
         self.btn_fold_editor.setText(L("エディタを開く", "Expand the editor") if fold_editor
                                      else L("エディタを畳む", "Collapse the editor"))
@@ -321,6 +329,7 @@ class WorkspacePanel(QWidget):
         self.model.setRootPath(str(path))
         self.tree.setRootIndex(self.model.index(str(path)))
         self.path_label.setText(str(path))
+        self._refresh_empty()
 
     def set_dark(self, dark: bool) -> None:
         self.terminal.set_dark(dark)
@@ -362,7 +371,22 @@ class WorkspacePanel(QWidget):
             self.file_label.setText(f"{path.name}: {why}")
             return why
         self.file_label.setText(str(path))
+        self.editor_stack.setCurrentWidget(self.editor)
         return ""
+
+    SUGGESTED_FILES = ("submit.sh", "README.txt", "spec.json")
+
+    def suggested_file(self) -> Path | None:
+        return next((self.root / n for n in self.SUGGESTED_FILES if (self.root / n).is_file()), None)
+
+    def _refresh_empty(self) -> None:
+        f = self.suggested_file()
+        self.editor_empty.set_texts(button=L(f"{f.name} を開く", f"Open {f.name}") if f is not None else "")
+
+    def _open_suggested(self) -> None:
+        f = self.suggested_file()
+        if f is not None:
+            self.open_file(f)
 
     def _ask_discard(self) -> bool:
         answer = QMessageBox.question(self, L("保存していません", "Not saved"),

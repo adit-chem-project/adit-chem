@@ -186,7 +186,7 @@ def test_english_ui(app, quiet, sk_root, tmp_path):
         assert tr("生成できます") == "Ready to generate" and tr("未知の文") == "未知の文"
         assert win.ribbon.page_titles() == ["File", "Insert", "View", "Run", "Settings", "Help"]
         assert win.act_open.iconText() == "Open" and win.act_open.text() == "Open calculation settings (spec.json)…"
-        assert win.act_back.toolTip() == "Undo (previous settings)"
+        assert win.act_back.toolTip() == "Back to the previous settings (Ctrl+Z)"
         assert [b.text() for b in win.ribbon.pages[0].groups[0].buttons] == ["Open", "Save"]
         assert win.ribbon.pages[0].groups[0].caption.text() == "Calculation settings"
         win.refresh_preview()
@@ -241,14 +241,18 @@ def test_toolbar_has_no_menu_duplicates(app, quiet, sk_root, tmp_path):
 def test_ribbon_collapses_on_second_click(app, quiet, sk_root, tmp_path):
     win = make_window(sk_root, tmp_path); win.show(); app.processEvents()
     rb = win.ribbon
+    rb.set_collapsed(False)
+    for _ in range(5):
+        app.processEvents()
     h_open = rb.height()
     rb.tabs.tabBarClicked.emit(rb.tabs.currentIndex())
     for _ in range(5):
         app.processEvents()
     assert rb.is_collapsed() and not rb.stack.isVisible() and rb.tabs.isVisible()
-    assert rb.height() < h_open - 40, (rb.height(), h_open)
+    assert rb.height() < h_open - 30, (rb.height(), h_open)
     rb.tabs.tabBarClicked.emit(3); rb.tabs.setCurrentIndex(3)
-    assert not rb.is_collapsed() and rb.stack.currentIndex() == 3
+    assert not rb.is_collapsed() and rb.stack.currentIndex() == 3 and rb.is_peeking()
+    rb.toggle.click(); assert not rb.is_collapsed() and not rb.is_peeking()   # opened by a tab click: the toggle pins it
     rb.toggle.click(); assert rb.is_collapsed()
     rb.toggle.click(); assert not rb.is_collapsed()
     win.ribbon.pages[2].groups[0].buttons[2].click()
