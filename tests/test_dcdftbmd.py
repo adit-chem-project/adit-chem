@@ -57,3 +57,11 @@ def test_dcdftbmd_missing_parameters_and_unmapped_thermostat_stop_before_generat
         build_project(water_spec(method=m, task=Task(type="molecular_dynamics", md=MDSettings(
             ensemble="NVT", thermostat="nose_hoover"))), cfg_for(sk_root))
     assert any(e.location == "task.md.thermostat" for e in ex.value.errors)
+
+
+def test_dcdftbmd_writes_no_analysis_script(sk_root, tmp_path):
+    spec = water_spec(method=_method(tmp_path), task=Task(type="single_point"), runtime=Runtime(profile="local"))
+    files = build_project(spec, cfg_for(sk_root))
+    assert "analyze.py" not in files.texts
+    readme = files.texts["README.txt"]
+    assert "analyze.py" not in readme and "自動解析は未対応" in readme
