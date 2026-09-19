@@ -199,3 +199,30 @@ def test_status_endpoint_is_gone(web):
     with pytest.raises(urllib.error.HTTPError) as ex:
         urllib.request.urlopen(base + "/status", timeout=60)
     assert ex.value.code == 404
+
+
+def test_requests_that_change_state_run_one_at_a_time(web, monkeypatch):
+    import time
+
+    app, base = web
+    active, peak, lock = [0], [0], threading.Lock()
+    original = app.preview
+
+    def slow_preview(form):
+        with lock:
+            active[0] += 1; peak[0] = max(peak[0], active[0])
+        try:
+            time.sleep(0.3)
+            return original(form)
+        finally:
+            with lock:
+                active[0] -= 1
+
+    monkeypatch.setattr(app, "preview", slow_preview)
+    fields = {**default_form(), "sk_set": "fake-1-0"}
+    threads = [threading.Thread(target=_post, args=(base + "/preview", fields)) for _ in range(3)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert peak[0] == 1
