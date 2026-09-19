@@ -27,7 +27,7 @@ class Item:
 
 
 def shortcut_text(action: QAction) -> str:
-    return action.shortcut().toString(QKeySequence.SequenceFormat.NativeText) if not action.shortcut().isEmpty() else ""
+    return action.shortcut().toString(QKeySequence.SequenceFormat.PortableText) if not action.shortcut().isEmpty() else ""
 
 
 def with_shortcut(tip: str, action: QAction) -> str:
