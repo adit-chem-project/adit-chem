@@ -693,7 +693,8 @@ class MainWindow(QMainWindow):
         self.act_readme = QAction(icons.icon("help", 32), "README を開く", self); self.act_readme.setIconText("README"); self.act_readme.triggered.connect(self._open_readme)
         self.act_about = QAction(icons.icon("about", 32), "ADIT について", self); self.act_about.triggered.connect(self._about)
 
-        rb = self.ribbon = Ribbon()
+        rb = self.ribbon = Ribbon(collapsed=bool(self.cfg.ribbon_collapsed))
+        rb.collapsed_changed.connect(self._remember_ribbon)
         p = rb.add_page("ファイル")
         g = p.add_group("計算設定"); g.add_large(self.act_open); g.add_large(self.act_save)
         g = p.add_group(L("前の計算と雛形", "Previous runs and templates")); g.add_large(self.act_continue)
@@ -735,6 +736,10 @@ class MainWindow(QMainWindow):
             rb.set_leading(self.quick_access)
         tl.addWidget(rb)
         self.setMenuWidget(self.top_area)
+
+    def _remember_ribbon(self, collapsed: bool) -> None:
+        if bool(self.cfg.ribbon_collapsed) != collapsed:
+            self.cfg.ribbon_collapsed = collapsed; self._save_cfg()
 
     def _save_cfg(self) -> None:
         try:
