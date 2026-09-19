@@ -118,6 +118,12 @@ class OrcaGenerator(InputGenerator):
             errs.append(ValidationError("method.extra_keywords", L("キーワードは 1 行で書いてください", "keywords must be a single line")))
         if spec.task.type == "band_structure":
             errs.append(ValidationError("task.type", L("ORCA にバンド計算はありません (周期系のコードで行ってください)", "ORCA has no band structure (use a periodic code)")))
+        if spec.structure.fixed_atoms and t.type == "vibrations":
+            errs.append(ValidationError("structure.fixed_atoms", L(
+                "ORCA の振動解析 (Freq) には固定原子を反映できません (部分ヘシアンは %freq の Partial_Hess を extra_blocks に書いてください)",
+                "fixed atoms cannot be applied to an ORCA frequency calculation (for a partial Hessian write %freq Partial_Hess in extra_blocks)")))
+        if spec.structure.fixed_atoms and t.type == "single_point" and m.irc:
+            errs.append(ValidationError("structure.fixed_atoms", L("ORCA の IRC には固定原子を反映できません", "fixed atoms cannot be applied to an ORCA IRC calculation")))
         errs += _check_solvent(m)
         errs += self._check_ts_irc(spec)
         if m.goat:
@@ -196,7 +202,10 @@ class OrcaGenerator(InputGenerator):
         out += {
             "geometry_optimization": [L("  orca.xyz      最適化後の構造 (分子ビューアで開けます)。各ステップの構造は orca_trj.xyz",
                                         "  orca.xyz      optimized structure (opens in molecular viewers); orca_trj.xyz has each step")],
-            "molecular_dynamics": [L("  trajectory.xyz  MD の軌跡 (dump の間隔ごとの座標)", "  trajectory.xyz  MD trajectory (coordinates every dump interval)")],
+            "molecular_dynamics": [L("  trajectory.xyz  MD の軌跡 (dump の間隔ごとの座標)", "  trajectory.xyz  MD trajectory (coordinates every dump interval)")]
+            + ([L("                固定原子は %md の Constraint Add Cartesian で止めています (自由度が 1 原子あたり 3 減ります)",
+                  "                fixed atoms are held by Constraint Add Cartesian in %md (3 degrees of freedom fewer per atom)")]
+               if spec.structure.fixed_atoms else []),
             "vibrations": [L("                振動数は output.log の VIBRATIONAL FREQUENCIES の節 (単位 cm⁻¹)。orca.hess はヘシアン",
                              "                the frequencies are in the VIBRATIONAL FREQUENCIES section of output.log (cm⁻¹); orca.hess holds the Hessian")],
         }.get(t, [])
@@ -276,6 +285,8 @@ class OrcaGenerator(InputGenerator):
                 lines.append(f"   Thermostat {th} {md.temperature_k:g}_K Timecon {md.coupling_time_fs:g}_fs")
             elif md.ensemble == "NPT":
                 raise GenerationError(L("ORCA の MD に NPT はありません", "ORCA MD has no NPT"))
+            # ORCA 6.1 manual, MD "Constraint" command: zero-based atom index, one atom per line.
+            lines += [f"   Constraint Add Cartesian {i}" for i in sorted(st.fixed_atoms)]
             lines += [f'   Dump Position Stride {md.dump_interval} Filename "trajectory.xyz"', f"   Run {md.steps}", "end"]
         if m.extra_blocks.strip():
             lines += ["# 追加のブロック (extra_blocks。そのまま書く)", m.extra_blocks.strip()]

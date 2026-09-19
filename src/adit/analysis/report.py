@@ -958,13 +958,32 @@ def run_analysis(run_dir: Path | str, opts: AnalysisOptions | None = None) -> An
     if fermi_used and data.fermi_is_homo:
         res.notes.append(L("フェルミ準位の代わりに最高被占準位 (highest occupied level) を使った", "the highest occupied level is used instead of the Fermi level"))
     res.tables = _jsonable(res.tables)
-    (out / "summary.json").write_text(json.dumps({"code": res.code, "tables": res.tables, "figures": res.figures, "notes": res.notes}, ensure_ascii=False, indent=2, default=float), encoding="utf-8")
+    (out / "summary.json").write_text(json.dumps({
+        "code": res.code, "tables": _paths_relative_to(res.tables, run_dir, out),
+        "figures": _paths_relative_to(res.figures, run_dir, out), "notes": res.notes},
+        ensure_ascii=False, indent=2, default=float), encoding="utf-8")
     (out / "summary.txt").write_text(res.summary_text() + "\n", encoding="utf-8")
     if opts.viscosity:
         _add_viscosity(res, data, out, save)
     if opts.xrd:
         _add_xrd(res, data, out, opts, save)
     return res
+
+
+def _paths_relative_to(obj, run_dir: Path, out: Path):
+    # summary.json is copied with the directory to other machines: write paths relative to run_dir
+    # (or to the analysis directory when -o put it elsewhere). AnalysisResult itself keeps absolute paths.
+    if isinstance(obj, dict):
+        return {k: _paths_relative_to(v, run_dir, out) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_paths_relative_to(v, run_dir, out) for v in obj]
+    if isinstance(obj, str) and obj and Path(obj).is_absolute():
+        for base in (run_dir, out):
+            try:
+                return Path(obj).resolve().relative_to(Path(base).resolve()).as_posix()
+            except ValueError:
+                continue
+    return obj
 
 
 def _spacing(times_fs: list[float] | None) -> float | None:

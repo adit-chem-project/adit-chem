@@ -226,3 +226,9 @@ def test_new_engine_generated_readme_is_clear_in_english(sk_root):
         assert "analyze.py" not in readme
     finally:
         lang.set_language(old_language)
+
+
+def test_grrm_readme_names_the_log_that_the_run_command_writes(sk_root):
+    files = build_project(molecular(GrrmMethod(theory="HF", basis="6-31G"), "geometry_optimization"), cfg_for(sk_root))
+    assert files.texts["submit.sh"].rstrip().endswith("grrm > output.log 2>&1")
+    assert "output.log" in files.texts["README.txt"] and "grrm.log" not in files.texts["README.txt"]

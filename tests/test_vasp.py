@@ -271,3 +271,12 @@ def test_parse_constraints():
     assert parse_constraints("1-2, 3:xy, 4:z", 5) == ([0, 1], {"2": (False, False, True), "3": (True, True, False)})
     with pytest.raises(ValueError):
         parse_constraints("3:q", 5)
+
+
+@pytest.mark.parametrize("coupling_fs,timestep_fs,period", [(100.0, 2.0, 50), (100.0, 1.0, 100), (0.5, 1.0, 1)])
+def test_csvr_period_is_a_number_of_md_steps(cfg_pp, coupling_fs, timestep_fs, period):
+    spec = si_spec(task=Task(type="molecular_dynamics", md=MDSettings(
+        ensemble="NVT", thermostat="csvr", coupling_time_fs=coupling_fs, timestep_fs=timestep_fs)))
+    inc = build_project(spec, cfg_pp).texts["INCAR"]
+    assert "MDALGO = 5" in inc and f"CSVR_PERIOD = {period}\n" in inc
+    assert f"POTIM = {timestep_fs:g}" in inc

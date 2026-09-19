@@ -92,6 +92,9 @@ def test_output_dir_parent_must_exist(sk_root, tmp_path):
     assert validate(water_spec(), cfg_for(sk_root), output_dir=tmp_path / "new") == []
     errs = validate(water_spec(), cfg_for(sk_root), output_dir=tmp_path / "no" / "such" / "dir")
     assert locations(errs) == ["output_dir"]
+    (tmp_path / "file").write_text("x", encoding="utf-8")
+    errs = validate(water_spec(), cfg_for(sk_root), output_dir=tmp_path / "file")
+    assert locations(errs) == ["output_dir"] and "file" in errs[0].message
 
 
 def test_skset_reads_shells(sk_root):
@@ -122,3 +125,13 @@ def test_overlap_across_periodic_boundary(sk_root):
                       kpoints=KPoints(mode="gamma"), task=Task(type="single_point"))
     errs = validate(spec, cfg_for(sk_root))
     assert [e.location for e in errs] == ["structure.atoms"] and "0.200" in errs[0].message
+
+
+def test_too_many_kpoints_is_caught_in_density_mode_even_with_a_zero_in_mesh(sk_root):
+    from ase.build import bulk
+    from adit.spec import AtomsData, KPoints, Structure
+    si = bulk("Si", "diamond", a=5.43)
+    st = Structure(source="bulk", source_ref="Si", atoms=AtomsData.from_ase(si))
+    kp = KPoints(mode="density", density=1000.0, mesh=(0, 1, 1))
+    errs = validate(water_spec(structure=st, kpoints=kp), cfg_for(sk_root))
+    assert "kpoints.density" in locations(errs)

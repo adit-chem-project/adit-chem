@@ -431,3 +431,10 @@ def test_old_spec_json_still_loads():
     for d in sorted(EX.glob("*_generated")):
         s = CalculationSpec.load(d / "spec.json")
         assert s.handoff is None and s.structure.velocities is None and s.meta.continued_from is None
+
+
+def test_write_stages_does_not_create_missing_parents(cfg, tmp_path):
+    from adit.project import ProjectError
+    with pytest.raises(ProjectError) as ex:
+        write_stages(water_spec(), cfg, tmp_path / "no" / "such" / "staged", parse_stages(STAGES))
+    assert [e.location for e in ex.value.errors] == ["output_dir"] and not (tmp_path / "no").exists()
