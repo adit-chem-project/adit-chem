@@ -27,6 +27,7 @@ Hamiltonian = DFTB {
 }
 
 Options {
+  RandomSeed = 12345
   WriteResultsTag = Yes
 }
 

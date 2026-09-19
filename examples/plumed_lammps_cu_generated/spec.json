@@ -706,7 +706,8 @@
     ],
     "style_commands": "",
     "extra_commands": "",
-    "seed": 12345
+    "seed": 12345,
+    "thermo_pressure_tensor": false
   },
   "kpoints": null,
   "task": {
@@ -747,8 +748,8 @@
     "lines": "# 利用者が書いた PLUMED の入力 (ADIT は作らない)\nd1: DISTANCE ATOMS=1,2\ncn: COORDINATION GROUPA=1-32 GROUPB=1-32 R_0=3.0\nPRINT ARG=d1,cn FILE=COLVAR STRIDE=50"
   },
   "provenance": {
-    "adit_version": "0.0.1",
-    "generated_utc": "2026-09-12T21:21:03+00:00",
+    "adit_version": "0.1.0a1",
+    "generated_utc": "2026-09-19T01:29:40+00:00",
     "python": "3.14.7",
     "ase": "3.29.0",
     "files": [
@@ -763,19 +764,19 @@
     "inputs": [
       {
         "name": "data.lammps",
-        "sha256": "746d6137914d0e9b434861847cd2d1c68ed75b84414a3a489dfe9b43fb603e92"
+        "sha256": "86c475089993ceacf30c7234a947f273bd42a54c34289eba35fb041c659f790f"
       },
       {
         "name": "in.lammps",
-        "sha256": "71c8b60030d02f84ab58e185d520701dd999e1ca08179a8cdbe7111761858a78"
+        "sha256": "fdebc34595ce03bc3e2b657fe362040b6a2ad445b4336f2104c3ffc1d5238c75"
       },
       {
         "name": "plumed.dat",
-        "sha256": "37e52da89257f30c2aa2406d89ad58d054130c245f418ea3b9106fb8be74fc89"
+        "sha256": "582d7451024249bc8f65432d4be13a46153d4c469b6c973ee69c77a9d60ae739"
       },
       {
         "name": "submit.sh",
-        "sha256": "47939022da59936a6ef9b5a716bd44b60254717056e7e89564e0185894b97270"
+        "sha256": "be9c3a2ccb06747dfcdd0b8c4ae123f733c7ed9632dec0296b88af694d5ff173"
       }
     ],
     "code_version_file": "code_version.txt"

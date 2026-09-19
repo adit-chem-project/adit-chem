@@ -3,7 +3,10 @@
   "meta": {
     "created": "2026-09-10T08:29:26+00:00",
     "app_version": "0.0.1",
-    "comment": ""
+    "comment": "",
+    "continued_from": null,
+    "template": null,
+    "stage": null
   },
   "structure": {
     "source": "bulk",
@@ -51,7 +54,8 @@
     "charge": 0,
     "multiplicity": 1,
     "fixed_atoms": [],
-    "fixed_axes": {}
+    "fixed_axes": {},
+    "velocities": null
   },
   "method": {
     "code": "espresso",
@@ -67,6 +71,15 @@
     "degauss": 0.0,
     "nspin": 1,
     "input_dft": "",
+    "starting_magnetization": {},
+    "hubbard": {},
+    "hubbard_projector": "atomic",
+    "assume_isolated": "",
+    "dipole_correction": false,
+    "dipole_direction": 0,
+    "dipole_maxpos": 0.0,
+    "dipole_decrease": 0.0,
+    "dipole_amplitude": 0.0,
     "extra": {}
   },
   "kpoints": {
@@ -85,7 +98,23 @@
   },
   "task": {
     "type": "geometry_optimization",
+    "bands": {
+      "path": "",
+      "npoints": 60,
+      "empty_bands": 4
+    },
     "optimizer": "Rational",
+    "md": {
+      "ensemble": "NVT",
+      "thermostat": "berendsen",
+      "temperature_k": 300.0,
+      "timestep_fs": 1.0,
+      "steps": 1000,
+      "dump_interval": 10,
+      "coupling_time_fs": 100.0,
+      "pressure_bar": 1.0,
+      "barostat_time_fs": 1000.0
+    },
     "max_steps": 20,
     "force_tolerance_ev_per_ang": 0.005142208619,
     "relax_cell": "no"
@@ -98,5 +127,33 @@
     "omp_threads": 1,
     "walltime": "01:00:00",
     "job_name": "si"
+  },
+  "handoff": null,
+  "plumed": null,
+  "provenance": {
+    "adit_version": "0.1.0a1",
+    "generated_utc": "2026-09-19T01:29:44+00:00",
+    "python": "3.14.7",
+    "ase": "3.29.0",
+    "files": [
+      {
+        "name": "pseudo/Si.pbe-n-rrkjus_psl.1.0.0.UPF",
+        "sha256": "669fb75395a9d26973b0ea1ce8223bbcb30d3396c5d48bf5e794d1243c52375a",
+        "bytes": 1513204,
+        "source": "/home/<user>/adit/pseudo/pslibrary/Si.pbe-n-rrkjus_psl.1.0.0.UPF"
+      }
+    ],
+    "generated_files": [],
+    "inputs": [
+      {
+        "name": "pw.in",
+        "sha256": "4b4a79a96e39b0c554f7102139984ae6d214962492b52237d033ac8074bc4e0a"
+      },
+      {
+        "name": "submit.sh",
+        "sha256": "43c9ef037eeae91bf84a70528f9d5e6ec5b9d6f08ad336320355eb0dff252fba"
+      }
+    ],
+    "code_version_file": "code_version.txt"
   }
 }

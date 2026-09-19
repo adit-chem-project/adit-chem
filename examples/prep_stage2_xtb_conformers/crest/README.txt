@@ -1,4 +1,4 @@
-CREST の入力 (ADIT は走らせません)
+CREST の入力 (ADIT は実行しません)
 
   struct.xyz   出発の構造 (力場のエネルギーが最も低い配座)
   run_crest.sh crest struct.xyz --gfn2 --chrg 0 --uhf 0 -T 1

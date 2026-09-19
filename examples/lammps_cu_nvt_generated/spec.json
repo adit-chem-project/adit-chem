@@ -3,7 +3,10 @@
   "meta": {
     "created": "2026-09-11T17:13:44+00:00",
     "app_version": "0.0.1",
-    "comment": ""
+    "comment": "",
+    "continued_from": null,
+    "template": null,
+    "stage": null
   },
   "structure": {
     "source": "bulk",
@@ -687,7 +690,8 @@
     "charge": 0,
     "multiplicity": 1,
     "fixed_atoms": [],
-    "fixed_axes": {}
+    "fixed_axes": {},
+    "velocities": null
   },
   "method": {
     "code": "lammps",
@@ -702,7 +706,8 @@
     ],
     "style_commands": "",
     "extra_commands": "",
-    "seed": 12345
+    "seed": 12345,
+    "thermo_pressure_tensor": false
   },
   "kpoints": null,
   "task": {
@@ -736,5 +741,37 @@
     "omp_threads": 1,
     "walltime": "01:00:00",
     "job_name": "lammps_cu_nvt"
+  },
+  "handoff": null,
+  "plumed": null,
+  "provenance": {
+    "adit_version": "0.1.0a1",
+    "generated_utc": "2026-09-19T01:29:39+00:00",
+    "python": "3.14.7",
+    "ase": "3.29.0",
+    "files": [
+      {
+        "name": "Cu_u3.eam",
+        "sha256": "3436c491a4c75ea8b7141adbc6ee382a118f5fdb47f609c2a660fc1eb772599f",
+        "bytes": 36588,
+        "source": "examples/lammps_cu/Cu_u3.eam"
+      }
+    ],
+    "generated_files": [],
+    "inputs": [
+      {
+        "name": "data.lammps",
+        "sha256": "86c475089993ceacf30c7234a947f273bd42a54c34289eba35fb041c659f790f"
+      },
+      {
+        "name": "in.lammps",
+        "sha256": "8b32a51e3a73d720f1532c6684ae1e684085da2f36aa3a85a0853a3a836fb6d6"
+      },
+      {
+        "name": "submit.sh",
+        "sha256": "be9c3a2ccb06747dfcdd0b8c4ae123f733c7ed9632dec0296b88af694d5ff173"
+      }
+    ],
+    "code_version_file": "code_version.txt"
   }
 }

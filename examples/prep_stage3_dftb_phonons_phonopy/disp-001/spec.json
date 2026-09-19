@@ -151,6 +151,7 @@
     "dispersion": "none",
     "d3_params": null,
     "filling_temperature": 0.0,
+    "seed": 12345,
     "solvation_param_file": ""
   },
   "kpoints": {
@@ -200,9 +201,10 @@
     "job_name": "prep"
   },
   "handoff": null,
+  "plumed": null,
   "provenance": {
-    "adit_version": "0.0.1",
-    "generated_utc": "2026-09-11T19:03:38+00:00",
+    "adit_version": "0.1.0a1",
+    "generated_utc": "2026-09-19T01:30:04+00:00",
     "python": "3.14.7",
     "ase": "3.29.0",
     "files": [
@@ -226,6 +228,20 @@
       }
     ],
     "generated_files": [],
+    "inputs": [
+      {
+        "name": "dftb_in.hsd",
+        "sha256": "46ca7103a3ad158a7f455f5f73fda536ee3658c4fe2d3ed72b2b7564fa0fc43e"
+      },
+      {
+        "name": "geometry.gen",
+        "sha256": "18a7cb7cab3bcb5b3db902b095276aec187253215e32dbd9780afdf560dbe51e"
+      },
+      {
+        "name": "submit.sh",
+        "sha256": "e01c6d73cc54ef67982c0c76621856475d79ed5a7bf67ab59083c970cd09a34c"
+      }
+    ],
     "code_version_file": "code_version.txt"
   }
 }

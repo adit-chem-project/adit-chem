@@ -10,7 +10,7 @@
   },
   "structure": {
     "source": "file",
-    "source_ref": "<作業ディレクトリ>/ads_inputs/adsorbed.extxyz",
+    "source_ref": "/home/<user>/adit/examples/prep_stage2_dftb_adsorption/inputs/adsorbed.extxyz",
     "atoms": {
       "symbols": [
         "C",
@@ -121,6 +121,7 @@
     "dispersion": "none",
     "d3_params": null,
     "filling_temperature": 0.0,
+    "seed": 12345,
     "solvation_param_file": ""
   },
   "kpoints": {
@@ -170,9 +171,10 @@
     "job_name": "prep"
   },
   "handoff": null,
+  "plumed": null,
   "provenance": {
-    "adit_version": "0.0.1",
-    "generated_utc": "2026-09-11T18:56:53+00:00",
+    "adit_version": "0.1.0a1",
+    "generated_utc": "2026-09-19T01:29:57+00:00",
     "python": "3.14.7",
     "ase": "3.29.0",
     "files": [
@@ -244,6 +246,20 @@
       }
     ],
     "generated_files": [],
+    "inputs": [
+      {
+        "name": "dftb_in.hsd",
+        "sha256": "a65e12d77cde473880509a8f14d1411b56972d20fd0b1dcaf0aaba2698767326"
+      },
+      {
+        "name": "geometry.gen",
+        "sha256": "7045de9350fd4a5297ceba5bf38d310a910977cb46792cef773930eaefd64f8d"
+      },
+      {
+        "name": "submit.sh",
+        "sha256": "05f4390fc3347b4cdbc77cdc84bd2e9fbb2c3011b2864b377e687c63f90e7f13"
+      }
+    ],
     "code_version_file": "code_version.txt"
   }
 }

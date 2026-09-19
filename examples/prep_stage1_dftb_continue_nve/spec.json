@@ -1,9 +1,9 @@
 {
   "version": 2,
   "meta": {
-    "created": "2026-09-11T17:59:20+00:00",
-    "app_version": "0.0.1",
-    "comment": "continued from /home/<user>/adit/examples/dftb_md_water_generated",
+    "created": "2026-09-19T01:29:55+00:00",
+    "app_version": "0.1.0a1",
+    "comment": "continued from /home/<user>/adit/examples/dftb_md_water_generated continued from /home/<user>/adit/examples/dftb_md_water_generated",
     "continued_from": {
       "dir": "/home/<user>/adit/examples/dftb_md_water_generated",
       "spec_sha256": "5e6525e0116f6ff24a1c900f7f4bb3f93f185954647f152e88350bb947184e60",
@@ -101,6 +101,7 @@
     "dispersion": "none",
     "d3_params": null,
     "filling_temperature": 0.0,
+    "seed": 12345,
     "solvation_param_file": ""
   },
   "kpoints": null,
@@ -144,9 +145,10 @@
     "velocities": true,
     "files": {}
   },
+  "plumed": null,
   "provenance": {
-    "adit_version": "0.0.1",
-    "generated_utc": "2026-09-11T17:59:20+00:00",
+    "adit_version": "0.1.0a1",
+    "generated_utc": "2026-09-19T01:29:55+00:00",
     "python": "3.14.7",
     "ase": "3.29.0",
     "files": [
@@ -188,6 +190,20 @@
       }
     ],
     "generated_files": [],
+    "inputs": [
+      {
+        "name": "dftb_in.hsd",
+        "sha256": "29c2fd0d8cf265e789b365f4d9f0ad9c815b567891062b296328f895e84b8301"
+      },
+      {
+        "name": "geometry.gen",
+        "sha256": "03319a54d70ac2ec133d41caa1e4819801fb2be9c62d4ee2ce877575f827181e"
+      },
+      {
+        "name": "submit.sh",
+        "sha256": "fb2bba8f1d6156d0840b9450d5ed0370bff117da3052e2509983dafd28a36500"
+      }
+    ],
     "code_version_file": "code_version.txt"
   }
 }
