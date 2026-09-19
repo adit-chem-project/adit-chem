@@ -82,7 +82,6 @@ class WebApp:
         self.written_kind: str = ""
         self.written_exe: str = ""
         self.written_code: str = ""
-        self.proc: subprocess.Popen | None = None
         self.figures: dict[str, str] = {}
         self.upload_dir = Path.home() / "adit_runs" / "uploads"
         self.scan_out: Path | None = None
@@ -533,7 +532,7 @@ class WebApp:
         self._fill_step_fields(f)
         self.recipe_status, self.recipe_note = None, None
         verb, _, arg = action.partition(":")
-        k = int(arg) if arg.isdigit() else 0
+        k = int(arg) if arg.isdecimal() else 0
         try:
             steps = R.steps_from_form(f)
         except StructureError as ex:
@@ -639,7 +638,12 @@ class WebApp:
                   "terms": [], "rows": []}
             if s.op == "slab":
                 names = R.terminations(rec, k - 1) if rec is not None else None
-                it["terms"] = R.term_options(names, forms._i(f.get(f"st{k}_term"), 0) if (f.get(f"st{k}_term") or "").strip().lstrip("-").isdigit() else s.termination)
+                raw_term = (f.get(f"st{k}_term") or "").strip()
+                try:
+                    term = forms._i(raw_term, 0) if raw_term.lstrip("-").isdecimal() else s.termination
+                except FormError:
+                    term = s.termination
+                it["terms"] = R.term_options(names, term)
             if s.op == "solvent_layer":
                 it["rows"] = [(str(i), f"{i + 1}: {R.pretty_name(c.name())}") for i, c in enumerate(s.components)]
             if self.recipe_note and self.recipe_note[0] == k:
@@ -664,17 +668,6 @@ class WebApp:
                                                                                        "Electrode–electrolyte interface (slab + auto-sized surface + electrolyte + fixed layer)"))]}
 
 
-
-    def status(self) -> dict:
-        running = self.proc is not None and self.proc.poll() is None
-        code = None if self.proc is None or running else self.proc.returncode
-        tail = ""
-        if self.written is not None:
-            p = self.written / "output.log"
-            if p.is_file():
-                text = p.read_text(encoding="utf-8", errors="replace")
-                tail = "\n".join(text.splitlines()[-40:])
-        return {"running": running, "exit_code": code, "tail": tail, "dir": str(self.written or "")}
 
     def analyze(self, run_dir: str, opts: AnalysisOptions):
         res = run_analysis(run_dir, opts)
@@ -857,8 +850,32 @@ def _executable_of(run_command: str) -> str:
 
 
 # ---- HTTP ----
+MAX_BODY_BYTES = 256 * 1024 * 1024
+
+
+class BadRequest(Exception):
+
+    def __init__(self, status: HTTPStatus, message: str):
+        super().__init__(message)
+        self.status = status
+
+
+def _body_length(handler: BaseHTTPRequestHandler) -> int:
+    raw = (handler.headers.get("Content-Length") or "0").strip()
+    try:
+        length = int(raw)
+    except ValueError:
+        length = -1
+    if length < 0:
+        raise BadRequest(HTTPStatus.BAD_REQUEST, L(f"Content-Length が数値ではありません: {raw!r}", f"Content-Length is not a number: {raw!r}"))
+    if length > MAX_BODY_BYTES:
+        raise BadRequest(HTTPStatus(413), L(f"送られた本文が大きすぎます ({length} バイト、上限 {MAX_BODY_BYTES})",
+                                            f"request body too large ({length} bytes, limit {MAX_BODY_BYTES})"))
+    return length
+
+
 def _parse_body(handler: BaseHTTPRequestHandler) -> tuple[dict[str, str], dict[str, tuple[str, bytes]]]:
-    length = int(handler.headers.get("Content-Length") or 0)
+    length = _body_length(handler)
     body = handler.rfile.read(length) if length else b""
     ctype = handler.headers.get("Content-Type", "")
     fields: dict[str, str] = {}
@@ -1057,8 +1074,6 @@ def make_handler(app: WebApp, token: str | None = None):
                 if app.spec is None:
                     self._send(L("先にプレビューしてください", "Preview first"), HTTPStatus.NOT_FOUND, "text/plain; charset=utf-8"); return
                 self._send_bytes(app.spec.model_dump_json(indent=2).encode(), "application/json", "spec.json")
-            elif u.path == "/status":
-                self._send(json.dumps(app.status()), ctype="application/json")
             elif u.path == "/analysis":
                 d = q.get("dir") or str(app.written or "")
                 md = _is_md(d) if d else False
@@ -1104,7 +1119,10 @@ def make_handler(app: WebApp, token: str | None = None):
         def _do_POST(self) -> None:
             app.refresh_config()
             u = urlparse(self.path)
-            fields, files = _parse_body(self)
+            try:
+                fields, files = _parse_body(self)
+            except BadRequest as ex:
+                self._send(str(ex), ex.status, "text/plain; charset=utf-8"); return
             if u.path == "/preview":
                 self._save_upload(fields, files)
                 status_text, err = app.preview(fields)
@@ -1449,7 +1467,7 @@ def make_handler(app: WebApp, token: str | None = None):
                 except (CompareError, ValueError, OSError, KeyError) as ex:
                     self._compare_page(base, rows, None, L(f"compare.json を読めません: {ex}", f"cannot read compare.json: {ex}")); return
                 self._compare_page(base, rows, None, ""); return
-            if not base or not Path(base).expanduser().is_dir():
+            if not base or not os.path.isdir(os.path.expanduser(base)):
                 self._compare_page(base, rows, None, L(f"{AF.lab('compare_base')}: ディレクトリがありません ({base!r})",
                                                        f"{AF.lab('compare_base')}: directory not found ({base!r})")); return
             try:
@@ -1476,7 +1494,7 @@ def make_handler(app: WebApp, token: str | None = None):
                 opts = None
             elif opts is not None and run_dir:
                 d = Path(run_dir).expanduser()
-                if d.is_dir() and not any((d / f).exists() for f in RESULT_FILES):
+                if os.path.isdir(d) and not any(os.path.exists(d / f) for f in RESULT_FILES):
                     notice = L("計算結果が見つかりません (output.log などの出力ファイルがありません)。まだ実行していないようです。"
                                "下の要約は、出力が無いまま入力ファイルだけから求めたものです。",
                                "No calculation results found (no output files such as output.log). It seems the calculation has not been run yet; "
