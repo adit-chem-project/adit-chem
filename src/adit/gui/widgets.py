@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 
 from PySide6.QtCore import QEvent, QObject, Qt
-from PySide6.QtGui import QValidator
+from PySide6.QtGui import QFont, QFontMetrics, QValidator
 from PySide6.QtWidgets import QApplication, QComboBox, QDoubleSpinBox, QFormLayout, QLabel, QWidget
 
 from adit.gui.style import LABEL_WIDTH, NARROW_FIELD
@@ -48,10 +48,41 @@ class SciDoubleSpinBox(QDoubleSpinBox):
             super().stepBy(steps)
 
 
+PILL_GAP = 8
+PILL_HEIGHT = 18
+PILL_POINT_SIZE = 8.5
+
+
+class FieldLabel(QLabel):
+    """Form label whose text stays the help / translation key; a "required" pill sits at its right edge."""
+
+    def __init__(self, text: str, parent: QWidget | None = None):
+        super().__init__(text, parent)
+        self.pill: QLabel | None = None
+
+    def mark_required(self) -> None:
+        from adit.lang import L
+
+        self.setObjectName("required")
+        pill = QLabel(L("必須", "required"), self)
+        pill.setObjectName("required_pill")
+        pill.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        font = QFont(pill.font()); font.setPointSizeF(PILL_POINT_SIZE)
+        pill.setFixedSize(QFontMetrics(font).horizontalAdvance(pill.text()) + 14, PILL_HEIGHT)
+        self.setContentsMargins(0, 0, pill.width() + PILL_GAP, 0)   # keeps the text clear of the pill
+        self.pill = pill
+
+    def resizeEvent(self, event) -> None:  # noqa: N802
+        super().resizeEvent(event)
+        if self.pill is not None:
+            x = min(self.fontMetrics().horizontalAdvance(self.text()) + PILL_GAP, self.width() - self.pill.width())
+            self.pill.move(x, (self.height() - self.pill.height()) // 2)
+
+
 def label(text: str, *, required: bool | None = None, help_text: str | None = None) -> QLabel:
     from adit.gui.help import help_for
 
-    w = QLabel(text)
+    w = FieldLabel(text)
     w.setProperty("adit_key", text)
     w.setMinimumWidth(LABEL_WIDTH)
     w.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
@@ -59,7 +90,7 @@ def label(text: str, *, required: bool | None = None, help_text: str | None = No
     req = required if required is not None else (h.required if h else False)
     tip = help_text if help_text is not None else (h.text() if h else "")
     if req:
-        w.setObjectName("required")
+        w.mark_required()
     if tip:
         w.setToolTip(tip); w.setStatusTip(tip)
     return w

@@ -38,16 +38,20 @@ class Tokens:
     glass_hover: str = ""
     glass_edge: str = ""
     accent_top: str = ""
+    pill_bg: str = ""
+    pill_fg: str = ""
 
 
 LIGHT = Tokens(bg="#EFEFF1", card="#FFFFFF", field="#F4F4F6", line="rgba(0, 0, 0, 30)", fg="#14161B", muted="#4B5260",
                accent="#0A7AFF", accent_hover="#0866D6", ok="#1F7A38", ng="#C8001A",
                bg_top="#E9E9EC", bg_bottom="#F5F5F7", glass="rgba(255, 255, 255, 158)", glass_field="rgba(255, 255, 255, 190)",
-               glass_hover="rgba(255, 255, 255, 235)", glass_edge="rgba(255, 255, 255, 230)", accent_top="#3A95FF")
+               glass_hover="rgba(255, 255, 255, 235)", glass_edge="rgba(255, 255, 255, 230)", accent_top="#3A95FF",
+               pill_bg="#E1E3E8", pill_fg="#3B4150")
 DARK = Tokens(bg="#1C1C1E", card="#2C2C2E", field="#3A3A3C", line="rgba(255, 255, 255, 34)", fg="#F0F1F4", muted="#B6B8C2",
               accent="#3D8CFF", accent_hover="#5C9EFF", ok="#5FD07A", ng="#FF6961",
               bg_top="#1C1C1E", bg_bottom="#2A2A2D", glass="rgba(255, 255, 255, 16)", glass_field="rgba(255, 255, 255, 24)",
-              glass_hover="rgba(255, 255, 255, 40)", glass_edge="rgba(255, 255, 255, 38)", accent_top="#6AA8FF")
+              glass_hover="rgba(255, 255, 255, 40)", glass_edge="rgba(255, 255, 255, 38)", accent_top="#6AA8FF",
+              pill_bg="#4A4B52", pill_fg="#E8E9EE")
 
 GROUP_COLORS = {"structure": "#0FA3A3", "task": "#F0883E", "method": "#8E5AD6", "kpoints": "#34A853", "runtime": "#5B7DB1", "analysis": "#D6567A"}
 
@@ -105,6 +109,8 @@ QLabel#status_ng {{ color: {t.ng}; font-weight: 600; }}
 QLabel#title {{ font-weight: 700; font-size: 12.5pt; }}
 QLabel#subtitle {{ font-weight: 700; font-size: 11pt; color: {t.muted}; margin-top: 8px; }}
 QLabel#required {{ color: {t.accent}; font-weight: 600; }}
+/* The word next to a required label; the color alone is not enough (also used by links) */
+QLabel#required_pill {{ background: {t.pill_bg}; color: {t.pill_fg}; border-radius: 9px; font-size: 8.5pt; font-weight: 600; }}
 
 QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox, QPlainTextEdit, QTextEdit {{
     background: {t.glass_field};
@@ -153,6 +159,8 @@ QPushButton#primary:disabled {{ background: {t.glass_field}; color: {t.muted}; b
 QPushButton#cell_button {{ padding: 2px 6px; min-height: 20px; }}
 QTableWidget QSpinBox, QTableWidget QComboBox, QTableWidget QLineEdit {{ padding: 1px 6px; }}
 QPushButton#link, QPushButton#gen_hint {{ border: none; background: transparent; color: {t.accent}; padding: 2px 6px; }}
+/* Underlined so that a link-style button is not mistaken for a required label */
+QPushButton#link {{ text-decoration: underline; }}
 QPushButton#link:hover, QPushButton#gen_hint:hover {{ text-decoration: underline; background: transparent; border: none; }}
 
 QToolBar {{ background: transparent; border: none; spacing: 8px; padding: 8px {PANEL_MARGIN}px 4px {PANEL_MARGIN}px; }}
