@@ -118,7 +118,7 @@ def test_thermo_needs_inputs_and_no_defaults():
     t = thermo.compute_thermo([], WATER, None, _ig())
     assert not t["computed"]
     t = thermo.compute_thermo(f, WATER, None, thermo.ThermoOptions(model="harmonic", temperatures_k=(300.0,), exclude_lowest=5))
-    assert not t["computed"] and "0 cm^-1" in t["reasons"][0]
+    assert not t["computed"] and ("0 cm^-1" in t["reasons"][0] or "0 cm⁻¹" in t["reasons"][0])
     t = thermo.compute_thermo(f, WATER, -10.0, thermo.ThermoOptions(model="harmonic", temperatures_k=(300.0, 600.0), exclude_lowest=6))
     assert t["computed"] and t["n_modes_used"] == 3 and len(t["rows"]) == 2
     r0 = t["rows"][0]
