@@ -6,6 +6,7 @@ import re
 import shutil
 from pathlib import Path
 
+from adit.citations import Citation
 from adit.codes.base import GenerationError, InputGenerator, ReadmeNotes, register
 from adit.codes.plumed import PLUMED_FILE, output_lines as plumed_outputs, plumed_text, readme_lines as plumed_prepare
 from adit.config import Config, Profile
@@ -363,3 +364,78 @@ class GromacsGenerator(InputGenerator):
 
 
 register(GromacsGenerator())
+
+
+# The papers the GROMACS reference manual asks for ("Citation information"; Bekker 1993 has no DOI and is omitted)
+_GMX_CITE_URL = "https://manual.gromacs.org/current/reference-manual/preface.html"
+CITATIONS = (
+    Citation("gromacs_abraham2015", r"""@article{gromacs_abraham2015,
+  author  = {Abraham, Mark James and Murtola, Teemu and Schulz, Roland and P{\'a}ll, Szil{\'a}rd and Smith, Jeremy C. and Hess, Berk and Lindahl, Erik},
+  title   = {{GROMACS}: High performance molecular simulations through multi-level parallelism from laptops to supercomputers},
+  journal = {SoftwareX},
+  volume  = {1-2},
+  pages   = {19--25},
+  year    = {2015},
+  doi     = {10.1016/j.softx.2015.06.001}
+}""", doi="10.1016/j.softx.2015.06.001", source=_GMX_CITE_URL),
+    Citation("gromacs_pall2015", r"""@incollection{gromacs_pall2015,
+  author    = {P{\'a}ll, Szil{\'a}rd and Abraham, Mark James and Kutzner, Carsten and Hess, Berk and Lindahl, Erik},
+  title     = {Tackling Exascale Software Challenges in Molecular Dynamics Simulations with {GROMACS}},
+  booktitle = {Solving Software Challenges for Exascale},
+  editor    = {Markidis, Stefano and Laure, Erwin},
+  publisher = {Springer International Publishing},
+  pages     = {3--27},
+  year      = {2015},
+  doi       = {10.1007/978-3-319-15976-8_1}
+}""", doi="10.1007/978-3-319-15976-8_1", source=_GMX_CITE_URL),
+    Citation("gromacs_pronk2013", r"""@article{gromacs_pronk2013,
+  author  = {Pronk, Sander and P{\'a}ll, Szil{\'a}rd and Schulz, Roland and Larsson, Per and Bjelkmar, P{\"a}r and Apostolov, Rossen and Shirts, Michael R. and Smith, Jeremy C. and Kasson, Peter M. and van der Spoel, David and Hess, Berk and Lindahl, Erik},
+  title   = {{GROMACS} 4.5: a high-throughput and highly parallel open source molecular simulation toolkit},
+  journal = {Bioinformatics},
+  volume  = {29},
+  number  = {7},
+  pages   = {845--854},
+  year    = {2013},
+  doi     = {10.1093/bioinformatics/btt055}
+}""", doi="10.1093/bioinformatics/btt055", source=_GMX_CITE_URL),
+    Citation("gromacs_hess2008", r"""@article{gromacs_hess2008,
+  author  = {Hess, Berk and Kutzner, Carsten and van der Spoel, David and Lindahl, Erik},
+  title   = {{GROMACS} 4: Algorithms for Highly Efficient, Load-Balanced, and Scalable Molecular Simulation},
+  journal = {Journal of Chemical Theory and Computation},
+  volume  = {4},
+  number  = {3},
+  pages   = {435--447},
+  year    = {2008},
+  doi     = {10.1021/ct700301q}
+}""", doi="10.1021/ct700301q", source=_GMX_CITE_URL),
+    Citation("gromacs_vanderspoel2005", r"""@article{gromacs_vanderspoel2005,
+  author  = {van der Spoel, David and Lindahl, Erik and Hess, Berk and Groenhof, Gerrit and Mark, Alan E. and Berendsen, Herman J. C.},
+  title   = {{GROMACS}: Fast, flexible, and free},
+  journal = {Journal of Computational Chemistry},
+  volume  = {26},
+  number  = {16},
+  pages   = {1701--1718},
+  year    = {2005},
+  doi     = {10.1002/jcc.20291}
+}""", doi="10.1002/jcc.20291", source=_GMX_CITE_URL),
+    Citation("gromacs_lindahl2001", r"""@article{gromacs_lindahl2001,
+  author  = {Lindahl, Erik and Hess, Berk and van der Spoel, David},
+  title   = {{GROMACS} 3.0: a package for molecular simulation and trajectory analysis},
+  journal = {Journal of Molecular Modeling},
+  volume  = {7},
+  number  = {8},
+  pages   = {306--317},
+  year    = {2001},
+  doi     = {10.1007/s008940100045}
+}""", doi="10.1007/s008940100045", source=_GMX_CITE_URL),
+    Citation("gromacs_berendsen1995", r"""@article{gromacs_berendsen1995,
+  author  = {Berendsen, H. J. C. and van der Spoel, D. and van Drunen, R.},
+  title   = {{GROMACS}: A message-passing parallel molecular dynamics implementation},
+  journal = {Computer Physics Communications},
+  volume  = {91},
+  number  = {1-3},
+  pages   = {43--56},
+  year    = {1995},
+  doi     = {10.1016/0010-4655(95)00042-E}
+}""", doi="10.1016/0010-4655(95)00042-E", source=_GMX_CITE_URL),
+)

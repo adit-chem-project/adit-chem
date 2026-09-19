@@ -7,6 +7,7 @@ from pathlib import Path
 from ase.io.vasp import write_vasp
 
 from adit.bandpath import KPATH_FILE, band_path, kpath_json, vasp_line_mode
+from adit.citations import Citation
 from adit.codes.base import GenerationError, InputGenerator, ReadmeNotes, register
 from adit.codes.potcar import PotcarError, PotcarLibrary
 from adit.codes.potcar_names import MP_POTCAR_NAMES
@@ -431,3 +432,61 @@ echo "POTCAR を作りました ($(grep -c TITEL POTCAR) 個。内訳は potcar.
 
 
 register(VaspGenerator())
+
+
+# References named in the VASP developers' answer "How to cite VASP" (vasp.at forum); PAW_CITATIONS is the PAW entry of that list
+_VASP_CITE_URL = "https://www.vasp.at/forum/viewtopic.php?t=2971"
+CITATIONS = (
+    Citation("vasp_kresse1996a", r"""@article{vasp_kresse1996a,
+  author  = {Kresse, G. and Furthm{\"u}ller, J.},
+  title   = {Efficient iterative schemes for ab initio total-energy calculations using a plane-wave basis set},
+  journal = {Physical Review B},
+  volume  = {54},
+  number  = {16},
+  pages   = {11169--11186},
+  year    = {1996},
+  doi     = {10.1103/PhysRevB.54.11169}
+}""", doi="10.1103/PhysRevB.54.11169", source=_VASP_CITE_URL),
+    Citation("vasp_kresse1996b", r"""@article{vasp_kresse1996b,
+  author  = {Kresse, G. and Furthm{\"u}ller, J.},
+  title   = {Efficiency of ab-initio total energy calculations for metals and semiconductors using a plane-wave basis set},
+  journal = {Computational Materials Science},
+  volume  = {6},
+  number  = {1},
+  pages   = {15--50},
+  year    = {1996},
+  doi     = {10.1016/0927-0256(96)00008-0}
+}""", doi="10.1016/0927-0256(96)00008-0", source=_VASP_CITE_URL),
+    Citation("vasp_kresse1993", r"""@article{vasp_kresse1993,
+  author  = {Kresse, G. and Hafner, J.},
+  title   = {Ab initio molecular dynamics for liquid metals},
+  journal = {Physical Review B},
+  volume  = {47},
+  number  = {1},
+  pages   = {558--561},
+  year    = {1993},
+  doi     = {10.1103/PhysRevB.47.558}
+}""", doi="10.1103/PhysRevB.47.558", source=_VASP_CITE_URL),
+    Citation("vasp_kresse1994", r"""@article{vasp_kresse1994,
+  author  = {Kresse, G. and Hafner, J.},
+  title   = {Ab initio molecular-dynamics simulation of the liquid-metal--amorphous-semiconductor transition in germanium},
+  journal = {Physical Review B},
+  volume  = {49},
+  number  = {20},
+  pages   = {14251--14269},
+  year    = {1994},
+  doi     = {10.1103/PhysRevB.49.14251}
+}""", doi="10.1103/PhysRevB.49.14251", source=_VASP_CITE_URL),
+)
+PAW_CITATIONS = (
+    Citation("vasp_kresse1999", r"""@article{vasp_kresse1999,
+  author  = {Kresse, G. and Joubert, D.},
+  title   = {From ultrasoft pseudopotentials to the projector augmented-wave method},
+  journal = {Physical Review B},
+  volume  = {59},
+  number  = {3},
+  pages   = {1758--1775},
+  year    = {1999},
+  doi     = {10.1103/PhysRevB.59.1758}
+}""", doi="10.1103/PhysRevB.59.1758", source=_VASP_CITE_URL),
+)
