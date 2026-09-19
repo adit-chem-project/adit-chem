@@ -49,6 +49,8 @@ class DftbMethodPanel(QWidget):
     def __init__(self, sk_root: str, parent: QWidget | None = None):
         super().__init__(parent)
         self.sets: dict[str, SKSet] = {}
+        self.unshown: list[str] = []
+        self._seed = DftbMethod.model_fields["seed"].default   # no widget; kept for the round trip
         self.sk_set = QComboBox()
         self.sk_info = QLabel("")
         self.sk_info.setWordWrap(True)
@@ -75,8 +77,8 @@ class DftbMethodPanel(QWidget):
         info_row = QVBoxLayout(); info_row.setSpacing(2); info_row.addWidget(self.sk_info); info_row.addWidget(self.sk_browse, 0, Qt.AlignmentFlag.AlignLeft)
         form.addRow(label(""), info_row)
         form.addRow(self.scc)
-        add_row(form, L("SCC の収束判定 (SccTolerance)", "SCC tolerance (SccTolerance)"), self.scc_tol)
-        add_row(form, L("SCC の反復上限 (MaxSccIterations)", "Maximum SCC iterations (MaxSccIterations)"), self.max_scc)
+        add_row(form, "SCC の収束判定 (SccTolerance)", self.scc_tol)
+        add_row(form, "SCC の反復上限 (MaxSccIterations)", self.max_scc)
         form.addRow(self.third)
         add_row(form, "分散力補正", self.dispersion)
         grid = QGridLayout(); grid.setHorizontalSpacing(8); grid.setVerticalSpacing(4)
@@ -124,7 +126,7 @@ class DftbMethodPanel(QWidget):
         return DftbMethod(sk_set=self.sk_set.currentText(), scc=self.scc.isChecked(), scc_tolerance=self.scc_tol.value(),
                       max_scc_iterations=self.max_scc.value(), third_order=self.third.isChecked(),
                       dispersion=self.dispersion.currentText(), d3_params=d3, filling_temperature=self.temperature.value(),
-                      solvation_param_file=self.solv_file.text().strip())
+                      solvation_param_file=self.solv_file.text().strip(), seed=self._seed)
 
     def set_periodic(self, periodic: bool) -> None:
         on = not periodic or bool(self.solv_file.text().strip())
@@ -132,6 +134,11 @@ class DftbMethodPanel(QWidget):
         self.solv_file.setPlaceholderText(self._solv_ph if not periodic else L("周期系では使えません (分子のときだけ)", "not available for periodic systems (molecules only)"))
 
     def set_method(self, m: DftbMethod) -> None:
+        self._seed = m.seed
+        self.unshown = []
+        if m.sk_set and self.sk_set.findText(m.sk_set) < 0:
+            self.unshown.append(L(f"Slater-Koster パラメータ ({m.sk_set} → {self.sk_set.currentText() or '空欄'})",
+                                  f"Slater-Koster parameters ({m.sk_set} → {self.sk_set.currentText() or 'empty'})"))
         self.sk_set.setCurrentText(m.sk_set); self.scc.setChecked(m.scc); self.scc_tol.setValue(m.scc_tolerance)
         self.max_scc.setValue(m.max_scc_iterations); self.third.setChecked(m.third_order)
         self.dispersion.setCurrentText(m.dispersion); self.temperature.setValue(m.filling_temperature)
@@ -203,6 +210,7 @@ class MethodPanel(QGroupBox):
     def __init__(self, cfg: Config, parent: QWidget | None = None):
         super().__init__("計算手法", parent)
         self.setObjectName("method")
+        self.unshown: list[str] = []
         self.code = QComboBox()
         self.code.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
         self.code.setMinimumContentsLength(24)
@@ -300,7 +308,9 @@ class MethodPanel(QGroupBox):
 
     def set_method(self, m) -> None:
         self.code.setCurrentIndex(list(CODES).index(m.code))
-        self._panels()[m.code].set_method(m)
+        panel = self._panels()[m.code]
+        panel.set_method(m)
+        self.unshown = list(getattr(panel, "unshown", []))
 
     def _on_code(self, *_) -> None:
         self.stack.setCurrentIndex(self.code.currentIndex())

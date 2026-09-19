@@ -73,9 +73,10 @@ class ShellSession:
 
                 proc = winpty.PtyProcess.spawn(argv, cwd=cwd, env=env, dimensions=(self.rows, self.cols))
             else:
-                from ptyprocess import PtyProcessUnicode
+                from ptyprocess import PtyProcess
 
-                proc = PtyProcessUnicode.spawn(argv, cwd=cwd, env=env, dimensions=(self.rows, self.cols))
+                # Bytes, not text: pyte decodes leniently, a strict decoder would kill the reader thread.
+                proc = PtyProcess.spawn(argv, cwd=cwd, env=env, dimensions=(self.rows, self.cols))
         except (ImportError, OSError, FileNotFoundError) as ex:
             raise TerminalError(str(ex)) from ex
         return proc
@@ -84,9 +85,7 @@ class ShellSession:
         while self._alive:
             try:
                 data = self._proc.read(READ_CHUNK)
-            except EOFError:
-                break
-            except OSError:
+            except Exception:
                 break
             if not data:
                 break
@@ -100,7 +99,7 @@ class ShellSession:
             return
         text = data.decode("utf-8", "replace") if isinstance(data, bytes) else data
         try:
-            self._proc.write(text)
+            self._proc.write(text if os.name == "nt" else text.encode("utf-8"))
         except (OSError, EOFError):
             self._alive = False
 
@@ -134,6 +133,15 @@ class ShellSession:
     @property
     def alive(self) -> bool:
         return self._alive and self._proc.isalive()
+
+    def busy(self) -> bool:
+        # POSIX: a foreground job owns the terminal when its process group is not the shell's.
+        if os.name == "nt" or not self.alive:
+            return False
+        try:
+            return os.tcgetpgrp(self._proc.fd) != self._proc.pid
+        except (OSError, AttributeError):
+            return False
 
     def close(self) -> None:
         self._alive = False

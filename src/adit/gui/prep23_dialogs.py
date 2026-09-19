@@ -7,6 +7,7 @@ from typing import Callable
 from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QComboBox, QDialog, QFileDialog, QFormLayout, QGridLayout, QHBoxLayout,
                                QHeaderView, QLabel, QLineEdit, QMessageBox, QPushButton, QTableWidget, QVBoxLayout, QWidget)
 
+from adit.gui.i18n import translate_widgets
 from adit.gui.style import GROUP_SPACING, PANEL_MARGIN, ROW_SPACING
 from adit.gui.widgets import add_row, narrow
 from adit.lang import L
@@ -85,6 +86,7 @@ class BatchDialog(QDialog):
         self.setMinimumWidth(760)
         self.btn_cancel.clicked.connect(self.reject)
         self.btn_ok.clicked.connect(self.generate)
+        translate_widgets(self)
 
     def build(self) -> None:
         raise NotImplementedError

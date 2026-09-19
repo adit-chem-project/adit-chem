@@ -118,7 +118,9 @@ def hubbard_from_rows(rows) -> dict:
 
 
 def hubbard_rows(hubbard: dict) -> list[tuple[str, str, str, str]]:
-    return [(e, h.orbital, f"{h.u_ev:g}", f"{h.j_ev:g}" if h.j_ev else "") for e, h in hubbard.items()]
+    from adit.textparse import short_number
+
+    return [(e, h.orbital, short_number(h.u_ev), short_number(h.j_ev) if h.j_ev else "") for e, h in hubbard.items()]
 
 
 def element_values_from_rows(rows, what: str) -> dict[str, float]:
@@ -274,7 +276,9 @@ def row_from_stage(stage: dict) -> dict:
 
 
 def _g(v) -> str:
-    return f"{v:g}" if isinstance(v, (int, float)) and not isinstance(v, bool) else str(v)
+    from adit.textparse import short_number
+
+    return short_number(v)
 
 
 COMMON_LABELS = {

@@ -569,7 +569,6 @@ class AnalysisPanel(QWidget):
         if not d or not Path(d).is_dir():
             self.summary.setPlainText(L(f"ディレクトリがありません: {d!r}", f"directory not found: {d!r}"))
             return None
-        self._apply_defaults(d)
         scan = self.is_scan_dir(d)
         self.scan_table.hide(); self.too_large.hide()
         try:
