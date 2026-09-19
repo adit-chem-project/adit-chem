@@ -84,7 +84,7 @@ class MainWindow(QMainWindow):
         self.run_hint = QLabel(""); self.run_hint.setObjectName("hint")
         home = str(Path.home())
         shown = str(cfg_path).replace(home, "~", 1) if str(cfg_path).startswith(home) else str(cfg_path)
-        self.cfg_label = QLabel(L(f"環境設定: {shown}", f"preferences: {shown}")); self.cfg_label.setToolTip(str(cfg_path)); self.cfg_label.setObjectName("hint")
+        self.act_settings.setToolTip(L(f"環境設定ファイル (cluster.toml) を編集: {shown}", f"Edit the settings file (cluster.toml): {shown}"))
         self.gen_hint = QPushButton(""); self.gen_hint.setObjectName("gen_hint"); self.gen_hint.setFlat(True)
         self.gen_hint.setMaximumWidth(560); self.gen_hint.setCursor(Qt.CursorShape.PointingHandCursor)
         self.gen_hint.clicked.connect(self._on_gen_hint_clicked)
@@ -96,8 +96,10 @@ class MainWindow(QMainWindow):
         self.statusBar().addWidget(self.run_hint)
         self.legend = QLabel(L("青字は必須です。最初から入っている値は、説明に出典がない限り ADIT が置いた値です。ラベルにカーソルを合わせると説明が表示されます",
                                "Blue fields are required. A pre-filled value was supplied by ADIT unless its explanation names another source. Hover a label for details.")); self.legend.setObjectName("hint")
-        self.statusBar().addPermanentWidget(self.cfg_label)
         self.statusBar().addPermanentWidget(self.legend)
+        # Right side of the status bar: the keys that work right now (Blender-style); the left side is the state.
+        self.key_hints = QLabel(""); self.key_hints.setObjectName("hint")
+        self.statusBar().addPermanentWidget(self.key_hints)
         self.act_back.triggered.connect(self.go_back); self.act_forward.triggered.connect(self.go_forward)
         self.act_settings.triggered.connect(self.open_settings)
         self._update_history_buttons()
@@ -142,6 +144,7 @@ class MainWindow(QMainWindow):
         root = QWidget(); rl = QVBoxLayout(root); rl.setContentsMargins(PANEL_MARGIN, 2, PANEL_MARGIN, 0); rl.setSpacing(4)
         rl.addWidget(self.mode_bar); rl.addWidget(split, 1); rl.addWidget(self.action_bar)
         self.setCentralWidget(root)
+        self._update_key_hints()
 
         self._timer = QTimer(self); self._timer.setSingleShot(True); self._timer.setInterval(250)
         self._timer.timeout.connect(self.refresh_preview)
@@ -295,6 +298,19 @@ class MainWindow(QMainWindow):
             self.act_save.setShortcut("" if index == self.MODE_WORKSPACE else "Ctrl+S")
         if hasattr(self, "_mode_actions"):
             self._mode_actions[index].setChecked(True)
+        if hasattr(self, "key_hints"):
+            self._update_key_hints()
+
+    def key_hint_pairs(self) -> list[tuple[str, str]]:
+        common = [("Ctrl+K", L("コマンド", "commands"))]
+        if self.mode() == self.MODE_WORKSPACE:
+            keys = common + [("Ctrl+S", L("保存", "save"))]
+        else:
+            keys = common + [("Ctrl+G", L("生成", "generate")), ("Ctrl+Z", L("戻す", "undo"))]
+        return keys + [("Ctrl+/", L("キー一覧", "all keys"))]
+
+    def _update_key_hints(self) -> None:
+        self.key_hints.setText("   ".join(f"{key} {what}" for key, what in self.key_hint_pairs()))
 
     def mode(self) -> int:
         return self.main_stack.currentIndex()

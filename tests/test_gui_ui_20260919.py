@@ -289,3 +289,18 @@ def test_empty_states_offer_the_next_action(app, quiet, sk_root, tmp_path):
     assert dlg.values.text() == dlg.current_choice().example and dlg.empty.title.text().endswith("個のディレクトリ")
     assert not dlg.empty.button.isVisibleTo(dlg)
     dlg.close(); win.close()
+
+
+# ---- the status bar: state on the left, the keys that work now on the right ----
+
+def test_status_bar_shows_the_keys_for_the_current_mode(app, quiet, sk_root, tmp_path):
+    win = make_window(sk_root, tmp_path)
+    assert not hasattr(win, "cfg_label"), "the settings path moved out of the status bar"
+    assert "cluster.toml" in win.act_settings.toolTip() and str(tmp_path.name) in win.act_settings.toolTip()
+    assert win.key_hints.text() == "Ctrl+K コマンド   Ctrl+G 生成   Ctrl+Z 戻す   Ctrl+/ キー一覧"
+    win.set_mode(win.MODE_WORKSPACE)
+    assert win.key_hints.text() == "Ctrl+K コマンド   Ctrl+S 保存   Ctrl+/ キー一覧"
+    win.set_mode(win.MODE_ANALYSIS)
+    assert "Ctrl+G 生成" in win.key_hints.text()
+    assert win.statusBar().isAncestorOf(win.key_hints) and win.statusBar().isAncestorOf(win.run_hint)
+    win.close()
