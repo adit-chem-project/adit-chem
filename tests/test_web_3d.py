@@ -163,3 +163,30 @@ def test_analysis_page_serves_the_frames_only_for_the_analyzed_directory(tmp_pat
             urllib.request.urlopen(base + "/frames.json?dir=" + urllib.parse.quote(str(repo / "examples" / "water_generated")))
     finally:
         httpd.shutdown(); httpd.server_close()
+
+
+def test_the_browser_geometry_matches_the_desktop_numbers(tmp_path):
+    import shutil
+    import subprocess
+
+    from adit.measure import angle, dihedral, distance
+
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("node is not installed")
+    pos = [[0.5, 5.0, 5.0], [9.5, 5.0, 5.0], [9.5, 6.2, 5.0], [9.5, 6.2, 6.4]]
+    cell = [[10.0, 0, 0], [5.0, 8.7, 0], [0, 0, 10.0]]
+    script = tmp_path / "check.js"
+    script.write_text(
+        "var window = {}; var document = { getElementById: function () { return null; }, addEventListener: function () {} };\n"
+        + JS.read_text(encoding="utf-8")
+        + "\nvar G = window.ADIT_GEOMETRY, pos = %s, cell = %s, inv = G.inv3(cell);\n"
+        "console.log(JSON.stringify([G.distance(pos, 0, 1, cell, inv), G.angle(pos, 0, 1, 2, cell, inv), G.dihedral(pos, 0, 1, 2, 3, cell, inv),"
+        " G.distance(pos, 0, 1, null, null)]));\n" % (json.dumps(pos), json.dumps(cell)), encoding="utf-8")
+    out = subprocess.run([node, str(script)], capture_output=True, text=True, timeout=30)
+    assert out.returncode == 0, out.stderr
+    got = json.loads(out.stdout.strip().splitlines()[-1])
+    assert got[0] == pytest.approx(distance(pos, 0, 1, cell), abs=1e-9)
+    assert got[1] == pytest.approx(angle(pos, 0, 1, 2, cell), abs=1e-9)
+    assert got[2] == pytest.approx(dihedral(pos, 0, 1, 2, 3, cell), abs=1e-9)
+    assert got[3] == pytest.approx(9.0) and got[0] == pytest.approx(1.0)      # the minimum image crosses the boundary
