@@ -194,7 +194,7 @@ def test_check_remote_script_is_written_for_a_cluster_and_never_submits(tmp_path
             assert "sbatch --test-only" in s and "qsub" not in s and "module load dftbplus/25.1" in s
         assert "qsub submit.sh" not in s and "sbatch submit.sh" not in s
         (tmp_path / f"check_{profile}.sh").write_text(s, encoding="utf-8")
-        if shutil.which("bash"):
+        if os.name != "nt" and shutil.which("bash"):      # Windows "bash" is the WSL launcher stub
             r = subprocess.run(["bash", "-n", str(tmp_path / f"check_{profile}.sh")], capture_output=True, text=True)
             assert r.returncode == 0, r.stderr
         assert "check_remote.sh" in files.texts["README.txt"]
