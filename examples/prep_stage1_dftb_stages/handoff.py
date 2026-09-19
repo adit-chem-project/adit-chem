@@ -1,19 +1,4 @@
-"""前の計算の出力から最終構造 (と速度) を取り出し、次の計算の入力に入れる。
-
-標準ライブラリだけで書く (ADIT も ASE も import しない)。理由: 段に分けた計算 (stages.py) では、このファイルが
-出力ディレクトリに写され、計算機の上で submit.sh から `python3 handoff.py <コード> <前の段> [--velocities]` と呼ばれる。
-クラスタに ADIT や ASE が入っているとは限らないので、同じ処理を ADIT の続き (continuation.py) と共用する。
-
-読むファイル (各生成器が書かせる名前。実際に実行した examples/*_generated の出力で確かめた):
-  dftbplus  MD: geo_end.xyz の最後のフレーム (記号 x y z [電荷] vx vy vz。速度は Å/ps、マニュアル 2.3.8 節)
-            最適化: geom.out.gen   それ以外: geometry.gen
-  vasp      CONTCAR (速度は位置のあとの空行に続く欄。Cartesian で Å/fs、VASP wiki の POSCAR ページ)
-  xtb       MD: xtb.trj の最後のフレーム   最適化: xtbopt.xyz   それ以外: struct.xyz
-  espresso  output.log の最後の ATOMIC_POSITIONS と CELL_PARAMETERS (無ければ pw.in のセル)
-  orca      MD: trajectory.xyz の最後   最適化: orca.xyz   それ以外: orca.inp の座標
-  cp2k      adit-1.restart の &SUBSYS の &CELL と &COORD (Å)
-lammps と gromacs は構造を書き換えず、ファイルを写すだけ (final.data → data.lammps、adit.gro / adit.cpt)。
-"""
+"""Carry the final structure, and velocities when continuing MD, from one run into the next. Standard library only, because this file is copied next to the run."""
 
 from __future__ import annotations
 
@@ -27,23 +12,34 @@ CONVERTS = ("dftbplus", "xtb", "espresso", "orca")
 VELOCITY_FILE = "velocities.dat"
 
 
+PREFIXES = ("adit", "vista", "qcgui")
+
+
+def existing_name(directory: str, pattern: str) -> str:
+    for prefix in PREFIXES:
+        name = pattern.format(prefix)
+        if directory and os.path.isfile(os.path.join(directory, name)):
+            return name
+    return pattern.format(PREFIXES[0])
+
+
 class HandoffError(Exception):
     pass
 
 
-def copy_files(code: str, previous_task: str, velocities: bool, gromacs_conf: str = "conf.gro") -> dict[str, str]:
-    """このディレクトリでの名前 → 前のディレクトリでの名前。構造の書き換え (CONVERTS) とは別に、そのまま写すもの。"""
+def copy_files(code: str, previous_task: str, velocities: bool, gromacs_conf: str = "conf.gro",
+               previous_dir: str = "") -> dict[str, str]:
     md = previous_task == "molecular_dynamics"
     if code == "vasp" and previous_task in ("geometry_optimization", "molecular_dynamics"):
         return {"POSCAR": "CONTCAR"}
     if code == "cp2k" and previous_task in ("geometry_optimization", "molecular_dynamics"):
-        return {"prev.restart": "adit-1.restart"}
+        return {"prev.restart": existing_name(previous_dir, "{}-1.restart")}
     if code == "lammps" and previous_task in ("geometry_optimization", "molecular_dynamics"):
         return {"data.lammps": "final.data"}
     if code == "gromacs" and previous_task in ("geometry_optimization", "molecular_dynamics", "single_point"):
-        out = {gromacs_conf: "adit.gro"}
+        out = {gromacs_conf: existing_name(previous_dir, "{}.gro")}
         if velocities and md:
-            out["prev.cpt"] = "adit.cpt"
+            out["prev.cpt"] = existing_name(previous_dir, "{}.cpt")
         return out
     if code == "xtb" and velocities and md:
         return {"mdrestart": "mdrestart"}
@@ -59,7 +55,6 @@ def _mat_vec(cell, frac):
 
 
 def parse_gen(text: str) -> dict:
-    """DFTB+ の gen 形式。C (分子)、S (周期、直交座標 Å)、F (周期、分数座標)。"""
     lines = [l.split("#", 1)[0].strip() for l in text.splitlines()]
     lines = [l for l in lines if l]
     head = lines[0].split()
@@ -93,7 +88,6 @@ def format_gen(symbols, positions, cell) -> str:
 
 
 def last_xyz_frame(path: str) -> list[list[str]]:
-    """xyz (複数フレーム) の最後のフレームの各原子の行 (空白で分けた語)。1 フレームずつ読み、前のフレームは捨てる。"""
     last = None
     with open(path, encoding="utf-8", errors="replace") as f:
         while True:
@@ -118,7 +112,6 @@ def last_xyz_frame(path: str) -> list[list[str]]:
 
 
 def parse_poscar(text: str) -> dict:
-    """POSCAR / CONTCAR (VASP 5 の形: 元素名の行がある)。速度の欄があれば Å/fs で返す。"""
     lines = text.splitlines()
     scale = float(lines[1].split()[0])
     cell = [[scale * x for x in _floats(lines[2 + i].split()[:3])] for i in range(3)]
@@ -149,7 +142,6 @@ def parse_poscar(text: str) -> dict:
 
 
 def _qe_block(path: str, key: str, n: int) -> tuple[str, list[list[str]]] | None:
-    """output.log の最後の key (ATOMIC_POSITIONS / CELL_PARAMETERS) の塊: (見出しの行, 続く n 行の語)。"""
     found = None
     with open(path, encoding="utf-8", errors="replace") as f:
         for line in f:
@@ -222,7 +214,7 @@ def final_espresso(prev: str) -> dict:
 
 
 def final_cp2k(prev: str) -> dict:
-    path = os.path.join(prev, "adit-1.restart")
+    path = os.path.join(prev, existing_name(prev, "{}-1.restart"))
     if not os.path.isfile(path):
         raise HandoffError(f"{path} がありません")
     cell, symbols, pos, in_subsys, in_cell, in_coord, has_vel = [None, None, None], [], [], False, False, False, False
@@ -258,11 +250,10 @@ def final_cp2k(prev: str) -> dict:
         raise HandoffError(f"{path} に &COORD がありません")
     return {"symbols": [re.sub(r"[^A-Za-z].*$", "", s) for s in symbols], "positions": pos,
             "cell": cell if all(c is not None for c in cell) else None, "velocities": None, "has_velocities": has_vel,
-            "source": "adit-1.restart"}
+            "source": os.path.basename(path)}
 
 
 def final_structure(code: str, prev: str, previous_task: str) -> dict:
-    """前の出力の最終構造。{"symbols", "positions" [Å], "cell" (3x3 Å か None), "velocities" ([Å/fs] か None), "source"}。"""
     j = lambda name: os.path.join(prev, name)  # noqa: E731
     md = previous_task == "molecular_dynamics"
     if code == "dftbplus":
@@ -314,11 +305,22 @@ def _orca_input_coords(path: str) -> dict:
 
 def _check_same(symbols_here: list[str], symbols_prev: list[str], where: str) -> None:
     if [s.capitalize() for s in symbols_here] != [s.capitalize() for s in symbols_prev]:
-        raise HandoffError(f"{where}: 前の段の原子の並び ({len(symbols_prev)} 個) が、この段の入力 ({len(symbols_here)} 個) と合いません")
+        raise HandoffError(f"{where}: 前の段階の原子の並び ({len(symbols_prev)} 個) が、この段階の入力 ({len(symbols_here)} 個) と合いません")
+
+
+def rewritten_at_run(code: str, velocities: bool = False) -> list[str]:
+    if code == "dftbplus":
+        return ["geometry.gen"] + ([VELOCITY_FILE] if velocities else [])
+    if code == "xtb":
+        return ["struct.xyz"]
+    if code == "orca":
+        return ["orca.inp"]
+    if code == "espresso":
+        return ["pw.in"]
+    return []
 
 
 def apply_stage(code: str, prev: str, here: str, previous_task: str, velocities: bool) -> list[str]:
-    """前の段 (prev) の最終構造を、この段 (here) の入力に入れる。書き換えたファイルの名前を返す。"""
     if code not in CONVERTS:
         return []
     d = final_structure(code, prev, previous_task)
@@ -371,11 +373,10 @@ def apply_stage(code: str, prev: str, here: str, previous_task: str, velocities:
 
 
 def run_stage_handoff(code: str, prev: str, previous_task: str, velocities: bool, files: dict[str, str], here: str = ".") -> None:
-    """submit.sh から呼ぶ入口: ファイルを写し、構造を書き換える。前の段の出力が無ければ理由を出して止まる。"""
     for dest, src in files.items():
         s = os.path.join(prev, src)
         if not os.path.isfile(s):
-            raise HandoffError(f"前の段の出力 {s} がありません (前の段が終わっていないか、失敗しています)")
+            raise HandoffError(f"前の段階の出力 {s} がありません (前の段階が終わっていないか、失敗しています)")
         shutil.copyfile(s, os.path.join(here, dest))
     apply_stage(code, prev, here, previous_task, velocities)
 
@@ -384,12 +385,12 @@ def _main(argv: list[str]) -> int:
     import argparse
     import json
 
-    ap = argparse.ArgumentParser(prog="handoff.py", description="前の段の最終構造 (と速度) を、この段の入力に入れる (adit が生成)")
+    ap = argparse.ArgumentParser(prog="handoff.py", description="前の段階の最終構造 (と速度) を、この段階の入力に入れる (ADIT が生成)")
     ap.add_argument("code")
     ap.add_argument("previous_dir")
     ap.add_argument("previous_task")
     ap.add_argument("--velocities", action="store_true")
-    ap.add_argument("--files", default="{}", help="写すファイル (JSON: この段での名前 → 前の段での名前)")
+    ap.add_argument("--files", default="{}", help="写すファイル (JSON: この段階での名前 → 前の段階での名前)")
     a = ap.parse_args(argv)
     try:
         run_stage_handoff(a.code, a.previous_dir, a.previous_task, a.velocities, json.loads(a.files))

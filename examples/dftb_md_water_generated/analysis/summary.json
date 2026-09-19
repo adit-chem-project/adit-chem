@@ -1,41 +1,55 @@
 {
   "code": "dftbplus",
   "tables": {
+    "diagnostics": {
+      "code": "dftbplus",
+      "supported": true,
+      "files": [
+        "output.log"
+      ],
+      "n_warnings": 1,
+      "warnings": [
+        {
+          "file": "output.log",
+          "line": 40,
+          "text": "WARNING! -> Current stacksize not set to unlimited or hard limit, which might cause",
+          "cause": null
+        }
+      ],
+      "errors": [],
+      "causes": []
+    },
     "energy": {
       "n": 21,
-      "last_ev": -109.2555,
-      "min_ev": -109.2555,
+      "last_ev": -109.2306,
+      "min_ev": -109.2306,
       "max_ev": -108.2205
     },
     "temperature": {
       "n": 21,
-      "mean_k": 4280.604171428571,
-      "std_k": 2077.9529681099793,
+      "mean_k": 2703.2757999999994,
+      "std_k": 2040.9660301741387,
       "skipped": 0,
       "target_k": 300.0
     },
     "bonds": [
       [
-        "O1-H2",
-        1.0407663563195084
-      ],
-      [
         "O1-H3",
-        0.9437089713219432
+        0.9433389536568688
       ]
     ],
     "charges": [
       {
         "definition": "Mulliken",
         "values": [
-          -0.6061389,
-          0.29446018,
-          0.31167872
+          -0.61328812,
+          0.28234074,
+          0.33094739
         ],
         "source": "detailed.out:18",
         "unit": "e",
         "note": "DFTB+ の Mulliken 電荷 (価電子の数 − Mulliken の電子数。負なら電子が多い)。MD では detailed.out は最後に書かれたステップの値",
-        "sum": 0.0,
+        "sum": 9.999999994736442e-09,
         "atoms": [
           "O1",
           "H2",
@@ -59,6 +73,6 @@
     "temperature": "analysis/temperature.png"
   },
   "notes": [
-    "MD の温度: 目標 300 K、平均 4281 K"
+    "MD の温度: 目標 300 K、平均 2703 K"
   ]
 }
