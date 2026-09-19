@@ -19,3 +19,17 @@ def test_summarize_water():
     names = dict(s.bonds)
     assert set(names) == {"O1-H2", "O1-H3"} and abs(names["O1-H2"] - 0.9672) < 1e-3
     assert "0.9672" in s.text()
+
+
+def test_not_run_yet_without_provenance_needs_spec_json(tmp_path):
+    from adit.results import not_run_yet
+    d = tmp_path / "run"
+    d.mkdir()
+    (d / "OUTCAR").write_text("foreign output\n", encoding="utf-8")
+    assert not_run_yet(d) is False
+    (d / "spec.json").write_text("{}", encoding="utf-8")
+    (d / "OUTCAR").unlink()
+    assert not_run_yet(d) is True
+    (d / "output.log").write_text("Total Energy: -4.0 H\n", encoding="utf-8")
+    assert not_run_yet(d) is False
+    assert not_run_yet(tmp_path / "missing") is False
