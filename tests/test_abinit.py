@@ -85,7 +85,7 @@ def test_geometry_optimization_writes_ionmov(pseudo, sk_root, tmp_path):
 
 
 def test_fixed_atoms_and_axes_become_iatfix(pseudo, sk_root, tmp_path):
-    atoms = bulk("Si", "diamond", a=5.43) * (1, 1, 2)
+    atoms = bulk("Si", "diamond", a=5.43, cubic=True)
     spec = spec_for(pseudo, Task(type="geometry_optimization", max_steps=5), atoms=atoms,
                     tolerance="toldff", tolerance_value=5e-5)
     spec = spec.model_copy(update={"structure": spec.structure.model_copy(
@@ -95,6 +95,22 @@ def test_fixed_atoms_and_axes_become_iatfix(pseudo, sk_root, tmp_path):
     v = variables((out / "input.abi").read_text(encoding="utf-8"))
     assert v["natfix"] == ["1"] and v["iatfix"] == ["1"]
     assert v["natfixz"] == ["1"] and v["iatfixz"] == ["3"]
+    assert "natfixx" not in v and "natfixy" not in v
+
+
+def test_cartesian_axes_are_converted_to_lattice_directions(pseudo, sk_root):
+    # Cell with a2 rotated in the xy plane: fixing Cartesian z is still the third lattice direction,
+    # fixing Cartesian x is not representable by iatfixx/y/z (which act on reduced coordinates).
+    from ase import Atoms
+    atoms = Atoms("Si2", positions=[(0, 0, 0), (1.3, 1.3, 1.3)],
+                  cell=[(5.0, 0, 0), (2.5, 4.33, 0), (0, 0, 5.0)], pbc=True)
+    task = Task(type="geometry_optimization", max_steps=5)
+    spec = spec_for(pseudo, task, atoms=atoms, tolerance="toldff", tolerance_value=5e-5)
+    ok = spec.model_copy(update={"structure": spec.structure.model_copy(update={"fixed_axes": {"1": (True, True, False)}})})
+    v = variables(build_project(ok, cfg_for(sk_root)).texts["input.abi"])
+    assert v["iatfixz"] == ["2"] and "natfixx" not in v and "natfixy" not in v
+    bad = spec.model_copy(update={"structure": spec.structure.model_copy(update={"fixed_axes": {"1": (False, True, True)}})})
+    assert "structure.fixed_axes" in places(errors(bad, cfg_for(sk_root)))
 
 
 def test_extra_variables_are_written_and_checked(pseudo, sk_root, tmp_path):
