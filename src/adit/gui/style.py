@@ -163,10 +163,18 @@ QPushButton#primary:hover {{ background: {t.accent_hover}; }}
 QPushButton#primary:disabled {{ background: {t.glass_field}; color: {t.muted}; border: 1px solid {t.line}; }}
 QPushButton#cell_button {{ padding: 2px 6px; min-height: 20px; }}
 QTableWidget QSpinBox, QTableWidget QComboBox, QTableWidget QLineEdit {{ padding: 1px 6px; min-height: 18px; }}
-QPushButton#link, QPushButton#gen_hint {{ border: none; background: transparent; color: {t.accent}; padding: 2px 6px; }}
+QPushButton#link {{ border: none; background: transparent; color: {t.accent}; padding: 2px 6px; }}
 /* Underlined so that a link-style button is not mistaken for a required label */
 QPushButton#link {{ text-decoration: underline; }}
-QPushButton#link:hover, QPushButton#gen_hint:hover {{ text-decoration: underline; background: transparent; border: none; }}
+QPushButton#link:hover {{ text-decoration: underline; background: transparent; border: none; }}
+/* Number of problems, left of Generate; the full list opens from it */
+QPushButton#error_badge {{ background: {t.ng}; color: #FFFFFF; border: none; border-radius: 11px; padding: 2px 12px; min-height: 18px; font-weight: 600; }}
+QPushButton#error_badge:hover {{ background: {t.ng}; color: #FFFFFF; border: none; }}
+/* The reason, in red, under the field it belongs to; the row is hidden when there is no error */
+QLabel#field_error {{ color: {t.ng}; font-size: 10pt; }}
+/* Value differs from the code default (labels paint the same bar themselves, see widgets.FieldLabel) */
+QCheckBox[adit_changed="user"] {{ border-left: 2px solid {t.accent}; padding-left: 6px; }}
+QCheckBox[adit_changed="template"] {{ border-left: 2px solid {t.muted}; padding-left: 6px; }}
 
 QToolBar {{ background: transparent; border: none; spacing: 8px; padding: 8px {PANEL_MARGIN}px 4px {PANEL_MARGIN}px; }}
 QToolBar QToolButton {{ border-radius: {rs}px; padding: 5px 12px; background: transparent; }}

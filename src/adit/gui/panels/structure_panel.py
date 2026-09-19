@@ -14,7 +14,7 @@ from ase.data import chemical_symbols
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QFileDialog, QFormLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
                                QPushButton, QSpinBox, QVBoxLayout, QWidget)
 
-from adit.builder.model import Base, ClusterRef, PolymerRef, Recipe, TwoD
+from adit.builder.model import Base, ClusterRef, PolymerRef, Recipe, TwoD, has_op
 from adit.lang import L
 from adit.gui.style import ROW_SPACING
 from adit.gui.style import LABEL_WIDTH  # noqa: F401  
@@ -407,7 +407,7 @@ class StructurePanel(QGroupBox):
                 self.recipe.clear()
                 if s.source != "recipe":
                     self._restore_base(Base(source=s.source, ref=s.source_ref))
-            has_fix = rec is not None and any(st.op == "fix" for st in rec.steps)
+            has_fix = rec is not None and has_op(rec.steps, "fix")
             if has_fix:
                 self.fixed.setText("")
             else:

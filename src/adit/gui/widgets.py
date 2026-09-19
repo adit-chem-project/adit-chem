@@ -51,6 +51,8 @@ class SciDoubleSpinBox(QDoubleSpinBox):
 PILL_GAP = 8
 PILL_HEIGHT = 18
 PILL_POINT_SIZE = 8.5
+BAR_WIDTH = 2       # the VS Code-style mark on a field whose value differs from the code default
+BAR_GAP = 6
 
 
 class FieldLabel(QLabel):
@@ -59,6 +61,7 @@ class FieldLabel(QLabel):
     def __init__(self, text: str, parent: QWidget | None = None):
         super().__init__(text, parent)
         self.pill: QLabel | None = None
+        self.changed_kind = ""      # "", "user" (typed by the user) or "template" (value from a group template)
 
     def mark_required(self) -> None:
         from adit.lang import L
@@ -69,14 +72,43 @@ class FieldLabel(QLabel):
         pill.setAlignment(Qt.AlignmentFlag.AlignCenter)
         font = QFont(pill.font()); font.setPointSizeF(PILL_POINT_SIZE)
         pill.setFixedSize(QFontMetrics(font).horizontalAdvance(pill.text()) + 14, PILL_HEIGHT)
-        self.setContentsMargins(0, 0, pill.width() + PILL_GAP, 0)   # keeps the text clear of the pill
         self.pill = pill
+        self._apply_margins()
+
+    def set_changed(self, kind: str) -> None:
+        if kind == self.changed_kind:
+            return
+        self.changed_kind = kind
+        self._apply_margins()
+        self.update()
+
+    def _apply_margins(self) -> None:
+        left = BAR_WIDTH + BAR_GAP if self.changed_kind else 0
+        right = self.pill.width() + PILL_GAP if self.pill is not None else 0     # keeps the text clear of the pill
+        self.setContentsMargins(left, 0, right, 0)
 
     def resizeEvent(self, event) -> None:  # noqa: N802
         super().resizeEvent(event)
         if self.pill is not None:
-            x = min(self.fontMetrics().horizontalAdvance(self.text()) + PILL_GAP, self.width() - self.pill.width())
+            x = min(self.contentsMargins().left() + self.fontMetrics().horizontalAdvance(self.text()) + PILL_GAP,
+                    self.width() - self.pill.width())
             self.pill.move(x, (self.height() - self.pill.height()) // 2)
+
+    def paintEvent(self, event) -> None:  # noqa: N802
+        super().paintEvent(event)
+        if not self.changed_kind:
+            return
+        from PySide6.QtGui import QColor, QPainter
+
+        from adit.gui.style import current_theme, tokens_for
+
+        t = tokens_for(current_theme())
+        p = QPainter(self)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        p.setPen(Qt.PenStyle.NoPen)
+        p.setBrush(QColor(t.accent if self.changed_kind == "user" else t.muted))
+        p.drawRoundedRect(0, 3, BAR_WIDTH, max(4, self.height() - 6), 1, 1)
+        p.end()
 
 
 def label(text: str, *, required: bool | None = None, help_text: str | None = None) -> QLabel:
@@ -174,3 +206,30 @@ def limit_combo_popups(root: QWidget | None = None) -> None:
     if root is not None:
         for c in root.findChildren(QComboBox):
             limit_combo(c)
+
+
+def confirm_overwrite(parent: QWidget, out) -> tuple[bool | None, object]:
+    """Ask before writing into a non-empty directory. Returns (overwrite, backup): overwrite is None when the user declined.
+
+    The generated file names are not known in advance here, so the backup starts as a snapshot and is pruned to
+    the overwritten files by backup.finish() after the write.
+    """
+    from pathlib import Path
+
+    from PySide6.QtWidgets import QMessageBox
+
+    from adit.lang import L
+    from adit.project import Backup, has_files, overwrite_plan
+
+    out = Path(out).expanduser()
+    if not has_files(out):
+        return False, None
+    keep = Backup(out)
+    fits = keep.can_snapshot()
+    text = overwrite_plan(out, None).message(keep.dir if fits else None, too_large=not fits)
+    if QMessageBox.question(parent, L("上書きの確認", "Overwrite?"), text) != QMessageBox.StandardButton.Yes:
+        return None, None
+    if not fits:
+        return True, None
+    keep.snapshot()
+    return True, keep

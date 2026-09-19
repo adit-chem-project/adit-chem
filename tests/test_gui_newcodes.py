@@ -154,10 +154,10 @@ def test_required_fields_and_unsupported_tasks_show_the_reason(app, quiet, sk_ro
     win = window(sk_root, tmp_path, cp2k_data)
     use_file(win, cu_file(tmp_path)); use_code(win, "lammps")
     win.refresh_preview()
-    assert not win.btn_generate.isEnabled() and win.gen_hint_action.isVisible()
+    assert not win.btn_generate.isEnabled() and win.error_badge_action.isVisible()
     status = message(win)
     assert "pair_style" in status and "units" in status
-    assert win.gen_hint.text().startswith("生成できません: ")
+    assert win.error_badge.text() == f"{len(win._errors)} 件の不足" and len(win._errors) >= 2
     win.task.type.setCurrentIndex(3)
     win.refresh_preview()
     assert "一点計算・構造最適化 (最小化)・分子動力学だけ" in message(win)

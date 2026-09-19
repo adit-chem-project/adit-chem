@@ -10,7 +10,7 @@ from ase.build import fcc111, molecule
 from ase.io import write
 from ase.neighborlist import neighbor_list
 
-from adit.builder import (Recipe, RecipeError, build_recipe, file_base, interface_steps, list_terminations, recipe_structure,
+from adit.builder import (Recipe, RecipeError, build_recipe, file_base, has_op, interface_steps, list_terminations, recipe_structure,
                          salt_count, split_molecules)
 from adit.builder.ops import planes
 from adit.mixture import Component, MixtureError, MixtureSpec, build_mixture
@@ -370,3 +370,19 @@ def test_solvent_layer_needs_a_slab_cell():
         run({"source": "bulk", "ref": "Si"}, _water_layer())
     with pytest.raises(RecipeError):
         run({"source": "preset", "ref": "H2O"}, _water_layer())
+
+
+def test_disabled_step_is_skipped_and_only_false_is_written():
+    rec = R(AU, {"op": "vacuum", "axis": 2, "thickness": 20.0, "enabled": False}, {"op": "fix", "bottom_layers": 2})
+    assert not rec.steps[0].enabled and rec.steps[1].enabled
+    ref = rec.to_ref()
+    assert '"enabled":false' in ref and '"enabled":true' not in ref
+    assert Recipe.from_ref(ref) == rec
+    atoms, logs = build_recipe(rec)
+    plain = run(AU, {"op": "fix", "bottom_layers": 2})
+    assert np.allclose(atoms.cell, plain.cell) and len(atoms) == len(plain)
+    assert logs[1].skipped and "飛ばしました" in logs[1].line() and not logs[2].skipped
+    st, _ = recipe_structure(rec)
+    assert len(st.fixed_atoms) == 32
+    assert R(AU, _water_layer(enabled=False)).total_charge() == 0
+    assert not has_op(rec.steps, "vacuum") and has_op(rec.steps, "fix")

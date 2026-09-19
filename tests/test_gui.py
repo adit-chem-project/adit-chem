@@ -358,7 +358,7 @@ def test_switching_source_to_empty_file_drops_old_structure(app, quiet, sk_root,
         win.structure.set_source(src); win.structure._rebuild(); win.refresh_preview()
         assert win.structure.structure() is None, src
         assert not win.btn_generate.isEnabled()
-        assert win.gen_hint_action.isVisible() and "生成できません" in win.gen_hint.text()
+        assert win.error_badge_action.isVisible() and win.error_badge.text().endswith("件の不足")
 
 
 def test_generate_block_reason_is_shown_without_internal_names(app, quiet, sk_root, tmp_path):
@@ -367,8 +367,10 @@ def test_generate_block_reason_is_shown_without_internal_names(app, quiet, sk_ro
     win.refresh_preview()
     assert not win.btn_generate.isEnabled()
     assert win.method.dftb.sk_browse.isVisibleTo(win.method.dftb) and "dftb.org" in win.method.dftb.sk_info.text()
-    assert "Slater-Koster パラメータ" in win.gen_hint.toolTip() and "method.sk_set" not in win.gen_hint.toolTip()
-    win.gen_hint.click()
+    assert "Slater-Koster パラメータ" in win.error_badge.toolTip() and "method.sk_set" not in win.error_badge.toolTip()
+    menu = win.show_error_list()
+    assert [a.text() for a in menu.actions()] == win._errors and "method.sk_set" not in menu.actions()[0].text()
+    menu.actions()[0].trigger(); menu.close()
     assert win.mode() == win.MODE_SETTINGS and win.method.sk_set.property("adit_error")
 
 
@@ -471,16 +473,16 @@ def test_stale_block_reason_disappears_after_fix(app, quiet, sk_root, tmp_path):
     win = make_window(sk_root, tmp_path)
     win.method.sk_set.setCurrentText("fake-1-0")
     win.structure.set_source("smiles"); win.structure._rebuild(); win.refresh_preview()
-    assert win.gen_hint_action.isVisible()
+    assert win.error_badge_action.isVisible()
     win.structure.set_source("preset"); win.structure._rebuild(); win.refresh_preview()
-    assert win.btn_generate.isEnabled() and not win.gen_hint_action.isVisible()
+    assert win.btn_generate.isEnabled() and not win.error_badge_action.isVisible()
 
 
 def test_empty_output_dir_blocks_generation(app, quiet, sk_root, tmp_path):
     win = make_window(sk_root, tmp_path)
     win.method.sk_set.setCurrentText("fake-1-0")
     win.runtime.outdir.setText(""); win.refresh_preview()
-    assert not win.btn_generate.isEnabled() and "出力ディレクトリ" in win.gen_hint.toolTip()
+    assert not win.btn_generate.isEnabled() and "出力ディレクトリ" in win.error_badge.toolTip()
 
 
 def test_smiles_formal_charge_fills_charge_column(app):
@@ -582,14 +584,13 @@ def test_generate_hint_jumps_to_the_field_and_marks_it_red(app, quiet, sk_root, 
     win.method.reload_sets("")
     win.refresh_preview(); app.processEvents()
     assert win._error_locations == ["method.sk_set"]
-    assert win.gen_hint.click() or True
-    win.gen_hint.click()
+    marked = win._error_marked
+    assert marked and all(w.property("adit_error") for w in marked)     # marked as soon as the problem is known
+    assert any(w.property("adit_key") == "Slater-Koster パラメータ" for w in marked)
+    win.preview.empty.button.click()
     for _ in range(4):
         app.processEvents()
     assert win.mode() == win.MODE_SETTINGS
-    marked = win._error_marked
-    assert marked and all(w.property("adit_error") for w in marked)
-    assert any(w.property("adit_key") == "Slater-Koster パラメータ" for w in marked)
     assert win.method.sk_set in marked
     win.method.reload_sets(str(sk_root)); win.method.sk_set.setCurrentIndex(0)
     win.refresh_preview(); app.processEvents()
@@ -659,3 +660,65 @@ def test_ctrl_s_saves_the_file_in_the_workspace_and_the_spec_elsewhere(app, quie
     QTest.keyClick(win.structure, Qt.Key.Key_S, Qt.KeyboardModifier.ControlModifier); app.processEvents()
     assert calls == ["spec"]
     win.workspace.close_session()
+
+
+def test_every_problem_is_listed_and_shown_under_its_field(app, quiet, sk_root, tmp_path):
+    from PySide6.QtWidgets import QFormLayout
+    win = make_window(sk_root, tmp_path)
+    win.method.sk_set.setCurrentText("fake-1-0")
+    win.runtime.outdir.setText(""); win.refresh_preview()
+    assert not win.btn_generate.isEnabled() and win.error_badge.text() == "1 件の不足" and win._error_locations == ["output_dir"]
+    assert win.runtime.outdir.property("adit_error") is True
+    win.runtime.outdir.setText(str(tmp_path / "out"))
+    win.task.type.setCurrentIndex(list(win.task.type.itemData(i) for i in range(win.task.type.count())).index("molecular_dynamics"))
+    win.task.md_steps.setValue(0); win.method.reload_sets(""); win.refresh_preview()
+    assert win.error_badge.text() == "2 件の不足" and len(win._errors) == 2 and win._error_locations == ["task.md.steps", "method.sk_set"]
+    # each field has its own red line, in the row below it, showing only the reason
+    lines = {lab.property("adit_key"): line for lab, line in win._inline_errors.items() if not win._form_row(line)[0] is None
+             and win._form_row(line)[0].isRowVisible(win._form_row(line)[1])}
+    assert set(lines) == {"MD ステップ数", "Slater-Koster パラメータ"}
+    for key, line in lines.items():
+        form, row = win._form_row(line)
+        assert isinstance(form, QFormLayout) and line.objectName() == "field_error"
+        assert line.text() and not line.text().startswith(key)
+    assert lines["MD ステップ数"].text() == "1 以上が必要です"
+    assert win.task.md_steps.property("adit_error") is True and win.method.sk_set.property("adit_error") is True
+    assert win.runtime.outdir.property("adit_error") is False
+    menu = win.show_error_list()
+    assert len(menu.actions()) == 2 and menu.actions()[0].text().startswith("MD ステップ数: ")
+    menu.actions()[1].trigger(); menu.close()
+    assert win.mode() == win.MODE_SETTINGS and win._error_index == 1
+    win.task.md_steps.setValue(1000); win.refresh_preview()
+    assert win.error_badge.text() == "1 件の不足" and win.task.md_steps.property("adit_error") is False
+    form, row = win._form_row(lines["MD ステップ数"])
+    assert not form.isRowVisible(row) and win.method.sk_set.property("adit_error") is True
+    win.method.reload_sets(str(sk_root)); win.method.sk_set.setCurrentText("fake-1-0"); win.refresh_preview()
+    assert win.btn_generate.isEnabled() and not win.error_badge_action.isVisible()
+    assert all(not win._form_row(line)[0].isRowVisible(win._form_row(line)[1]) for line in lines.values())
+    assert not win.method.sk_set.property("adit_error") and not win._error_marked
+
+
+def test_overwrite_confirmation_names_the_files_and_offers_undo(app, quiet, sk_root, tmp_path, monkeypatch):
+    from adit.project import BACKUP_DIR
+
+    asked = []
+    monkeypatch.setattr(QMessageBox, "question", staticmethod(lambda *a, **k: (asked.append(a[2]), QMessageBox.StandardButton.Yes)[1]))
+    win = make_window(sk_root, tmp_path)
+    win.method.sk_set.setCurrentText("fake-1-0"); win.refresh_preview()
+    win.generate()
+    out = tmp_path / "out"
+    assert not asked and win.undo_link.isHidden() and not (out / BACKUP_DIR).exists()
+    (out / "dftb_in.hsd").write_text("old\n", encoding="utf-8")
+    (out / "mine.txt").write_text("keep\n", encoding="utf-8")
+    win.generate()
+    assert len(asked) == 1 and "13 ファイルのうち 12 件を上書きします" in asked[0] and "dftb_in.hsd" in asked[0] and BACKUP_DIR in asked[0]
+    backups = list((out / BACKUP_DIR).iterdir())
+    assert len(backups) == 1 and (backups[0] / "dftb_in.hsd").read_text(encoding="utf-8") == "old\n" and not (backups[0] / "mine.txt").exists()
+    assert not win.undo_link.isHidden() and win._undo_timer.isActive()
+    win.undo_link.click()
+    assert win.undo_link.isHidden() and (out / "dftb_in.hsd").read_text(encoding="utf-8") == "old\n"
+    assert (out / "mine.txt").read_text(encoding="utf-8") == "keep\n" and "元に戻しました" in win.statusBar().currentMessage()
+    win.undo_link.click()          # a second click has nothing left to do
+    monkeypatch.setattr(QMessageBox, "question", staticmethod(lambda *a, **k: QMessageBox.StandardButton.No))
+    win.generate()
+    assert (out / "dftb_in.hsd").read_text(encoding="utf-8") == "old\n" and len(list((out / BACKUP_DIR).iterdir())) == 1
