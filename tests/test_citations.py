@@ -133,3 +133,13 @@ def test_adit_citation_comes_from_citation_cff(tmp_path):
     assert adit_citation(tmp_path / "missing.cff") is None
     text = bibtex_text([c, c], header="h")
     assert text.count("@software") == 1 and text.startswith("% h\n")
+
+
+def test_packaged_citation_file_matches_the_repository_copy():
+    import adit
+    from pathlib import Path
+
+    repo = Path(__file__).resolve().parents[1]
+    packaged = Path(adit.__file__).resolve().parent / "CITATION.cff"
+    assert packaged.is_file()
+    assert packaged.read_text(encoding="utf-8") == (repo / "CITATION.cff").read_text(encoding="utf-8")

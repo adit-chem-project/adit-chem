@@ -64,7 +64,8 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 # web/static/*.js draws the 3D view and the sketch editor; without it those areas stay empty
-adit = ["scripts/templates/*.j2", "web/templates/*.html", "web/static/*.js",
+# CITATION.cff is a copy of the repository file, so adit-report can cite ADIT from an installed package
+adit = ["CITATION.cff", "scripts/templates/*.j2", "web/templates/*.html", "web/static/*.js",
         "examples/*/spec.json", "examples/*/SOURCES.md"]   # for --list-samples / --sample
 
 [tool.pytest.ini_options]

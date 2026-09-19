@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+title: "ADIT: Atomistic Design and Interpretation Toolkit"
+message: "If you use this software in your research, please cite it as below, together with the simulation codes you ran."
+type: software
+authors:
+  - name: "The ADIT project"
+repository-code: "https://github.com/adit-chem-project/adit-chem"
+license: MIT
+version: 0.1.0a1
+date-released: "2026-09-15"
+abstract: >-
+  A desktop application that prepares atomistic simulations and turns their results into
+  figures and tables. It builds structures, writes complete input sets for DFTB+, VASP, xtb,
+  Quantum ESPRESSO, ORCA, CP2K, LAMMPS, GROMACS and other codes, and analyses the output.
