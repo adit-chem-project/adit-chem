@@ -101,7 +101,7 @@ def main(argv: list[str] | None = None) -> int:
                     help=L("MSD から系全体の重心の流れを落としません (既定は落とします。落とした量は要約に出ます)",
                            "do not remove the drift of the center of mass from the MSD (it is removed by default; the amount is given in the summary)"))
     ap.add_argument("--msd-blocks", type=int, default=5, metavar="N",
-                    help=L("拡散係数の誤差を出すために軌跡を分ける区間の数 (既定 5。0 なら誤差を出しません)",
+                    help=L("拡散係数の誤差を出すために軌跡を分けるブロックの数 (既定 5。0 なら誤差を出しません)",
                            "number of equal blocks of the trajectory used for the error on the diffusion coefficient (default 5; 0 disables it)"))
     ap.add_argument("--coordination", type=float, default=0.0, metavar="Å", help=L(
         "原子ごとの配位数 (カットオフ [Å] を指定。ADIT は既定値を持ちません)",

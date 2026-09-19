@@ -15,7 +15,7 @@ LABELS: dict[str, tuple[str, str]] = {
     "msd_fit": ("MSD の当てはめ範囲 [fs]", "MSD fit range [fs]"),
     "msd_axes": ("MSD を取る成分", "Components used for the MSD"),
     "msd_keep_drift": ("重心の流れを落とさない", "Keep the center-of-mass drift"),
-    "msd_blocks": ("誤差を出す区間の数", "Number of blocks for the error"),
+    "msd_blocks": ("誤差を出すブロックの数", "Number of blocks for the error"),
     "msd_per_atom": ("原子 1 個ごとの拡散係数も出す", "Also report a diffusion coefficient per atom"),
     "vanhove": ("変位の分布 (van Hove) も見る", "Displacement distribution (van Hove)"),
     "vanhove_taus": ("見る遅れ時間の点数", "Number of lag times"),

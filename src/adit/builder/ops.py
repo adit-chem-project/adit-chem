@@ -468,7 +468,7 @@ def op_adsorb(atoms: Atoms, st: Adsorb) -> Atoms:
         info = a.info.get("adsorbate_info") or {}
         sites = info.get("sites") or {}
         if not sites:
-            raise RecipeError(L("席の名前は、ASE の面関数で作ったスラブ (土台が surface で、そのあと変換行列の超格子や面の切り直しをしていないもの) にだけあります。"
+            raise RecipeError(L("吸着サイトの名前は、ASE の面関数で作ったスラブ (土台が surface で、そのあと変換行列の超格子や面の切り直しをしていないもの) にだけあります。"
                                 "above_atom (原子の番号) か xy で置き場所を指定してください",
                                 "site names exist only for slabs made by ASE surface functions (surface base, not re-cut or matrix-supercelled). "
                                 "Use above_atom (an atom index) or xy instead"))

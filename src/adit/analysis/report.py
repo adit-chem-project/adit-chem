@@ -278,8 +278,8 @@ class AnalysisResult:
                 sizes = ", ".join(str(x) for x in counts)
                 a, b = e.get("fit_range_fs") or m["fit_range_fs"]
                 lines.append(L(f"  参考・ブロック D 平均の標準誤差: {e['d_err_cm2_s']:.2e} cm^2/s。"
-                               f"全 {sum(counts)} フレームを {e['n_blocks']} 区間 ({sizes} フレーム) に分け、各区間の {a:g}〜{b:g} fs を当てはめ、"
-                               f"区間ごとの D の標本標準偏差 ÷ √{e['n_blocks']} としました。全軌跡から出した D 自体の厳密な誤差ではありません",
+                               f"全 {sum(counts)} フレームを {e['n_blocks']} ブロック ({sizes} フレーム) に分け、各ブロックの {a:g}〜{b:g} fs を当てはめ、"
+                               f"ブロックごとの D の標本標準偏差 ÷ √{e['n_blocks']} としました。全軌跡から出した D 自体の厳密な誤差ではありません",
                                f"  for reference, standard error of the mean block D: {e['d_err_cm2_s']:.2e} cm^2/s. "
                                f"All {sum(counts)} frames were split into {e['n_blocks']} blocks ({sizes} frames); each block was fitted over {a:g}-{b:g} fs. "
                                f"This is the sample standard deviation of block D values / sqrt({e['n_blocks']}), not a rigorous error on D from the full trajectory."))
@@ -738,7 +738,7 @@ def run_analysis(run_dir: Path | str, opts: AnalysisOptions | None = None) -> An
                              "D_err_cm2_s": (a["error"] or {}).get("d_err_cm2_s"), "D_error": a["error"],
                              "definition": L(
                                  "D は当てはめ範囲で MSD を直線に当てはめた傾きから。D_error は各ブロックから出した D の平均の標準誤差で、"
-                                 "全軌跡の D 自体の厳密な誤差ではありません。当てはめ範囲が 1 区間に収まらないときは、収まる範囲まで上限を下げて"
+                                 "全軌跡の D 自体の厳密な誤差ではありません。当てはめ範囲が 1 ブロックに収まらないときは、収まる範囲まで上限を下げて"
                                  "求めます。loglog_slope は当てはめ範囲での log MSD 対 log t の傾き (拡散なら 1 に近い)",
                                  "D comes from a straight-line fit of the MSD over the fit range. D_error is the standard error of the mean "
                                  "block D, not a rigorous error on D from the full trajectory. loglog_slope is the slope of log MSD vs log t "

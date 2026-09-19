@@ -76,7 +76,7 @@ def convert_with_openbabel(source: Path | str, output: Path | str, *,
                                 f"Open Babel conversion failed. The previous output was not changed. Staged file: {staged}. {detail}"))
     try:
         if dst.exists() and not overwrite:
-            raise ConversionError(L(f"出力先 {dst} が変換中に作成されました (上書きしません)。途中ファイル: {staged}",
+            raise ConversionError(L(f"出力先 {dst} が変換の途中で作られました (上書きしません)。途中ファイル: {staged}",
                                     f"output {dst} was created during conversion (not overwritten). Staged file: {staged}"))
         os.replace(staged, dst)
     except OSError as ex:
@@ -455,7 +455,7 @@ def _parser() -> argparse.ArgumentParser:
     babel.add_argument("--input-format", help=L("Open Babel の入力形式名", "Open Babel input format name"))
     babel.add_argument("--output-format", help=L("Open Babel の出力形式名", "Open Babel output format name"))
     babel.add_argument("--overwrite", action="store_true", help=L("既存の出力を上書きします", "overwrite an existing output"))
-    dock = sub.add_parser("dock6", help=L("利用者が作成した DOCK6 の dock.in と入力ファイルをまとめます",
+    dock = sub.add_parser("dock6", help=L("利用者が用意した DOCK6 の dock.in と入力ファイルをまとめます",
                                              "package a user-authored DOCK6 dock.in and its input files"))
     dock.add_argument("source", help=L("既存の dock.in", "existing dock.in"))
     dock.add_argument("output", help=L("空の出力ディレクトリ", "empty output directory"))

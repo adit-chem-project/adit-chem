@@ -9,7 +9,7 @@ from adit.structure import build_structure
 
 
 @pytest.mark.parametrize("language,expected", [
-    ("ja", "板との間隙 (gap) は帯の厚みを変えません"),
+    ("ja", "スラブとの隙間 (gap) は帯の厚みを変えません"),
     ("en", "The slab gap does not change the band thickness"),
 ])
 def test_band_packing_failure_distinguishes_gap_from_band_thickness(monkeypatch, language, expected):

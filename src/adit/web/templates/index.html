@@ -161,7 +161,7 @@ button.link:hover { text-decoration:underline; background:none; }
   {% call row("プリセット", "Preset", "preset") %}<input name="preset" id="preset" value="{{ form.get('preset','H2O') }}" list="preset-list" autocomplete="off"><datalist id="preset-list">{% for value, label in presets_opts %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</datalist><span class="hint">{{ T("式・英語名・日本語名で検索できます", "Search by formula or name") }}</span>{% endcall %}
   </div>
   <div class="only" data-source="smiles">
-  {% call row("SMILES", "SMILES", "smiles") %}{{ txt("smiles", ph=T("例: CCO", "e.g. CCO")) }}{% endcall %}
+  {% call row("SMILES", "SMILES", "smiles") %}{{ txt("smiles", ph=T("例 CCO", "e.g. CCO")) }}{% endcall %}
   </div>
   <div class="only" data-source="file">
   {% call row("ファイル", "File", "file_path") %}{{ txt("file_path", ph=T("この PC 上のパス (xyz, cif, POSCAR など)", "Path on this machine (xyz, cif, POSCAR, ...)")) }}{% endcall %}
@@ -187,7 +187,7 @@ button.link:hover { text-decoration:underline; background:none; }
   <div class="only" data-mixbox="density">{% call row("密度 [g/cm³]", "Density [g/cm³]", "mix_density") %}{{ txt("mix_density", "narrow") }}{% endcall %}</div>
   <div class="only" data-mixbox="edge">{% call row("一辺 [Å]", "Edge [Å]", "mix_edge") %}{{ txt("mix_edge", "narrow") }}{% endcall %}</div>
   {% call row("分子間の最短距離 [Å]", "Min. distance [Å]", "mix_min_dist") %}{{ txt("mix_min_dist", "narrow") }}{% endcall %}
-  {% call row("乱数シード", "Seed", "mix_seed") %}{{ txt("mix_seed", "narrow") }}{% endcall %}
+  {% call row("乱数の種", "Random seed", "mix_seed") %}{{ txt("mix_seed", "narrow") }}{% endcall %}
   </div>
   {#- 新しい土台 3 つ。欄と文言はデスクトップ版 structure_panel.py の _build_new_base_widgets と同じ -#}
   <div class="only" data-source="2d">
@@ -209,7 +209,7 @@ button.link:hover { text-decoration:underline; background:none; }
   </div>
   <div class="only" data-source="polymer">
   {% call row("ポリマー", "Polymer", "pl_unit") %}<input type="text" name="pl_unit" id="pl_unit" value="{{ form.get('pl_unit', '') }}" placeholder="{{ T('例: *CC* (連結点の * を 2 つ)', 'e.g. *CC* (two * connection points)') }}" title="{{ T('繰り返し単位の SMILES。つなぐ位置に * を 2 つ書きます (例 *CC*、*CC(*)c1ccccc1)。末端は H で終端します', 'SMILES of the repeat unit with two * where the units join (e.g. *CC*, *CC(*)c1ccccc1); the chain ends are capped with H') }}">{% endcall %}
-  <div class="row"><span></span><div class="inline"><label for="pl_n">{{ T("重合度", "units") }}</label>{{ txt("pl_n", "tiny") }}<label for="pl_seed">{{ T("乱数シード", "seed") }}</label>{{ txt("pl_seed", "narrow") }}</div></div>
+  <div class="row"><span></span><div class="inline"><label for="pl_n">{{ T("重合度", "units") }}</label>{{ txt("pl_n", "tiny") }}<label for="pl_seed">{{ T("乱数の種", "seed") }}</label>{{ txt("pl_seed", "narrow") }}</div></div>
   <div class="row"><span></span><div class="hint">{{ T("鎖を 1 本作ります (H を含めて 500 原子まで)。3 次元化に数秒〜20 秒ほどかかるので、「作る」を押して作ります", "builds one chain (up to 500 atoms including H). Making the 3D structure takes a few to about 20 seconds, so press Build") }}</div></div>
   </div>
 

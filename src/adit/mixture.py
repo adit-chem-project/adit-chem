@@ -322,7 +322,7 @@ def _room_note(packed: "Packed") -> str:
 def pack_failure_message(summary: str, packed: "Packed", min_distance: float) -> str:
     where = L(f"z の帯 {packed.band[0]:.1f}〜{packed.band[1]:.1f} Å", f"the z band {packed.band[0]:.1f}-{packed.band[1]:.1f} Å") if packed.band \
         else L("セル", "the cell")
-    band_note = L("板との間隙 (gap) は帯の厚みを変えません。", "The slab gap does not change the band thickness. ") if packed.band else ""
+    band_note = L("スラブとの隙間 (gap) は帯の厚みを変えません。", "The slab gap does not change the band thickness. ") if packed.band else ""
     return L(f"{where}に {summary} を最短距離 {min_distance} Å では詰められません (いちばん近い組で {packed.near:.2f} Å){_room_note(packed)}。"
              f"{band_note}密度を下げる (帯なら厚くなる)、個数を減らす、最短距離を短くする、のどれかにしてください",
              f"cannot pack {summary} into {where} with a minimum distance of {min_distance} Å (closest pair {packed.near:.2f} Å){_room_note(packed)}. "

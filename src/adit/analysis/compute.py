@@ -304,7 +304,7 @@ def diffusion_blocks(pos: np.ndarray, dt_fs: float, dim: int, frac: tuple[float,
            "estimator": "standard_error_of_block_mean", "estimate_for": "mean_of_block_D"}
     if k < 2:
         out.update(n_blocks=0, reason_code="insufficient_blocks", reason=L(
-            f"区間を 2 つ以上 (1 区間 {min_block} フレーム以上) 取れません (使ったフレーム {T})",
+            f"ブロックを 2 つ以上 (1 ブロック {min_block} フレーム以上) 取れません (使ったフレーム {T})",
             f"Cannot form at least two blocks of {min_block} or more frames ({T} frames available)"))
         return out
     requested = k
@@ -324,14 +324,14 @@ def diffusion_blocks(pos: np.ndarray, dt_fs: float, dim: int, frac: tuple[float,
                      f" With two blocks, {rng[0]:g}-{span:g} fs would fit (`--msd-fit {rng[0]:g},{span:g}`), "
                      "but that is a different fit range from the D above")
         out.update(n_blocks=0, reason_code="fit_range_not_available_in_all_blocks", reason=L(
-            f"主当てはめ範囲 {rng[0]:g}〜{rng[1]:g} fs を含む区間を 2 つ取れません (使ったフレーム {T})。",
+            f"主当てはめ範囲 {rng[0]:g}〜{rng[1]:g} fs を含むブロックを 2 つ取れません (使ったフレーム {T})。",
             f"cannot form two blocks that both cover the main fit range {rng[0]:g}-{rng[1]:g} fs ({T} frames). ") + hint)
         return out
     out["n_blocks"] = k
     if k != requested:
         out["n_blocks_requested"] = requested
         out["adjusted"] = L(
-            f"区間の数を {requested} から {k} に減らしました (当てはめ範囲 {rng[0]:g}〜{rng[1]:g} fs が全区間に収まる最大の数)",
+            f"ブロックの数を {requested} から {k} に減らしました (当てはめ範囲 {rng[0]:g}〜{rng[1]:g} fs が全ブロックに収まる最大の数)",
             f"the number of blocks was reduced from {requested} to {k} (the largest number for which every block covers "
             f"the fit range {rng[0]:g}-{rng[1]:g} fs)")
     length, extra = divmod(T, k)
@@ -348,7 +348,7 @@ def diffusion_blocks(pos: np.ndarray, dt_fs: float, dim: int, frac: tuple[float,
                block_frames=length if extra == 0 else None)
     if any(rng[0] < -1e-9 or rng[1] > b["duration_fs"] + 1e-9 or b["fit_points"] < 2 for b in out["blocks"]):
         out.update(reason_code="fit_range_not_available_in_all_blocks", reason=L(
-            f"全区間で主当てはめ範囲 {rng[0]:g}〜{rng[1]:g} fs を含む2点以上を取れません。範囲は変更していません",
+            f"全ブロックで主当てはめ範囲 {rng[0]:g}〜{rng[1]:g} fs を含む2点以上を取れません。範囲は変更していません",
             f"Not every block covers the main fit range {rng[0]:g}-{rng[1]:g} fs with at least two points; the range was not changed"))
         return out
     for b in out["blocks"]:

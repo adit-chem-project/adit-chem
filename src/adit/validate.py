@@ -51,7 +51,7 @@ def validate(spec: CalculationSpec, cfg: Config, *, output_dir: Path | str | Non
     if output_dir is not None:
         errs += output_dir_errors(output_dir)
     if spec.runtime.profile.strip() and spec.runtime.profile not in cfg.profiles:
-        errs.append(ValidationError("runtime.profile", L(f"プロファイル {spec.runtime.profile!r} が設定ファイルにありません", f"profile {spec.runtime.profile!r} is not in the settings file")))
+        errs.append(ValidationError("runtime.profile", L(f"プロファイル {spec.runtime.profile!r} が環境設定ファイルにありません", f"profile {spec.runtime.profile!r} is not in the settings file")))
     elif spec.runtime.profile in cfg.profiles:
         errs += _check_placeholders(spec.runtime.profile, cfg.profiles[spec.runtime.profile], spec.method.code)
         jn = spec.runtime.job_name.strip()
