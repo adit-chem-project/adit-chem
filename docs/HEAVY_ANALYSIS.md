@@ -21,7 +21,7 @@ msd_run.sh           (→ msd_vanhove.json)     (図・要約・報告)
 座標のメモリ = フレーム数 × 原子数 × 24 バイト
 ```
 
-見積もりが **60 秒** (`--heavy-limit` で変更可)を超えると、その場では計算せず、実行用のファイルを置きます。
+見積もりが **60 秒** (`--heavy-limit` で変更可) を超えると、その場では計算せず、実行用のファイルを置きます。
 
 | 系 | 変位の数 | 見積もり | どうなるか |
 |---|---|---|---|
@@ -43,8 +43,7 @@ adit-analyze run/ --msd --vanhove --vanhove-here   # 小さい系なら、その
 試験 `tests/test_heavy_setup.py` が見張っています)。クラスタに ADIT が入っていなくても走ります。
 
 ```bash
-
-# 研究室の Na.dat 形式 (1 行 = 1 原子、ラベル x y z) をそのまま読む場合
+# 1 行 = 1 原子 (ラベル x y z) の独自形式をそのまま読む場合
 python msd_worker.py Na.dat --natoms 18 --cell dftb.inp --dt 10 --taus 100 --out msd_vanhove.json
 
 # ASE が読める形式 (extxyz、vasprun.xml など) はそのまま
@@ -64,7 +63,7 @@ python msd_worker.py trajectory.extxyz --dt 10 --species Na
 | `vanhove.alpha2` | 非ガウス因子 α₂ = 3⟨r⁴⟩/(5⟨r²⟩²) − 1 (Rahman 1964)。0 ならガウス |
 | `vanhove.truncated_from_fs` | 最小像の上限で変位が頭打ちになり始めた遅れ時間 (なければ null) |
 
-**最小像の頭打ちに注意。**`--vanhove-displacement mic` (既定)は折り返した座標の最小像を使うので、
+**最小像の頭打ちに注意。**`--vanhove-displacement mic` (既定) は折り返した座標の最小像を使うので、
 **セルの最小の幅の半分**より大きい変位を測れません。変位の 1 % がその 9 割を超えたら、その遅れ時間を
 `truncated_from_fs` に記録し、要約でも注意します。`--vanhove-displacement unwrapped` なら頭打ちしません。
 
