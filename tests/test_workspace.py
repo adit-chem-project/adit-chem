@@ -388,4 +388,4 @@ def test_the_tree_marks_the_kind_of_each_file(tmp_path):
     model.setRootPath(str(tmp_path))
     icon = model.data(model.index(str(tmp_path / "dftb_in.hsd")), Qt.ItemDataRole.DecorationRole)
     assert icon is not None and not icon.isNull()
-    assert FileIcons.KIND[".hsd"][0] == "in"                     # marked as an input file
+    assert FileIcons.KIND[".hsd"] == "in" and "in" in FileIcons.INPUT_KINDS   # marked as an input file
