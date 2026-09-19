@@ -36,6 +36,7 @@ class RuntimePanel(QGroupBox):
         super().__init__("実行環境とリソース", parent)
         self.setObjectName("runtime")
         self.cfg = cfg
+        self.unshown: list[str] = []
         self.profile = QComboBox()
         self.profile_info = QLabel("")
         self.nodes = narrow(QSpinBox()); self.nodes.setRange(1, 1000)
@@ -89,6 +90,10 @@ class RuntimePanel(QGroupBox):
         return self.outdir.text().strip()
 
     def set_runtime(self, r: Runtime) -> None:
+        self.unshown = []
+        if self.profile.findText(r.profile) < 0:
+            self.unshown.append(L(f"プロファイル ({r.profile} → {self.profile.currentText()})",
+                                  f"profile ({r.profile} → {self.profile.currentText()})"))
         self.profile.setCurrentText(r.profile); self.nodes.setValue(r.nodes); self.ncpus.setValue(r.ncpus)
         self.mpiprocs.setValue(r.mpiprocs); self.omp.setValue(r.omp_threads)
         self.walltime.setText(r.walltime); self.job_name.setText(r.job_name)

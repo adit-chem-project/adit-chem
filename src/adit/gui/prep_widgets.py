@@ -5,6 +5,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QComboBox, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout, QWidget
 
 from adit.lang import L
+from adit.textparse import short_number
 from adit.web.codefields import SHELLS, element_values_from_rows, hubbard_from_rows, hubbard_rows
 
 
@@ -97,7 +98,8 @@ class HubbardTable(QWidget):
         self._emit()
 
     def row_texts(self) -> list[tuple[str, str, str, str]]:
-        return [(ec.currentData() or "", oc.currentText(), ue.text(), je.text() if self.with_j else "") for ec, oc, ue, je in self.rows]
+        # J is kept even when the column is hidden, so a spec with J survives the round trip.
+        return [(ec.currentData() or "", oc.currentText(), ue.text(), je.text()) for ec, oc, ue, je in self.rows]
 
     def hubbard(self) -> dict:
         return hubbard_from_rows(self.row_texts())
@@ -162,7 +164,7 @@ class ElementValues(QWidget):
         return element_values_from_rows([(e, w.text()) for e, w in self.edits.items()], self.what)
 
     def set_values(self, values: dict[str, float]) -> None:
-        self._kept = {e: f"{v:g}" for e, v in values.items()}
+        self._kept = {e: short_number(v) for e, v in values.items()}
         for e, w in self.edits.items():
             w.blockSignals(True); w.setText(self._kept.get(e, "")); w.blockSignals(False)
         extra = [e for e in values if e not in self.elements]

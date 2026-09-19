@@ -35,6 +35,7 @@ class LammpsMethodPanel(QWidget):
         self.extra_commands = QPlainTextEdit(); self.extra_commands.setMaximumHeight(60)
         self.extra_commands.setPlaceholderText("例 kspace_style pppm 1e-4 / neigh_modify every 1")
         self.seed = narrow(QSpinBox()); self.seed.setRange(1, 2**31 - 1); self.seed.setValue(12345)
+        self._thermo_pressure_tensor = False    # no widget; kept for the round trip
         note = QLabel("相互作用は外部のもの (力場のファイル、data ファイル、機械学習ポテンシャルのモデル) をそのまま使います。"
                       "全電荷とスピン多重度は使いません (0 と 1 のまま)。k 点はありません")
         note.setObjectName("hint"); note.setWordWrap(True)
@@ -71,9 +72,10 @@ class LammpsMethodPanel(QWidget):
                             pair_style=self.pair_style.text().strip(), pair_coeff=self.pair_coeff.toPlainText().strip(),
                             potential_files=parse_lines(self.potential_files.toPlainText()),
                             style_commands=self.style_commands.toPlainText().strip(), extra_commands=self.extra_commands.toPlainText().strip(),
-                            seed=self.seed.value())
+                            seed=self.seed.value(), thermo_pressure_tensor=self._thermo_pressure_tensor)
 
     def set_method(self, m: LammpsMethod) -> None:
+        self._thermo_pressure_tensor = m.thermo_pressure_tensor
         self.units.setCurrentIndex(max(0, self.units.findData(m.units))); self.atom_style.setCurrentText(m.atom_style)
         self.data_file.setText(m.data_file); self.type_elements.setText(" ".join(m.type_elements)); self.pair_style.setText(m.pair_style)
         self.pair_coeff.setPlainText(m.pair_coeff); self.potential_files.setPlainText("\n".join(m.potential_files))

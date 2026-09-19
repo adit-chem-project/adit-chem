@@ -27,6 +27,8 @@ class KPointsPanel(QGroupBox):
         self.shift = QComboBox(); self.shift.addItems(["0", "0.5"])
         self.density = narrow(SciDoubleSpinBox(0.0, 1000, 0.0, 0.5))
         self.info = QLabel(""); self.info.setObjectName("hint")
+        self._shift: tuple[float, float, float] | None = None   # the loaded 3 components; the field shows one value
+        self._shift_shown = ""
 
         form = QFormLayout(self); form.setVerticalSpacing(ROW_SPACING); self._form = form
         add_row(form, "サンプリング方法", self.mode)
@@ -49,13 +51,15 @@ class KPointsPanel(QGroupBox):
 
     def kpoints(self) -> KPoints:
         s = float(self.shift.currentText())
-        return KPoints(mode=self.mode.currentData(), mesh=tuple(w.value() for w in self.mesh), shift=(s, s, s), density=self.density.value())
+        shift = self._shift if self._shift is not None and self.shift.currentText() == self._shift_shown else (s, s, s)
+        return KPoints(mode=self.mode.currentData(), mesh=tuple(w.value() for w in self.mesh), shift=shift, density=self.density.value())
 
     def set_kpoints(self, kp: KPoints) -> None:
         self.mode.setCurrentIndex(list(MODES).index(kp.mode))
         for w, v in zip(self.mesh, kp.mesh):
             w.setValue(v)
-        self.shift.setCurrentText("0.5" if kp.shift[0] == 0.5 else "0"); self.density.setValue(kp.density)
+        self._shift, self._shift_shown = tuple(kp.shift), "0.5" if kp.shift[0] == 0.5 else "0"
+        self.shift.setCurrentText(self._shift_shown); self.density.setValue(kp.density)
         self._emit()
 
     def _on_mode(self, *_) -> None:

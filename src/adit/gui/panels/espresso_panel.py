@@ -47,6 +47,7 @@ class EspressoMethodPanel(QWidget):
             self.assume_isolated.addItem(text, value)
         self.mag = ElementValues("starting_magnetization", L("空欄 = 指定しない", "empty = not set"))
         self.hubbard = HubbardTable(with_j=False)
+        self._dipole: dict = {}                 # dipole_* fields have no widgets; kept for the round trip
         self.hub_proj = QComboBox(); self.hub_proj.addItems(["atomic", "ortho-atomic", "norm-atomic", "wf", "pseudo"])
         self.extra = QPlainTextEdit(); self.extra.setMaximumHeight(80)
         self.extra.setPlaceholderText("画面にない変数を 1 行に 1 つ、名前空間.変数 = 値 の形で (例 system.nbnd = 20)")
@@ -171,9 +172,11 @@ class EspressoMethodPanel(QWidget):
                               degauss=self.degauss.value(), nspin=int(self.nspin.currentText()), input_dft=self.input_dft.text().strip(),
                               extra=parse_extra(self.extra.toPlainText()), starting_magnetization=self.mag.values(),
                               hubbard=self.hubbard.hubbard(), hubbard_projector=self.hub_proj.currentText(),
-                              assume_isolated=self.assume_isolated.currentData())
+                              assume_isolated=self.assume_isolated.currentData(), **self._dipole)
 
     def set_method(self, m: EspressoMethod) -> None:
+        self._dipole = {k: getattr(m, k) for k in ("dipole_correction", "dipole_direction", "dipole_maxpos",
+                                                    "dipole_decrease", "dipole_amplitude")}
         self.pseudo_set.setCurrentText(m.pseudo_set); self.ecutwfc.setValue(m.ecutwfc); self.ecutrho.setValue(m.ecutrho)
         self.conv_thr.setValue(m.conv_thr); self.maxstep.setValue(m.electron_maxstep); self.mixing.setValue(m.mixing_beta)
         self.occupations.setCurrentText(m.occupations); self.smearing.setCurrentText(m.smearing); self.degauss.setValue(m.degauss)
