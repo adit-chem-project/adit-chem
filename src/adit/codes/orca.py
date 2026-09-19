@@ -146,7 +146,7 @@ class OrcaGenerator(InputGenerator):
             if guest.suffix.lower() != ".xyz" or not guest.is_file():
                 errs.append(ValidationError("method.docker_guest_file", L("GUEST には既存の .xyz ファイルを指定してください", "GUEST requires an existing .xyz file")))
             elif _guest_xyz_error(guest, allow_default_charge=m.docker_assume_neutral_singlet):
-                errs.append(ValidationError("method.docker_guest_file", L("GUEST の各 XYZ フレームには原子数、元素と有限の座標が必要です。2 行目に電荷と多重度の整数を書くか、ORCA の既定 (0, 1) を使う明示指定をしてください",
+                errs.append(ValidationError("method.docker_guest_file", L("GUEST の各 XYZ フレームには原子数、元素と有限の座標が必要です。2 行目に電荷と多重度の整数を書くか、ORCA の既定 (0, 1) を使うことを指定してください",
                                                                        "each GUEST XYZ frame needs an atom count, elements, and finite coordinates. Put integer charge and multiplicity on the second line, or explicitly choose the ORCA default (0, 1)")))
         from ase.data import atomic_numbers
         n_el = sum(atomic_numbers[s] for s in spec.structure.atoms.symbols) - spec.structure.charge

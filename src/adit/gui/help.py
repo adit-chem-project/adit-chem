@@ -188,7 +188,7 @@ HELP: dict[str, Help] = {
     "SCC (自己無撞着電荷)": Help(O, "原子電荷を自己無撞着に決めるか (DFTB2 以上)。外すと非自己無撞着の DFTB1 になります。", "Whether atomic charges are determined self-consistently (DFTB2+). Unchecked = non-self-consistent DFTB1."),
     "SCC の収束判定 (SccTolerance)": Help(O, "SCC 反復の収束判定 (電荷の変化がこの値以下で収束)。小さいほど厳密です。", "Convergence threshold of the SCC loop (change in charges). Smaller is stricter."),
     "SCC の反復上限 (MaxSccIterations)": Help(O, "SCC 反復の上限。ここまでに収束しなければ止まります。", "Maximum SCC iterations."),
-    "DFTB3 (ThirdOrderFull)": Help(O, "3 次の項を入れる DFTB3。セットの README に Hubbard 微分値と H-X 減衰の指数が要ります。", "Third-order DFTB3; needs Hubbard derivatives and the H-X damping exponent from the set's README."),
+    "DFTB3 (ThirdOrderFull)": Help(O, "3 次の項を入れる DFTB3。Hubbard 微分値と H-X 減衰の指数が、セットの README に書かれている必要があります。", "Third-order DFTB3; needs Hubbard derivatives and the H-X damping exponent from the set's README."),
     "分散力補正": Help(O, "ファンデルワールス力の補正。dftd3 は Grimme の D3 (BJ 減衰)、lennard-jones は UFF の LJ ポテンシャル。", "Van der Waals correction: dftd3 = Grimme's D3 (BJ damping), lennard-jones = UFF LJ potential."),
     "DFT-D3 係数 (BJ)": Help(O, "D3 (BJ 減衰) の 4 係数 s6, s8, a1, a2。パーサのバージョン 7 以降は既定値が無いので、セットの文書 (skf/README など) か文献の値を入れます。"
                             "4 つとも 0 のままでは分散力が入りません。分散力補正が none のときは使いません。",
@@ -285,7 +285,7 @@ HELP: dict[str, Help] = {
                                 "Time range (start and end) for obtaining the diffusion coefficient from the MSD slope. In 3D, D = slope / 6. Empty = 10–50% of the maximum lag time."),
     "MSD のメモリの上限 [MB]": Help(O, "MSD は全フレームの座標を持ちます。読む前に フレーム数 × 原子数 × 24 バイト を見積もり、この値を超えたら止めます。",
                                 "The MSD keeps the coordinates of all frames. Frames × atoms × 24 bytes is estimated before reading, and the run stops above this limit."),
-    "z 方向の密度分布": Help(O, "a-b 面に垂直な方向を区間に切り、元素ごとの数密度と質量密度を数えます。周期系の軌跡だけ。",
+    "z 方向の密度分布": Help(O, "a-b 面に垂直な方向を区間に切り、元素ごとの数密度と質量密度を数えます。周期系の軌跡だけに使えます。",
                          "Counts the number density of each element and the mass density in bins along the normal of the a-b plane; periodic trajectories only."),
     "z 密度の区間の幅 [Å]": Help(O, "z 方向の密度分布の区間の幅。", "Bin width of the density profile along z."),
     "時系列の統計 (ブロック平均と自己相関時間)": Help(O, "MD の温度・エネルギー・密度・圧力の時系列について、ブロック平均 (Flyvbjerg–Petersen) による平均値の誤差と、積分自己相関時間を並べます。",

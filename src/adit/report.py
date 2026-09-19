@@ -747,14 +747,14 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("run_dirs", nargs="+", help=L("計算ディレクトリ (spec.json のある場所)", "calculation directories (where spec.json is)"))
     p.add_argument("-o", "--out", metavar="methods.md", help=L("方法の節の書き出し先 (既定は画面)", "where to write the methods section (default: screen)"))
     p.add_argument("--lang", choices=("ja", "en", "both"), default="", help=L("報告の言語 (既定は ADIT の設定)", "language of the report (default: the ADIT setting)"))
-    p.add_argument("--csv", metavar="conditions.csv", help=L("条件の表を CSV で書き出す", "write the settings table as CSV"))
+    p.add_argument("--csv", metavar="conditions.csv", help=L("条件の表を CSV で書き出します", "write the settings table as CSV"))
     p.add_argument("--results-csv", metavar="results.csv", help=L(
         "複数の計算の結果 (最終エネルギー・平均温度・正常終了・収束など) を 1 枚の表にします",
         "write the results of several runs (final energy, mean temperature, completion, convergence) as one table"))
-    p.add_argument("--bundle", metavar="pack.zip", help=L("再現に要るファイルと manifest.json をまとめる (.zip かディレクトリ)",
+    p.add_argument("--bundle", metavar="pack.zip", help=L("再現に要るファイルと manifest.json をまとめます (.zip かディレクトリ)",
                                                           "collect the files needed to reproduce plus manifest.json (.zip or a directory)"))
     p.add_argument("--check", action="store_true", help=L(
-        "生成したときの照合用のハッシュと、いまのファイル (入力・写した擬ポテンシャルや力場) を突き合わせる。終了コード 0 = 一致、1 = 不一致、2 = 記録が無くて確かめられない",
+        "生成したときの照合用のハッシュと、いまのファイル (入力・写した擬ポテンシャルや力場) を突き合わせます。終了コード 0 = 一致、1 = 不一致、2 = 記録が無くて確かめられない",
         "compare the current files (inputs and copied pseudopotentials or force fields) with the fingerprints recorded at generation; "
         "exit code 0 = all match, 1 = mismatch, 2 = nothing on record to check against"))
     args = p.parse_args(argv)

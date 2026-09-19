@@ -41,24 +41,24 @@ _ISSUE_REASONS_JA = {
     "unmapped namelist variable": "この namelist 変数には対応していません",
     "only scf with explicit ibrav=0 is supported": "ibrav=0 を明示した SCF 計算のみ読み込めます",
     "duplicate card": "同じカードが重複しています",
-    "explicit angstrom cell and angstrom / crystal positions required": "セルは angstrom、座標は angstrom または crystal で単位を明示してください",
+    "explicit angstrom cell and angstrom / crystal positions required": "セルは angstrom、座標は angstrom または crystal で単位を指定してください",
     "CELL_PARAMETERS must use angstrom": "CELL_PARAMETERS は angstrom 単位で指定してください",
     "unique plain element labels are required": "重複のない元素記号を指定してください",
     "only gamma / automatic k points supported": "gamma または automatic の k 点のみ読み込めます",
     "unmapped QE card": "この QE カードには対応していません",
-    "explicit k points required": "K_POINTS を明示してください",
+    "explicit k points required": "K_POINTS を指定してください",
     "MD requires explicit generated velocity create; restart / supplied velocities are unsupported": "MD では生成器と同じ velocity create の明示指定が必要です。restart や外部から与えた速度には対応していません",
     "temperature ramps / unequal initial and target temperatures are unsupported": "温度ランプや初期温度と目標温度が異なる設定には対応していません",
     "only generated NVE / Nose-Hoover NVT without extra fix options supported": "生成器と同じ NVE または追加オプションのない Nose-Hoover NVT のみ読み込めます",
     "variables / continuation are unsupported": "変数展開と行継続には対応していません",
     "duplicate command": "同じコマンドが重複しています",
     "unmapped LAMMPS command": "この LAMMPS コマンドには対応していません",
-    "explicit supported task, atom_style atomic and units metal / real required": "対応する計算タスク、atom_style atomic、units metal または real を明示してください",
+    "explicit supported task, atom_style atomic and units metal / real required": "対応する計算タスク、atom_style atomic、units metal または real を指定してください",
     "only analytic lj/cut supported; potential dependencies are not inferred": "解析的な lj/cut のみ読み込めます。ポテンシャルへの外部依存は推測しません",
-    "explicit pair_coeff required": "pair_coeff を明示してください",
+    "explicit pair_coeff required": "pair_coeff を指定してください",
     "only numeric lj/cut coefficients supported": "数値で指定した lj/cut の係数のみ読み込めます",
     "units, atom_style and boundary must precede read_data": "units・atom_style・boundary は read_data より前に指定してください",
-    "explicit p / f boundary flags required": "境界条件には p または f を各方向に明示してください",
+    "explicit p / f boundary flags required": "境界条件には p または f を各方向に指定してください",
     "one bundle-relative data filename required": "入力一式の内部を指す data ファイル名を 1 つ指定してください",
     "data symlink leaves input bundle": "data ファイルのシンボリックリンクが入力一式の外を指しています",
     "duplicate atom type in generated title": "生成時の見出しで原子タイプが重複しています",
@@ -68,9 +68,9 @@ _ISSUE_REASONS_JA = {
     "mass must be positive": "原子質量は正の値にしてください",
     "duplicate mass / atom type": "原子タイプの質量指定が重複しています",
     "Masses label disagrees with generated type title": "Masses の元素ラベルが生成時の見出しと一致しません",
-    "Masses rows require explicit '# Element' labels": "Masses の各行に「# 元素記号」のラベルを明示してください",
+    "Masses rows require explicit '# Element' labels": "Masses の各行に「# 元素記号」のラベルを指定してください",
     "atom IDs must cover 1..N exactly": "原子 ID は 1 から N までを重複なく指定してください",
-    "all atom types require explicit element labels": "全原子タイプに元素ラベルを明示してください",
+    "all atom types require explicit element labels": "全原子タイプに元素ラベルを指定してください",
     "commands differ from the supported generated sequence; options / ordering / initialization cannot be preserved": "コマンドの内容・順序・初期化が対応する生成入力と異なります。そのまま保持できないため読み込みません",
 }
 
@@ -214,7 +214,7 @@ def _vasp(path, result):
     text = _read(poscar, result)
     lines = text.splitlines()
     if len(lines) < 8 or all(x.isdigit() for x in lines[5].split()):
-        raise NativeImportError(L("POSCAR に元素記号を明示してください (VASP 5 形式)", "POSCAR requires explicit element symbols (VASP 5 format)"))
+        raise NativeImportError(L("POSCAR に元素記号を指定してください (VASP 5 形式)", "POSCAR requires explicit element symbols (VASP 5 format)"))
     from ase.data import atomic_numbers
     elements = lines[5].split()
     counts = [int(x) for x in lines[6].split()]
@@ -408,7 +408,7 @@ def _lammps_md(commands, result, path, method):
     dt = commands.get("timestep", [])
     every = commands.get("thermo", [])
     if len(dt) != 1 or len(every) != 1 or not every[0].isdigit() or int(every[0]) <= 0:
-        raise NativeImportError(L("時間刻みと正の出力間隔を明示してください", "an explicit timestep and positive output interval are required"))
+        raise NativeImportError(L("時間刻みと正の出力間隔を指定してください", "an explicit timestep and positive output interval are required"))
     factor = 1000 if method.get("units") == "metal" else 1
     timestep = _number(dt[0]) * factor
     if timestep <= 0:
@@ -733,7 +733,7 @@ def import_native(source: Path | str, code: str | None = None) -> NativeImportRe
             matches = [{"INCAR": "vasp", "POSCAR": "vasp", "KPOINTS": "vasp", "pw.in": "espresso", "in.lammps": "lammps",
                         "grompp.mdp": "gromacs"}.get(path.name)]
         if len(matches) != 1 or not matches[0]:
-            raise NativeImportError(L("入力コードを明示してください", "specify the native input code explicitly"))
+            raise NativeImportError(L("入力コードを指定してください", "specify the native input code explicitly"))
         code = matches[0]
     code = {"qe": "espresso"}.get(code, code)
     if code not in {"vasp", "espresso", "lammps", "gromacs"}:

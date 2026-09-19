@@ -305,7 +305,7 @@ def analyze_neb(run_dir: Path, out_dir: Path) -> dict | None:
             t["climbing_image"] = climb
             if not climb:
                 t.setdefault("reasons", []).append(L(
-                    "climbing image は使っていません。最高エネルギーの像は鞍点そのものとは限らないため、像の最大値から得る上昇量は、位置を求めた遷移状態の障壁ではありません",
+                    "climbing image は使っていません。最高エネルギーの像は鞍点そのものとは限らないため、像の最大値から得る上昇量は、遷移状態を探して求めた障壁ではありません",
                     "no climbing image was used; the highest-energy image need not coincide with the saddle point, so the rise to the highest image is not a barrier from a located transition state"))
         except (OSError, ValueError, TypeError):
             pass

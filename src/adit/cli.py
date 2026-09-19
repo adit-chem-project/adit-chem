@@ -93,7 +93,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--config", help=L("cluster.toml のパス (既定はユーザーの環境設定ファイル)", "path to cluster.toml (default: the user settings file)"))
     ap.add_argument("--run", action="store_true", help=L(
         "生成したあと、そのままこの PC で実行します (bash submit.sh)。画面と同じ判定で、"
-        "実行できないときは理由を出して止まります。**クラスタへの投入はしません**",
+        "実行できないときは理由を出して止まります。クラスタへの投入はしません",
         "after generating, run it here with bash submit.sh; the same checks as the screens apply and the reason is "
         "printed when it cannot run. ADIT never submits to a cluster"))
     ap.add_argument("--overwrite", action="store_true", help=L("出力ディレクトリが空でなくても上書きします", "overwrite even if the output directory is not empty"))
@@ -112,12 +112,12 @@ def main(argv: list[str] | None = None) -> int:
         "1 つの値だけを振った入力を、値ごとのディレクトリにまとめて作ります (収束の確認・格子定数の探索)。"
         "例 method.ecutwfc=30,40,50 / kpoints.mesh=4x4x4,6x6x6 / scale=0.98,1.00,1.02 (周期系のセルを伸縮)。"
         "実行したあと adit-analyze <出力ディレクトリ> --scan で値とエネルギーの表を作ります。"
-        "**2 回以上書くと、値のすべての組み合わせ (格子状) を作ります** (例 --scan method.ecutwfc=30,40 --scan kpoints.mesh=4x4x4,6x6x6)。"
+        "2 回以上書くと、値のすべての組み合わせ (格子状) を作ります (例 --scan method.ecutwfc=30,40 --scan kpoints.mesh=4x4x4,6x6x6)。"
         "構造の幾何も振れます: geom.distance(0,1)=0.9,1.0 / geom.angle(0,1,2)=100,105 / geom.dihedral(0,1,2,3)=0,30,60 (原子の番号は 0 始まり)",
         "generate one directory per value of a single parameter (convergence checks, lattice scans). "
         "e.g. method.ecutwfc=30,40,50 / kpoints.mesh=4x4x4,6x6x6 / scale=0.98,1.00,1.02 (scales a periodic cell). "
         "After running them, adit-analyze <output> --scan makes a value-energy table. "
-        "**Give it more than once to scan a grid of all value combinations** (e.g. --scan method.ecutwfc=30,40 --scan kpoints.mesh=4x4x4,6x6x6). "
+        "Give it more than once to scan a grid of all value combinations (e.g. --scan method.ecutwfc=30,40 --scan kpoints.mesh=4x4x4,6x6x6). "
         "Geometry can be scanned too: geom.distance(0,1)=0.9,1.0 / geom.angle(0,1,2)=100,105 / geom.dihedral(0,1,2,3)=0,30,60 (0-based atom indices)"))
     ap.add_argument("--stages", metavar="STAGES.json", help=L(
         "段階に分けた計算 (例 最小化 → NVT → NPT → 本計算) を stage_01_… のディレクトリに並べて作ります。2 段階目からは前の段階の最終構造 (と速度) から始まります",
@@ -151,7 +151,7 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--conformers", type=int, metavar="N", help=L("RDKit の ETKDG で N 個の配座を作り、力場で最適化して重複を除き、配座ごとの計算にします (--rmsd が要ります)",
                                                                 "embed N conformers with RDKit ETKDG, optimize with a force field, drop duplicates, one run per conformer (needs --rmsd)"))
     g.add_argument("--rmsd", type=float, metavar="Å", help=L("配座を重複とみなす RMSD [Å] (既定はありません)", "RMSD in Å below which conformers count as duplicates (no default)"))
-    g.add_argument("--conf-seed", type=int, default=12345, metavar="S", help=L("ETKDG の乱数の種 (既定 12345。RDKit 2026.03 では 0 だと全部の配座が同じ座標になった)",
+    g.add_argument("--conf-seed", type=int, default=12345, metavar="S", help=L("ETKDG の乱数の種 (既定 12345。RDKit 2026.03 では 0 だと全部の配座が同じ座標になりました)",
                                                                                 "ETKDG random seed (default 12345; with 0, RDKit 2026.03 gave identical coordinates for all conformers)"))
     g.add_argument("--conf-ff", default="MMFF94", choices=("MMFF94", "MMFF94s", "UFF"), help=L("配座の最適化の力場 (既定 MMFF94)", "force field for the conformers (default MMFF94)"))
     g.add_argument("--conf-max-iters", type=int, default=200, metavar="N", help=L("力場の最適化の反復の上限 (既定 200 = RDKit の既定)", "max force-field iterations (default 200 = RDKit default)"))
@@ -177,7 +177,7 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--elastic-components", default="1,2,3,4,5,6", metavar="1,2,...", help=L("歪みを与える Voigt の成分 (既定は 6 つ全部)", "Voigt components to strain (default all six)"))
     g.add_argument("--ts", choices=("ts", "irc", "ts+irc"), help=L("ORCA の遷移状態の探索 (OptTS)、IRC、または段階に分けた両方", "ORCA transition-state search (OptTS), IRC, or both as stages"))
     g.add_argument("--sella", action="store_true", help=L("ASE + Sella の遷移状態の探索と IRC のスクリプトを書きます (xtb は tblite、機械学習ポテンシャル)", "write an ASE + Sella TS search and IRC script (xtb via tblite, or an ML potential)"))
-    g.add_argument("--sella-no-irc", action="store_true", help=L("Sella のスクリプトで IRC をしない", "no IRC in the Sella script"))
+    g.add_argument("--sella-no-irc", action="store_true", help=L("Sella のスクリプトで IRC をしません", "no IRC in the Sella script"))
     args = ap.parse_args(argv)
 
     try:

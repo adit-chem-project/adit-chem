@@ -1310,7 +1310,7 @@ def make_handler(app: WebApp, token: str | None = None):
                     self._analysis_page(ref, None, "", audit_error=error, audit_fields=audit_fields)
                     return
                 if kind not in {"msd", "energy"}:
-                    error = L("点検対象は MSD またはエネルギーを選んでください",
+                    error = L("点検対象には MSD かエネルギーを選んでください",
                               "Choose MSD or energy as the audit kind.")
                     self._analysis_page(ref, None, "", audit_error=error, audit_fields=audit_fields)
                     return
