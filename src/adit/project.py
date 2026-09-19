@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 from adit.errors import AditError
+import json
 import shlex
 import shutil
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
+from typing import Iterable
 
 from adit.lang import L, pick
 from adit.codes import GENERATORS, GenerationError
@@ -39,6 +42,172 @@ class ProjectFiles:
 
     texts: dict[str, str] = field(default_factory=dict)
     copies: dict[str, Path] = field(default_factory=dict)
+
+    def names(self) -> list[str]:
+        return [*self.texts, *self.copies]
+
+
+BACKUP_DIR = ".adit_backup"
+MANIFEST_FILE = "manifest.json"
+SNAPSHOT_LIMIT = 50 * 1024 * 1024    # bytes; above this a whole-directory snapshot is not taken
+
+
+def has_files(out: Path | str) -> bool:
+    """True when the directory holds anything besides earlier backups."""
+    out = Path(out).expanduser()
+    return out.exists() and any(p.name != BACKUP_DIR for p in out.iterdir())
+
+
+def tree_files(out: Path | str) -> dict[str, tuple[int, int]]:
+    # relative posix path -> (size, mtime_ns) for every file, earlier backups excluded
+    out = Path(out).expanduser()
+    found: dict[str, tuple[int, int]] = {}
+    if not out.is_dir():
+        return found
+    for p in sorted(out.rglob("*")):
+        rel = p.relative_to(out)
+        if rel.parts[0] == BACKUP_DIR or not p.is_file():
+            continue
+        st = p.stat()
+        found[rel.as_posix()] = (st.st_size, st.st_mtime_ns)
+    return found
+
+
+def new_backup_dir(out: Path | str) -> Path:
+    out = Path(out).expanduser()
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    d = out / BACKUP_DIR / stamp
+    n = 1
+    while d.exists():
+        n += 1
+        d = out / BACKUP_DIR / f"{stamp}_{n}"
+    return d
+
+
+@dataclass
+class OverwritePlan:
+
+    out: Path
+    existing: list[str]
+    overwritten: list[str] | None     # None: the generated names are not known in advance
+
+    def message(self, backup: Path | None, *, too_large: bool = False) -> str:
+        n = len(self.existing)
+        if self.overwritten is None:
+            head = L(f"{self.out} にある {n} ファイルのうち、生成するものと同じ名前のファイルを上書きします (残りはそのまま)。",
+                     f"Files in {self.out} ({n} in total) that have the same names as the generated ones will be overwritten; the rest are kept.")
+        elif not self.overwritten:
+            head = L(f"{self.out} にある {n} ファイルはそのまま残し、新しいファイルを足します。",
+                     f"The {n} files in {self.out} are kept; new files are added next to them.")
+        else:
+            shown = ", ".join(self.overwritten[:4]) + ("…" if len(self.overwritten) > 4 else "")
+            head = L(f"{self.out} にある {n} ファイルのうち {len(self.overwritten)} 件を上書きします ({shown})。",
+                     f"{len(self.overwritten)} of the {n} files in {self.out} will be overwritten ({shown}).")
+        if backup is not None:
+            tail = L(f"上書き前の内容は {backup}/ に残します (生成のあと 10 秒間、ステータス行の「元に戻す」で戻せます)。",
+                     f"The previous contents are kept in {backup}/ (for 10 s after writing, \"Undo\" in the status bar restores them).")
+        elif too_large:
+            tail = L(f"合計 {sum(1 for _ in self.existing)} ファイルが {SNAPSHOT_LIMIT // (1024 * 1024)} MB を超えるので、上書き前の控えは取りません。元に戻せません。",
+                     f"The {len(self.existing)} files exceed {SNAPSHOT_LIMIT // (1024 * 1024)} MB, so no copy of the previous contents is kept. This cannot be undone.")
+        else:
+            tail = L("上書き前の控えは取りません。元に戻せません。", "No copy of the previous contents is kept. This cannot be undone.")
+        return head + "\n\n" + tail
+
+
+def overwrite_plan(out: Path | str, files: ProjectFiles | Iterable[str] | None = None) -> OverwritePlan:
+    out = Path(out).expanduser()
+    existing = sorted(tree_files(out))
+    if files is None:
+        return OverwritePlan(out, existing, None)
+    names = set(files.names() if isinstance(files, ProjectFiles) else files)
+    return OverwritePlan(out, existing, [n for n in existing if n in names])
+
+
+class Backup:
+    """Copies of the files a write replaces, plus a manifest of what was replaced or created, so the write can be undone."""
+
+    def __init__(self, out: Path | str, directory: Path | str | None = None):
+        self.out = Path(out).expanduser()
+        self.dir = Path(directory).expanduser() if directory is not None else new_backup_dir(self.out)
+        self.before = tree_files(self.out)
+        self.saved: list[str] = []
+        self._snapshot = False
+
+    def _save(self, rel: str) -> None:
+        src, dst = self.out / rel, self.dir / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dst)
+        self.saved.append(rel)
+
+    def copy(self, names: Iterable[str]) -> list[str]:
+        for rel in names:
+            if rel in self.before and rel not in self.saved:
+                self._save(rel)
+        return list(self.saved)
+
+    def total_size(self) -> int:
+        return sum(size for size, _m in self.before.values())
+
+    def can_snapshot(self) -> bool:
+        return self.total_size() <= SNAPSHOT_LIMIT
+
+    def snapshot(self) -> bool:
+        # For writers whose file names are not known in advance: copy everything now, keep only what changed at finish().
+        if not self.can_snapshot():
+            return False
+        self._snapshot = True
+        for rel in self.before:
+            self._save(rel)
+        return True
+
+    def finish(self) -> Path | None:
+        after = tree_files(self.out)
+        if self._snapshot:
+            for rel in list(self.saved):
+                if after.get(rel) == self.before[rel]:
+                    (self.dir / rel).unlink()
+                    self.saved.remove(rel)
+            for p in sorted(self.dir.rglob("*"), reverse=True):
+                if p.is_dir() and not any(p.iterdir()):
+                    p.rmdir()
+        created = [rel for rel in after if rel not in self.before]
+        if not self.saved and not created:
+            if self.dir.is_dir() and not any(self.dir.iterdir()):
+                self.dir.rmdir()
+            return None
+        self.dir.mkdir(parents=True, exist_ok=True)
+        manifest = {"out": str(self.out), "written": datetime.now().isoformat(timespec="seconds"),
+                    "overwritten": list(self.saved), "created": created}
+        (self.dir / MANIFEST_FILE).write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        return self.dir
+
+
+def restore_backup(directory: Path | str) -> tuple[list[str], list[str]]:
+    """Put the overwritten files back and remove the created ones. Returns (restored, removed)."""
+    d = Path(directory).expanduser()
+    try:
+        manifest = json.loads((d / MANIFEST_FILE).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as ex:
+        raise ProjectError(L(f"控え {d} を読めません: {ex}", f"cannot read the backup {d}: {ex}")) from ex
+    out = Path(manifest["out"])
+    restored, removed = [], []
+    for rel in manifest.get("overwritten", []):
+        src = d / rel
+        if src.is_file():
+            (out / rel).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, out / rel)
+            restored.append(rel)
+    for rel in manifest.get("created", []):
+        p = out / rel
+        if p.is_file():
+            p.unlink()
+            removed.append(rel)
+    for rel in sorted(manifest.get("created", []), key=len, reverse=True):
+        parent = (out / rel).parent
+        while parent != out and parent.is_dir() and not any(parent.iterdir()):
+            parent.rmdir()
+            parent = parent.parent
+    return restored, removed
 
 
 def version_trap(probe: tuple[str, str]) -> str:
@@ -178,13 +347,18 @@ def _check_names_stay_inside(names: list[str]) -> None:
 
 def write_project(spec: CalculationSpec, cfg: Config, output_dir: Path | str, *, overwrite: bool = False,
                   pre_command: str = "", extra_readme: list[str] | None = None,
-                  extra_texts: dict[str, str] | None = None, drop: tuple[str, ...] = (), run_transform=None) -> list[Path]:
+                  extra_texts: dict[str, str] | None = None, drop: tuple[str, ...] = (), run_transform=None,
+                  backup: Path | str | None = None) -> list[Path]:
+    """Write the run directory; with backup=<dir>, the files it replaces are copied there first (see restore_backup)."""
     out = Path(output_dir).expanduser()
     files = build_project(spec, cfg, output_dir=out, pre_command=pre_command, extra_readme=extra_readme,
                           extra_texts=extra_texts, drop=drop, run_transform=run_transform)
-    if out.exists() and any(out.iterdir()) and not overwrite:
+    if has_files(out) and not overwrite:
         raise OutputNotEmpty(L(f"出力先 {out} には、すでにファイルがあります。黙って上書きしないよう、何も書かずに止めました。",
                                f"The output directory {out} already contains files; nothing was written, to avoid overwriting them silently."))
+    keep = Backup(out, backup) if backup is not None else None
+    if keep is not None:
+        keep.copy(files.names())
     out.mkdir(parents=True, exist_ok=True)
     written: list[Path] = []
     for rel, text in files.texts.items():
@@ -203,6 +377,8 @@ def write_project(spec: CalculationSpec, cfg: Config, output_dir: Path | str, *,
         p.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src, p)
         written.append(p)
+    if keep is not None:
+        keep.finish()
     return written
 
 

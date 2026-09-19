@@ -29,7 +29,9 @@ def check_output(out: Path, overwrite: bool) -> None:
     errs = output_dir_errors(out)
     if errs:
         raise ProjectError(L("次の点を直すと生成できます:", "fix the following to generate:") + "\n" + "\n".join(f"  - {e}" for e in errs), errs)
-    if out.exists() and any(out.iterdir()) and not overwrite:
+    from adit.project import has_files
+
+    if has_files(out) and not overwrite:
         raise OutputNotEmpty(L(f"出力先 {out} には、すでにファイルがあります。黙って上書きしないよう、何も書かずに止めました。",
                                f"The output directory {out} already contains files; nothing was written, to avoid overwriting them silently."))
 

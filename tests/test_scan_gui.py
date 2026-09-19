@@ -143,3 +143,30 @@ def test_analysis_tab_shows_table_and_figures_for_a_scan(app, tmp_path):
     plain = tmp_path / "plain"; shutil.copytree(REPO / "examples" / "dftb_tio2_generated", plain)
     panel.set_run_dir(plain); panel.run()
     assert t.isHidden()
+
+
+def test_scan_overwrite_keeps_a_pruned_backup(app, boxes, sk_root, tmp_path, monkeypatch):
+    from adit.project import BACKUP_DIR, restore_backup
+
+    asked = []
+    monkeypatch.setattr(QMessageBox, "question", staticmethod(lambda *a, **k: (asked.append(a[2]), QMessageBox.StandardButton.Yes)[1]))
+    win = make_window(sk_root, tmp_path)
+    dlg = win.scan_dialog()
+    dlg.path.setText("method.max_scc_iterations"); dlg.values.setText("50, 100")
+    dlg.generate()
+    out = tmp_path / "out_scan"
+    assert not asked and dlg.backup_dir is None
+    (out / "max_scc_iterations_50" / "dftb_in.hsd").write_text("old\n", encoding="utf-8")
+    (out / "extra.txt").write_text("keep\n", encoding="utf-8")
+    dlg = win.scan_dialog()
+    dlg.path.setText("method.max_scc_iterations"); dlg.values.setText("50, 100")
+    dlg.generate()
+    assert len(asked) == 1 and "同じ名前のファイルを上書きします" in asked[0] and BACKUP_DIR in asked[0]
+    d = dlg.backup_dir
+    assert d is not None and d.parent == out / BACKUP_DIR
+    saved = sorted(p.relative_to(d).as_posix() for p in d.rglob("*") if p.is_file())
+    assert "max_scc_iterations_50/dftb_in.hsd" in saved and "extra.txt" not in saved
+    win.offer_undo(d)
+    assert not win.undo_link.isHidden()
+    restore_backup(d)
+    assert (out / "max_scc_iterations_50" / "dftb_in.hsd").read_text(encoding="utf-8") == "old\n"

@@ -659,3 +659,29 @@ def test_ctrl_s_saves_the_file_in_the_workspace_and_the_spec_elsewhere(app, quie
     QTest.keyClick(win.structure, Qt.Key.Key_S, Qt.KeyboardModifier.ControlModifier); app.processEvents()
     assert calls == ["spec"]
     win.workspace.close_session()
+
+
+def test_overwrite_confirmation_names_the_files_and_offers_undo(app, quiet, sk_root, tmp_path, monkeypatch):
+    from adit.project import BACKUP_DIR
+
+    asked = []
+    monkeypatch.setattr(QMessageBox, "question", staticmethod(lambda *a, **k: (asked.append(a[2]), QMessageBox.StandardButton.Yes)[1]))
+    win = make_window(sk_root, tmp_path)
+    win.method.sk_set.setCurrentText("fake-1-0"); win.refresh_preview()
+    win.generate()
+    out = tmp_path / "out"
+    assert not asked and win.undo_link.isHidden() and not (out / BACKUP_DIR).exists()
+    (out / "dftb_in.hsd").write_text("old\n", encoding="utf-8")
+    (out / "mine.txt").write_text("keep\n", encoding="utf-8")
+    win.generate()
+    assert len(asked) == 1 and "13 ファイルのうち 12 件を上書きします" in asked[0] and "dftb_in.hsd" in asked[0] and BACKUP_DIR in asked[0]
+    backups = list((out / BACKUP_DIR).iterdir())
+    assert len(backups) == 1 and (backups[0] / "dftb_in.hsd").read_text(encoding="utf-8") == "old\n" and not (backups[0] / "mine.txt").exists()
+    assert not win.undo_link.isHidden() and win._undo_timer.isActive()
+    win.undo_link.click()
+    assert win.undo_link.isHidden() and (out / "dftb_in.hsd").read_text(encoding="utf-8") == "old\n"
+    assert (out / "mine.txt").read_text(encoding="utf-8") == "keep\n" and "元に戻しました" in win.statusBar().currentMessage()
+    win.undo_link.click()          # a second click has nothing left to do
+    monkeypatch.setattr(QMessageBox, "question", staticmethod(lambda *a, **k: QMessageBox.StandardButton.No))
+    win.generate()
+    assert (out / "dftb_in.hsd").read_text(encoding="utf-8") == "old\n" and len(list((out / BACKUP_DIR).iterdir())) == 1
