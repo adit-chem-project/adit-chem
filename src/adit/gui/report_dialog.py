@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog, QDialogButtonBox, 
 
 from adit.gui import report_fields as R
 from adit.gui.help import help_for
+from adit.gui.i18n import translate_widgets
 from adit.gui.style import PANEL_MARGIN, ROW_SPACING
 from adit.gui.widgets import add_row
 from adit.lang import L
@@ -32,6 +33,7 @@ class ReportDialog(QDialog):
                              (self.results, "results.csv"), (self.bundle, "pack.zip")):
             widget.setPlaceholderText(L(f"空欄なら作りません (例 {hint})", f"empty = not created (e.g. {hint})"))
         self.check = QCheckBox(R.lab("rep_check"))
+        self.check.setToolTip(_help(R.LABELS["rep_check"][0]))
         self.out = QPlainTextEdit(); self.out.setReadOnly(True); self.out.setFixedHeight(160)
         self.out.setStyleSheet("font-family: monospace;")
 
@@ -57,6 +59,7 @@ class ReportDialog(QDialog):
         self.browse.clicked.connect(self._add_dir)
         self.run_button.clicked.connect(self.build)
         buttons.rejected.connect(self.reject)
+        translate_widgets(self)
 
     def _add_dir(self) -> None:
         path = QFileDialog.getExistingDirectory(self, R.lab("rep_dirs"))
