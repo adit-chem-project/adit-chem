@@ -353,7 +353,7 @@ HELP: dict[str, Help] = {
                        "Use the structure currently on screen as the slab, molecule, or adsorbed state in the set, or save it as extended XYZ."),
     "スラブの固定原子": Help(O, "スラブの計算で動かさない原子 (1 始まりの番号)。空欄なら固定しません。", "Atoms kept fixed in the slab run (1-based); empty = none."),
     "吸着した構造の固定原子": Help(O, "吸着した構造の計算で動かさない原子 (1 始まりの番号)。", "Atoms kept fixed in the adsorbed run (1-based)."),
-    "反応に出てくる計算": Help(R, "反応の組の計算を 1 行に 1 つ。名前 (ディレクトリの名前になります)、構造のファイル (空欄なら画面の構造)、係数 ν (生成したファイルは正、反応物は負)、全電荷、スピン多重度。",
+    "反応に出てくる計算": Help(R, "反応の組の計算を 1 行に 1 つ。名前 (ディレクトリの名前になります)、構造のファイル (空欄なら画面の構造)、係数 ν (生成物は正、反応物は負)、全電荷、スピン多重度。",
                        "One run per row: the name (it becomes the directory name), the structure file (empty = the structure on screen), the coefficient ν (products positive, reactants negative), the total charge and the spin multiplicity."),
     "溶媒側で変える手法の項目": Help(R, "溶媒側の計算で上書きする手法の項目を JSON で (例 {\"solvation\": \"alpb\", \"solvent\": \"water\"})。ここだけが気相側との違いになります。",
                           "Method items overridden for the solvated run, as JSON (e.g. {\"solvation\": \"alpb\", \"solvent\": \"water\"}); this is the only intended difference from the gas phase."),
