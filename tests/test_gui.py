@@ -455,7 +455,7 @@ def test_run_progress_from_output_log(app, tmp_path):
     log = "***  Geometry step: 0\n...\n***  Geometry step: 41\n"
     assert last_step(log) == 41 and last_step("no steps") is None
     t = progress_text(41, 1000, 84.0)
-    assert "42 / 1000" in t and "2 秒/ステップ" in t and "残り約 32 分" in t
+    assert "42 / 1000" in t and "1 ステップ 2 秒" in t and "残り約 32 分" in t
     assert "/" not in progress_text(3, None, 1.0).split("、")[0]
     (tmp_path / "output.log").write_text(log, encoding="utf-8")
     p = RunPanel(); p.start(tmp_path, 100)

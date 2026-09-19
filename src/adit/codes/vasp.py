@@ -204,9 +204,9 @@ class VaspGenerator(InputGenerator):
         prep = [
             L("  POTCAR は VASP のライセンス保持者にしか配布できないため、このディレクトリには入っていません。",
               "  POTCAR may only be distributed to VASP license holders, so it is not in this directory."),
-            L(f"  計算を実行する計算機で、環境変数 {PP_ENV} (POTCAR ライブラリの親ディレクトリ。その下に {m.potcar_set}/<名前>/POTCAR がある場所)",
+            L(f"  計算を実行する計算機で、環境変数 {PP_ENV} (POTCAR ライブラリの親ディレクトリ。その下に {m.potcar_set}/<名前>/POTCAR がある場所) を設定しておいてください。",
               f"  On the machine that runs the job, set the environment variable {PP_ENV} (the parent of the POTCAR library, containing {m.potcar_set}/<name>/POTCAR)."),
-            L("  を設定しておいてください。ADIT の環境設定 (cluster.toml のプロファイルの env) に書いておくと、submit.sh が設定します。",
+            L("  ADIT の環境設定 (cluster.toml のプロファイルの env) に書いておくと、submit.sh が設定します。",
               "  If it is written in the ADIT settings (env of the profile in cluster.toml), submit.sh sets it."),
             (L("  この PC では POTCAR ライブラリを確認できなかったため、potcar.spec の TITEL / ZVAL は未確認です (実行時に make_potcar.sh が potcar.used に記録します)。",
                "  The library was not available on this machine, so TITEL / ZVAL in potcar.spec are unverified (make_potcar.sh records them in potcar.used at run time).")

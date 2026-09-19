@@ -63,7 +63,7 @@ def block_reason(cfg, target: RunTarget | None, *, running: bool = False, cfg_pa
         return L(f"{target.run_dir} に {SUBMIT} がありません", f"{target.run_dir} has no {SUBMIT}")
     if target.kind != "direct":
         return L("クラスタ用 (PBS / Slurm) の入力は、ADIT からは実行しません",
-                 "Cluster (PBS / Slurm) outputs are not run by ADIT")
+                 "Cluster (PBS / Slurm) inputs are not run by ADIT")
     if os.name == "nt":
         return L("Windows では実行できません (生成した入力を Linux のサーバーに転送して使います)",
                  "Not run on Windows (transfer the files to a Linux server)")
@@ -74,9 +74,9 @@ def block_reason(cfg, target: RunTarget | None, *, running: bool = False, cfg_pa
             return L(f"実行ファイルがありません: {target.exe}", f"executable not found: {target.exe}")
     elif shutil.which(target.exe) is None:
         return L(f"{target.exe} が見つかりません (インストールされていないか、コマンドを探す場所 PATH に入っていません。"
-                 "README の「用意するもの」を参照)",
+                 "README.txt の「実行する前に用意すること」を参照)",
                  f"{target.exe} not found (not installed, or not on PATH, the list of places where commands are looked up; "
-                 "see \"What you need\" in the README)")
+                 "see \"Before running\" in README.txt)")
     return ""
 
 

@@ -45,7 +45,7 @@ class ConvertDialog(QDialog):
         button = QPushButton(L("参照…", "Browse…")); row.addWidget(button)
         def choose():
             if folder:
-                p = QFileDialog.getExistingDirectory(self, L("出力先", "Output directory"), edit.text() or str(Path.home()))
+                p = QFileDialog.getExistingDirectory(self, L("出力ディレクトリ", "Output directory"), edit.text() or str(Path.home()))
             elif save:
                 p, _ = QFileDialog.getSaveFileName(self, L("変換後の構造", "Converted structure"), edit.text() or str(Path.home()))
             else:
@@ -75,7 +75,7 @@ class ConvertDialog(QDialog):
             if not t.error: self.template.addItem(f"{t.name} — {t.code}" + (f" — {t.comment}" if t.comment else ""), t.name)
         self.calc_output = QLineEdit()
         add_row(form, L("変換先の雛形", "Target template"), self.template)
-        add_row(form, L("保存先", "Output directory"), self._path_row(self.calc_output, True))
+        add_row(form, L("出力ディレクトリ", "Output directory"), self._path_row(self.calc_output, True))
         form.addRow(_hint(L("構造・固定原子・速度・計算の種類・MD の条件は現在の画面から保ちます。計算手法、力場、カットオフ、擬ポテンシャル、k 点は変換せず、変換先の雛形から取ります。",
                               "The structure, fixed atoms, velocities, task, and MD settings are preserved from the current screen. The method, force field, cutoffs, pseudopotentials, and k-points are not translated; they come from the target template.")))
         if not self.template.count():

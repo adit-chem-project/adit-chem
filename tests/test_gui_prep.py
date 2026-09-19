@@ -29,7 +29,7 @@ from adit.spec import Cp2kMethod, DftbMethod, EspressoMethod, HubbardU, OrcaMeth
 
 REPO = Path(__file__).resolve().parent.parent
 EX = REPO / "examples"
-NEW_LABELS = ["溶媒の模型 (--alpb / --gbsa)", "溶媒の模型 (CPCM / SMD)", "溶媒", "溶媒のパラメータファイル (GBSA)", "溶媒の比誘電率 (SCCS)",
+NEW_LABELS = ["溶媒モデル (--alpb / --gbsa)", "溶媒モデル (CPCM / SMD)", "溶媒", "溶媒のパラメータファイル (GBSA)", "溶媒の比誘電率 (SCCS)",
               "元素ごとの初期磁気モーメント [μB]", "DFT+U", "LDAUTYPE", "starting_magnetization (元素ごと)", "HUBBARD の射影",
               "元素ごとの MAGNETIZATION", "PLUS_U_METHOD"]
 

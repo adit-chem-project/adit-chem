@@ -41,10 +41,10 @@ class VacfResult:
                 "freq_cm1": self.freq_cm1.tolist(), "spectrum": self.spectrum.tolist(),
                 "note": L("VACF は時間原点を全部使った平均です。D は Green-Kubo の式 (1/3)∫⟨v(0)·v(t)⟩dt で、"
                           "MSD の傾きから出した D と一致するはずの量です。スペクトルは VACF のフーリエ変換 "
-                          "(振動の状態密度)。**収束もピークの帰属も判定していません。**",
+                          "(振動の状態密度)。収束もピークの帰属も判定していません。",
                           "The VACF averages over all time origins. D is the Green-Kubo integral (1/3) int <v(0).v(t)> dt, "
                           "which should agree with the slope of the MSD. The spectrum is the Fourier transform of the VACF "
-                          "(vibrational density of states). **Neither convergence nor peak assignment is judged.**")}
+                          "(vibrational density of states). Neither convergence nor peak assignment is judged.")}
 
 
 def velocities_from_positions(pos: np.ndarray, dt_fs: float) -> np.ndarray:

@@ -263,7 +263,7 @@ def parameter_notes(report: RunReport) -> list[str]:
     if spec.method.code == "dftbplus":
         out.append(L("Slater-Koster のパラメータに交換相関汎関数の記載はありません (DFTB のパラメータ化そのものが近似です)。"
                      "使ったセットの名前と照合用のハッシュは上の表にあります。",
-                     "Slater-Koster parameters record no exchange-correlation functional (the parameterisation itself is the "
+                     "Slater-Koster parameters record no exchange-correlation functional (the parameterization itself is the "
                      "approximation); the set name and fingerprints are in the table above."))
     return out
 
@@ -450,7 +450,7 @@ def methods_section(reports: list[RunReport]) -> list[str]:
         if rows:
             lines += [L("### 条件 (spec.json に記録された値)", "### Settings (as recorded in spec.json)"), ""]
             lines += _table((L("項目", "Field"), L("値", "Value"), L("単位", "Unit")), rows)
-            lines += [L("空欄の項目と、値が 0 の方法の欄 (この案件では「指定しない」の意味) は出していません。"
+            lines += [L("空欄の項目と、値が 0 の方法の欄 (ADIT では「指定しない」の意味) は出していません。"
                         "**この表は `spec.json` の記録であって、計算コードの入力に実際に書かれたかは別です** "
                         "(共通の欄には、そのコードへ写されないものがあります)。実際に書かれた項目だけを照合するには "
                         "`adit-convert verify <ディレクトリ>` を使ってください "
@@ -793,17 +793,17 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("run_dirs", nargs="+", help=L("計算ディレクトリ (spec.json のある場所)", "calculation directories (where spec.json is)"))
     p.add_argument("-o", "--out", metavar="methods.md", help=L("方法の節の書き出し先 (既定は画面)", "where to write the methods section (default: screen)"))
     p.add_argument("--lang", choices=("ja", "en", "both"), default="", help=L("報告の言語 (既定は ADIT の設定)", "language of the report (default: the ADIT setting)"))
-    p.add_argument("--csv", metavar="conditions.csv", help=L("条件の表を CSV で書き出す", "write the settings table as CSV"))
+    p.add_argument("--csv", metavar="conditions.csv", help=L("条件の表を CSV で書き出します", "write the settings table as CSV"))
     p.add_argument("--results-csv", metavar="results.csv", help=L(
         "複数の計算の結果 (最終エネルギー・平均温度・正常終了・収束など) を 1 枚の表にします",
         "write the results of several runs (final energy, mean temperature, completion, convergence) as one table"))
-    p.add_argument("--bundle", metavar="pack.zip", help=L("再現に要るファイルと manifest.json をまとめる (.zip かディレクトリ)",
+    p.add_argument("--bundle", metavar="pack.zip", help=L("再現に要るファイルと manifest.json をまとめます (.zip かディレクトリ)",
                                                           "collect the files needed to reproduce plus manifest.json (.zip or a directory)"))
     p.add_argument("--bib", metavar=BIB_FILE, help=L(
         "方法の節が引用する文献 (計算コード・パラメータのセット・汎関数・分散補正・ADIT 自身) を BibTeX で書き出す",
         "write the references the methods section cites (code, parameter set, functional, dispersion, ADIT itself) as BibTeX"))
     p.add_argument("--check", action="store_true", help=L(
-        "生成したときの照合用のハッシュと、いまのファイル (入力・写した擬ポテンシャルや力場) を突き合わせる。終了コード 0 = 一致、1 = 不一致、2 = 記録が無くて確かめられない",
+        "生成したときの照合用のハッシュと、いまのファイル (入力・写した擬ポテンシャルや力場) を突き合わせます。終了コード 0 = 一致、1 = 不一致、2 = 記録が無くて確かめられない",
         "compare the current files (inputs and copied pseudopotentials or force fields) with the fingerprints recorded at generation; "
         "exit code 0 = all match, 1 = mismatch, 2 = nothing on record to check against"))
     args = p.parse_args(argv)

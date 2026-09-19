@@ -76,7 +76,7 @@ def convert_with_openbabel(source: Path | str, output: Path | str, *,
                                 f"Open Babel conversion failed. The previous output was not changed. Staged file: {staged}. {detail}"))
     try:
         if dst.exists() and not overwrite:
-            raise ConversionError(L(f"出力先 {dst} が変換中に作成されました (上書きしません)。途中ファイル: {staged}",
+            raise ConversionError(L(f"出力先 {dst} が変換の途中で作られました (上書きしません)。途中ファイル: {staged}",
                                     f"output {dst} was created during conversion (not overwritten). Staged file: {staged}"))
         os.replace(staged, dst)
     except OSError as ex:
@@ -270,7 +270,7 @@ def retarget_spec(source: CalculationSpec, target_conditions: CalculationSpec, *
                 "--use-target-thermostat requires an NVT or NPT MD source calculation"))
         if "thermostat" not in target_conditions.task.md.model_fields_set:
             raise ConversionError(L(
-                "変換先の雛形に task.md.thermostat を明示してください。熱浴の種類を ADIT が選ぶことはしません",
+                "変換先の雛形に task.md.thermostat を指定してください。熱浴の種類を ADIT が選ぶことはしません",
                 "Set task.md.thermostat explicitly in the target template; ADIT does not choose a thermostat"))
         thermostat = target_conditions.task.md.thermostat
         task = task.model_copy(update={"md": task.md.model_copy(update={"thermostat": thermostat})})
@@ -455,7 +455,7 @@ def _parser() -> argparse.ArgumentParser:
     babel.add_argument("--input-format", help=L("Open Babel の入力形式名", "Open Babel input format name"))
     babel.add_argument("--output-format", help=L("Open Babel の出力形式名", "Open Babel output format name"))
     babel.add_argument("--overwrite", action="store_true", help=L("既存の出力を上書きします", "overwrite an existing output"))
-    dock = sub.add_parser("dock6", help=L("利用者が作成した DOCK6 の dock.in と入力ファイルをまとめます",
+    dock = sub.add_parser("dock6", help=L("利用者が用意した DOCK6 の dock.in と入力ファイルをまとめます",
                                              "package a user-authored DOCK6 dock.in and its input files"))
     dock.add_argument("source", help=L("既存の dock.in", "existing dock.in"))
     dock.add_argument("output", help=L("空の出力ディレクトリ", "empty output directory"))
@@ -485,7 +485,7 @@ def _parser() -> argparse.ArgumentParser:
         "初速度を明示的に除外し、その事実を変換記録に残します",
         "omit initial velocities and record the omission in the conversion report"))
     calc.add_argument("--accept-import-defaults", action="store_true", help=L(
-        "読み込んだ下書きの計算設定 (draft_spec.json) の元入力にない既定値を確認済みとして、変換を続けます",
+        "読み込んだ下書き (draft_spec.json) の既定値のうち、元の入力に無かったものを確認済みとみなして、変換を続けます",
         "continue after reviewing defaults absent from an imported draft spec"))
     calc.add_argument("--overwrite", action="store_true", help=L("空でない出力ディレクトリを上書きします", "overwrite a non-empty output directory"))
     return ap
@@ -538,7 +538,7 @@ def main(argv: list[str] | None = None) -> int:
             f"読み戻して照合した項目: {len(result.preserved)} 件一致、{len(result.mismatched)} 件不一致、{len(result.unverifiable)} 件未確認。計算全体の同等性は判定していません。",
             f"Re-imported mapped fields: {len(result.preserved)} matched, {len(result.mismatched)} mismatched, {len(result.unverifiable)} unverified. Whole-calculation equivalence was not assessed."))
         print(L(
-            f"対応項目のみの点検結果: {'通過' if checked else '不通過'}。未確認項目は成功終了でも検証済みを意味しません。",
+            f"対応項目のみの点検結果: {'問題なし' if checked else '問題あり'}。未確認項目は成功終了でも検証済みを意味しません。",
             f"Mapped-field check only: {'passed' if checked else 'failed'}. Unverified fields remain unverified even when this command exits successfully."))
         for item in result.mismatched[:5]:
             print(L(f"  不一致: {item['field']}", f"  mismatch: {item['field']}"), file=sys.stderr)

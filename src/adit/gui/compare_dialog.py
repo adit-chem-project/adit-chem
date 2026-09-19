@@ -23,7 +23,7 @@ class CompareDialog(QDialog):
         row = QHBoxLayout(); row.addWidget(self.base, 1); row.addWidget(self.browse)
         form = QFormLayout()
         add_row(form, AF.LABELS["compare_base"][0], row)
-        self.hint = QLabel(L("係数 ν は生成したファイルを正、反応物を負にします (ΔE = ΣνE)。ディレクトリは基準のディレクトリからの相対パスか絶対パス。"
+        self.hint = QLabel(L("係数 ν は生成物を正、反応物を負にします (ΔE = ΣνE)。ディレクトリは基準のディレクトリからの相対パスか絶対パス。"
                              "反応の名前が空の行は、上の行と同じ反応に入ります。",
                              "The coefficient ν is positive for products and negative for reactants (ΔE = ΣνE). Directories are relative to the base "
                              "directory or absolute. A row with an empty reaction name belongs to the reaction above it."))

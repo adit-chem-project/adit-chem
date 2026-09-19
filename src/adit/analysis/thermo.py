@@ -50,9 +50,9 @@ def missing_inputs(o: ThermoOptions) -> list[str]:
         if o.exclude_lowest is None or o.exclude_lowest < 0:
             r.append(L("除く低い振動の本数 (0 以上の整数。並進・回転にあたるモードなど)", "number of lowest modes to exclude (integer, 0 or more; e.g. translations and rotations)"))
     if o.model == "quasi_harmonic" and (o.qh_cutoff_cm1 is None or o.qh_cutoff_cm1 <= 0):
-        r.append(L("準調和の下限の振動数 [cm^-1] (正の数)", "quasi-harmonic cutoff frequency [cm^-1] (positive)"))
+        r.append(L("準調和の下限の振動数 [cm⁻¹] (正の数)", "quasi-harmonic cutoff frequency [cm^-1] (positive)"))
     if o.model == "msrrho" and (o.msrrho_tau_cm1 is None or o.msrrho_tau_cm1 <= 0):
-        r.append(L("準 RRHO の減衰の τ [cm^-1] (正の数)", "quasi-RRHO damping tau [cm^-1] (positive)"))
+        r.append(L("準 RRHO の減衰の τ [cm⁻¹] (正の数)", "quasi-RRHO damping tau [cm^-1] (positive)"))
     if o.imaginary not in (None, "ignore", "stop"):
         r.append(L("虚振動の扱いは ignore か stop", "imaginary-mode handling must be ignore or stop"))
     return r
@@ -112,7 +112,7 @@ def compute_thermo(freqs_cm1: list[float], atoms: Atoms | None, energy_ev: float
                n_imaginary_used=len(imag), imaginary_cm1_used=[_to_cm1(x) for x in imag],
                excluded_cm1=[_to_cm1(e[i]) for i in idx if i not in set(use)])
     if imag and o.imaginary is None:
-        out["reasons"] = [L(f"使うモードに虚振動が {len(imag)} 本あります ({', '.join(f'{_to_cm1(x):.1f}' for x in imag)} cm^-1)。"
+        out["reasons"] = [L(f"使うモードに虚振動が {len(imag)} 本あります ({', '.join(f'{_to_cm1(x):.1f}' for x in imag)} cm⁻¹)。"
                             "除いて計算するか (ignore)、計算しないか (stop) を選んでください",
                             f"{len(imag)} imaginary mode(s) among the modes used ({', '.join(f'{_to_cm1(x):.1f}' for x in imag)} cm^-1); "
                             "choose ignore (drop them) or stop (do not compute)")]
@@ -121,7 +121,7 @@ def compute_thermo(freqs_cm1: list[float], atoms: Atoms | None, energy_ev: float
         out["reasons"] = [L(f"使うモードに虚振動が {len(imag)} 本あるので、指定どおり計算していません", f"{len(imag)} imaginary mode(s) among the modes used; not computed as requested")]
         return out
     if zero:
-        out["reasons"] = [L(f"使うモードに 0 cm^-1 のものが {len(zero)} 本あります (エントロピーが発散します。除く本数を見直してください)",
+        out["reasons"] = [L(f"使うモードに 0 cm⁻¹ のものが {len(zero)} 本あります (エントロピーが発散します。除く本数を見直してください)",
                             f"{len(zero)} mode(s) at 0 cm^-1 among the modes used (the entropy diverges; revisit the number of excluded modes)")]
         return out
     ign = bool(imag) and o.imaginary == "ignore"
@@ -141,12 +141,12 @@ def compute_thermo(freqs_cm1: list[float], atoms: Atoms | None, energy_ev: float
             includes = L("振動の寄与だけ (並進・回転を含まない)。F = U − T S", "vibrational contributions only (no translation or rotation); F = U - T S")
         elif o.model == "quasi_harmonic":
             th = tc.QuasiHarmonicThermo(sel, potentialenergy=0.0, ignore_imag_modes=ign, raise_to=o.qh_cutoff_cm1 * units.invcm)
-            includes = L(f"振動の寄与だけ。{o.qh_cutoff_cm1:g} cm^-1 より低い振動数を {o.qh_cutoff_cm1:g} cm^-1 に上げて調和振動子で数える。F = U − T S",
+            includes = L(f"振動の寄与だけ。{o.qh_cutoff_cm1:g} cm⁻¹ より低い振動数を {o.qh_cutoff_cm1:g} cm⁻¹ に上げて調和振動子で数える。F = U − T S",
                          f"vibrational contributions only; frequencies below {o.qh_cutoff_cm1:g} cm^-1 are raised to it before the harmonic treatment; F = U - T S")
         else:
             real = [x.real for x in sel if x.imag == 0 and x.real > 0]
             th = tc.MSRRHOThermo(real, atoms=mol, potentialenergy=0.0, tau=o.msrrho_tau_cm1, nu_scal=1.0, treat_int_energy=False)
-            includes = L(f"振動の寄与だけ。低い振動のエントロピーを自由回転子と混ぜる (τ = {o.msrrho_tau_cm1:g} cm^-1、ASE の既定 treat_int_energy=False: 内部エネルギーは調和振動子のまま)。F = U − T S",
+            includes = L(f"振動の寄与だけ。低い振動のエントロピーを自由回転子と混ぜる (τ = {o.msrrho_tau_cm1:g} cm⁻¹、ASE の既定 treat_int_energy=False: 内部エネルギーは調和振動子のまま)。F = U − T S",
                          f"vibrational contributions only; low-mode entropies are interpolated with free rotors (tau = {o.msrrho_tau_cm1:g} cm^-1; ASE default treat_int_energy=False: harmonic internal energy); F = U - T S")
         zpe = float(th.get_ZPE_correction())
         rows = []

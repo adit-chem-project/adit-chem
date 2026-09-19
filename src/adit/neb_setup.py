@@ -187,7 +187,7 @@ def _path_length(images) -> list[float]:
 
 def _readme_common(opts, images, notes) -> list[str]:
     climb_note = [] if opts.climb else [L(
-        "  - climbing image は使いません。最高エネルギーの像は鞍点そのものとは限らないため、像の最大値から得る上昇量は、位置を求めた遷移状態の障壁ではありません",
+        "  - climbing image は使いません。最高エネルギーの像は鞍点そのものとは限らないため、像の最大値から得る上昇量は、遷移状態を探して求めた障壁ではありません",
         "  - No climbing image is used. The highest-energy image need not coincide with the saddle point, so the rise to the highest image is not a barrier from a located transition state")]
     return [L("== 反応経路 (NEB) ==", "== Reaction path (NEB) =="),
             L(f"  始状態・終状態を含めて {len(images)} 個の像 (中間 {opts.images} 個)。全像は images.extxyz、条件は neb.json",

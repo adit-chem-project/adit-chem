@@ -219,8 +219,8 @@ def cross_section_problem(cell, mols: list[tuple[Atoms, int]], min_distance: flo
     if (w >= need_min - 1e-9).all():
         return None
     n = fit_repeat(w, need_room)
-    return L(f"板の断面が狭すぎて、溶液の成分が周期の像と重ならずに入りません。周期の幅は a の方向 {w[0]:.2f} Å、b の方向 {w[1]:.2f} Å ですが、"
-             f"{thin_name} がいちばん薄い向きでも「分子間の最短距離」{min_distance:g} Å を保つには、どちらも {need_min:.2f} Å 以上 要ります。"
+    return L(f"スラブの断面が狭すぎて、溶液の成分が周期の像と重ならずに入りません。周期の幅は a の方向 {w[0]:.2f} Å、b の方向 {w[1]:.2f} Å です。"
+             f"{thin_name} がいちばん薄い向きでも「分子間の最短距離」{min_distance:g} Å を保つには、どちらも {need_min:.2f} Å 以上要ります。"
              f"この手順の前に「超格子」の手順を入れて、「繰り返し (a × b × c)」を {n[0]} × {n[1]} × 1 にしてください "
              f"(幅が {w[0] * n[0]:.2f} × {w[1] * n[1]:.2f} Å になり、いちばん大きい {room_name} も余裕をもって入ります)。"
              "「超格子」は「面で切る」より後ろに置いてください (ミラー指数はいまのセルの格子ベクトルに対する指数なので、"
@@ -242,8 +242,8 @@ def box_problem(cell, mols: list[tuple[Atoms, int]], min_distance: float, from_p
         return None
     how = L("「余白」を大きくしてください", "increase the padding") if from_padding else \
         L("先に「超格子」の手順でセルを広げてください", "widen the cell with a supercell step first")
-    return L(f"箱が狭すぎて、溶媒の成分が周期の像と重ならずに入りません。周期の幅は {w[0]:.2f} × {w[1]:.2f} × {w[2]:.2f} Å ですが、"
-             f"{thin_name} がいちばん薄い向きでも「分子間の最短距離」{min_distance:g} Å を保つには、どの方向も {need_min:.2f} Å 以上 要ります "
+    return L(f"箱が狭すぎて、溶媒の成分が周期の像と重ならずに入りません。周期の幅は {w[0]:.2f} × {w[1]:.2f} × {w[2]:.2f} Å です。"
+             f"{thin_name} がいちばん薄い向きでも「分子間の最短距離」{min_distance:g} Å を保つには、どの方向も {need_min:.2f} Å 以上要ります "
              f"(いちばん大きい {room_name} に余裕をみるなら {need_room:.2f} Å)。{how}",
              f"the box is too small for the solvent to avoid its own periodic images. The periodic widths are "
              f"{w[0]:.2f} x {w[1]:.2f} x {w[2]:.2f} Å, but {thin_name} needs at least {need_min:.2f} Å in every direction to keep the "
@@ -468,7 +468,7 @@ def op_adsorb(atoms: Atoms, st: Adsorb) -> Atoms:
         info = a.info.get("adsorbate_info") or {}
         sites = info.get("sites") or {}
         if not sites:
-            raise RecipeError(L("席の名前は、ASE の面関数で作ったスラブ (土台が surface で、そのあと変換行列の超格子や面の切り直しをしていないもの) にだけあります。"
+            raise RecipeError(L("吸着サイトの名前は、ASE の面関数で作ったスラブ (土台が surface で、そのあと変換行列の超格子や面の切り直しをしていないもの) にだけあります。"
                                 "above_atom (原子の番号) か xy で置き場所を指定してください",
                                 "site names exist only for slabs made by ASE surface functions (surface base, not re-cut or matrix-supercelled). "
                                 "Use above_atom (an atom index) or xy instead"))

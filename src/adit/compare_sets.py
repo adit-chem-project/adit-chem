@@ -171,7 +171,7 @@ def plan_set(spec: CalculationSpec, data: dict, where: Path) -> dict:
             except (TypeError, ValueError):
                 nu = 0.0
             if nu == 0 or not np.isfinite(nu):
-                raise CompareSetError(L(f"{name}: 係数 nu (生成したファイルは正、反応物は負) を 0 以外の有限の数で書いてください", f"{name}: give a non-zero finite coefficient nu (products positive, reactants negative)"))
+                raise CompareSetError(L(f"{name}: 係数 nu (生成物は正、反応物は負) を 0 以外の有限の数で書いてください", f"{name}: give a non-zero finite coefficient nu (products positive, reactants negative)"))
             s, ch = _member_spec(spec, _member_structure(spec, it, where, name), name, "member")
             members.append((name, "member", s, ch))
             terms.append({"dir": name, "nu": nu})
@@ -274,7 +274,7 @@ def write_compare_set(spec: CalculationSpec, cfg, out_dir: Path | str, data: dic
         mesh = "x".join(str(k) for k in s.kpoints.resolved_mesh(s.structure.atoms.cell)) if s.kpoints is not None and s.structure.periodic else "-"
         lines.append(f"  {d:<15} {role:<11} {_formula(s):<9} {len(s.structure.atoms.symbols):<7} {'yes' if s.structure.periodic else 'no':<5} "
                      f"{s.structure.charge:<5} {s.structure.multiplicity:<7} {mesh}")
-    lines += ["", L(f"比べる式: ΔE = {rx_text}   (係数 ν は生成したファイルが正、反応物が負)", f"Difference: ΔE = {rx_text}   (ν: products positive, reactants negative)")]
+    lines += ["", L(f"比べる式: ΔE = {rx_text}   (係数 ν は生成物が正、反応物が負)", f"Difference: ΔE = {rx_text}   (ν: products positive, reactants negative)")]
     for b in bal:
         if b["imbalance"] or b["charge_imbalance"]:
             lines.append(L(f"  組成または電荷が釣り合っていません: Σν·組成 = {b['imbalance']}、Σν·電荷 = {b['charge_imbalance']:g} (この差は反応のエネルギーではありません)",

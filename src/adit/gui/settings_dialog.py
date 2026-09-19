@@ -61,7 +61,7 @@ def describe_problem(text: str) -> str | None:
         ja = next((v for k, v in _TOML_MSG_JA.items() if msg.startswith(k)), "")
         where_ja = f"{line} 行目 {col} 文字目" if line else "どこか"
         where_en = f"line {line}, column {col}" if line else "somewhere"
-        return L(f"設定ファイルの {where_ja}が TOML の書き方として正しくありません" + (f"。{ja}" if ja else "") + f" ({msg})",
+        return L(f"環境設定ファイルの {where_ja}が TOML の書き方として正しくありません" + (f"。{ja}" if ja else "") + f" ({msg})",
                  f"The settings file is not valid TOML at {where_en} ({msg}).")
     try:
         Config.model_validate(data)
@@ -70,7 +70,7 @@ def describe_problem(text: str) -> str | None:
         for e in ex.errors():
             loc = ".".join(str(x) for x in e.get("loc", ()))
             lines.append(f"  {loc or L('全体', 'whole file')}: {e.get('msg', '')}")
-        return L("設定ファイルの書き方は正しいのですが、次の項目の値が使えません。\n", "The file is valid TOML, but these values cannot be used:\n") + "\n".join(lines)
+        return L("環境設定ファイルの書き方は正しいのですが、次の項目の値が使えません。\n", "The settings file is valid TOML, but these values cannot be used:\n") + "\n".join(lines)
     return None
 
 
@@ -118,7 +118,7 @@ class SettingsDialog(QDialog):
         self._tab = 0
         self.tabs.currentChanged.connect(self._on_tab)
 
-        where = QLabel(L(f"設定ファイル: {self.path}", f"Settings file: {self.path}")); where.setObjectName("hint")
+        where = QLabel(L(f"環境設定ファイル: {self.path}", f"Settings file: {self.path}")); where.setObjectName("hint")
         where.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse); where.setWordWrap(True)
 
         self.btn_cancel = QPushButton(L("キャンセル", "Cancel")); self.btn_cancel.clicked.connect(self.reject)
@@ -190,7 +190,7 @@ class SettingsDialog(QDialog):
         row, self.templates_dir, self.templates_note = self._folder_row(".adit-no-marker", L("研究室の雛形の置き場所", "Group template folder"))
         self._field(f1, L("研究室の雛形", "Group templates"), row,
                     L("研究室で共有する雛形 (構造を除いた計算の条件、名前.json) を置くフォルダです。空のままなら、"
-                      "この設定ファイルと同じ場所の templates/ だけを使います。ここに書いたフォルダを templates/ より先に探します。",
+                      "この環境設定ファイルと同じ場所の templates/ だけを使います。ここに書いたフォルダを templates/ より先に探します。",
                       "Folder holding shared group templates (calculation conditions without a structure, name.json). If empty, only templates/ "
                       "next to this settings file is used; a folder given here is searched before templates/."),
                     self.templates_note)
@@ -199,9 +199,9 @@ class SettingsDialog(QDialog):
         self.combos: dict[str, QComboBox] = {}
         descs = {
             "language": (L("表示する言語", "Language"), L("メニューやボタンの言葉です。", "Language of menus and buttons.")),
-            "theme": (L("色の組み合わせ", "Theme"), L("明るい画面 (ライト) か暗い画面 (ダーク) か。「システムに従う」なら OS の設定に合わせます。",
+            "theme": (L("テーマ", "Theme"), L("明るい画面 (ライト) か暗い画面 (ダーク) か。「システムに従う」なら OS の設定に合わせます。",
                                                    "Light or dark. \"Follow the system\" follows your OS setting.")),
-            "window_frame": (L("ウィンドウの枠", "Window frame"), L("題名の帯とボタンを誰が描くか。表示がおかしいときは「OS に任せる」を試してください。",
+            "window_frame": (L("ウィンドウの枠", "Window frame"), L("タイトルバーとボタンを誰が描くか。表示がおかしいときは「OS に任せる」を試してください。",
                                                                 "Who draws the title bar. Try \"Use the system frame\" if the window looks wrong.")),
         }
         for key, items in _choices().items():
@@ -247,7 +247,7 @@ class SettingsDialog(QDialog):
 
     def _build_raw(self) -> QWidget:
         page = QWidget(); lay = QVBoxLayout(page); lay.setContentsMargins(12, 12, 12, 12); lay.setSpacing(8)
-        lay.addWidget(self._desc(L("設定ファイルの本文です。「基本」タブの欄の値はここに書き込まれています。"
+        lay.addWidget(self._desc(L("環境設定ファイルの本文です。「基本」タブの欄の値はここに書き込まれています。"
                                    "ここで直した値は「基本」タブに戻ったときに欄へ入ります。# から後ろはメモ (コメント) として残ります。",
                                    "The settings file itself. Values from the Basic tab are already written here; "
                                    "edits made here are loaded into the Basic tab when you switch back. Text after # is kept as a comment.")))
@@ -356,7 +356,7 @@ class SettingsDialog(QDialog):
         text = self.editor.toPlainText()
         problem = describe_problem(text)
         if problem:
-            self._show_problem(L("保存できません", "Cannot save"), problem + L("\n\n設定ファイルは書き換えていません。", "\n\nThe settings file was not changed."))
+            self._show_problem(L("保存できません", "Cannot save"), problem + L("\n\n環境設定ファイルは書き換えていません。", "\n\nThe settings file was not changed."))
             return
         tmp = self.path.with_suffix(".toml.tmp")
         try:
@@ -365,7 +365,7 @@ class SettingsDialog(QDialog):
             load_config(tmp)
         except (ConfigError, OSError) as ex:
             tmp.unlink(missing_ok=True)
-            msg = str(ex).replace(str(tmp), L("設定ファイル", "the settings file"))
+            msg = str(ex).replace(str(tmp), L("環境設定ファイル", "the settings file"))
             self._show_problem(L("保存できません", "Cannot save"), msg); return
         try:
             tmp.replace(self.path)

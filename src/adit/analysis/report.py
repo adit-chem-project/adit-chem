@@ -255,14 +255,14 @@ class AnalysisResult:
             last_msd = f"{m['last_A2']:.3g}"
             diff = ""
             if m.get("D_cm2_s") is not None:
-                diff = L(f"、拡散係数 {m['D_cm2_s']:.3e} cm^2/s", f", diffusion coefficient {m['D_cm2_s']:.3e} cm^2/s")
+                diff = L(f"、拡散係数 {m['D_cm2_s']:.3e} cm²/s", f", diffusion coefficient {m['D_cm2_s']:.3e} cm^2/s")
             lines.append(L(f"MSD (平均二乗変位。{m['species'] or '全原子'}、{m['n_frames']} フレーム): 最終 {last_msd} Å²",
                            f"MSD (mean squared displacement; {m['species'] or 'all atoms'}, {m['n_frames']} frames): last {last_msd} Å²") + diff)
             per = [f"{el} {v['D_cm2_s']:.3e}"
                    for el, v in m.get("by_element", {}).items() if v.get("D_cm2_s") is not None]
             if len(m.get("by_element", {})) > 1 and per:
-                label = (L("  参考・全元素の拡散係数 [cm^2/s]: ", "  for reference, diffusion coefficients for all elements [cm^2/s]: ")
-                         if m.get("species") else L("  元素ごとの拡散係数 [cm^2/s]: ", "  diffusion coefficient by element [cm^2/s]: "))
+                label = (L("  参考・全元素の拡散係数 [cm²/s]: ", "  for reference, diffusion coefficients for all elements [cm^2/s]: ")
+                         if m.get("species") else L("  元素ごとの拡散係数 [cm²/s]: ", "  diffusion coefficient by element [cm^2/s]: "))
                 lines.append(label + ", ".join(per))
             if m.get("formula"):
                 lines.append(L(f"  使った式: {m['formula']} ({m['dimension']} 次元、成分 {m['axes']}、複数の時間原点で平均した MSD)",
@@ -287,9 +287,9 @@ class AnalysisResult:
                 counts = e.get("block_frame_counts") or [e["block_frames"]] * e["n_blocks"]
                 sizes = ", ".join(str(x) for x in counts)
                 a, b = e.get("fit_range_fs") or m["fit_range_fs"]
-                lines.append(L(f"  参考・ブロック D 平均の標準誤差: {e['d_err_cm2_s']:.2e} cm^2/s。"
-                               f"全 {sum(counts)} フレームを {e['n_blocks']} 区間 ({sizes} フレーム) に分け、各区間の {a:g}〜{b:g} fs を当てはめ、"
-                               f"区間ごとの D の標本標準偏差 ÷ √{e['n_blocks']} としました。全軌跡から出した D 自体の厳密な誤差ではありません",
+                lines.append(L(f"  参考・ブロック D 平均の標準誤差: {e['d_err_cm2_s']:.2e} cm²/s。"
+                               f"全 {sum(counts)} フレームを {e['n_blocks']} ブロック ({sizes} フレーム) に分け、各ブロックの {a:g}〜{b:g} fs を当てはめ、"
+                               f"ブロックごとの D の標本標準偏差 ÷ √{e['n_blocks']} としました。全軌跡から出した D 自体の厳密な誤差ではありません",
                                f"  for reference, standard error of the mean block D: {e['d_err_cm2_s']:.2e} cm^2/s. "
                                f"All {sum(counts)} frames were split into {e['n_blocks']} blocks ({sizes} frames); each block was fitted over {a:g}-{b:g} fs. "
                                f"This is the sample standard deviation of block D values / sqrt({e['n_blocks']}), not a rigorous error on D from the full trajectory."))
@@ -316,7 +316,7 @@ class AnalysisResult:
             f = [x for x in t["frequencies"] if x > 50]
             neg = [x for x in t["frequencies"] if x < -50]
             top = ", ".join(f"{x:.0f}" for x in f[-8:]) + " cm^-1"
-            lines.append(L(f"振動数 (振動の速さ): {len(f)} 本 (50 cm^-1 超)。高い順に 8 本まで: ",
+            lines.append(L(f"振動数 (振動の速さ): {len(f)} 本 (50 cm⁻¹ 超)。高い順に 8 本まで: ",
                                f"frequencies: {len(f)} above 50 cm^-1; up to the eight highest: ") + top
                          + (L(f"。虚振動 {len(neg)} 本", f". {len(neg)} imaginary") if neg else ""))
         if "bands" in t:
@@ -656,7 +656,7 @@ def run_analysis(run_dir: Path | str, opts: AnalysisOptions | None = None) -> An
                 "別の rmax や別の計算の g(r) とは比べられません。rmax に依らない量は rdf.json の density [Å⁻³] と n(r) です (周期系はセルの体積で規格化するので rmax に依りません)",
                 f"g(r) normalization: this system is not periodic, so the volume of a sphere of rmax = {rmax:.2f} Å (V = {v:.1f} Å³) is used. The absolute "
                 "value of g(r) changes with rmax, so it cannot be compared with a g(r) from another rmax or another run; the rmax-independent quantities "
-                "are density [Å⁻³] and n(r) in rdf.json (periodic systems are normalised by the cell volume and do not depend on rmax)"))
+                "are density [Å⁻³] and n(r) in rdf.json (periodic systems are normalized by the cell volume and do not depend on rmax)"))
         if rmax < opts.rdf_rmax:
             res.notes.append(L(f"RDF はセルの幅の半分 ({rmax:.2f} Å) までしか数えられません (周期境界の最小像のため。指定は {opts.rdf_rmax:.1f} Å)",
                                f"the RDF can only be counted up to half the cell width ({rmax:.2f} Å) because of the minimum-image convention (requested {opts.rdf_rmax:.1f} Å)"))
@@ -713,7 +713,7 @@ def run_analysis(run_dir: Path | str, opts: AnalysisOptions | None = None) -> An
                 "note": L("原子 1 個ごとに、時間原点を全部使った MSD を直線に当てはめた D です。"
                           "速い・遅いの判定はしていません (1 原子の統計は全体より悪く、ばらつきます)。",
                           "D per atom, from a straight-line fit to its own multiple-time-origin MSD. "
-                          "No fast/slow judgement is made; single-atom statistics are much noisier than the average.")}
+                          "No fast/slow judgment is made; single-atom statistics are much noisier than the average.")}
             if each["d_cm2_s"]:
                 good = [v for v in each["d_cm2_s"] if v is not None]
                 if good:
@@ -753,7 +753,7 @@ def run_analysis(run_dir: Path | str, opts: AnalysisOptions | None = None) -> An
                              "D_err_cm2_s": (a["error"] or {}).get("d_err_cm2_s"), "D_error": a["error"],
                              "definition": L(
                                  "D は当てはめ範囲で MSD を直線に当てはめた傾きから。D_error は各ブロックから出した D の平均の標準誤差で、"
-                                 "全軌跡の D 自体の厳密な誤差ではありません。当てはめ範囲が 1 区間に収まらないときは、収まる範囲まで上限を下げて"
+                                 "全軌跡の D 自体の厳密な誤差ではありません。当てはめ範囲が 1 ブロックに収まらないときは、収まる範囲まで上限を下げて"
                                  "求めます。loglog_slope は当てはめ範囲での log MSD 対 log t の傾き (拡散なら 1 に近い)",
                                  "D comes from a straight-line fit of the MSD over the fit range. D_error is the standard error of the mean "
                                  "block D, not a rigorous error on D from the full trajectory. loglog_slope is the slope of log MSD vs log t "
@@ -1257,7 +1257,7 @@ def _add_local_order(res: AnalysisResult, data: RunData, frames, opts: AnalysisO
             values = np.array(got["centrosymmetry_A2"], dtype=float)
             res.notes.append(L(f"中心対称性パラメータ (相手 {got['n_neighbors']} 個): 最小 {np.nanmin(values):.4g}、"
                                f"最大 {np.nanmax(values):.4g} Å² (どこからを欠陥と呼ぶかは判定していません)",
-                               f"centrosymmetry parameter ({got['n_neighbors']} neighbours): min {np.nanmin(values):.4g}, "
+                               f"centrosymmetry parameter ({got['n_neighbors']} neighbors): min {np.nanmin(values):.4g}, "
                                f"max {np.nanmax(values):.4g} Å² (no threshold for calling an atom a defect)"))
         if opts.steinhardt_cutoff:
             got = LO.steinhardt(last, opts.steinhardt_cutoff)
@@ -1525,7 +1525,7 @@ def _add_structure_extras(res: AnalysisResult, data: RunData, frames, opts: Anal
                 ok = ls.neighbors >= 3
                 if not ok.any():
                     res.notes.append(L(f"カットオフ {opts.strain_cutoff:g} Å の中に近傍が 3 個以上ある原子がありません",
-                                       f"no atom has three or more neighbours within {opts.strain_cutoff:g} Å"))
+                                       f"no atom has three or more neighbors within {opts.strain_cutoff:g} Å"))
                 else:
                     res.tables["local_strain"] = {
                         "cutoff_ang": opts.strain_cutoff,
@@ -1537,7 +1537,7 @@ def _add_structure_extras(res: AnalysisResult, data: RunData, frames, opts: Anal
                         f"体積ひずみ 平均 {ls.volumetric[ok].mean():+.5f}、せん断 平均 {ls.shear[ok].mean():.5f}・"
                         f"最大 {ls.shear[ok].max():.5f}、当てはめの残差 平均 {ls.residual[ok].mean():.4f} Å",
                         f"local strain (cutoff {opts.strain_cutoff:g} Å, {int(ok.sum())} atoms with three or more "
-                        f"neighbours): volumetric mean {ls.volumetric[ok].mean():+.5f}, shear mean "
+                        f"neighbors): volumetric mean {ls.volumetric[ok].mean():+.5f}, shear mean "
                         f"{ls.shear[ok].mean():.5f} and max {ls.shear[ok].max():.5f}, fit residual "
                         f"{ls.residual[ok].mean():.4f} Å"))
     if opts.voronoi:
@@ -1700,7 +1700,7 @@ def _add_geometry_series(res: AnalysisResult, data: RunData, frames, opts: Analy
         res.notes.append(L(f"RMSD (基準は {ref + 1} 番目のフレーム、Kabsch で重ね合わせ): 最後の値 {values[-1]:.3f} Å、"
                            f"最大 {values.max():.3f} Å (落ち着いたかどうかは判定していません)",
                            f"RMSD (reference: frame {ref + 1}, after a Kabsch superposition): last {values[-1]:.3f} Å, "
-                           f"largest {values.max():.3f} Å. No judgement about equilibration is made"))
+                           f"largest {values.max():.3f} Å. No judgment about equilibration is made"))
     if opts.rmsf:
         got = G.rmsf(frames, idx)
         res.tables["rmsf"] = got
@@ -2176,7 +2176,7 @@ def _vibration_note(data: RunData, spec) -> str:
 _ANALYZE_JA = '''#!/usr/bin/env python
 """adit が生成した解析スクリプト。このディレクトリの計算結果を読み、analysis/ に図 (PNG) と summary.txt を書く。
 使い方:  python analyze.py [--rdf] [--msd [元素]] [--dos] [--zdens] [--export] [--skip N] [--stride N] [--rmax R] [--sigma S]
-adit が入った Python 環境で実行する (pip install adit)。"""
+ADIT が入った Python 環境で実行する (pip install adit)。"""
 import argparse
 from pathlib import Path
 

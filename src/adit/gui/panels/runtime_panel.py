@@ -15,7 +15,7 @@ from adit.gui import icons
 from adit.gui.widgets import add_row, label, narrow
 from adit.spec import Runtime
 
-_LOCAL_JA = "この PC で bash submit.sh を実行 (計算ソフトがインストール済みで PATH にあること)"
+_LOCAL_JA = "この PC で bash submit.sh を実行 (計算コードがインストール済みで PATH にあること)"
 _LOCAL_EN = "run bash submit.sh on this PC (the program must be installed and on PATH)"
 
 

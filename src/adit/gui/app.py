@@ -43,7 +43,7 @@ def main() -> int:
                                          "\n\nThe file was not changed. Fix it and start ADIT again."))
         return 2
     if created:
-        QMessageBox.information(None, L("設定ファイルを作りました", "Settings file created"), first_run_message(cfg_file))
+        QMessageBox.information(None, L("環境設定ファイルを作りました", "Settings file created"), first_run_message(cfg_file))
     from adit.config import env_var
     print("theme:", apply_theme(app, env_var("THEME") or cfg.theme), file=sys.stderr)
     from adit.gui.main_window import MainWindow

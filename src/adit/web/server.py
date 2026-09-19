@@ -214,7 +214,7 @@ class WebApp:
             written = write_project(self.spec, self.cfg, out, overwrite=overwrite)
         except OutputNotEmpty as ex:
             return "", str(ex) + "\n" + L("中のファイルを上書きしてよければ、「上書きを許可」に印を付けてから、もう一度「生成」を押してください。",
-                                          "To overwrite the files inside, tick \"Allow overwrite\" and press \"Generate input\" again.")
+                                          "To overwrite the files inside, tick \"Allow overwrite\" and press \"Generate\" again.")
         except ProjectError as ex:
             return "", str(ex)
         self.written = Path(out).expanduser().resolve()
@@ -669,7 +669,7 @@ class WebApp:
             open_k = R.failed_step(status[1])
         return {"items": items, "status": status, "lines": lines, "open": open_k, "has_fix": any(s.op == "fix" for s in steps),
                 "add_opts": [(op, op_label(op)) for op in R.ADD_ORDER] + [(R.INTERFACE, L("電極と電解質の界面 (面 + 断面の自動調整 + 溶液 + 固定)",
-                                                                                       "Electrode–electrolyte interface (slab + auto-sized surface + electrolyte + fixed layer)"))]}
+                                                                                       "Electrode–electrolyte interface (surface cut + auto-sized cross-section + solution + fixed layer)"))]}
 
 
 
@@ -1310,7 +1310,7 @@ def make_handler(app: WebApp, token: str | None = None):
                     self._analysis_page(ref, None, "", audit_error=error, audit_fields=audit_fields)
                     return
                 if kind not in {"msd", "energy"}:
-                    error = L("点検対象は MSD またはエネルギーを選んでください",
+                    error = L("点検対象には MSD かエネルギーを選んでください",
                               "Choose MSD or energy as the audit kind.")
                     self._analysis_page(ref, None, "", audit_error=error, audit_fields=audit_fields)
                     return
@@ -1401,7 +1401,7 @@ def make_handler(app: WebApp, token: str | None = None):
                     atom["x"] += 360.0
                     atom["y"] += 200.0
                 self._draw_page(_json.dumps(data), from_smiles=text,
-                                message=L(f"SMILES から {len(data['atoms'])} 原子 を読み込みました",
+                                message=L(f"SMILES から {len(data['atoms'])} 原子を読み込みました",
                                           f"loaded {len(data['atoms'])} atoms from the SMILES"))
                 return
             try:
@@ -1584,7 +1584,7 @@ def server_lines(host: str, port: int, token: str | None = None) -> list[str]:
 
 def main(argv: list[str] | None = None) -> int:
     ensure_printable_stdio()
-    ap = argparse.ArgumentParser(prog="adit-web", description=L("ブラウザで使う ADIT (準備 → 実行 → 解析)", "adit in the browser (prepare, run, analyze)"))
+    ap = argparse.ArgumentParser(prog="adit-web", description=L("ブラウザで使う ADIT (準備 → 実行 → 解析)", "ADIT in the browser (prepare, run, analyze)"))
     ap.add_argument("--host", default="127.0.0.1", help=L("待ち受けるアドレス (既定 127.0.0.1)。これ以外では合言葉 (トークン) が必要になります",
                                                           "bind address (default 127.0.0.1); other addresses require a token"))
     ap.add_argument("--token", help=L("合言葉を自分で決める (省略すると、127.0.0.1 以外では毎回作ります)",

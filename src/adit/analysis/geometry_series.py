@@ -95,7 +95,7 @@ def rmsf(frames, indices=None, *, superpose: bool = True) -> dict:
             "note": L("平均構造からの揺らぎです。重ね合わせ (Kabsch) をしてから測っています。"
                       "大きい・小さいの判定はしていません。",
                       "fluctuation around the mean structure, measured after a Kabsch superposition; "
-                      "no judgement of large or small is made.")}
+                      "no judgment of large or small is made.")}
 
 
 def radius_of_gyration(frames, indices=None, *, mass_weighted: bool = True) -> dict:
@@ -117,7 +117,7 @@ def radius_of_gyration(frames, indices=None, *, mass_weighted: bool = True) -> d
             "note": L("慣性半径 Rg [Å] です (質量で重み付け)。principal_A は慣性テンソルの主値の平方根で、"
                       "大きい順に 3 つ (形の偏りを見るときに使います)。広がりの良し悪しは判定していません。",
                       "radius of gyration in Å (mass weighted); principal_A holds the square roots of the "
-                      "eigenvalues of the gyration tensor, largest first. No judgement about the size is made.")}
+                      "eigenvalues of the gyration tensor, largest first. No judgment about the size is made.")}
 
 
 def parse_atom_list(text: str, expected: int) -> list[int]:

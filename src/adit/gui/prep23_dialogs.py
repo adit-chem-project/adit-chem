@@ -183,7 +183,7 @@ class CompareSetDialog(BatchDialog):
         self.btn_add.clicked.connect(lambda: self.add_row())
         rx = QWidget(); rx.setObjectName("rowbox"); rxl = QVBoxLayout(rx); rxl.setContentsMargins(0, 0, 0, 0); rxl.setSpacing(4)
         rxl.addWidget(self.table)
-        rxl.addWidget(_hint(L("生成したファイルは正の係数、反応物は負の係数。構造のファイルが空欄の行は画面の構造を使います。",
+        rxl.addWidget(_hint(L("生成物は正の係数、反応物は負の係数。構造のファイルが空欄の行は画面の構造を使います。",
                               "Products have a positive coefficient, reactants a negative one; an empty structure file means the structure on screen.")))
         brow = QHBoxLayout(); brow.addWidget(self.btn_add); brow.addStretch(1); rxl.addLayout(brow)
         self.rx_box = self.row("cmp_rows", rx, required=True)

@@ -14,7 +14,7 @@ _EN: dict[str, str] = {
     "3D 構造を生成": "Build 3D structure", "参照…": "Browse…", "全電荷": "Total charge", "スピン多重度": "Spin multiplicity",
     "固定原子": "Fixed atoms", "立方晶セル": "Cubic cell", "層": "layers", "真空層 [Å]": "Vacuum [Å]",
     "周期セルに入れる": "Put in a periodic cell", "分子を立方体の周期セルに置きます。VASP と pw.x では周期セルが必須です": "Place the molecule in a cubic periodic cell. VASP and pw.x require a periodic cell", "一辺 [Å]": "edge [Å]",
-    "ase gui で構造を確認": "View structure with ase gui", "例: CCO": "e.g. CCO",
+    "ase gui で構造を確認": "View structure with ase gui", "例 CCO": "e.g. CCO",
     "1 始まりの番号 (例 1-4,7)。軸を指定するなら 7:xy (x, y を固定)。空欄なら全原子を動かします":
         "Fixed atoms (1-based, e.g. 1-4,7). Axes only: 7:xy (freeze x,y). Empty = all free",
     "SMILES (RDKit が未導入のため使えません)": "SMILES (RDKit not installed)",
@@ -29,7 +29,7 @@ _EN: dict[str, str] = {
     "SCC の最大反復回数": "Max SCC iterations", "最適化の収束レベル (--opt)": "Optimization level (--opt)", "GFN-FF (力場)": "GFN-FF (force field)",
     "パラメータファイルは不要です (計算手法に内蔵)。分子系のみ。電荷とスピン多重度は構造パネルの値をコマンドライン引数で渡します":
         "No parameter files are needed (built into the method). Molecules only. Charge and multiplicity are passed from the structure panel as command-line arguments",
-    "擬ポテンシャルのセット": "Pseudopotential set", "元素ごとの UPF ファイル": "UPF file per element", "ecutwfc [Ry]": "ecutwfc [Ry] (required)",
+    "擬ポテンシャルのセット": "Pseudopotential set", "元素ごとの UPF ファイル": "UPF file per element", "ecutwfc [Ry]": "ecutwfc [Ry]",
     "ecutrho [Ry] (0 = 指定しない)": "ecutrho [Ry] (0 = omit)", "追加の変数 (名前空間.変数 = 値)": "Additional variables (namelist.variable = value)",
     "画面にない変数を 1 行に 1 つ、名前空間.変数 = 値 の形で (例 system.nbnd = 20)": "Variables not in the GUI, one per line: namelist.var = value (e.g. system.nbnd = 20)",
     "空欄なら UPF の汎関数を使用 (例 PBE, PBEsol)": "Empty = functional from the UPF (e.g. PBE, PBEsol)",
@@ -51,7 +51,7 @@ _EN: dict[str, str] = {
     "先に「生成」を押してください": "Press “Generate” first", "実行中": "Running",
     "クラスタ用 (PBS / Slurm) の入力は、このアプリからは実行しません": "Cluster (PBS / Slurm) input is not run from this app",
     "Windows では実行できません (生成した入力を Linux のサーバーに転送して使います)": "Cannot run on Windows (transfer the generated input to a Linux server)",
-    "設定ファイルを作りました": "Settings file created", "表示言語を切り替えます (環境設定の language に保存。再起動後に反映)": "Switch the display language (saved as language in the preferences; effective after restart)", "挿入": "Insert", "表示": "View", "設定": "Preferences",
+    "環境設定ファイルを作りました": "Settings file created", "表示言語を切り替えます (環境設定の language に保存。再起動後に反映)": "Switch the display language (saved as language in the preferences; effective after restart)", "挿入": "Insert", "表示": "View", "設定": "Preferences",
     "ヘルプ": "Help", "計算設定 (spec.json) を保存…": "Save calculation settings (spec.json)…", "終了": "Quit", "構造ファイルを読み込む…": "Load a structure file…",
     "溶液に成分を追加": "Add a component to the solution", "テーマ": "Theme", "システムに従う": "Follow the system", "ライト": "Light", "ダーク": "Dark",
     "ADIT について": "About ADIT", "README を開く": "Open the README", "言語 (再起動後に反映)": "Language (after restart)", "テーマ (再起動後に反映)": "Theme (after restart)",
@@ -65,7 +65,7 @@ _EN: dict[str, str] = {
     "閉じる": "Close", "最小化": "Minimize", "最大化 / 元の大きさ": "Maximize / restore",
     "右側のタブ": "Right tabs", "溶液・混合物": "Solution / mixture", "成分を追加": "Add component", "削除": "Remove",
     "成分の種類": "Kind", "指定 (名前 / SMILES / ファイル)": "Reference (name / SMILES / path)", "個数": "Count", "電荷": "Charge", "表示名": "Label",
-    "密度から自動 [g/cm³]": "From density [g/cm³]", "一辺を指定 [Å]": "Edge [Å]", "セル": "Box", "分子間の最短距離 [Å]": "Min. distance [Å]", "乱数シード": "Seed",
+    "密度から自動 [g/cm³]": "From density [g/cm³]", "一辺を指定 [Å]": "Edge [Å]", "セル": "Box", "分子間の最短距離 [Å]": "Min. distance [Å]",
     "Draw: 分子を描いて SMILES にします (RDKit が要ります)": "Draw: sketch the molecule and turn it into SMILES (needs RDKit)", "構造の作り方": "Source", "共通設定": "Common settings", "環境設定…": "Preferences…",
     "元に戻す (1 つ前の設定)": "Undo (previous settings)", "やり直す": "Redo", "環境設定ファイル (cluster.toml) を編集": "Open and edit the settings file (cluster.toml)",
     "青字は必須項目です。ラベルにカーソルを合わせると説明が表示されます": "Blue labels are required. Hover a label for an explanation",
@@ -75,7 +75,7 @@ _EN: dict[str, str] = {
     "y 軸から": "along y", "x 軸から": "along x", "まだ実行していません": "Not run yet", "(元素の既定値)": "(element default)",
     "上書きの確認": "Confirm overwrite", "生成できません": "Cannot generate", "生成しました": "Generated", "読めません": "Cannot read", "設定を読めません": "Cannot read the settings",
     "生成ファイルのプレビュー": "Preview of generated files", "解析": "Analysis",
-    "計算条件": "Settings", "メインの面": "Main pane", "計算結果のディレクトリ": "Run directory", "エネルギーの推移": "Energy over time", "温度の推移 (MD)": "Temperature over time (MD)",
+    "計算条件": "Calculation settings", "メインの面": "Main pane", "計算結果のディレクトリ": "Run directory", "エネルギーの推移": "Energy over time", "温度の推移 (MD)": "Temperature over time (MD)",
     "結合長 (最終構造)": "Bond lengths (final structure)", "動径分布関数 (RDF)": "Radial distribution function (RDF)", "r の最大値 [Å]": "Maximum r [Å]",
     "平均二乗変位 (MSD) と拡散係数": "MSD and diffusion coefficient", "元素": "element", "状態密度 (DOS)": "Density of states (DOS)", "ガウス幅 [eV]": "Gaussian width [eV]",
     "振動数とスペクトル": "Frequencies and spectrum", "平衡化として捨てるフレーム数": "Frames to skip (equilibration)", "解析を実行": "Run analysis",
@@ -91,7 +91,7 @@ _EN: dict[str, str] = {
     "計算設定": "Calculation settings", "アプリ": "Application", "ボタン": "Buttons", "入力": "Input", "この PC": "This PC",
     "環境設定": "Preferences", "自動": "Automatic", "ADIT が描く": "Drawn by ADIT", "OS の枠": "System frame",
     "ASE に収録された分子 (G2 集など) から選びます": "Choose a molecule from ASE's built-in set (G2 and others)",
-    "例: [Na+]、CCO": "e.g. [Na+], CCO", "構造ファイルのパス": "Path to a structure file",
+    "例 [Na+]、CCO": "e.g. [Na+], CCO", "構造ファイルのパス": "Path to a structure file",
     "SMILES を入力して Enter。「Draw」で描くこともできます": "Type a SMILES string and press Enter, or draw the molecule with “Draw”",
     "この行の分子を描いて SMILES にします (RDKit が要ります)": "Draw this row's molecule and turn it into SMILES (requires RDKit)",
     "プリセットは一覧から選び、SMILES は入力するか「Draw」で描き、ファイルは「参照…」で選びます":
@@ -108,7 +108,7 @@ _EN: dict[str, str] = {
     "倍数の上限": "Max. cell multiple", "元素 (条件)": "Elements", "z の範囲 [Å]": "z range [Å]", "選ぶ数": "Number to pick",
     "置き換え先の元素": "Replace with", "分子": "Molecule", "置き場所": "Position", "吸着サイトの名前": "Site", "原子の番号 (1 始まり)": "Atom number (from 1)",
     "xy 座標 [Å]": "x, y [Å]", "高さ [Å]": "Height [Å]", "下に向ける原子 (1 始まり)": "Atom facing down (from 1)", "厚みの決め方": "Thickness from",
-    "間隙 [Å]": "Gap [Å]", "真空 [Å] (0 なら両側が溶液)": "Vacuum [Å] (0 = solution on both sides)", "濃度から個数": "Count from concentration",
+    "隙間 [Å]": "Gap [Å]", "真空 [Å] (0 なら両側が溶液)": "Vacuum [Å] (0 = solution on both sides)", "濃度から個数": "Count from concentration",
     "溶質の周りの余白 [Å]": "Padding around solute [Å]", "密度 [g/cm³]": "Density [g/cm³]", "下から数えた層": "Bottom layers",
     "汎関数": "Functional", "基底関数のファイル": "Basis-set file", "擬ポテンシャルのファイル": "Pseudopotential file",
     "元素ごとの基底と擬ポテンシャル": "Basis and pseudopotential per element", "分散補正": "Dispersion correction",
@@ -117,7 +117,7 @@ _EN: dict[str, str] = {
     "分子の箱の一辺 [Å]": "Box edge for a molecule [Å]", "追加の行 (節ごと)": "Extra lines (per section)",
     "(3 方向とも周期なら不要)": "(not needed if periodic in all three directions)",
     "例 PBE、BLYP、PBE0 (CP2K の XC_FUNCTIONAL の名前)": "e.g. PBE, BLYP, PBE0 (a CP2K XC_FUNCTIONAL name)",
-    "[節の道筋] の行のあとに、その節の末尾に足す行 (例\n[FORCE_EVAL/DFT/SCF]\nSCF_GUESS ATOMIC)":
+    "[セクションのパス] の行のあとに、その節の末尾に足す行 (例\n[FORCE_EVAL/DFT/SCF]\nSCF_GUESS ATOMIC)":
         "Lines after a [section path] line are appended to that section (e.g.\n[FORCE_EVAL/DFT/SCF]\nSCF_GUESS ATOMIC)",
     "基底関数と擬ポテンシャルは CP2K の data ディレクトリのファイルから読み、使う項目だけを生成したファイルに写します。data ディレクトリの場所は環境設定 (cp2k_data) に書きます":
         "Basis sets and pseudopotentials are read from the files in the CP2K data directory, and only the entries used are copied into the output. Set the data directory as cp2k_data in the settings",
@@ -149,7 +149,7 @@ _EN: dict[str, str] = {
         "The structure file above (.gro / .pdb) is authoritative. Load the same file in the structure group too (used to check the atom count and for display). Total charge and multiplicity come from the topology and are not used (leave 0 and 1). There are no k-points",
 }
 _EN.update({
-    "溶媒の模型 (--alpb / --gbsa)": "Solvation model (--alpb / --gbsa)", "溶媒の模型 (CPCM / SMD)": "Solvation model (CPCM / SMD)",
+    "溶媒モデル (--alpb / --gbsa)": "Solvation model (--alpb / --gbsa)", "溶媒モデル (CPCM / SMD)": "Solvation model (CPCM / SMD)",
     "溶媒": "Solvent", "なし": "None", "溶媒のパラメータファイル (GBSA)": "Solvation parameter file (GBSA)",
     "空欄なら溶媒なし (param_gbsa_<溶媒>.txt の形のファイル)": "Empty = no solvent (a file like param_gbsa_<solvent>.txt)",
     "溶媒の比誘電率 (SCCS)": "Solvent permittivity (SCCS)",
@@ -159,7 +159,7 @@ _EN.update({
 })
 _EN.update({
     "機械学習ポテンシャル (MACE・CHGNet)": "Machine-learning potential (MACE, CHGNet)",
-    "機械学習ポテンシャルの種類": "Machine-learning potential", "モデル": "Model", "計算に使う装置 (device)": "Device", "数値の精度 (dtype)": "Precision (dtype)",
+    "機械学習ポテンシャルの種類": "Machine-learning potential", "モデル": "Model", "計算に使うデバイス (device)": "Device", "数値の精度 (dtype)": "Precision (dtype)",
     "D3 を足す (mace_mp の dispersion)": "Add D3 (the dispersion option of mace_mp)",
     "空欄ならパッケージの既定のモデル (例 small、medium-mpa-0、またはモデルのファイルのパス)":
         "Empty = the default model of the package (e.g. small, medium-mpa-0, or the path of a model file)",
@@ -269,7 +269,7 @@ _EN.update({
     "RDF の元素の組": "RDF element pairs",
     "密度分布を取る軸": "Axis for the density profile",
     "配位数のカットオフ [Å]": "Coordination cutoff [Å]",
-    "中心対称性の相手の数": "Centrosymmetry neighbours",
+    "中心対称性の相手の数": "Centrosymmetry neighbors",
     "Steinhardt q4・q6 のカットオフ [Å]": "Steinhardt q4 and q6 cutoff [Å]",
     "かたまりのカットオフ [Å]": "Cluster cutoff [Å]",
     "結合角の分布の元素": "Elements for the angle distribution",
@@ -324,7 +324,7 @@ _EN.update({
     "条件の表 (CSV)": "Conditions table (CSV)",
     "結果の表 (CSV)": "Results table (CSV)",
     "再現パッケージ (.zip)": "Reproducibility bundle (.zip)",
-    "入力の照合用のハッシュを照合する": "Verify the input fingerprints",
+    "入力のハッシュを照合する": "Verify the input fingerprints",
     "報告を作る": "Build",
 })
 

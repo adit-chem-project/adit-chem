@@ -1,4 +1,4 @@
-"""Atom selection language: the part of the MDAnalysis syntax that contains no judgement."""
+"""Atom selection language: the part of the MDAnalysis syntax that contains no judgment."""
 
 from __future__ import annotations
 
@@ -150,7 +150,7 @@ class _Parser:
         except ValueError as ex:
             raise SelectionError(L("within のあとに距離 [Å] が要ります", "within must be followed by a distance in Å")) from ex
         if (self.take() or "").lower() != "of":
-            raise SelectionError(L("書き方は `within 5 of element O` です", "write it as `within 5 of element O`"))
+            raise SelectionError(L("書き方は「within 5 of element O」です", "write it as: within 5 of element O"))
         other = self.parse_unit()
         if not other.any():
             return np.zeros(self.n, dtype=bool)

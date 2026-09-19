@@ -54,7 +54,7 @@ class OrcaMethodPanel(QWidget):
         add_row(form, "SCF の収束判定", self.scf_conv)
         add_row(form, "SCF の最大反復回数", self.scf_maxiter)
         add_row(form, "%maxcore [MB] (0 = 指定しない)", self.maxcore)
-        add_row(form, "溶媒の模型 (CPCM / SMD)", self.solvation)
+        add_row(form, "溶媒モデル (CPCM / SMD)", self.solvation)
         add_row(form, "溶媒", self.solvent)
         add_row(form, "追加のキーワード (! 行)", self.extra_kw)
         add_row(form, "追加の %ブロック", self.extra_blocks)

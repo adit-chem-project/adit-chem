@@ -47,13 +47,13 @@ def coordination(atoms: Atoms, cutoff: float, indices=None) -> dict:
             "note": L("カットオフ以内にある原子の数です。カットオフは利用者が指定した値で、"
                       "ADIT は既定値を持ちません (第一配位圏の切り方は化学的な判断です)。",
                       "the number of atoms within the cutoff; the cutoff is the value you gave. "
-                      "adit has no default (where to cut the first coordination shell is a chemical judgement).")}
+                      "ADIT has no default (where to cut the first coordination shell is a chemical judgment).")}
 
 
 def centrosymmetry(atoms: Atoms, n_neighbors: int = 12, indices=None) -> dict:
     if n_neighbors < 2 or n_neighbors % 2:
         raise LocalOrderError(L("相手の数は 2 以上の偶数です (FCC なら 12、BCC なら 8)",
-                                "the number of neighbours must be an even number of at least 2 (12 for FCC, 8 for BCC)"))
+                                "the number of neighbors must be an even number of at least 2 (12 for FCC, 8 for BCC)"))
     pos = atoms.get_positions()
     cell = np.asarray(atoms.cell, dtype=float)
     periodic = bool(np.any(atoms.pbc)) and abs(np.linalg.det(cell)) > 0
@@ -124,8 +124,8 @@ def steinhardt(atoms: Atoms, cutoff: float, ls=(4, 6), indices=None) -> dict:
             **out,
             "note": L("Steinhardt の q_l (1983)。カットオフ以内の相手の向きを球面調和関数で平均した量です。"
                       "値がどの構造に当たるかは判定していません (文献の値と比べるのは利用者です)。",
-                      "Steinhardt's q_l (1983), from the directions of the neighbours within the cutoff. "
-                      "adit does not say which structure a value corresponds to.")}
+                      "Steinhardt's q_l (1983), from the directions of the neighbors within the cutoff. "
+                      "ADIT does not say which structure a value corresponds to.")}
 
 
 def clusters(atoms: Atoms, cutoff: float, indices=None) -> dict:
@@ -153,7 +153,7 @@ def clusters(atoms: Atoms, cutoff: float, indices=None) -> dict:
             "note": L("カットオフ以内でつながった原子のかたまりです。カットオフは利用者が指定します。"
                       "かたまりが「分子」「凝集体」かどうかは判定していません。",
                       "groups of atoms connected within the cutoff; the cutoff is yours. "
-                      "adit does not decide whether a group is a molecule or an aggregate.")}
+                      "ADIT does not decide whether a group is a molecule or an aggregate.")}
 
 
 def angle_distribution(frames, center: str | None = None, cutoff: float = 0.0, nbins: int = 90,
@@ -183,7 +183,7 @@ def angle_distribution(frames, center: str | None = None, cutoff: float = 0.0, n
             "center_element": center, "outer_element": outer, "cutoff_A": float(cutoff), "n_angles": int(pairs),
             "note": L("カットオフ以内の相手 2 つが中心の原子に対して作る角度の分布です。"
                       "カットオフは利用者の指定で、山の帰属 (四面体・八面体など) は判定していません。",
-                      "distribution of angles formed at each central atom by two neighbours within the cutoff; "
+                      "distribution of angles formed at each central atom by two neighbors within the cutoff; "
                       "the cutoff is yours and no assignment of the peaks is made.")}
 
 

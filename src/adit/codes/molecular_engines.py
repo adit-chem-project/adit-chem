@@ -33,7 +33,7 @@ def _molecule_errors(spec: CalculationSpec, *, tasks: tuple[str, ...], code: str
             f"この {code} 生成器は分子だけに対応します", f"this {code} generator supports molecules only")))
     if st.fixed_atoms or st.fixed_axes:
         errors.append(ValidationError("structure.fixed_atoms", L(
-            f"この {code} 生成器は固定原子・固定軸を入力へ写せません",
+            f"この {code} 生成器は固定原子・固定軸を入力に書けません",
             f"this {code} generator cannot write fixed atoms or axes")))
     if st.multiplicity != 1:
         errors.append(ValidationError("structure.multiplicity", L(
@@ -58,7 +58,7 @@ def _word_error(value: str, location: str, label: str) -> list[ValidationError]:
     if value and _TOKEN.fullmatch(value):
         return []
     return [ValidationError(location, L(
-        f"{label}を改行・空白のない 1 語で明示してください",
+        f"{label}を改行・空白のない 1 語で指定してください",
         f"explicitly enter {label} as one token without spaces or newlines"))]
 
 
@@ -67,7 +67,7 @@ def _parallel_error(spec: CalculationSpec, cfg: Config, code: str) -> list[Valid
             and spec.runtime.profile in cfg.profiles
             and not cfg.profile(spec.runtime.profile).commands.get(code)):
         return [ValidationError("runtime.profile", L(
-            f"並列実行では環境設定の commands.{code} に起動コマンドを明示してください",
+            f"並列実行では環境設定の commands.{code} に起動コマンドを指定してください",
             f"for parallel execution, set commands.{code} explicitly in your settings"))]
     return []
 
@@ -89,7 +89,7 @@ class GaussianGenerator(InputGenerator):
     def validate(self, spec: CalculationSpec, cfg: Config) -> list[ValidationError]:
         m = spec.method
         if not isinstance(m, GaussianMethod):
-            return [ValidationError("method.code", L("Gaussian の条件ではありません", "not a Gaussian method"))]
+            return [ValidationError("method.code", L("Gaussian の条件ではありません", "the settings are not for Gaussian"))]
         errors = _molecule_errors(spec, tasks=("single_point",), code="Gaussian")
         errors += _word_error(m.theory, "method.theory", L("手法", "method"))
         errors += _word_error(m.basis, "method.basis", L("基底関数", "basis set"))
@@ -137,11 +137,11 @@ class GamessGenerator(InputGenerator):
         errors = _molecule_errors(spec, tasks=("single_point",), code="US GAMESS")
         if m.gbasis.upper() not in {"STO", "N21", "N31", "N311"}:
             errors.append(ValidationError("method.gbasis", L(
-                "GBASIS は STO、N21、N31、N311 のいずれかを明示してください",
+                "GBASIS は STO、N21、N31、N311 のいずれかを指定してください",
                 "explicitly choose GBASIS from STO, N21, N31, N311")))
         if not 1 <= m.ngauss <= 6:
             errors.append(ValidationError("method.ngauss", L(
-                "NGAUSS を 1～6 の整数で明示してください", "explicitly set NGAUSS to an integer from 1 to 6")))
+                "NGAUSS を 1〜6 の整数で指定してください", "explicitly set NGAUSS to an integer from 1 to 6")))
         errors += _parallel_error(spec, cfg, self.code)
         return errors
 
@@ -222,7 +222,7 @@ class GrrmGenerator(InputGenerator):
     def validate(self, spec: CalculationSpec, cfg: Config) -> list[ValidationError]:
         m = spec.method
         if not isinstance(m, GrrmMethod):
-            return [ValidationError("method.code", L("GRRM17 の条件ではありません", "not a GRRM17 method"))]
+            return [ValidationError("method.code", L("GRRM17 の条件ではありません", "the settings are not for GRRM17"))]
         errors = _molecule_errors(spec, tasks=("geometry_optimization", "vibrations"), code="GRRM17")
         if spec.task.type == "geometry_optimization" and spec.task.relax_cell != "no":
             errors.append(ValidationError("task.relax_cell", L("GRRM17 のこの生成器はセルを緩和しません", "this GRRM17 generator cannot relax a cell")))

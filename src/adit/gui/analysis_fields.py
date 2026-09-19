@@ -15,7 +15,7 @@ LABELS: dict[str, tuple[str, str]] = {
     "msd_fit": ("MSD の当てはめ範囲 [fs]", "MSD fit range [fs]"),
     "msd_axes": ("MSD を取る成分", "Components used for the MSD"),
     "msd_keep_drift": ("重心の流れを落とさない", "Keep the center-of-mass drift"),
-    "msd_blocks": ("誤差を出す区間の数", "Number of blocks for the error"),
+    "msd_blocks": ("誤差を出すブロックの数", "Number of blocks for the error"),
     "msd_per_atom": ("原子 1 個ごとの拡散係数も出す", "Also report a diffusion coefficient per atom"),
     "vanhove": ("変位の分布 (van Hove) も見る", "Displacement distribution (van Hove)"),
     "vanhove_taus": ("見る遅れ時間の点数", "Number of lag times"),
@@ -52,7 +52,7 @@ LABELS: dict[str, tuple[str, str]] = {
     "rdf_pairs": ("RDF の元素の組", "RDF element pairs"),
     "zdens_axis": ("密度分布を取る軸", "Axis for the density profile"),
     "coordination": ("配位数のカットオフ [Å]", "Coordination cutoff [Å]"),
-    "centrosymmetry": ("中心対称性の相手の数", "Centrosymmetry neighbours"),
+    "centrosymmetry": ("中心対称性の相手の数", "Centrosymmetry neighbors"),
     "steinhardt": ("Steinhardt q4・q6 のカットオフ [Å]", "Steinhardt q4 and q6 cutoff [Å]"),
     "clusters": ("かたまりのカットオフ [Å]", "Cluster cutoff [Å]"),
     "adf": ("結合角の分布の元素", "Elements for the angle distribution"),
@@ -707,7 +707,7 @@ def compare_sections(cres) -> list[Section]:
                              "ΔH [kJ/mol]", "ΔS [J/(mol K)]", L("ΔG (F) [kJ/mol]", "ΔG (F) [kJ/mol]"), L("組成の釣り合い", "Composition balance"),
                              L("条件が違う項目", "Settings that differ")],
                             rows, [False, False, True, True, True, True, True, True, True, True, False, False],
-                            [L("ν は生成したファイルが正、反応物が負。組成の釣り合いは Σν·(元素ごとの原子数)", "ν is positive for products and negative for reactants; balance is Σν·(atoms per element)"),
+                            [L("ν は生成物が正、反応物が負。組成の釣り合いは Σν·(元素ごとの原子数)", "ν is positive for products and negative for reactants; balance is Σν·(atoms per element)"),
                              L("ΔH・ΔS・ΔG は各計算の analysis/thermo.csv (ASE の熱化学) の H・S・G の ΣνX。温度 (と圧力) が全部の計算で揃っているときだけ出します。"
                                "振動だけのモデルでは H は無く、G の列は F = U − TS の差です",
                                "ΔH, ΔS and ΔG are ΣνX of H, S and G from analysis/thermo.csv (ASE thermochemistry) of each run, given only when every run has the same temperatures (and pressures). "
