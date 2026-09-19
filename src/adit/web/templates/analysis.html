@@ -176,9 +176,31 @@
                         "The same trajectory the analysis reads, after the skip and stride settings (at most 200 frames are sent to the browser). Vibrational-mode playback is in the desktop analysis tab.") }}</div>
   <noscript><div class="hint">{{ T("この再生はブラウザの中の小さなプログラム (JavaScript) で動きます。JavaScript を切っていると出ません。", "The player runs on a small program in the browser (JavaScript) and does not appear with JavaScript disabled.") }}</div></noscript>
 </fieldset>
-<script>window.ADIT_FRAMES_URL = "{{ frames_url }}"; window.ADIT_LANG = "{{ lang }}";</script>
+{% endif %}
+{% if iso_files %}
+<fieldset id="adit-iso"><legend>{{ T("等値面 (軌道・電子密度・静電ポテンシャル)", "Isosurface (orbitals, electron density, electrostatic potential)") }}</legend>
+  <div class="row"><label for="adit-iso-file">{{ T("ファイル", "File") }}</label><select id="adit-iso-file">{% for name in iso_files %}<option value="{{ name }}">{{ name }}</option>{% endfor %}</select></div>
+  <div class="hint" id="adit-iso-range">{{ T("値の範囲を読んでいます…", "reading the value range…") }}</div>
+  <div class="row"><label for="adit-iso-level">{{ T("等値", "Level") }}</label><input type="text" id="adit-iso-level" inputmode="decimal" placeholder="{{ T('等値 (ファイルの単位。既定値はありません)', 'level (file unit; no default)') }}"></div>
+  <div class="row"><label for="adit-iso-pos">{{ T("正の色", "Positive colour") }}</label><input type="color" id="adit-iso-pos" value="#2b6fe6">
+    <label for="adit-iso-neg" style="margin-left:12px">{{ T("負の色", "Negative colour") }}</label><input type="color" id="adit-iso-neg" value="#e64b3c"></div>
+  <div class="row"><label for="adit-iso-opacity">{{ T("透明度", "Opacity") }}</label><input type="range" id="adit-iso-opacity" min="10" max="100" value="55" style="width:160px;vertical-align:middle">
+    <label for="adit-iso-stride" style="margin-left:12px">{{ T("間引き (格子点)", "Stride (grid points)") }}</label><input type="number" id="adit-iso-stride" min="1" max="64" value="1" style="width:64px"></div>
+  <div class="actions"><button type="button" id="adit-iso-show">{{ T("表示", "Show") }}</button>
+    <button type="button" id="adit-iso-clear">{{ T("等値面を消す", "Remove the surface") }}</button>
+    <button type="button" id="adit-iso-use-stride" hidden></button></div>
+  <canvas id="adit3d-iso" width="420" height="320" style="width:100%;max-width:640px;height:320px;border-radius:10px;border:1px solid rgba(0,0,0,0.12)"></canvas>
+  <div class="hint" id="adit-iso-note"></div>
+  <div class="hint">{{ T("cube (Gaussian、ORCA orca_plot、xtb、DFTB+ waveplot、pp.x) と CHGCAR・PARCHG・LOCPOT を読み、等値の面を三角形にして原子に重ねます。正の等値を入れると、負の値があるファイルでは -等値 の面も描きます。ブラウザに送る三角形は最大 60,000 枚で、超えるときは間引きを提案します。",
+                        "Reads cube files (Gaussian, ORCA orca_plot, xtb, DFTB+ waveplot, pp.x) and CHGCAR / PARCHG / LOCPOT and overlays the surface as triangles on the atoms. A positive level also draws -level when the file has negative values. At most 60,000 triangles are sent to the browser; above that a stride is suggested.") }}</div>
+  <noscript><div class="hint">{{ T("この表示はブラウザの中の小さなプログラム (JavaScript) で動きます。JavaScript を切っていると出ません。", "This view runs on a small program in the browser (JavaScript) and does not appear with JavaScript disabled.") }}</div></noscript>
+</fieldset>
+{% endif %}
+{% if frames_url or iso_url %}
+<script>window.ADIT_FRAMES_URL = "{{ frames_url }}"; window.ADIT_ISO_URL = "{{ iso_url }}"; window.ADIT_LANG = "{{ lang }}";</script>
 <script>{{ viewer_js | safe }}</script>
-<script>{{ playback_js | safe }}</script>
+{% if frames_url %}<script>{{ playback_js | safe }}</script>{% endif %}
+{% if iso_url %}<script>{{ isosurface_js | safe }}</script>{% endif %}
 {% endif %}
 {% if export_dir %}
 <fieldset id="export"><legend>{{ T("書き出したファイル (export_README.txt)", "Exported files (export_README.txt)") }}</legend>
