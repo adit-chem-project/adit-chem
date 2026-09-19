@@ -152,6 +152,9 @@ def test_panel_sends_base_cell_indices_to_the_chosen_field(app):
     assert not panel.act_send_series.isEnabled()
     panel.btn_clear_sel.click()
     assert panel.viewer.selected == [] and not panel.btn_send.isEnabled()
+    panel.viewer.set_selection([0, 1]); assert panel.btn_send.isEnabled()
+    panel.set_structure(st)                                             # a new structure drops the selection and the buttons follow
+    assert panel.viewer.selected == [] and not panel.btn_send.isEnabled() and panel.measure.text() == ""
 
 
 def test_main_window_puts_the_atoms_into_the_fields(app, sk_root, tmp_path):
