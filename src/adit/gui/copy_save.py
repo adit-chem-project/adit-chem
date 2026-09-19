@@ -53,7 +53,10 @@ def save_dialog(parent: QWidget, default_name: str, svg_text: str | None = None,
         else:
             if widget is None:
                 raise ValueError(L("この形式では保存できません", "cannot save in this format"))
-            widget_image(widget).save(str(path if path.suffix else path.with_suffix(".png")))
+            target = path if path.suffix else path.with_suffix(".png")
+            if not widget_image(widget).save(str(target)):
+                raise OSError(L(f"画像を書けません: {target}", f"cannot write the image: {target}"))
+            path = target
     except (OSError, ValueError) as ex:
         QMessageBox.warning(parent, L("保存できません", "Cannot save"), str(ex))
         return None

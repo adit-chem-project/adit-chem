@@ -766,7 +766,10 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, tr("生成できません"), str(ex)); return
         path, _ = QFileDialog.getSaveFileName(self, "spec.json", "spec.json", "JSON (*.json)")
         if path:
-            Path(path).write_text(spec.model_dump_json(indent=2), encoding="utf-8")
+            try:
+                Path(path).write_text(spec.model_dump_json(indent=2), encoding="utf-8")
+            except OSError as ex:
+                QMessageBox.critical(self, L("保存できません", "Cannot save"), str(ex)); return
             self.statusBar().showMessage(L(f"{path} に保存しました", f"saved to {path}"))
 
     def _insert_structure_file(self) -> None:

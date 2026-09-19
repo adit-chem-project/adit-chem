@@ -10,6 +10,15 @@ from PySide6.QtGui import QBrush, QColor, QMouseEvent, QPainter, QPen, QRadialGr
 from PySide6.QtWidgets import QWidget
 
 _BOND_FACTOR = 1.2
+_UNKNOWN_RGB = (0.6, 0.6, 0.6)
+
+
+def _radius(z: int) -> float:
+    return float(covalent_radii[z]) if 0 <= z < len(covalent_radii) else 1.5
+
+
+def _rgb(z: int) -> tuple[float, float, float]:
+    return tuple(jmol_colors[z]) if 0 <= z < len(jmol_colors) else _UNKNOWN_RGB
 _MAX_BOND_ATOMS = 2000
 
 
@@ -66,7 +75,7 @@ class Viewer3D(QWidget):
         n = len(atoms)
         if n < 2 or n > _MAX_BOND_ATOMS:
             return []
-        r = np.array([covalent_radii[z] for z in self._num])
+        r = np.array([_radius(z) for z in self._num])
         d = atoms.get_all_distances(mic=False)
         cut = _BOND_FACTOR * (r[:, None] + r[None, :])
         i, j = np.where((d < cut) & (d > 0.1))
@@ -121,8 +130,8 @@ class Viewer3D(QWidget):
         p.setPen(QPen(QColor(0, 0, 0, 90), 0.8))
         for i in order:
             z = self._num[i]
-            r = max(2.0, covalent_radii[z] * 0.55 * s)
-            col = QColor.fromRgbF(*jmol_colors[z])
+            r = max(2.0, _radius(z) * 0.55 * s)
+            col = QColor.fromRgbF(*_rgb(z))
             shade = 0.75 + 0.25 * (depth[i] - zmin) / zr
             col = QColor(int(col.red() * shade), int(col.green() * shade), int(col.blue() * shade))
             g = QRadialGradient(QPointF(xy[i][0] - r * 0.35, xy[i][1] - r * 0.35), r * 1.4)

@@ -254,7 +254,10 @@ class StagesDialog(QDialog):
             QMessageBox.critical(self, L("保存できません", "Cannot save"), str(ex)); return
         path, _ = QFileDialog.getSaveFileName(self, "stages.json", "stages.json", "JSON (*.json)")
         if path:
-            Path(path).write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            try:
+                Path(path).write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            except OSError as ex:
+                QMessageBox.critical(self, L("保存できません", "Cannot save"), str(ex))
 
     def _base_type(self) -> str:
         try:
