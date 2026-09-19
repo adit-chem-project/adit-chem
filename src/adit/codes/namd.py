@@ -70,7 +70,7 @@ class NamdGenerator(InputGenerator):
                 "this NAMD generator supports NVE molecular dynamics only")))
         if st.fixed_atoms or st.fixed_axes:
             errors.append(ValidationError("structure.fixed_atoms", L(
-                "この NAMD 生成器は固定原子・固定軸を入力へ写せません",
+                "この NAMD 生成器は固定原子・固定軸を入力に書けません",
                 "this NAMD generator cannot write fixed atoms or axes")))
         if st.periodic and not all(st.atoms.pbc):
             errors.append(ValidationError("structure.atoms", L(

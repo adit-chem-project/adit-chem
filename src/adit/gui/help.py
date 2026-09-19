@@ -19,7 +19,7 @@ class Help:
 R, O = True, False  # required / optional
 
 HELP: dict[str, Help] = {
-    "構造の作り方": Help(R, "計算する原子の並びをどこから作るか (土台)。プリセット (ASE の分子集)、SMILES (RDKit で 3 次元化)、ファイル、バルク結晶、表面スラブ、溶液・混合物、"
+    "構造の作り方": Help(R, "計算する原子の並びをどこから作るか (土台)。プリセット (ASE の g2 セット)、SMILES (RDKit で 3 次元化)、ファイル、バルク結晶、表面スラブ、溶液・混合物、"
                         "2 次元材料・ナノチューブ、ナノ粒子、ポリマーのいずれか 1 つ。下の「組み立て手順」で、この土台に加工を重ねられます。",
                    "Where the atoms come from (the base): a preset (ASE molecule set), SMILES (3D via RDKit), a file, a bulk crystal, a surface slab, a solution / mixture, "
                    "a 2D material / nanotube, a nanoparticle or a polymer. The build steps below can then modify this base."),
@@ -95,7 +95,7 @@ HELP: dict[str, Help] = {
                        "How fast the thermostat pulls the temperature back. Converted mechanically to each code's coupling parameter (Berendsen τ, Andersen probability, Nosé-Hoover frequency, Langevin friction)."),
     "圧力 [bar] (NPT)": Help(O, "NPT の目標圧力。1 bar ≈ 大気圧。", "Target pressure of NPT; 1 bar is about atmospheric."),
     "圧力浴の緩和時間 [fs] (NPT)": Help(O, "圧力浴 (バロスタット) がセルの体積を目標圧力へ戻す速さ。", "How fast the barostat adjusts the cell volume toward the target pressure."),
-    "k 点の経路 (バンド)": Help(O, "バンド図を描く逆格子空間の道筋。空なら格子の対称性から決まる標準の経路 (ASE)。GXWKGLUWLK,UX のように高対称点の記号で書きます。", "Path in reciprocal space for the band plot. Empty = the standard path of the lattice (ASE). Written with high-symmetry labels like GXWKGLUWLK,UX."),
+    "k 点の経路 (バンド)": Help(O, "バンド図を描く逆格子空間の経路。空なら格子の対称性から決まる標準の経路 (ASE)。GXWKGLUWLK,UX のように高対称点の記号で書きます。", "Path in reciprocal space for the band plot. Empty = the standard path of the lattice (ASE). Written with high-symmetry labels like GXWKGLUWLK,UX."),
     "経路上の k 点数": Help(O, "経路全体を何点で刻むか。多いほど滑らかな図になります。", "Number of k-points along the whole path; more gives a smoother plot."),
     "空のバンド数 (pw.x)": Help(O, "価電子帯に加えて計算する空のバンドの数 (pw.x の nbnd に使います)。伝導帯を見たいときに増やします。", "Empty bands computed in addition to the valence bands (pw.x nbnd). Increase to see the conduction bands."),
     "サンプリング方法": Help(R, "結晶の中の電子の波を、何通りの波の向き・長さ (k 点) で代表させるか。セルが小さいほど多くの k 点が要り、少ないとエネルギーがずれます。"
@@ -145,7 +145,7 @@ HELP: dict[str, Help] = {
     "OT の追加行": Help(O, "画面にない &OT の項目を、1 行に 1 つ書きます。", "Additional &OT settings, one per line."),
     "SURFACE_DIPOLE_CORRECTION": Help(O, "CP2K の表面双極子補正を使うかどうか。利用者が選んだときだけ書きます。", "Whether to enable CP2K's surface dipole correction; written only when selected."),
     "SURF_DIP_DIR": Help(O, "表面双極子補正を適用する方向。", "Direction in which the surface dipole correction is applied."),
-    "追加の行 (節ごと)": Help(O, "画面に無い CP2K の設定の逃げ道。[FORCE_EVAL/DFT/SCF] のような見出しの次の行に書いた行を、その節の末尾にそのまま足します。",
+    "追加の行 (節ごと)": Help(O, "画面にない CP2K の設定を書く欄。[FORCE_EVAL/DFT/SCF] のような見出しの次の行に書いた行を、その節の末尾にそのまま足します。",
                           "Escape hatch for CP2K settings not in the form: lines under a header such as [FORCE_EVAL/DFT/SCF] are appended to the end of that section as is."),
     # ---- LAMMPS ----
     "単位系 (units)": Help(R, "力場のファイルが前提とする単位系。metal (eV、Å、ps、bar) か real (kcal/mol、Å、fs、atm)。EAM は多くが metal、ReaxFF や分子の力場は多くが real です。ファイルの説明で確かめます。",
@@ -241,11 +241,11 @@ HELP: dict[str, Help] = {
     "%maxcore [MB] (0 = 指定しない)": Help(O, "1 コアあたりに使ってよいメモリ (MB)。相関計算 (MP2、CC) で要ります。", "Memory per core (MB); needed for correlated methods (MP2, CC)."),
     "追加のキーワード (! 行)": Help(O, "! 行に足すキーワード (例 D3BJ RIJCOSX)。", "Extra keywords for the ! line (e.g. D3BJ RIJCOSX)."),
     "追加の %ブロック": Help(O, "%ブロックをそのまま足します (複数行可)。", "Extra %blocks, written as is."),
-    "溶媒の模型 (--alpb / --gbsa)": Help(O, "連続誘電体で溶媒の効果を入れる模型 (xtb の --alpb / --gbsa)。「なし」なら気相です。GFN0-xTB では使えません。",
+    "溶媒モデル (--alpb / --gbsa)": Help(O, "連続誘電体で溶媒の効果を入れるモデル (xtb の --alpb / --gbsa)。「なし」なら気相です。GFN0-xTB では使えません。",
                                      "Implicit-solvent model (xtb --alpb / --gbsa); None = gas phase. Not available with GFN0-xTB."),
-    "溶媒の模型 (CPCM / SMD)": Help(O, "連続誘電体で溶媒の効果を入れる模型 (! CPCM(溶媒) / ! SMD(溶媒))。「なし」なら気相です。",
+    "溶媒モデル (CPCM / SMD)": Help(O, "連続誘電体で溶媒の効果を入れるモデル (! CPCM(溶媒) / ! SMD(溶媒))。「なし」なら気相です。",
                                 "Implicit-solvent model (! CPCM(solvent) / ! SMD(solvent)); None = gas phase."),
-    "溶媒": Help(O, "溶媒の名前。候補は、選んだ模型と計算手法でその計算コードが受け付ける名前です (xtb の文書、ORCA 6.1 マニュアルの溶媒の表)。模型を選んだら必須です。ADIT は溶媒を選びません。",
+    "溶媒": Help(O, "溶媒の名前。候補は、選んだモデルと計算手法でその計算コードが受け付ける名前です (xtb の文書、ORCA 6.1 マニュアルの溶媒の表)。モデルを選んだら必須です。ADIT は溶媒を選びません。",
                 "Solvent name. The choices are the names the code accepts for the chosen model and method (xtb documentation, solvent table of the ORCA 6.1 manual). "
                 "Required once a model is chosen; ADIT does not pick one."),
     "溶媒のパラメータファイル (GBSA)": Help(O, "DFTB+ の Solvation = GeneralisedBorn に渡す GBSA のパラメータファイル (param_gbsa_<溶媒>.txt の形)。空なら溶媒なし。分子 (非周期) だけで使えます。係数はファイルから読むだけです。",
@@ -326,7 +326,7 @@ HELP: dict[str, Help] = {
                               "adit itself does not use them; the generated run_mlip.py imports them where it runs."),
     "モデル": Help(O, "MACE の model 引数 (small のような名前か、モデルのファイルのパス)。ファイルを指定すると生成先へ写します。空欄なら、入っているバージョンの既定のモデルです (使ったバージョンは output.log に残ります)。CHGNet では空欄にします。",
                   "The model argument of MACE (a name such as small, or the path of a model file; a file is copied into the output). Empty = the default model of the installed version (recorded in output.log). Leave it empty for CHGNet."),
-    "計算に使う装置 (device)": Help(O, "計算に使う装置 (cpu、cuda など)。空欄ならパッケージが選びます。", "Device used for the calculation (cpu, cuda, ...); empty lets the package choose."),
+    "計算に使うデバイス (device)": Help(O, "計算に使うデバイス (cpu、cuda など)。空欄ならパッケージが選びます。", "Device used for the calculation (cpu, cuda, ...); empty lets the package choose."),
     "数値の精度 (dtype)": Help(O, "MACE の default_dtype (float32 / float64)。空欄ならパッケージの既定。CHGNet では使いません。",
                             "default_dtype of MACE (float32 / float64); empty = the package default. Unused for CHGNet."),
     "遷移状態の探索 (OptTS)": Help(O, "構造最適化を鞍点 (遷移状態) の探索にします (! OptTS)。計算の種類が構造最適化のときだけ書かれます。",
@@ -494,7 +494,7 @@ HELP: dict[str, Help] = {
          "Factor applied to the frequencies. Harmonic frequencies come out higher than experiment, so papers scale them by about 0.96. ADIT has no default and records the value you used."),
     "重ねる測定したスペクトル": Help(O, "赤外・ラマンの図に測定を重ねます。縦軸は互いの最大値で合わせるだけで、一致の良し悪しは判定しません。",
          "Overlays a measured spectrum on the IR and Raman plots. The vertical axes are matched at their maxima only, and the agreement is not judged."),
-    "報告をまとめる": Help(O, "計算ディレクトリから、方法の節・条件の表・結果の表・再現パッケージ・入力の照合用のハッシュの照合を作ります。コマンドの adit-report と同じものです。",
+    "報告をまとめる": Help(O, "計算ディレクトリから、方法の節・条件の表・結果の表・再現パッケージ・入力のハッシュの照合を作ります。コマンドの adit-report と同じものです。",
          "Builds the methods section, the conditions table, the results table, the reproducibility bundle and the fingerprint check from your run directories. It is the same as the adit-report command."),
     "計算ディレクトリ (1 行に 1 つ)": Help(O, "spec.json のある計算ディレクトリです。複数 入れると 1 枚の表にまとめます。",
          "Run directories that contain spec.json; several of them are combined into one table."),
@@ -508,7 +508,7 @@ HELP: dict[str, Help] = {
          "Where to write a CSV of final energies, average temperatures and completion status; runs that have not been executed are marked as such."),
     "再現パッケージ (.zip)": Help(O, "再現に要るファイルと manifest.json をまとめた .zip (またはディレクトリ) の書き出し先です。すでにあるものには書きません。",
          "Where to write a .zip (or directory) with the files needed to reproduce the runs plus manifest.json; an existing path is never overwritten."),
-    "入力の照合用のハッシュを照合する": Help(O, "生成したときに記録した SHA-256 と、いまのファイルを突き合わせます。一致 / 不一致 / 記録が無くて確かめられない の 3 つを出します。",
+    "入力のハッシュを照合する": Help(O, "生成したときに記録した SHA-256 と、いまのファイルを突き合わせます。一致 / 不一致 / 記録が無くて確かめられない の 3 つを出します。",
          "Compares the SHA-256 recorded at generation time with the files as they are now, reporting match, differ, or no record."),
     "報告を作る": Help(O, "上の指定で報告を作ります。",
          "Builds the report with the settings above."),

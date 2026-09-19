@@ -538,7 +538,7 @@ def main(argv: list[str] | None = None) -> int:
             f"読み戻して照合した項目: {len(result.preserved)} 件一致、{len(result.mismatched)} 件不一致、{len(result.unverifiable)} 件未確認。計算全体の同等性は判定していません。",
             f"Re-imported mapped fields: {len(result.preserved)} matched, {len(result.mismatched)} mismatched, {len(result.unverifiable)} unverified. Whole-calculation equivalence was not assessed."))
         print(L(
-            f"対応項目のみの点検結果: {'通過' if checked else '不通過'}。未確認項目は成功終了でも検証済みを意味しません。",
+            f"対応項目のみの点検結果: {'問題なし' if checked else '問題あり'}。未確認項目は成功終了でも検証済みを意味しません。",
             f"Mapped-field check only: {'passed' if checked else 'failed'}. Unverified fields remain unverified even when this command exits successfully."))
         for item in result.mismatched[:5]:
             print(L(f"  不一致: {item['field']}", f"  mismatch: {item['field']}"), file=sys.stderr)

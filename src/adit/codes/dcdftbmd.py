@@ -59,14 +59,14 @@ class DcdftbmdGenerator(InputGenerator):
             errs.append(ValidationError("task.type", L("この生成器は一点計算・構造最適化・MD に対応します", "this generator supports single point, geometry optimization, and MD")))
         if t.type == "geometry_optimization":
             if t.optimizer not in ("SteepestDescent", "FIRE"):
-                errs.append(ValidationError("task.optimizer", L("この生成器では最急降下法と FIRE のみ、同じ名前の手法として写せます", "this generator can map only SteepestDescent and FIRE to the same-named methods")))
+                errs.append(ValidationError("task.optimizer", L("この生成器では最急降下法と FIRE のみ、同じ名前の手法として書けます", "this generator can map only SteepestDescent and FIRE to the same-named methods")))
             if t.relax_cell != "no":
                 errs.append(ValidationError("task.relax_cell", L("この生成器は格子最適化を書けません", "this generator cannot write lattice optimization")))
         if t.type == "molecular_dynamics":
             if t.md.ensemble == "NPT":
                 errs.append(ValidationError("task.md.ensemble", L("この生成器は NPT を書けません", "this generator cannot write NPT")))
             if t.md.ensemble == "NVT" and t.md.thermostat != "berendsen":
-                errs.append(ValidationError("task.md.thermostat", L("この生成器で時定数まで写せる NVT 熱浴は Berendsen だけです", "Berendsen is the only NVT thermostat whose coupling time this generator can map")))
+                errs.append(ValidationError("task.md.thermostat", L("この生成器で時定数まで書ける NVT 熱浴は Berendsen だけです", "Berendsen is the only NVT thermostat whose coupling time this generator can map")))
         if st.periodic and not all(st.atoms.pbc):
             errs.append(ValidationError("structure.atoms", L("DCDFTBMD の TV ベクトルは 3 方向の周期セルとして書きます。部分周期には対応していません", "DCDFTBMD TV vectors are written for a fully periodic cell; partial periodicity is unsupported")))
         return errs

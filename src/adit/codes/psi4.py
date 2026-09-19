@@ -43,7 +43,7 @@ class Psi4Generator(InputGenerator):
                 "この Psi4 生成器は分子 (非周期) だけに対応します", "this Psi4 generator supports molecules (nonperiodic) only")))
         if st.fixed_atoms or st.fixed_axes:
             errs.append(ValidationError("structure.fixed_atoms", L(
-                "この Psi4 生成器は固定原子・固定軸を入力へ写せません (optking の凍結座標は確かめていません)",
+                "この Psi4 生成器は固定原子・固定軸を入力に書けません (optking の凍結座標は確かめていません)",
                 "this Psi4 generator cannot write fixed atoms or axes (optking's frozen coordinates were not verified)")))
         if st.velocities is not None:
             errs.append(ValidationError("structure.velocities", L(

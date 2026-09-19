@@ -56,7 +56,7 @@ class XtbMethodPanel(QWidget):
         add_row(form, "電子温度 [K] (--etemp)", self.etemp)
         add_row(form, "SCC の最大反復回数", self.max_iter)
         add_row(form, "最適化の収束レベル (--opt)", self.opt_level)
-        add_row(form, "溶媒の模型 (--alpb / --gbsa)", self.solvation)
+        add_row(form, "溶媒モデル (--alpb / --gbsa)", self.solvation)
         add_row(form, "溶媒", self.solvent)
         add_row(form, L("MD の水素質量 [u] ($md hmass)", "Hydrogen mass in MD [u] ($md hmass)"), self.md_hmass)
         add_row(form, L("MD の結合固定 ($md shake)", "Bond constraints in MD ($md shake)"), self.md_shake)

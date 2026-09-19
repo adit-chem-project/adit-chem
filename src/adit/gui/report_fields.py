@@ -14,7 +14,7 @@ LABELS: dict[str, tuple[str, str]] = {
     "rep_conditions": ("条件の表 (CSV)", "Conditions table (CSV)"),
     "rep_results": ("結果の表 (CSV)", "Results table (CSV)"),
     "rep_bundle": ("再現パッケージ (.zip)", "Reproducibility bundle (.zip)"),
-    "rep_check": ("入力の照合用のハッシュを照合する", "Verify the input fingerprints"),
+    "rep_check": ("入力のハッシュを照合する", "Verify the input fingerprints"),
     "rep_run": ("報告を作る", "Build"),
 }
 

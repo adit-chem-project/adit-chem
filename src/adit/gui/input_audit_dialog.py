@@ -149,7 +149,7 @@ class InputAuditDialog(QDialog):
                 result = verify_generated_bundle(source)
                 passed = verification_passed(result)
                 self.summary.setText(L(
-                    f"対応項目のみの点検: {'通過' if passed else '不通過'}。一致 {len(result.preserved)} 件、不一致 {len(result.mismatched)} 件、未確認 {len(result.unverifiable)} 件。未確認は検証済みを意味しません。",
+                    f"対応項目のみの点検: {'問題なし' if passed else '問題あり'}。一致 {len(result.preserved)} 件、不一致 {len(result.mismatched)} 件、未確認 {len(result.unverifiable)} 件。未確認は検証済みを意味しません。",
                     f"Mapped-field check only: {'passed' if passed else 'failed'}. {len(result.preserved)} matched, {len(result.mismatched)} mismatched, {len(result.unverifiable)} unverified. Unverified does not mean verified."))
                 details = result.report()
             else:

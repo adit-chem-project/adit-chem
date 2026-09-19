@@ -287,7 +287,7 @@ class OpenmmGenerator(InputGenerator):
                 "with an OpenMM force field the charges come from the topology; leave the total charge and multiplicity at 0 and 1")))
         if st.fixed_atoms or st.fixed_axes:
             errs.append(ValidationError("structure.fixed_atoms", L(
-                "この生成器は固定原子・固定軸を入力へ写せません (OpenMM では質量 0 や拘束力で表しますが、拘束との組み合わせを確かめていません)",
+                "この生成器は固定原子・固定軸を入力に書けません (OpenMM では質量 0 や拘束力で表しますが、拘束との組み合わせを確かめていません)",
                 "this generator cannot write fixed atoms or axes (OpenMM expresses them with zero masses or restraint forces, whose interaction with constraints was not verified)")))
         if spec.kpoints is not None:
             errs.append(ValidationError("kpoints", L(

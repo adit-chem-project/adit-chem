@@ -66,7 +66,7 @@ def _check_solvent(m: OrcaMethod) -> list[ValidationError]:
     name = m.solvent.strip()
     if m.solvation == "none":
         if name:
-            return [ValidationError("method.solvent", L(f"溶媒の模型が「なし」なので、溶媒 {name!r} は使われません (模型を CPCM か SMD にするか、溶媒を空にしてください)",
+            return [ValidationError("method.solvent", L(f"溶媒モデルが「なし」なので、溶媒 {name!r} は使われません (モデルを CPCM か SMD にするか、溶媒を空にしてください)",
                                                         f"the solvation model is 'none', so the solvent {name!r} would not be used (choose CPCM or SMD, or clear the solvent)"))]
         return []
     model = m.solvation.upper()
@@ -139,7 +139,7 @@ class OrcaGenerator(InputGenerator):
             if m.method.strip().upper() not in {"XTB", "GFN2-XTB", "GFN1-XTB", "GFN0-XTB", "GFN-FF"} or m.basis.strip():
                 errs.append(ValidationError("method.method", L("ORCA 6.1 DOCKER は XTB/GFN-xTB/GFN-FF のみです。基底関数欄は空にしてください", "ORCA 6.1 DOCKER supports only XTB/GFN-xTB/GFN-FF; leave the basis field empty")))
             if m.solvation != "none":
-                errs.append(ValidationError("method.solvation", L("ORCA DOCKER の溶媒模型は ALPB のみです。この欄の CPCM/SMD は使えません", "ORCA DOCKER supports only ALPB solvation; CPCM/SMD in this field cannot be used")))
+                errs.append(ValidationError("method.solvation", L("ORCA DOCKER の溶媒モデルは ALPB のみです。この欄の CPCM/SMD は使えません", "ORCA DOCKER supports only ALPB solvation; CPCM/SMD in this field cannot be used")))
             if spec.structure.fixed_atoms:
                 errs.append(ValidationError("structure.fixed_atoms", L("この生成器は DOCKER のホスト固定を反映できません", "this generator cannot apply host constraints in DOCKER")))
             guest = Path(m.docker_guest_file).expanduser()

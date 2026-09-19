@@ -41,7 +41,7 @@ class NwchemGenerator(InputGenerator):
         if st.periodic or any(st.atoms.pbc):
             errors.append(ValidationError("structure.atoms", L("この NWChem 生成器は分子の計算だけに対応します", "this NWChem generator supports molecular calculations only")))
         if st.fixed_atoms or st.fixed_axes:
-            errors.append(ValidationError("structure.fixed_atoms", L("この NWChem 生成器では固定原子・固定軸を入力へ写せません", "this NWChem generator cannot write fixed atoms or axes")))
+            errors.append(ValidationError("structure.fixed_atoms", L("この NWChem 生成器では固定原子・固定軸を入力に書けません", "this NWChem generator cannot write fixed atoms or axes")))
         if spec.handoff is not None and spec.handoff.files:
             errors.append(ValidationError("handoff.files", L("この NWChem 生成器は前の計算のファイルを引き継げません", "this NWChem generator cannot carry over restart files")))
         if task.type != "single_point":

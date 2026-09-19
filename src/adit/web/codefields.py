@@ -20,7 +20,7 @@ def parse_sections(text: str) -> dict[str, str]:
             out.setdefault(cur, [])
             continue
         if cur is None:
-            raise ValueError(L(f"追加の行: 先に [節の道筋] の見出しを書いてください (例 [FORCE_EVAL/DFT/SCF]): {raw.strip()!r}",
+            raise ValueError(L(f"追加の行: 先に [セクションのパス] の見出しを書いてください (例 [FORCE_EVAL/DFT/SCF]): {raw.strip()!r}",
                                f"extra lines: write a [section path] header first (e.g. [FORCE_EVAL/DFT/SCF]): {raw.strip()!r}"))
         out[cur].append(line)
     return {k: "\n".join(v) for k, v in out.items() if v}
@@ -296,7 +296,7 @@ METHOD_LABELS = {
              "ibrion": "IBRION (構造最適化の方法)", "algo": "ALGO", "prec": "PREC", "lreal": "LREAL", "magmom_by_element": "元素ごとの初期磁気モーメント [μB]",
              "hubbard": "DFT+U", "ldau_type": "LDAUTYPE", "extra_incar": "追加の INCAR 設定"},
     "xtb": {"gfn": "計算手法 (--gfn)", "accuracy": "精度 (--acc)", "etemp": "電子温度 [K] (--etemp)", "max_iterations": "SCC の最大反復回数",
-            "opt_level": "最適化の収束レベル (--opt)", "solvation": "溶媒の模型 (--alpb / --gbsa)", "solvent": "溶媒"},
+            "opt_level": "最適化の収束レベル (--opt)", "solvation": "溶媒モデル (--alpb / --gbsa)", "solvent": "溶媒"},
     "espresso": {"pseudo_set": "擬ポテンシャルのセット", "pseudo": "元素ごとの UPF ファイル", "ecutwfc": "ecutwfc [Ry]", "ecutrho": "ecutrho [Ry] (0 = 指定しない)",
                  "conv_thr": "conv_thr [Ry]", "electron_maxstep": "electron_maxstep", "mixing_beta": "mixing_beta", "occupations": "occupations",
                  "smearing": "smearing", "degauss": "degauss [Ry]", "nspin": "nspin", "input_dft": "input_dft",
@@ -304,7 +304,7 @@ METHOD_LABELS = {
                  "extra": "追加の変数 (名前空間.変数 = 値)"},
     "orca": {"method": "計算手法 (! 行)", "basis": "基底関数", "scf_convergence": "SCF の収束判定", "scf_maxiter": "SCF の最大反復回数",
              "maxcore_mb": "%maxcore [MB] (0 = 指定しない)", "extra_keywords": "追加のキーワード (! 行)", "extra_blocks": "追加の %ブロック",
-             "solvation": "溶媒の模型 (CPCM / SMD)", "solvent": "溶媒"},
+             "solvation": "溶媒モデル (CPCM / SMD)", "solvent": "溶媒"},
     "cp2k": {"basis_file": "基底関数のファイル", "potential_file": "擬ポテンシャルのファイル", "basis": "元素ごとの基底と擬ポテンシャル",
              "potential": "元素ごとの基底と擬ポテンシャル", "xc": "汎関数", "dispersion": "分散補正", "cutoff_ry": "カットオフ [Ry]",
              "rel_cutoff_ry": "相対カットオフ [Ry]", "eps_scf": "SCF の収束の閾値 (EPS_SCF)", "max_scf": "SCF の反復の上限 (MAX_SCF)", "uks": "スピン分極",

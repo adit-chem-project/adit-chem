@@ -75,7 +75,7 @@ class XtbGenerator(InputGenerator):
         name = m.solvent.strip()
         if m.solvation == "none":
             if name:
-                return [ValidationError("method.solvent", L(f"溶媒の模型が「なし」なので、溶媒 {name!r} は使われません (模型を alpb か gbsa にするか、溶媒を空にしてください)",
+                return [ValidationError("method.solvent", L(f"溶媒モデルが「なし」なので、溶媒 {name!r} は使われません (モデルを alpb か gbsa にするか、溶媒を空にしてください)",
                                                             f"the solvation model is 'none', so the solvent {name!r} would not be used (choose alpb or gbsa, or clear the solvent)"))]
             return []
         method = {"0": "GFN0-xTB", "1": "GFN1-xTB", "2": "GFN2-xTB", "ff": "GFN-FF"}[m.gfn]
