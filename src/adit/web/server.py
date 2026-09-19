@@ -72,6 +72,8 @@ class WebApp:
 
     def __init__(self, cfg: Config, cfg_path: Path):
         self.cfg, self.cfg_path = cfg, cfg_path
+        # One request at a time: the form, spec, figures and the language are shared module/instance state.
+        self.lock = threading.RLock()
         self._cfg_mtime = _mtime(cfg_path)
         self.config_error = ""
         self.form: dict[str, str] = default_form(cfg.default_profile, Path.home() / "adit_runs" / f"run_{datetime.now():%Y%m%d_%H%M%S}")
@@ -899,6 +901,7 @@ def _parse_body(handler: BaseHTTPRequestHandler) -> tuple[dict[str, str], dict[s
 
 
 LOCAL_HOSTS = ("127.0.0.1", "localhost", "::1")
+READ_ONLY_PATHS = ("/file", "/spec.json")
 WILDCARD_HOSTS = ("", "0.0.0.0", "::")
 TOKEN_CHARS = re.compile(r"[A-Za-z0-9_-]+")
 
@@ -1051,7 +1054,11 @@ def make_handler(app: WebApp, token: str | None = None):
             try:
                 if not self._authorized():
                     return
-                fn()
+                if urlparse(self.path).path in READ_ONLY_PATHS:
+                    fn()
+                else:
+                    with app.lock:
+                        fn()
             except (BrokenPipeError, ConnectionResetError):
                 raise
             except Exception as ex:
