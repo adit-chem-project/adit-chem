@@ -60,6 +60,8 @@ class Viewer3D(QWidget):
         self._xy = np.zeros((0, 2)); self._r = np.zeros(0); self._depth = np.zeros(0)
         self.selected: list[int] = []
         self.dark = False
+        self._surfaces: list[tuple[np.ndarray, np.ndarray, QColor]] = []   # (triangles (m,3,3) Å absolute, normals (m,3), colour)
+        self._light = np.array([0.3, 0.5, 0.81]); self._light /= np.linalg.norm(self._light)
 
     def set_atoms(self, atoms: Atoms | None) -> None:
         self._atoms = atoms
@@ -100,6 +102,26 @@ class Viewer3D(QWidget):
 
     def atoms(self) -> Atoms | None:
         return self._atoms
+
+    # ---- isosurfaces ----
+    def set_surfaces(self, surfaces) -> None:
+        """surfaces: iterable of (triangles (m,3,3) in Å, absolute coordinates; face normals (m,3); QColor with alpha)."""
+        out = []
+        for tri, nrm, color in surfaces:
+            tri = np.asarray(tri, dtype=float).reshape(-1, 3, 3)
+            nrm = np.asarray(nrm, dtype=float).reshape(-1, 3)
+            if len(tri) and len(nrm) == len(tri):
+                out.append((tri, nrm, QColor(color)))
+        self._surfaces = out
+        self.update()
+
+    def clear_surfaces(self) -> None:
+        if self._surfaces:
+            self._surfaces = []
+            self.update()
+
+    def n_triangles(self) -> int:
+        return sum(len(t) for t, _, _ in self._surfaces)
 
     def _find_bonds(self, atoms: Atoms) -> list[tuple[int, int]]:
         n = len(atoms)
@@ -205,12 +227,17 @@ class Viewer3D(QWidget):
         pen = QPen(QColor("#B0B0B6" if self.dark else "#606068")); pen.setWidthF(max(1.5, 0.12 * s)); pen.setCapStyle(Qt.PenCapStyle.RoundCap); p.setPen(pen)
         for i, j in bonds:
             p.drawLine(QPointF(*xy[i]), QPointF(*xy[j]))
-        order = np.argsort(depth)
         zmin, zmax = float(depth.min()), float(depth.max()); zr = max(zmax - zmin, 1e-6)
         radii = np.zeros(len(self._pos))
         selected = set(self.selected)
-        p.setPen(QPen(QColor(0, 0, 0, 90), 0.8))
-        for i in order:
+        tri_xy, tri_depth, tri_col = self._project_surfaces(s, cx, cy)
+        n_atoms = len(depth)
+        order = np.argsort(np.concatenate([depth, tri_depth])) if len(tri_depth) else np.argsort(depth)
+        for k in order:
+            if k >= n_atoms:
+                self._draw_triangle(p, tri_xy[k - n_atoms], tri_col[k - n_atoms])
+                continue
+            i = int(k)
             z = self._num[i]
             r = max(2.0, _radius(z) * 0.55 * s); radii[i] = r
             col = QColor.fromRgbF(*_rgb(z))
@@ -218,14 +245,37 @@ class Viewer3D(QWidget):
             col = QColor(int(col.red() * shade), int(col.green() * shade), int(col.blue() * shade))
             g = QRadialGradient(QPointF(xy[i][0] - r * 0.35, xy[i][1] - r * 0.35), r * 1.4)
             g.setColorAt(0.0, col.lighter(140)); g.setColorAt(1.0, col.darker(120))
+            p.setRenderHint(QPainter.RenderHint.Antialiasing, True)
             p.setBrush(QBrush(g)); p.setPen(QPen(QColor(0, 0, 0, 90), 0.8)); p.drawEllipse(QPointF(*xy[i]), r, r)
             if i in selected:
                 ring = QPen(self._accent()); ring.setWidthF(2.5); p.setPen(ring); p.setBrush(Qt.BrushStyle.NoBrush)
                 p.drawEllipse(QPointF(*xy[i]), r + 3.0, r + 3.0)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         self._xy, self._r, self._depth = xy, radii, depth
         self._draw_measurement(p, xy)
         self._draw_axes(p)
         p.end()
+
+    def _project_surfaces(self, s: float, cx: float, cy: float):
+        """Screen triangles of all surfaces: (m,3,2) points, (m,) depth, list of shaded colours."""
+        if not self._surfaces:
+            return np.zeros((0, 3, 2)), np.zeros(0), []
+        xy_all, depth_all, cols = [], [], []
+        for tri, nrm, color in self._surfaces:
+            rp = (tri - self._center) @ self._rot.T                       # (m,3,3) rotated
+            xy = rp[..., :2] * s; xy[..., 1] *= -1; xy[..., 0] += cx; xy[..., 1] += cy
+            depth = rp[..., 2].mean(axis=1)
+            shade = 0.45 + 0.55 * np.abs((nrm @ self._rot.T) @ self._light)   # two-sided flat shading
+            r, g, b, a = color.red(), color.green(), color.blue(), color.alpha()
+            cols += [QColor(int(r * f), int(g * f), int(b * f), a) for f in shade]
+            xy_all.append(xy); depth_all.append(depth)
+        return np.concatenate(xy_all), np.concatenate(depth_all), cols
+
+    @staticmethod
+    def _draw_triangle(p: QPainter, xy: np.ndarray, color: QColor) -> None:
+        p.setRenderHint(QPainter.RenderHint.Antialiasing, False)         # no seams between neighbouring triangles
+        p.setPen(Qt.PenStyle.NoPen); p.setBrush(color)
+        p.drawConvexPolygon([QPointF(xy[0][0], xy[0][1]), QPointF(xy[1][0], xy[1][1]), QPointF(xy[2][0], xy[2][1])])
 
     def _draw_measurement(self, p: QPainter, xy: np.ndarray) -> None:
         if not self.selected:
