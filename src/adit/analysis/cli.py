@@ -316,6 +316,8 @@ def main(argv: list[str] | None = None) -> int:
     import sys as _sys
 
     if "--help-all" in (argv if argv is not None else _sys.argv[1:]):
+        ap.epilog = L("何も付けずに実行しても、エネルギー・温度・結合長・振動数・バンドは解析します。",
+                      "With no options at all, the energy, temperature, bond lengths, frequencies and bands are still analyzed.")
         ap.print_help()
         return 0
     _hide_detailed_options(ap, argv)

@@ -253,8 +253,8 @@ class GrrmGenerator(InputGenerator):
                                       "  Provide GRRM17 and a licensed Gaussian installation; configure subgrr, subgau and subchk as documented by GRRM17."),
                                     L("  共通 Spec の最適化器・最大反復数・力の閾値は grrm.com に適用していません。",
                                       "  The common optimizer, maximum step count, and force threshold are not applied to grrm.com.")],
-                           outputs=[L("  grrm.log     GRRM17 の計算結果。ADIT はまだ内容を解析しません。",
-                                      "  grrm.log     GRRM17 results; ADIT does not yet parse them.")])
+                           outputs=[L("  output.log   GRRM17 の計算結果 (標準出力)。ADIT はまだ内容を解析しません。",
+                                      "  output.log   GRRM17 results (standard output); ADIT does not yet parse them.")])
 
 
 register(GaussianGenerator())

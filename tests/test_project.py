@@ -41,6 +41,32 @@ def test_config_roundtrip(tmp_path, monkeypatch, cfg):
         back.profile("nope")
 
 
+def test_save_config_keeps_comments_and_unknown_keys(tmp_path):
+    path = tmp_path / "cluster.toml"
+    path.write_text('# my settings\nsk_root = "/x"  # parameters\nlanguage = "ja"\nmy_note = 1\n\n'
+                    '[extra_table]\nkeep = true\n\n[profiles.local]\nkind = "direct"\ntemplates_dir = "/t"\n\n'
+                    '[profiles.local.env]\nOMP_STACKSIZE = "1G"\n', encoding="utf-8")
+    cfg = load_config(path)
+    assert cfg.unknown_keys == ["extra_table", "my_note", "profiles.local.templates_dir"]
+    cfg.language = "en"
+    cfg.profiles["local"].env = {"OMP_NUM_THREADS": "2"}
+    cfg.profiles["cluster"] = pbs_profile()
+    save_config(cfg, path)
+    text = path.read_text(encoding="utf-8")
+    assert text.startswith('# my settings\nsk_root = "/x"  # parameters\nlanguage = "en"\nmy_note = 1\n')
+    assert "OMP_STACKSIZE" not in text and 'templates_dir = "/t"' in text
+    back = load_config(path)
+    assert back.language == "en" and back.profiles["local"].env == {"OMP_NUM_THREADS": "2"}
+    assert back.profiles["cluster"] == pbs_profile() and back.unknown_keys == cfg.unknown_keys
+    cfg.window_frame = "native"
+    save_config(cfg, path)
+    text = path.read_text(encoding="utf-8")
+    assert text.index('window_frame = "native"') < text.index("[") and load_config(path).window_frame == "native"
+    path.write_text("not = [valid\n", encoding="utf-8")
+    save_config(cfg, path)
+    assert load_config(path).language == "en"
+
+
 def test_config_broken(tmp_path):
     p = tmp_path / "cluster.toml"; p.write_text("profiles = 3\n", encoding="utf-8")
     with pytest.raises(ConfigError):
@@ -75,6 +101,28 @@ def test_validation_blocks_writing(tmp_path, cfg):
         write_project(bad, cfg, out)
     assert ex.value.errors and ex.value.errors[0].location == "method.sk_set"
     assert not out.exists()
+
+
+@pytest.mark.parametrize("name", ["../escape.txt", "a/../../escape.txt", "/tmp/escape.txt", "C:\\escape.txt", "..\\escape.txt"])
+def test_file_names_cannot_leave_the_output_directory(tmp_path, cfg, name):
+    with pytest.raises(ProjectError, match="escape"):
+        build_project(water_spec(), cfg, output_dir=tmp_path / "calc", extra_texts={name: "x"})
+    from adit.spec import Handoff
+    (tmp_path / "prev").mkdir()
+    (tmp_path / "prev" / "charges.bin").write_bytes(b"x")
+    h = Handoff(previous_dir=str(tmp_path / "prev"), previous_task="single_point", previous_code="dftbplus",
+                files={name: "charges.bin"})
+    with pytest.raises(ProjectError, match="escape"):
+        write_project(water_spec(handoff=h), cfg, tmp_path / "calc")
+    assert not (tmp_path / "escape.txt").exists() and not (tmp_path / "calc").exists()
+
+
+def test_output_path_that_is_a_file_is_reported(tmp_path, cfg):
+    (tmp_path / "calc").write_text("not a directory\n", encoding="utf-8")
+    with pytest.raises(ProjectError) as ex:
+        write_project(water_spec(), cfg, tmp_path / "calc")
+    assert [e.location for e in ex.value.errors] == ["output_dir"]
+    assert (tmp_path / "calc").read_text(encoding="utf-8") == "not a directory\n"
 
 
 def test_unknown_profile(tmp_path, cfg):

@@ -115,3 +115,32 @@ def test_orca_command_from_profile(sk_root):
     cfg.profiles["local"].commands["orca"] = "/opt/orca/orca"
     s = build_project(water_spec(method=OrcaMethod(), runtime=Runtime(profile="local", mpiprocs=8)), cfg).texts["submit.sh"]
     assert s.rstrip().endswith("/opt/orca/orca orca.inp > output.log 2>&1") and "mpirun" not in s
+
+
+def test_orca_md_holds_fixed_atoms_with_a_cartesian_constraint(sk_root):
+    from adit.spec import MDSettings
+    spec = water_spec(method=OrcaMethod(), task=Task(type="molecular_dynamics", md=MDSettings(ensemble="NVT", thermostat="csvr", steps=20)))
+    spec.structure.fixed_atoms = [2, 0]
+    files = build_project(spec, cfg_for(sk_root))
+    inp = files.texts["orca.inp"]
+    md = inp[inp.index("%md"):]
+    md = md[:md.index("\nend")]
+    assert "   Constraint Add Cartesian 0\n   Constraint Add Cartesian 2\n" in md
+    assert md.index("Constraint Add") < md.index("Run 20")
+    assert "Constraint Add Cartesian" in files.texts["README.txt"]
+    spec.structure.fixed_atoms = []
+    assert "Constraint" not in build_project(spec, cfg_for(sk_root)).texts["orca.inp"]
+
+
+@pytest.mark.parametrize("method,task", [
+    (OrcaMethod(), Task(type="vibrations")),
+    (OrcaMethod(irc=True), Task(type="single_point")),
+])
+def test_orca_rejects_fixed_atoms_where_they_would_be_ignored(sk_root, method, task):
+    spec = water_spec(method=method, task=task)
+    spec.structure.fixed_atoms = [0]
+    with pytest.raises(ProjectError) as ex:
+        build_project(spec, cfg_for(sk_root))
+    assert any(e.location == "structure.fixed_atoms" for e in ex.value.errors)
+    spec.structure.fixed_atoms = []
+    build_project(spec, cfg_for(sk_root))

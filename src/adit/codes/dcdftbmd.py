@@ -17,6 +17,7 @@ from adit.validate_types import ValidationError
 class DcdftbmdGenerator(InputGenerator):
     code = "dcdftbmd"
     uses_kpoints = False  # DCDFTBMD 2.0 manual uses TV vectors, not a k-point mesh
+    supports_analysis = False  # no reader for dftb.out / traject yet
 
     def resolve(self, spec: CalculationSpec, cfg: Config) -> dict[str, Path]:
         m = spec.method

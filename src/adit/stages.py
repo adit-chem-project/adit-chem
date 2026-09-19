@@ -218,13 +218,12 @@ def _top_submit(plan: list[PlannedStage]) -> str:
 
 
 def write_stages(spec: CalculationSpec, cfg, out_dir: Path | str, stages: list[Stage], *, overwrite: bool = False) -> list[Path]:
-    from adit.project import OutputNotEmpty, build_project, write_project
+    from adit.batch import check_output
+    from adit.project import build_project, write_project
 
     out = Path(out_dir).expanduser()
     plan = plan_stages(spec, stages)
-    if out.exists() and any(out.iterdir()) and not overwrite:
-        raise OutputNotEmpty(L(f"出力先 {out} には、すでにファイルがあります。黙って上書きしないよう、何も書かずに止めました。",
-                               f"The output directory {out} already contains files; nothing was written, to avoid overwriting them silently."))
+    check_output(out, overwrite)
     out.mkdir(parents=True, exist_ok=True)
     for p in plan:
         build_project(p.spec, cfg, output_dir=out / p.dir, pre_command=p.pre_command, extra_readme=p.readme)

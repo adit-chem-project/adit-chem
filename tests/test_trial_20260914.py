@@ -94,6 +94,8 @@ def test_help_is_short_and_help_all_is_complete():
     assert len(full.splitlines()) > 150
     assert "--help-all" in short and "--rdf" in short
     assert "--steinhardt" not in short and "--steinhardt" in full
+    assert ("よく使う指定" in short or "Only the common options" in short)
+    assert "よく使う指定" not in full and "Only the common options" not in full
 
 
 def test_the_file_count_message_shows_what_is_in_subdirectories(tmp_path, sk_root, monkeypatch):
