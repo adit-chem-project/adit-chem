@@ -41,6 +41,32 @@ def test_config_roundtrip(tmp_path, monkeypatch, cfg):
         back.profile("nope")
 
 
+def test_save_config_keeps_comments_and_unknown_keys(tmp_path):
+    path = tmp_path / "cluster.toml"
+    path.write_text('# my settings\nsk_root = "/x"  # parameters\nlanguage = "ja"\nmy_note = 1\n\n'
+                    '[extra_table]\nkeep = true\n\n[profiles.local]\nkind = "direct"\ntemplates_dir = "/t"\n\n'
+                    '[profiles.local.env]\nOMP_STACKSIZE = "1G"\n', encoding="utf-8")
+    cfg = load_config(path)
+    assert cfg.unknown_keys == ["extra_table", "my_note", "profiles.local.templates_dir"]
+    cfg.language = "en"
+    cfg.profiles["local"].env = {"OMP_NUM_THREADS": "2"}
+    cfg.profiles["cluster"] = pbs_profile()
+    save_config(cfg, path)
+    text = path.read_text(encoding="utf-8")
+    assert text.startswith('# my settings\nsk_root = "/x"  # parameters\nlanguage = "en"\nmy_note = 1\n')
+    assert "OMP_STACKSIZE" not in text and 'templates_dir = "/t"' in text
+    back = load_config(path)
+    assert back.language == "en" and back.profiles["local"].env == {"OMP_NUM_THREADS": "2"}
+    assert back.profiles["cluster"] == pbs_profile() and back.unknown_keys == cfg.unknown_keys
+    cfg.window_frame = "native"
+    save_config(cfg, path)
+    text = path.read_text(encoding="utf-8")
+    assert text.index('window_frame = "native"') < text.index("[") and load_config(path).window_frame == "native"
+    path.write_text("not = [valid\n", encoding="utf-8")
+    save_config(cfg, path)
+    assert load_config(path).language == "en"
+
+
 def test_config_broken(tmp_path):
     p = tmp_path / "cluster.toml"; p.write_text("profiles = 3\n", encoding="utf-8")
     with pytest.raises(ConfigError):
