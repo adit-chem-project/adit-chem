@@ -5,7 +5,7 @@
 {% macro rsel(name, options, cls="", aria="") -%}<select name="{{ name }}" id="{{ name }}"{% if cls %} class="{{ cls }}"{% endif %}{% if aria %} aria-label="{{ aria }}"{% endif %}>
 {%- for k, v in options %}<option value="{{ k }}"{% if k|string == form.get(name, '')|string %} selected{% endif %}>{{ v }}</option>{% endfor -%}
 </select>{%- endmacro %}
-{% macro rrow(ja, en, for_id, sw="") -%}{% set h = HELP(ja) %}<div class="row{% if sw %} sw{% endif %}"{% if sw %} data-sw="{{ sw }}"{% endif %}><label for="{{ for_id }}"{% if h and h.required %} class="required"{% endif %}{% if h %} title="{{ h.text() }}"{% endif %}>{{ T(ja, en) }}</label><div class="inline">{{ caller() }}</div></div>{%- endmacro %}
+{% macro rrow(ja, en, for_id, sw="") -%}{% set h = HELP(ja) %}<div class="row{% if sw %} sw{% endif %}"{% if sw %} data-sw="{{ sw }}"{% endif %}><label for="{{ for_id }}"{% if h and h.required %} class="required"{% endif %}{% if h %} title="{{ h.text() }}"{% endif %}>{{ T(ja, en) }}{% if h and h.required %}<span class="pill">{{ T("必須", "required") }}</span>{% endif %}</label><div class="inline">{{ caller() }}</div></div>{%- endmacro %}
 {% macro rhint(ja, en, sw="") -%}<div class="row{% if sw %} sw{% endif %}"{% if sw %} data-sw="{{ sw }}"{% endif %}><span></span><div class="hint">{{ T(ja, en) }}</div></div>{%- endmacro %}
 {% macro selection(p) -%}
   {% call rrow("元素 (条件)", "Elements", p ~ "elements") %}{{ rtxt(p ~ "elements", "", ph=T("例: Li (空欄なら全元素)", "e.g. Li (empty = all elements)")) }}{% endcall %}
