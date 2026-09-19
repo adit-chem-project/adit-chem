@@ -34,6 +34,8 @@ class Tokens:
     ng: str
     bg_top: str = ""
     bg_bottom: str = ""
+    # Surfaces are (nearly) opaque so that text contrast does not depend on what lies underneath;
+    # only the ground keeps its gradient. The names are historical.
     glass: str = ""
     glass_field: str = ""
     glass_hover: str = ""
@@ -45,13 +47,13 @@ class Tokens:
 
 LIGHT = Tokens(bg="#EFEFF1", card="#FFFFFF", field="#F4F4F6", line="rgba(0, 0, 0, 30)", fg="#14161B", muted="#4B5260",
                accent="#0A7AFF", accent_hover="#0866D6", ok="#1F7A38", ng="#C8001A",
-               bg_top="#E9E9EC", bg_bottom="#F5F5F7", glass="rgba(255, 255, 255, 158)", glass_field="rgba(255, 255, 255, 190)",
-               glass_hover="rgba(255, 255, 255, 235)", glass_edge="rgba(255, 255, 255, 230)", accent_top="#3A95FF",
+               bg_top="#E9E9EC", bg_bottom="#F5F5F7", glass="rgba(255, 255, 255, 242)", glass_field="rgba(250, 250, 252, 250)",
+               glass_hover="rgba(255, 255, 255, 255)", glass_edge="rgba(255, 255, 255, 230)", accent_top="#3A95FF",
                pill_bg="#E1E3E8", pill_fg="#3B4150")
 DARK = Tokens(bg="#1C1C1E", card="#2C2C2E", field="#3A3A3C", line="rgba(255, 255, 255, 34)", fg="#F0F1F4", muted="#B6B8C2",
               accent="#3D8CFF", accent_hover="#5C9EFF", ok="#5FD07A", ng="#FF6961",
-              bg_top="#1C1C1E", bg_bottom="#2A2A2D", glass="rgba(255, 255, 255, 16)", glass_field="rgba(255, 255, 255, 24)",
-              glass_hover="rgba(255, 255, 255, 40)", glass_edge="rgba(255, 255, 255, 38)", accent_top="#6AA8FF",
+              bg_top="#1C1C1E", bg_bottom="#2A2A2D", glass="rgba(48, 48, 51, 242)", glass_field="rgba(62, 62, 66, 250)",
+              glass_hover="rgba(78, 78, 83, 255)", glass_edge="rgba(255, 255, 255, 38)", accent_top="#6AA8FF",
               pill_bg="#4A4B52", pill_fg="#E8E9EE")
 
 GROUP_COLORS = {"structure": "#0FA3A3", "task": "#F0883E", "method": "#8E5AD6", "kpoints": "#34A853", "runtime": "#5B7DB1", "analysis": "#D6567A"}
