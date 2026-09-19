@@ -123,6 +123,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--hbond", default="", metavar="距離,角度", help=L(
         "水素結合の本数 (例 --hbond 3.5,150)。**距離 [Å] と角度 [度] は必須**で、ADIT は既定値を持ちません",
         "count hydrogen bonds (e.g. --hbond 3.5,150); the distance in Å and the angle in degrees are required, with no defaults"))
+    ap.add_argument("--hbond-lifetime", action="store_true", help=L(
+        "水素結合の寿命: 存在の自己相関 C(τ) を intermittent と continuous の 2 通りで出し、積分と 1/e の時間を表にする (--hbond が要ります)",
+        "hydrogen-bond lifetime: the presence autocorrelation C(tau), intermittent and continuous, with the integral and the 1/e time (needs --hbond)"))
+    ap.add_argument("--hbond-cdf", type=float, default=0.0, metavar="Å", help=L(
+        "D–A 距離 × D–H···A 角の 2 次元分布 (しきい値の候補を見るための図。距離の上限 [Å] を指定。角度は 0〜180 度)",
+        "2D distribution of the D-A distance and the D-H...A angle, for choosing the thresholds (give the upper distance in Å; angles 0-180 deg)"))
     ap.add_argument("--rg", action="store_true", help=L("慣性半径 Rg の時系列", "time series of the radius of gyration"))
     ap.add_argument("--no-effective-mass", action="store_true", help=L(
         "バンドの端の有効質量を出しません (既定はバンド図があれば出します)",
@@ -309,6 +315,9 @@ def main(argv: list[str] | None = None) -> int:
         "(各ディレクトリの出力を読んで band.yaml や C_ij を書くだけで、計算は実行しません)",
         "run the phonon (phonon_collect.py) and elastic (elastic_collect.py) collections here if it has not been done "
         "(it only reads the outputs of each directory and writes band.yaml or C_ij; no calculation is started)"))
+    ap.add_argument("--conformer-temperature", type=float, default=0.0, metavar="K", help=L(
+        "CREST の配座 (crest_conformers.xyz) の Boltzmann の重みを出す温度 [K]。省くと相対エネルギーだけを出し、重みは出しません",
+        "temperature in K for the Boltzmann weights of the CREST conformers (crest_conformers.xyz); without it only relative energies are given"))
     ap.add_argument("--no-compare", action="store_true", help=L(
         "compare.json があっても、組にして比べる表を出しません (既定は、あれば出します)",
         "do not write the comparison table even if compare.json is present (by default it is written when the file exists)"))
@@ -421,7 +430,8 @@ def main(argv: list[str] | None = None) -> int:
                                                       dihedrals=a.dihedral, rmsd_reference=a.rmsd, rmsf=a.rmsf, coordination_cutoff=a.coordination, centrosymmetry_neighbors=a.centrosymmetry,
                                                       steinhardt_cutoff=a.steinhardt, cluster_cutoff=a.clusters,
                                                       adf=a.adf, adf_cutoff=a.adf_cutoff, structure_factor=a.sq,
-                                                      hbond=a.hbond, radius_of_gyration=a.rg, density_grid=a.density_grid,
+                                                      hbond=a.hbond, hbond_lifetime=a.hbond_lifetime, hbond_cdf=a.hbond_cdf,
+                                                      radius_of_gyration=a.rg, density_grid=a.density_grid,
                                                       effective_mass=not a.no_effective_mass,
                                                       effective_mass_points=a.effective_mass_points,
                                                       bader=a.bader, bader_valence=a.bader_valence,
@@ -447,7 +457,8 @@ def main(argv: list[str] | None = None) -> int:
                                                       export=a.export or a.unwrap_molecules, export_unwrap=a.unwrap_molecules,
                                                       memory_budget_mb=a.memory_mb if a.memory_mb else MEMORY_BUDGET_MB,
                                                       thermo=thermo_opts, uvvis_broadening=uv, pdos=a.pdos, symprecs=symprecs,
-                                                      compare=not a.no_compare, collect=a.collect))
+                                                      compare=not a.no_compare, collect=a.collect,
+                                                      conformer_temperature_k=a.conformer_temperature))
     except Exception as ex:
         print(str(ex), file=sys.stderr)
         from adit.results import failure_note

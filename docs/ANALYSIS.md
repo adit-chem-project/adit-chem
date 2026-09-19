@@ -31,7 +31,10 @@ GUI の「解析」タブ、ウェブ版の「解析」ページ、`adit-analyze
 | UV-Vis | ORCA の TD-DFT の吸収の表 | 遷移の表 (uvvis_transitions.csv) と、広げたスペクトル (uvvis.png) |
 | 空間群 | 最終構造 (spglib が入っているとき) | 許容誤差ごとの空間群 |
 | フォノン分散・DOS | phonopy の band.yaml、total_dos.dat | phonon_bands.png、phonon_dos.png |
-| 組にして比べる表 | 複数の計算のディレクトリ | ΣνE、組成の釣り合い、条件が違う項目 (compare_*.csv、compare_energy.png) |
+| 組にして比べる表 | 複数の計算のディレクトリ (それぞれの analysis/thermo.csv があれば熱化学も) | ΣνE、組成の釣り合い、条件が違う項目 (compare_*.csv、compare_energy.png)。各計算に ASE の熱化学の表があれば ΔH・ΔS・ΔG (温度と圧力が揃っているときだけ) |
+| 水素結合の寿命 | MD の軌跡と `--hbond` の距離・角度 | 存在の自己相関 C(τ) (intermittent / continuous)、積分と 1/e の時間 (hbond_lifetime.png / .csv) |
+| 水素結合の距離×角度の分布 | MD の軌跡 (`--hbond-cdf` の距離の上限) | D–A 距離 × D–H···A 角の 2 次元ヒストグラム (hbond_map.png / .csv)。しきい値は決めない |
+| CREST の配座 | crest_conformers.xyz (コメント行の全エネルギー [Eh])、crest.energies、crest.log の最後の表 (縮退度) | 配座ごとの相対エネルギー (kcal/mol、kJ/mol、eV)、縮退度、最低配座との重原子 RMSD。温度を入れたときだけ Boltzmann の重み (crest_conformers.csv、crest_conformers.png) |
 
 `adit-analyze` の主なオプション (`adit-analyze --help-all` に全部):
 
@@ -48,13 +51,79 @@ GUI の「解析」タブ、ウェブ版の「解析」ページ、`adit-analyze
 | `--uvvis SHAPE:FWHM` | ORCA の UV-Vis を広げる形と半値全幅 [eV] (例 `gauss:0.3`) |
 | `--pdos` | PDOS のファイルが無いときも理由を書く (あれば指定しなくても描く) |
 | `--symprec Å[,Å…]` | 空間群の許容誤差 (既定は 1e-5、1e-3、1e-1 を並べる) |
+| `--hbond 3.5,150` | 水素結合の本数 (距離 [Å] と角度 [度] は必須で既定値は無い) |
+| `--hbond-lifetime` | 水素結合の寿命 (存在の自己相関。`--hbond` が要る) |
+| `--hbond-cdf Å` | D–A 距離 × D–H···A 角の 2 次元分布 (距離の上限を渡す) |
+| `--conformer-temperature K` | CREST の配座の Boltzmann の重みを出す温度。省くと相対エネルギーだけを出す (既定の温度は無い) |
 
 ```bash
 adit-analyze out/md --msd --stride 10 --msd-fit 1000 5000 --zdens 0.5
 adit-analyze out/md --export --unwrap-molecules
 adit-analyze out/vib --thermo ideal_gas --temperature 298.15 --pressure 100000 --symmetry-number 2 --geometry nonlinear --spin 0
 adit-analyze runs/ --compare "ads=1:slab_mol,-1:slab,-1:mol"
+adit-analyze out/conformers/crest --conformer-temperature 298.15
 ```
+
+### 水素結合の寿命と、距離 × 角度の分布
+
+`--hbond 距離,角度` で数えた水素結合 (水素 i と受容体 j の組) について、各フレームの存在 h_ij(t) (条件を満たせば 1、
+満たさなければ 0) を追い、`--hbond-lifetime` で次の自己相関を出します (t0 は全フレーム、N(t0) > 0 のものだけで平均)。
+
+    C(τ) = ⟨ Σ_ij h_ij(t0) h_ij(t0+τ) / Σ_ij h_ij(t0) ⟩_t0
+
+- intermittent: 途中で切れて戻った組も t0+τ で数える (h_ij(t0) h_ij(t0+τ) そのまま)
+- continuous: t0 から t0+τ まで 1 度も切れなかった組だけを数える (h_ij(t0) h_ij(t0+1) … h_ij(t0+τ) の積)
+
+定義は MDAnalysis の `HydrogenBondAnalysis.lifetime` と `lib.correlations.autocorrelation`
+(https://docs.mdanalysis.org/stable/documentation_pages/analysis/hydrogenbonds.html: 「S(τ) = ⟨ N(t0, t0+τ) / N(t0) ⟩」、
+「intermittency 0 は continuous」) に合わせ、intermittent は intermittency = ∞ に当たります。
+組は MDAnalysis と同じく水素–受容体の対で区別します。
+寿命として、C(τ) の積分 (τ_max = フレーム数の半分で打ち切り。C が 0 に落ちていなければ下限) と、C が 1/e を切る τ を表に出します。
+指数関数の当てはめはしていません。時間の単位は 1 フレームの時間が分かれば fs、分からなければフレーム。
+メモリはフレーム数 × 組の数 (1 バイトずつ) を先に見積もり、`--memory-mb` の上限を超えたら計算せずに間引きの間隔を示します。
+
+`--hbond-cdf 上限` は、しきい値の根拠を見るための図です。D–H···A の全部の組 (H は 1.3 Å 以内のいちばん近い N / O / F に付く)
+のうち D–A が上限以内のものを、D–A 距離 (0〜上限) × D–H···A 角 (0〜180 度) の 2 次元ヒストグラム (60 × 60 区間) にします。
+密度は面積で割って全体を 1 にした値で、`--hbond` の距離と角度があれば破線で重ねます。しきい値は利用者が決めます。
+
+### 反応式の ΔH・ΔS・ΔG (組にして比べる表)
+
+組にして比べる表は、各計算のディレクトリに `analysis/thermo.csv` (`--thermo` で ASE が書いた熱化学の表。無ければ
+`analysis/summary.json` の `thermo_ase`) があると、係数 ν で次を足し合わせます。
+
+    ΔH = Σ ν_i H_i      ΔS = Σ ν_i S_i      ΔG = Σ ν_i G_i      (H_i = E_i + H補正_i、G_i = E_i + G補正_i、E_i は出力の最終エネルギー)
+
+- 出すのは、組の全部の計算が同じ温度 (と圧力) の行を持つときだけ。揃っていなければ「温度が揃っていません (298.15 / 300)」と書いて値は出しません
+- 理想気体 (`ideal_gas`) は H・S・G。調和・準調和・準 RRHO は H が無いので、ΔS と ΔF (F = U − TS) だけを出し、G の列に F と書きます。
+  理想気体と振動だけのモデルが混ざった組は出しません
+- 列は `compare_reactions.csv` の `thermo_T_K`、`delta_h_ev` / `delta_h_kj_mol`、`delta_s_ev_per_k` / `delta_s_j_mol_k`、
+  `delta_g_ev` / `delta_g_kj_mol`、`delta_g_label` (G か F)、`thermo_note`。温度が複数あるときは `;` で並べます。
+  `compare_summary.json` では反応ごとの `thermo` (温度ごとの辞書の一覧) と `thermo_note`
+- 単位の換算は 1 eV = 96.485332123 kJ/mol = 23.060547830619 kcal/mol、1 eV/K = 96485.33212 J/(mol K)
+- 画面 (デスクトップ版の「組にして比べる…」、ウェブ版の `/compare`) の反応ごとの表にも同じ列が出ます
+
+### CREST の配座の読み方と重み
+
+`adit-gen --conformers` が書いた `crest/run_crest.sh` を実行すると、その場所に CREST の結果ができます。
+そのディレクトリ (か、その親の配座の集合のディレクトリ) を `adit-analyze` に渡すと、次を読みます。
+
+- `crest_conformers.xyz`: 重複を除いた配座。各構造のコメント行が全エネルギー [Eh] (CREST の `cregen.f90` が `f18.8` で書く)
+- `crest.energies`: `番号  E − E(最低) [kcal/mol]` (同じく `cregen.f90`。表の `crest_energies_kcal_mol` 列にそのまま載せる)
+- `crest.log` の最後の表 (`Erel/kcal  Etot  weight/tot  conformer  set  degen`) の `degen` 列: 配座ごとの縮退度 g (回転異性体の数)。
+  表が無ければ全部 1 として、その旨を注に書く
+
+相対エネルギーはコメント行の全エネルギーから出し (無ければ `crest.energies`)、kcal/mol・kJ/mol・eV で並べます。
+RMSD は最も低い配座 (1 番) との重原子の Kabsch 重ね合わせで、対称な原子の並べ替えは考えていません。
+
+温度 T を `--conformer-temperature` (画面では「CREST の配座の重みの温度 [K]」) で入れたときだけ、重みを出します。
+
+    w_i = g_i exp(−ΔE_i / k_B T) / Σ_j g_j exp(−ΔE_j / k_B T)      ΔE_i = E_i − E(最低)、k_B = 8.617333262e-5 eV/K
+
+温度の既定値は置きません (CREST 自身は 298.15 K で `weight/tot` を出しますが、ADIT はその値を写しません)。
+出典: CREST の文書 (https://crest-lab.github.io/crest-docs/page/examples/example_1.html の出力例) と、
+ソースの `src/cregen.f90` (`crest.energies` の書式 `(2x,i0,2x,f12.3)`、コメント行の `(2x,f18.8)`)。
+配座ごとに別のディレクトリで計算した振動や UV-Vis を重み付きで足し合わせる機能はまだありません
+(CREST の配座と ADIT の計算ディレクトリを結ぶ情報が無いため)。
 
 画面では、解析タブ (ウェブ版は解析のページ) の「詳しい条件」を開くと、上のオプションと同じ欄があります (間引き、MSD の当てはめ範囲、
 z 方向の密度分布、時系列の統計、熱化学の各欄、UV-Vis の広げ方、空間群の許容誤差)。熱化学の欄には既定値を入れていません。

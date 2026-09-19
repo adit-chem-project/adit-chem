@@ -50,6 +50,10 @@ def figure_title(name: str) -> str:
         "compare_energy": L("組にした計算のエネルギー差", "Energy differences of the compared runs"),
         "elastic_stress_strain": L("応力と歪み (弾性定数の当てはめ)", "Stress vs. strain (elastic constant fits)"),
         "conformers": L("配座ごとの相対エネルギー", "Relative energy of each conformer"),
+        "crest_conformers": L("CREST の配座の相対エネルギーと重み", "Relative energy and weight of the CREST conformers"),
+        "hbond": L("水素結合の本数の推移", "Hydrogen-bond count"),
+        "hbond_lifetime": L("水素結合の存在の自己相関", "Hydrogen-bond autocorrelation"),
+        "hbond_map": L("水素結合の距離と角度の分布", "Hydrogen-bond distance-angle distribution"),
     }.get(name, name)
 
 
@@ -147,6 +151,9 @@ class AnalysisOptions:
     xrd: str = ""
     xrd_range: tuple[float, float] = (5.0, 90.0)
     xrd_measured: Path | str | None = None
+    conformer_temperature_k: float = 0.0
+    hbond_lifetime: bool = False
+    hbond_cdf: float = 0.0
 
 
 @dataclass
@@ -326,9 +333,11 @@ class AnalysisResult:
             lines.append(L(f"DOS (状態密度): {t['dos']['n_eigen']} 個の固有値", f"DOS (density of states): {t['dos']['n_eigen']} eigenvalues") + ef)
         from adit.analysis import neb as _neb, pdos as _pdos, phonons as _ph, symmetry as _sym, thermo as _th, uvvis as _uv
         from adit.analysis import collections as _coll
+        from adit.analysis import crest as _crest
         for key, fn in (("thermo_ase", _th.summary_lines), ("pdos", _pdos.summary_lines), ("neb", _neb.summary_lines),
                         ("uvvis", _uv.summary_lines), ("spacegroup", _sym.summary_lines), ("phonopy", _ph.summary_lines),
-                        ("phonon_set", _coll.phonon_set_lines), ("elastic", _coll.elastic_lines), ("conformers", _coll.conformer_lines)):
+                        ("phonon_set", _coll.phonon_set_lines), ("elastic", _coll.elastic_lines), ("conformers", _coll.conformer_lines),
+                        ("crest_conformers", _crest.summary_lines)):
             if key in t:
                 lines += fn(t[key])
         if "mlip" in t:
@@ -948,7 +957,8 @@ def run_analysis(run_dir: Path | str, opts: AnalysisOptions | None = None) -> An
                 _add_effective_mass(res, bd, opts)
     _add_electronic_extras(res, run_dir, opts)
     if (opts.coordination_cutoff or opts.centrosymmetry_neighbors or opts.steinhardt_cutoff or opts.cluster_cutoff
-            or opts.adf is not None or opts.hbond or opts.radius_of_gyration or opts.density_grid):
+            or opts.adf is not None or opts.hbond or opts.radius_of_gyration or opts.density_grid or opts.hbond_cdf
+            or opts.hbond_lifetime):
         _add_local_order(res, data, frames, opts, dt_used, save, out)
     if opts.distances or opts.angles or opts.dihedrals or opts.rmsd_reference or opts.rmsf:
         _add_geometry_series(res, data, frames, opts, dt_used, save, out)
@@ -1219,6 +1229,7 @@ def _add_local_order(res: AnalysisResult, data: RunData, frames, opts: AnalysisO
 
     from adit.analysis import local_order as LO
     from adit.analysis.geometry_series import radius_of_gyration
+    from adit.analysis import hbond as HB
     from adit.analysis.hbond import HydrogenBondError, count_series, criteria_note
     from adit.analysis.volumetric import DensityGrid, VolumetricError
 
@@ -1291,6 +1302,13 @@ def _add_local_order(res: AnalysisResult, data: RunData, frames, opts: AnalysisO
                                f"hydrogen bonds (D-A <= {c['donor_acceptor_A']:g} Å, D-H...A >= {c['angle_deg']:g} deg): "
                                f"mean {got['mean']:.2f}" + (f" (sd {got['std']:.2f})" if got["std"] else "")
                                + ". The criteria are the ones you gave. " + criteria_note()))
+            if opts.hbond_lifetime:
+                _add_hbond_lifetime(res, frames, float(distance), float(angle), opts, dt_fs, save, out)
+    elif opts.hbond_lifetime:
+        res.notes.append(L("水素結合の寿命には --hbond の距離と角度が要ります (例 --hbond 3.5,150)",
+                           "the hydrogen-bond lifetime needs the distance and angle of --hbond (e.g. --hbond 3.5,150)"))
+    if opts.hbond_cdf:
+        _add_hbond_map(res, frames, opts, save, out)
     if opts.radius_of_gyration:
         got = radius_of_gyration(frames)
         res.tables["radius_of_gyration"] = got
@@ -1316,6 +1334,75 @@ def _add_local_order(res: AnalysisResult, data: RunData, frames, opts: AnalysisO
                                f"{len(frames)} フレーム)。VMD・VESTA・OVITO で開いてください",
                                f"the 3D number density was written to {path.name} (grid {'x'.join(map(str, shape))}, "
                                f"{len(frames)} frames); open it in VMD, VESTA or OVITO"))
+
+
+def _add_hbond_lifetime(res: AnalysisResult, frames, distance: float, angle: float, opts: AnalysisOptions, dt_fs, save, out: Path) -> None:
+    import matplotlib.pyplot as plt
+
+    from adit.analysis import hbond as HB
+
+    try:
+        t = HB.lifetime(frames, distance, angle, dt_fs=dt_fs, budget_mb=opts.memory_budget_mb)
+    except HB.HydrogenBondError as ex:
+        res.notes.append(str(ex))
+        return
+    t["file"] = str(HB.write_lifetime_csv(t, out / "hbond_lifetime.csv"))
+    res.tables["hbond_lifetime"] = t
+    fig, ax = plt.subplots(figsize=(6, 3.0))
+    ax.plot(t["lag"], t["intermittent"], lw=1.2, label="intermittent")
+    ax.plot(t["lag"], t["continuous"], lw=1.2, label="continuous")
+    ax.axhline(np.exp(-1), color="gray", lw=0.6, ls="--")
+    ax.set_xlabel(f"lag [{t['unit']}]"); ax.set_ylabel("C(τ)"); ax.set_ylim(0, 1.02); ax.legend(fontsize=8); plotstyle.grid(ax)
+    save(fig, "hbond_lifetime")
+    li, lc = t["lifetime_intermittent"], t["lifetime_continuous"]
+    u = t["unit"]
+
+    def txt(x) -> str:
+        return "-" if x is None else f"{x:.4g} {u}"
+
+    res.notes.append(L(f"水素結合の寿命 (τ_max = {t['tau_max']} {u}、{t['n_pairs']} 組): intermittent の積分 {txt(li['integral'])}、1/e {txt(li['one_over_e'])}; "
+                       f"continuous の積分 {txt(lc['integral'])}、1/e {txt(lc['one_over_e'])}。"
+                       + ("" if li["reached_one_over_e"] else "intermittent は τ_max までに 1/e を切っていません (積分は下限)。")
+                       + "定義は summary.json の definition を見てください",
+                       f"hydrogen-bond lifetime (tau_max = {t['tau_max']} {u}, {t['n_pairs']} pairs): intermittent integral {txt(li['integral'])}, 1/e {txt(li['one_over_e'])}; "
+                       f"continuous integral {txt(lc['integral'])}, 1/e {txt(lc['one_over_e'])}. "
+                       + ("" if li["reached_one_over_e"] else "The intermittent C does not fall below 1/e within tau_max (the integral is a lower bound). ")
+                       + "See definition in summary.json"))
+
+
+def _add_hbond_map(res: AnalysisResult, frames, opts: AnalysisOptions, save, out: Path) -> None:
+    import matplotlib.pyplot as plt
+
+    from adit.analysis import hbond as HB
+
+    try:
+        t = HB.distance_angle_map(frames, opts.hbond_cdf)
+    except HB.HydrogenBondError as ex:
+        res.notes.append(str(ex))
+        return
+    d = t.pop("distribution")
+    t["file"] = str(HB.write_map_csv({"distribution": d}, out / "hbond_map.csv"))
+    t.update(distance_centers=[float(x) for x in d.x_centers], angle_centers=[float(y) for y in d.y_centers],
+             counts=[[int(v) for v in row] for row in d.counts])
+    res.tables["hbond_map"] = t
+    fig, ax = plt.subplots(figsize=(5.2, 3.6))
+    im = ax.pcolormesh(d.x_centers, d.y_centers, d.density.T, shading="auto")
+    fig.colorbar(im, ax=ax, label="density [1/(Å deg)]")
+    if opts.hbond:
+        try:
+            dist_s, _, ang_s = opts.hbond.partition(",")
+            ax.axvline(float(dist_s), color="w", lw=0.8, ls="--"); ax.axhline(float(ang_s), color="w", lw=0.8, ls="--")
+        except ValueError:
+            pass
+    ax.set_xlabel("D–A distance [Å]"); ax.set_ylabel("D–H···A angle [deg]")
+    save(fig, "hbond_map")
+    pk = t.get("peak")
+    res.notes.append(L(f"水素結合の距離×角度の分布 (D–A ≤ {t['rmax_A']:g} Å、{t['n_frames']} フレーム、{t['n_points']} 点): "
+                       + (f"いちばん多い区間は {pk['distance_A']:.2f} Å、{pk['angle_deg']:.0f} 度のあたり。" if pk else "点がありません。")
+                       + "しきい値は決めていません",
+                       f"hydrogen-bond distance-angle map (D-A <= {t['rmax_A']:g} Å, {t['n_frames']} frames, {t['n_points']} points): "
+                       + (f"the most populated bin is near {pk['distance_A']:.2f} Å, {pk['angle_deg']:.0f} deg. " if pk else "no points. ")
+                       + "No threshold is chosen"))
 
 
 def _add_fes(res: AnalysisResult, table: dict, opts: AnalysisOptions, save) -> None:
@@ -1993,6 +2080,7 @@ def _add_collections(res: AnalysisResult, run_dir: Path, out: Path, opts: Analys
         res.tables["conformers"] = t
         if t.get("figure"):
             res.figures["conformers"] = t["figure"]
+    _add_crest(res, run_dir, out, opts)
     if opts.compare and (run_dir / coll.COMPARE_FILE).is_file():
         from adit.analysis.compare import CompareError, analyze_compare
         try:
@@ -2005,6 +2093,22 @@ def _add_collections(res: AnalysisResult, run_dir: Path, out: Path, opts: Analys
                                  "partial": c.partial, "files": c.files, "figures": c.figures, "notes": c.notes,
                                  "summary": c.summary_text()}
         res.figures.update(c.figures)
+
+
+def _add_crest(res: AnalysisResult, run_dir: Path, out: Path, opts: AnalysisOptions) -> None:
+    from adit.analysis import crest
+
+    crest_dir = crest.find_crest_dir(run_dir)
+    if crest_dir is None:
+        return
+    try:
+        t = crest.analyze_crest(crest_dir, out, opts.conformer_temperature_k or None)
+    except crest.CrestError as ex:
+        res.notes.append(L(f"CREST の配座を読めません: {ex}", f"cannot read the CREST conformers: {ex}"))
+        return
+    res.tables["crest_conformers"] = t
+    if t.get("figure"):
+        res.figures["crest_conformers"] = t["figure"]
 
 
 XTB_MD_DEFAULTS = {"hmass": "4", "shake": "2", "sccacc": "2.0"}
