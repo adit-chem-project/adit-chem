@@ -65,13 +65,13 @@ def test_web_verify_distinguishes_mapped_pass_from_mismatch(web_crosscode, tmp_p
     make_bundle(bundle)
     before = {p.name: p.read_bytes() for p in bundle.iterdir()}
     page = _post(web_crosscode, "/native_verify", {"verify_project": str(bundle)})
-    assert "対応項目のみの点検結果: 通過" in page and "未確認" in page
+    assert "対応項目のみの点検結果: 問題なし" in page and "未確認" in page
     assert before == {p.name: p.read_bytes() for p in bundle.iterdir()}
 
     incar = bundle / "INCAR"
     incar.write_text(incar.read_text(encoding="utf-8").replace("EDIFF = 1e-08", "EDIFF = 2e-08"), encoding="utf-8")
     page = _post(web_crosscode, "/native_verify", {"verify_project": str(bundle)})
-    assert "対応項目のみの点検結果: 不通過" in page and "method.ediff" in page
+    assert "対応項目のみの点検結果: 問題あり" in page and "method.ediff" in page
 
 
 def test_web_cross_run_audit_is_read_only(web_crosscode, tmp_path, monkeypatch):

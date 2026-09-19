@@ -117,7 +117,7 @@ _EN: dict[str, str] = {
     "分子の箱の一辺 [Å]": "Box edge for a molecule [Å]", "追加の行 (節ごと)": "Extra lines (per section)",
     "(3 方向とも周期なら不要)": "(not needed if periodic in all three directions)",
     "例 PBE、BLYP、PBE0 (CP2K の XC_FUNCTIONAL の名前)": "e.g. PBE, BLYP, PBE0 (a CP2K XC_FUNCTIONAL name)",
-    "[節の道筋] の行のあとに、その節の末尾に足す行 (例\n[FORCE_EVAL/DFT/SCF]\nSCF_GUESS ATOMIC)":
+    "[セクションのパス] の行のあとに、その節の末尾に足す行 (例\n[FORCE_EVAL/DFT/SCF]\nSCF_GUESS ATOMIC)":
         "Lines after a [section path] line are appended to that section (e.g.\n[FORCE_EVAL/DFT/SCF]\nSCF_GUESS ATOMIC)",
     "基底関数と擬ポテンシャルは CP2K の data ディレクトリのファイルから読み、使う項目だけを生成したファイルに写します。data ディレクトリの場所は環境設定 (cp2k_data) に書きます":
         "Basis sets and pseudopotentials are read from the files in the CP2K data directory, and only the entries used are copied into the output. Set the data directory as cp2k_data in the settings",
@@ -149,7 +149,7 @@ _EN: dict[str, str] = {
         "The structure file above (.gro / .pdb) is authoritative. Load the same file in the structure group too (used to check the atom count and for display). Total charge and multiplicity come from the topology and are not used (leave 0 and 1). There are no k-points",
 }
 _EN.update({
-    "溶媒の模型 (--alpb / --gbsa)": "Solvation model (--alpb / --gbsa)", "溶媒の模型 (CPCM / SMD)": "Solvation model (CPCM / SMD)",
+    "溶媒モデル (--alpb / --gbsa)": "Solvation model (--alpb / --gbsa)", "溶媒モデル (CPCM / SMD)": "Solvation model (CPCM / SMD)",
     "溶媒": "Solvent", "なし": "None", "溶媒のパラメータファイル (GBSA)": "Solvation parameter file (GBSA)",
     "空欄なら溶媒なし (param_gbsa_<溶媒>.txt の形のファイル)": "Empty = no solvent (a file like param_gbsa_<solvent>.txt)",
     "溶媒の比誘電率 (SCCS)": "Solvent permittivity (SCCS)",
@@ -159,7 +159,7 @@ _EN.update({
 })
 _EN.update({
     "機械学習ポテンシャル (MACE・CHGNet)": "Machine-learning potential (MACE, CHGNet)",
-    "機械学習ポテンシャルの種類": "Machine-learning potential", "モデル": "Model", "計算に使う装置 (device)": "Device", "数値の精度 (dtype)": "Precision (dtype)",
+    "機械学習ポテンシャルの種類": "Machine-learning potential", "モデル": "Model", "計算に使うデバイス (device)": "Device", "数値の精度 (dtype)": "Precision (dtype)",
     "D3 を足す (mace_mp の dispersion)": "Add D3 (the dispersion option of mace_mp)",
     "空欄ならパッケージの既定のモデル (例 small、medium-mpa-0、またはモデルのファイルのパス)":
         "Empty = the default model of the package (e.g. small, medium-mpa-0, or the path of a model file)",
@@ -318,7 +318,7 @@ _EN.update({
     "条件の表 (CSV)": "Conditions table (CSV)",
     "結果の表 (CSV)": "Results table (CSV)",
     "再現パッケージ (.zip)": "Reproducibility bundle (.zip)",
-    "入力の照合用のハッシュを照合する": "Verify the input fingerprints",
+    "入力のハッシュを照合する": "Verify the input fingerprints",
     "報告を作る": "Build",
 })
 

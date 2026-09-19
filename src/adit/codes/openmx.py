@@ -43,7 +43,7 @@ class OpenmxGenerator(InputGenerator):
                 "this OpenMX generator supports neutral singlets only")))
         if st.fixed_atoms or st.fixed_axes:
             errors.append(ValidationError("structure.fixed_atoms", L(
-                "この OpenMX 生成器は固定原子・固定軸を入力へ写せません",
+                "この OpenMX 生成器は固定原子・固定軸を入力に書けません",
                 "this OpenMX generator cannot write fixed atoms or axes")))
         if st.periodic and not all(st.atoms.pbc):
             errors.append(ValidationError("structure.atoms", L(
@@ -79,7 +79,7 @@ class OpenmxGenerator(InputGenerator):
                     f"explicitly set the number of valence electrons for the {symbol} VPS")))
         if st.periodic and spec.kpoints is not None and any(spec.kpoints.shift):
             errors.append(ValidationError("kpoints.shift", L(
-                "OpenMX のこの生成器では k 点の shift を入力へ写せません",
+                "OpenMX のこの生成器では k 点の shift を入力に書けません",
                 "this OpenMX generator cannot write a shifted k-point mesh")))
         if ((spec.runtime.mpiprocs > 1 or spec.runtime.omp_threads > 1)
                 and spec.runtime.profile in cfg.profiles

@@ -61,7 +61,7 @@ def test_verify_displays_mismatch_and_unverified_without_writing(app, monkeypatc
     dialog.kind.setCurrentIndex(dialog.kind.findData("verify"))
     dialog.verify_dir.setText(str(tmp_path / "generated"))
     dialog.inspect()
-    assert "不通過" in dialog.summary.text()
+    assert "問題あり" in dialog.summary.text()
     assert "kpoints.mesh" in dialog.details.toPlainText()
     assert "runtime.profile" in dialog.details.toPlainText()
     assert list(tmp_path.iterdir()) == []

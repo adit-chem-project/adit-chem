@@ -194,7 +194,7 @@ class SettingsDialog(QDialog):
             "language": (L("表示する言語", "Language"), L("メニューやボタンの言葉です。", "Language of menus and buttons.")),
             "theme": (L("色の組み合わせ", "Theme"), L("明るい画面 (ライト) か暗い画面 (ダーク) か。「システムに従う」なら OS の設定に合わせます。",
                                                    "Light or dark. \"Follow the system\" follows your OS setting.")),
-            "window_frame": (L("ウィンドウの枠", "Window frame"), L("題名の帯とボタンを誰が描くか。表示がおかしいときは「OS に任せる」を試してください。",
+            "window_frame": (L("ウィンドウの枠", "Window frame"), L("タイトルバーとボタンを誰が描くか。表示がおかしいときは「OS に任せる」を試してください。",
                                                                 "Who draws the title bar. Try \"Use the system frame\" if the window looks wrong.")),
         }
         for key, items in _choices().items():

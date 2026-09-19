@@ -33,7 +33,7 @@ def _molecule_errors(spec: CalculationSpec, *, tasks: tuple[str, ...], code: str
             f"この {code} 生成器は分子だけに対応します", f"this {code} generator supports molecules only")))
     if st.fixed_atoms or st.fixed_axes:
         errors.append(ValidationError("structure.fixed_atoms", L(
-            f"この {code} 生成器は固定原子・固定軸を入力へ写せません",
+            f"この {code} 生成器は固定原子・固定軸を入力に書けません",
             f"this {code} generator cannot write fixed atoms or axes")))
     if st.multiplicity != 1:
         errors.append(ValidationError("structure.multiplicity", L(

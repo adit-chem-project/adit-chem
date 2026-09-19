@@ -75,8 +75,8 @@ ADIT は、溶媒・U の値・段階の組み方などを推奨しません。�
 
 | 計算コード | 欄 | 書かれるもの |
 |---|---|---|
-| xtb | 溶媒の模型 (なし / ALPB / GBSA) と溶媒 | `--alpb <溶媒>` / `--gbsa <溶媒>`。溶媒の候補は、模型と計算手法 (GFN1 / GFN2 / GFN-FF) で xtb が受け付ける名前だけ。GFN0-xTB では使えません |
-| ORCA | 溶媒の模型 (なし / CPCM / SMD) と溶媒 | `! CPCM(<溶媒>)` / `! SMD(<溶媒>)`。候補は ORCA 6.1 マニュアルの溶媒の表 |
+| xtb | 溶媒モデル (なし / ALPB / GBSA) と溶媒 | `--alpb <溶媒>` / `--gbsa <溶媒>`。溶媒の候補は、モデルと計算手法 (GFN1 / GFN2 / GFN-FF) で xtb が受け付ける名前だけ。GFN0-xTB では使えません |
+| ORCA | 溶媒モデル (なし / CPCM / SMD) と溶媒 | `! CPCM(<溶媒>)` / `! SMD(<溶媒>)`。候補は ORCA 6.1 マニュアルの溶媒の表 |
 | DFTB+ | 溶媒のパラメータファイル (GBSA) | `Solvation = GeneralisedBorn { ParamFile }`。`param_gbsa_<溶媒>.txt` の形のファイルを指定します。分子 (非周期) だけ |
 | CP2K | 溶媒の比誘電率 (SCCS) | `&SCCS` の `RELATIVE_PERMITTIVITY`。0 なら溶媒なし |
 

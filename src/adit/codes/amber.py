@@ -109,7 +109,7 @@ class AmberGenerator(InputGenerator):
                 "Amber のこの生成器はセルを緩和しません", "this Amber generator cannot relax the cell")))
         if st.fixed_atoms or st.fixed_axes:
             errors.append(ValidationError("structure.fixed_atoms", L(
-                "この Amber 生成器は固定原子・固定軸を入力へ写せません",
+                "この Amber 生成器は固定原子・固定軸を入力に書けません",
                 "this Amber generator cannot write fixed atoms or axes")))
         if st.periodic and not all(st.atoms.pbc):
             errors.append(ValidationError("structure.atoms", L(

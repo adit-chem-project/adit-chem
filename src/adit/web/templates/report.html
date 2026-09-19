@@ -13,7 +13,7 @@
   {% call rrow("rep_results", "rep_results") %}<input type="text" id="rep_results" name="rep_results" value="{{ f.rep_results }}" placeholder="{{ T('空欄なら作りません (例 results.csv)', 'empty = not created (e.g. results.csv)') }}">{% endcall %}
   {% call rrow("rep_bundle", "rep_bundle") %}<input type="text" id="rep_bundle" name="rep_bundle" value="{{ f.rep_bundle }}" placeholder="{{ T('空欄なら作りません (例 pack.zip)', 'empty = not created (e.g. pack.zip)') }}">{% endcall %}
   <div class="row"><label></label><div class="inline">{% set h = hlp("rep_check") %}<label{% if h %} title="{{ h.text() }}"{% endif %}><input type="checkbox" name="rep_check"{% if f.rep_check %} checked{% endif %}> {{ lab("rep_check") }}</label></div></div>
-  <p class="hint">{{ T("コマンドの adit-report と同じものを作ります。判定はしません (照合用のハッシュの照合だけは 一致 / 不一致 / 記録なし を出します)。ファイルの場所は、このサーバーを動かしている機械の中です。",
+  <p class="hint">{{ T("コマンドの adit-report と同じものを作ります。判定はしません (ハッシュの照合だけは 一致 / 不一致 / 記録なし を出します)。ファイルの場所は、このサーバーを動かしている機械の中です。",
                        "This produces the same output as the adit-report command. Nothing is judged (only the fingerprint check reports match / differ / no record). The paths are on the machine running this server.") }}</p>
   <div class="actions"><button type="submit" class="primary">{{ lab("rep_run") }}</button></div>
 </fieldset>
