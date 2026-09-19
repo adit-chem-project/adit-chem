@@ -4,6 +4,7 @@ from __future__ import annotations
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QComboBox, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout, QWidget
 
+from adit.gui.style import NARROW_FIELD
 from adit.lang import L
 from adit.textparse import short_number
 from adit.web.codefields import SHELLS, element_values_from_rows, hubbard_from_rows, hubbard_rows
@@ -48,7 +49,7 @@ class HubbardTable(QWidget):
         ue = QLineEdit(u); ue.setPlaceholderText(L("U [eV] (必須)", "U [eV] (required)"))
         je = QLineEdit(j); je.setPlaceholderText(L("J [eV] (空欄 = 0)", "J [eV] (empty = 0)"))
         for w in (ue, je):
-            w.setMaximumWidth(120); w.textChanged.connect(self._emit)
+            w.setFixedWidth(NARROW_FIELD); w.textChanged.connect(self._emit)
         ec.currentIndexChanged.connect(self._emit); oc.currentTextChanged.connect(self._emit)
         self.rows.append((ec, oc, ue, je))
         self._relayout(); self._emit()
@@ -144,7 +145,7 @@ class ElementValues(QWidget):
         for i, e in enumerate(self.elements):
             r, c = divmod(i, cols)
             lab = QLabel(e); lab.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-            ed = QLineEdit(self._kept.get(e, "")); ed.setPlaceholderText(self.placeholder); ed.setMaximumWidth(110)
+            ed = QLineEdit(self._kept.get(e, "")); ed.setPlaceholderText(self.placeholder); ed.setFixedWidth(NARROW_FIELD)
             ed.setAccessibleName(f"{self.what} {e}")
             ed.textChanged.connect(self._emit)
             self.grid.addWidget(lab, r, 2 * c); self.grid.addWidget(ed, r, 2 * c + 1)

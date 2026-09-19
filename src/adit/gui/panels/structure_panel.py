@@ -22,7 +22,7 @@ from adit.gui import icons
 from adit.gui.i18n import tr
 from adit.gui.panels.mixture_editor import MixtureEditor
 from adit.gui.panels.recipe_editor import Num, RecipeEditor, hint, hrow, spin
-from adit.gui.widgets import SciDoubleSpinBox, add_row, label, limit_combo, narrow
+from adit.gui.widgets import SciDoubleSpinBox, add_row, label, limit_combo, narrow, unit_row
 from adit.spec import AtomsData, Structure
 from adit.textparse import parse_constraints, parse_indices  # noqa: F401  
 from adit.structure import (CRYSTAL_STRUCTURES, SURFACE_FUNCTIONS, StructureError, build_structure, default_bulk,  # noqa: F401
@@ -95,11 +95,7 @@ class StructurePanel(QGroupBox):
         self.bulk_cubic = QCheckBox("立方晶セル")
         self.surf_facet = QComboBox(); self.surf_facet.addItems(SURFACE_FUNCTIONS); self.surf_facet.setCurrentText("fcc111")
         self.surf_el = QComboBox(); self.surf_el.addItems(ELEMENTS); self.surf_el.setCurrentText("Al")
-        self.surf_n = [narrow(QSpinBox()) for _ in range(3)]
-        for w in self.surf_n:
-            w.setMaximumWidth(64)
-        for w, v in zip(self.surf_n, (2, 2, 3)):
-            w.setRange(1, 50); w.setValue(v); w.setMaximumWidth(60)
+        self.surf_n = [spin(1, 50, v, 60) for v in (2, 2, 3)]
         self.surf_vac = narrow(SciDoubleSpinBox(0.0, 100.0, 10.0, 1.0))
         self._build_new_base_widgets()
         self.box = QCheckBox("周期セルに入れる"); self.box.setToolTip("分子を立方体の周期セルに置きます。VASP と pw.x では周期セルが必須です")
@@ -141,7 +137,7 @@ class StructurePanel(QGroupBox):
             row.addWidget(w)
         row.addStretch(); add_row(form, "バルク", row_w)
         row_b2 = QWidget(); row_b2.setObjectName("rowbox"); row = QHBoxLayout(row_b2); row.setContentsMargins(0, 0, 0, 0)
-        for w in (QLabel("a [Å]"), self.bulk_a, self.bulk_cubic):
+        for w in (QLabel("a"), unit_row(self.bulk_a, "Å"), self.bulk_cubic):
             row.addWidget(w)
         row.addStretch(); form.addRow(label(""), row_b2); self._source_rows["bulk"] = [row_w, row_b2]
         row_w = QWidget(); row_w.setObjectName("rowbox"); row = QHBoxLayout(row_w); row.setContentsMargins(0, 0, 0, 0)
@@ -149,7 +145,7 @@ class StructurePanel(QGroupBox):
             row.addWidget(w)
         row.addStretch(); add_row(form, "スラブ", row_w)
         row_w2 = QWidget(); row_w2.setObjectName("rowbox"); row = QHBoxLayout(row_w2); row.setContentsMargins(0, 0, 0, 0)
-        for w in (QLabel("層"), self.surf_n[2], QLabel("真空層 [Å]"), self.surf_vac):
+        for w in (QLabel("層"), self.surf_n[2], QLabel(L("真空層", "vacuum")), unit_row(self.surf_vac, "Å")):
             row.addWidget(w)
         row.addStretch(); form.addRow(label(""), row_w2); self._source_rows["surface"] = [row_w, row_w2]
         form.addRow(self.mixture); self._source_rows["mixture"] = [self.mixture]
@@ -161,7 +157,7 @@ class StructurePanel(QGroupBox):
         self.recipe = RecipeEditor(); form.addRow(self.recipe)
         sub = QLabel("共通設定"); sub.setObjectName("subtitle"); form.addRow(sub)
         row_w = QWidget(); row_w.setObjectName("rowbox"); row = QHBoxLayout(row_w); row.setContentsMargins(0, 0, 0, 0)
-        row.addWidget(self.box); row.addWidget(QLabel("一辺 [Å]")); row.addWidget(self.box_size); row.addStretch()
+        row.addWidget(self.box); row.addWidget(QLabel(L("一辺", "edge"))); row.addWidget(unit_row(self.box_size, "Å")); row.addStretch()
         add_row(form, "周期セルに入れる", row_w); self._box_row = row_w
         self.box.setText("")
         add_row(form, "固定原子", self.fixed)

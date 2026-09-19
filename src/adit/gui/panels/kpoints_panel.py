@@ -21,9 +21,9 @@ class KPointsPanel(QGroupBox):
         self.mode = QComboBox()
         for k, v in MODES.items():
             self.mode.addItem(icons.icon(f"kpoints_{k}"), v, k)
-        self.mesh = [narrow(QSpinBox()) for _ in range(3)]
+        self.mesh = [QSpinBox() for _ in range(3)]
         for w in self.mesh:
-            w.setRange(1, 999); w.setValue(1); w.setMaximumWidth(64)
+            w.setRange(1, 999); w.setValue(1); w.setFixedWidth(64)
         self.shift = QComboBox(); self.shift.addItems(["0", "0.5"])
         self.density = narrow(SciDoubleSpinBox(0.0, 1000, 0.0, 0.5))
         self.info = QLabel(""); self.info.setObjectName("hint")
