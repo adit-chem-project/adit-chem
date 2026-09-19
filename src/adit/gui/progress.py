@@ -16,7 +16,7 @@ PERCENT_AFTER = 10.0   # seconds before a known fraction is shown as a percentag
 
 
 class Job(QObject):
-    """Runs one function on a worker thread; a cancelled or superseded run has its result dropped."""
+    # Runs one function on a worker thread; a cancelled or superseded run has its result dropped.
 
     finished = Signal(object, object)    # result, exception or None
     progress = Signal(int, int, str)
@@ -74,7 +74,7 @@ class Job(QObject):
 
 
 class ProgressStrip(QWidget):
-    """Nothing under 1 s, a looping bar with Cancel from 1 s, a percentage from 10 s when the fraction is known."""
+    # Nothing under 1 s, a looping bar with Cancel from 1 s, a percentage from 10 s when the fraction is known.
 
     cancel_requested = Signal()
 
@@ -164,7 +164,7 @@ class ProgressStrip(QWidget):
 
 
 class EmptyState(QWidget):
-    """Heading + one line + the next action, centred in an area that has nothing to show yet."""
+    # Heading + one line + the next action, centred in an area that has nothing to show yet.
 
     clicked = Signal()
 

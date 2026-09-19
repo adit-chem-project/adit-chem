@@ -1,4 +1,4 @@
-"""Progress reports from long builds and analyses, per thread, so callers need no callback arguments."""
+# Progress reports from long builds and analyses, kept per thread so callers need no callback arguments.
 
 from __future__ import annotations
 
