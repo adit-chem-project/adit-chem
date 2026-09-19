@@ -8,8 +8,9 @@ from dataclasses import dataclass
 from PySide6.QtGui import QFont, QFontDatabase
 from PySide6.QtWidgets import QApplication
 
-LABEL_WIDTH = 164
-NARROW_FIELD = 140
+LABEL_WIDTH = 120       # floor; the widest label of a group sets its column
+NARROW_FIELD = 120      # every numeric field
+LABEL_GAP = 12          # between the label column and the fields
 GROUP_SPACING = 14
 ROW_SPACING = 8
 PANEL_MARGIN = 14
@@ -107,7 +108,9 @@ QLabel#hint {{ color: {t.muted}; font-size: 10pt; }}
 QLabel#status_ok {{ color: {t.ok}; font-weight: 600; }}
 QLabel#status_ng {{ color: {t.ng}; font-weight: 600; }}
 QLabel#title {{ font-weight: 700; font-size: 12.5pt; }}
-QLabel#subtitle {{ font-weight: 700; font-size: 11pt; color: {t.muted}; margin-top: 8px; }}
+/* Sub-headings inside a card are set apart by space above, not by weight */
+QLabel#subtitle {{ font-weight: 500; font-size: 11pt; color: {t.muted}; margin-top: 16px; }}
+QLabel#unit {{ color: {t.muted}; }}
 QLabel#required {{ color: {t.accent}; font-weight: 600; }}
 /* The word next to a required label; the color alone is not enough (also used by links) */
 QLabel#required_pill {{ background: {t.pill_bg}; color: {t.pill_fg}; border-radius: 9px; font-size: 8.5pt; font-weight: 600; }}
@@ -116,8 +119,8 @@ QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox, QPlainTextEdit, QTextEdit {{
     background: {t.glass_field};
     border: 1px solid {t.line};
     border-radius: {rs}px;
-    padding: 1px 8px;
-    min-height: 18px;
+    padding: 3px 8px;
+    min-height: 24px;
     selection-background-color: {t.accent};
 }}
 QPlainTextEdit, QTextEdit {{ padding: 8px 10px; }}
@@ -140,8 +143,8 @@ QPushButton {{
     background: {t.glass_field};
     border: 1px solid {t.line};
     border-radius: {rs}px;
-    padding: 4px 14px;
-    min-height: 18px;
+    padding: 3px 14px;
+    min-height: 24px;
     font-weight: 500;
 }}
 QPushButton:hover {{ background: {t.glass_hover}; border: 1px solid {t.glass_edge}; }}
@@ -157,7 +160,7 @@ QPushButton#primary {{
 QPushButton#primary:hover {{ background: {t.accent_hover}; }}
 QPushButton#primary:disabled {{ background: {t.glass_field}; color: {t.muted}; border: 1px solid {t.line}; }}
 QPushButton#cell_button {{ padding: 2px 6px; min-height: 20px; }}
-QTableWidget QSpinBox, QTableWidget QComboBox, QTableWidget QLineEdit {{ padding: 1px 6px; }}
+QTableWidget QSpinBox, QTableWidget QComboBox, QTableWidget QLineEdit {{ padding: 1px 6px; min-height: 18px; }}
 QPushButton#link, QPushButton#gen_hint {{ border: none; background: transparent; color: {t.accent}; padding: 2px 6px; }}
 /* Underlined so that a link-style button is not mistaken for a required label */
 QPushButton#link {{ text-decoration: underline; }}

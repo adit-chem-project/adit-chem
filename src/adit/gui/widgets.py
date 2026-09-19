@@ -7,7 +7,7 @@ from PySide6.QtCore import QEvent, QObject, Qt
 from PySide6.QtGui import QFont, QFontMetrics, QValidator
 from PySide6.QtWidgets import QApplication, QComboBox, QDoubleSpinBox, QFormLayout, QLabel, QWidget
 
-from adit.gui.style import LABEL_WIDTH, NARROW_FIELD
+from adit.gui.style import LABEL_GAP, LABEL_WIDTH, NARROW_FIELD
 
 _SCI = re.compile(r"^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$")
 _PARTIAL = re.compile(r"^[+-]?(\d*\.?\d*)([eE][+-]?\d*)?$")
@@ -98,6 +98,7 @@ def label(text: str, *, required: bool | None = None, help_text: str | None = No
 
 def add_row(form: QFormLayout, text: str, field, *, required: bool | None = None, help_text: str | None = None) -> None:
     form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
+    form.setHorizontalSpacing(LABEL_GAP)
     lab = label(text, required=required, help_text=help_text)
     if lab.toolTip() and isinstance(field, QWidget):
         field.setToolTip(lab.toolTip()); field.setStatusTip(lab.toolTip())
@@ -128,8 +129,20 @@ def file_row(edit, title: str, filters: str = "", *, append: bool = False) -> QW
 
 
 def narrow(w: QWidget) -> QWidget:
-    w.setMaximumWidth(NARROW_FIELD)
+    w.setFixedWidth(NARROW_FIELD)
     return w
+
+
+def unit_row(field: QWidget, unit: str) -> QWidget:
+    """A fixed-width numeric field followed by its unit in gray."""
+    from PySide6.QtWidgets import QHBoxLayout
+
+    narrow(field)
+    row = QWidget(); row.setObjectName("rowbox")
+    h = QHBoxLayout(row); h.setContentsMargins(0, 0, 0, 0); h.setSpacing(6)
+    u = QLabel(unit); u.setObjectName("unit")
+    h.addWidget(field); h.addWidget(u); h.addStretch(1)
+    return row
 
 
 POPUP_ROWS = 12
