@@ -385,7 +385,7 @@ def _main(argv: list[str]) -> int:
     import argparse
     import json
 
-    ap = argparse.ArgumentParser(prog="handoff.py", description="前の段階の最終構造 (と速度) を、この段階の入力に入れる (adit が生成)")
+    ap = argparse.ArgumentParser(prog="handoff.py", description="前の段階の最終構造 (と速度) を、この段階の入力に入れる (ADIT が生成)")
     ap.add_argument("code")
     ap.add_argument("previous_dir")
     ap.add_argument("previous_task")

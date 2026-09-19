@@ -89,7 +89,7 @@ class GaussianGenerator(InputGenerator):
     def validate(self, spec: CalculationSpec, cfg: Config) -> list[ValidationError]:
         m = spec.method
         if not isinstance(m, GaussianMethod):
-            return [ValidationError("method.code", L("Gaussian の条件ではありません", "not a Gaussian method"))]
+            return [ValidationError("method.code", L("Gaussian の条件ではありません", "the settings are not for Gaussian"))]
         errors = _molecule_errors(spec, tasks=("single_point",), code="Gaussian")
         errors += _word_error(m.theory, "method.theory", L("手法", "method"))
         errors += _word_error(m.basis, "method.basis", L("基底関数", "basis set"))
@@ -222,7 +222,7 @@ class GrrmGenerator(InputGenerator):
     def validate(self, spec: CalculationSpec, cfg: Config) -> list[ValidationError]:
         m = spec.method
         if not isinstance(m, GrrmMethod):
-            return [ValidationError("method.code", L("GRRM17 の条件ではありません", "not a GRRM17 method"))]
+            return [ValidationError("method.code", L("GRRM17 の条件ではありません", "the settings are not for GRRM17"))]
         errors = _molecule_errors(spec, tasks=("geometry_optimization", "vibrations"), code="GRRM17")
         if spec.task.type == "geometry_optimization" and spec.task.relax_cell != "no":
             errors.append(ValidationError("task.relax_cell", L("GRRM17 のこの生成器はセルを緩和しません", "this GRRM17 generator cannot relax a cell")))

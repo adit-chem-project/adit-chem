@@ -500,7 +500,7 @@ def provenance_summary(prov: dict | None) -> tuple[str, list[str]]:
     if not prov:
         return "", []
     head = L(f"作成時の記録: ADIT {prov.get('adit_version')} / Python {prov.get('python')} / ASE {prov.get('ase')}",
-             f"Provenance: adit {prov.get('adit_version')} / Python {prov.get('python')} / ASE {prov.get('ase')}")
+             f"Provenance: ADIT {prov.get('adit_version')} / Python {prov.get('python')} / ASE {prov.get('ase')}")
     files = list(prov.get("files") or []) + list(prov.get("generated_files") or [])
     if files:
         head += L(f"、ファイルの SHA-256 {len(files)} 件", f", SHA-256 of {len(files)} files")

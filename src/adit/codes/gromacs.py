@@ -171,7 +171,7 @@ class GromacsGenerator(InputGenerator):
                 errs.append(ValidationError("method.rcoulomb_nm", L(
                     f"近傍リストの半径 {rl:.4g} nm (カットオフ {rc:g} nm{' の 1.05 倍' if rl != rc else ''}) が箱の短い辺 ({min(box):g} nm) の半分以上です。"
                     "grompp が止まります (カットオフを短くするか、箱を大きくしてください)",
-                    f"the neighbour-list radius {rl:.4g} nm (cut-off {rc:g} nm{' x 1.05' if rl != rc else ''}) is at least half the shortest box edge "
+                    f"the neighbor-list radius {rl:.4g} nm (cut-off {rc:g} nm{' x 1.05' if rl != rc else ''}) is at least half the shortest box edge "
                     f"({min(box):g} nm); grompp stops (shorten the cut-off or enlarge the box)")))
             n = _gro_atom_count(conf)
             if n is not None and n != len(st.atoms.symbols):
@@ -271,7 +271,7 @@ class GromacsGenerator(InputGenerator):
             files.append(L(f"                GROMACS に付いている力場から読むもの: {', '.join(from_lib)}", f"                read from the force fields bundled with GROMACS: {', '.join(from_lib)}"))
         if m.checkpoint_file.strip():
             files.append(L(f"  prev.cpt      前の段階のチェックポイント ({Path(m.checkpoint_file).name} を写したもの。速度と圧力浴・熱浴の状態を引き継ぎます)",
-                           f"  prev.cpt      state of the previous stage (a copy of {Path(m.checkpoint_file).name}; carries over velocities and the barostat)"))
+                           f"  prev.cpt      state of the previous stage (a copy of {Path(m.checkpoint_file).name}; carries over velocities and the thermostat and barostat state)"))
         files.append(L("                submit.sh が gmx grompp (設定とトポロジーをまとめて adit.tpr にする) → gmx mdrun (計算) の順に実行します",
                        "                submit.sh runs gmx grompp (combines settings and topology into adit.tpr), then gmx mdrun (the calculation)"))
         out = [L("  grompp.log    gmx grompp の出力 (トポロジーの誤りや注意はここに出ます)", "  grompp.log    output of gmx grompp (topology errors and notes appear here)"),
@@ -300,7 +300,7 @@ class GromacsGenerator(InputGenerator):
     # ---- mdp ----
     def mdp(self, spec: CalculationSpec) -> str:
         m, t = spec.method, spec.task
-        lines = ["; adit が生成した GROMACS の mdp (項目は https://manual.gromacs.org/current/user-guide/mdp-options.html で確かめたもの)"]
+        lines = ["; ADIT が生成した GROMACS の mdp (項目は https://manual.gromacs.org/current/user-guide/mdp-options.html で確かめたもの)"]
         opts: dict[str, str] = {}
         if t.type == "geometry_optimization":
             opts["integrator"] = "l-bfgs" if t.optimizer == "LBFGS" else "steep"

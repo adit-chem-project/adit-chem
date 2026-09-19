@@ -570,7 +570,7 @@ def fill_count(step: SolventLayer, row: int, conc: float, area: float | None) ->
             n = counts[row] = new
         if n < 1:
             return step, L(f"帯の体積 {v:.0f} Å³ では {conc:g} mol/L は 1 個未満です。成分を増やすか濃度を上げてください",
-                           f"{conc:g} mol/L is less than one ion in a band of {v:.0f} Å³; add more solvent or raise the concentration"), False
+                           f"{conc:g} mol/L is less than one ion in a band of {v:.0f} Å³; add more components or raise the concentration"), False
         actual = salt_count(conc, v)[1]
     except Exception as ex:
         return step, str(ex), False

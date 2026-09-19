@@ -23,7 +23,7 @@ MACE_LAMMPS_DOC = "https://mace-docs.readthedocs.io/en/latest/guide/lammps.html"
 CHGNET_URL = "https://github.com/CederGroupHub/chgnet"
 
 SCRIPT = r'''#!/usr/bin/env python3
-"""adit が生成: 機械学習ポテンシャル (ASE の calculator) で 1 つの計算を実行する。設定の値は mlip_settings.json にある。
+"""ADIT が生成: 機械学習ポテンシャル (ASE の calculator) で 1 つの計算を実行する。設定の値は mlip_settings.json にある。
 実行する環境に ase と、選んだモデルのパッケージ (mace-torch か chgnet。どちらも PyTorch を使う) が要る。ADIT は要らない。
 結果: results.json (エネルギー [eV]、力の最大値 [eV/Å]、応力 [eV/Å³]、振動数 [cm^-1])、final.extxyz (最後の構造)、
       trajectory.extxyz (最適化の各ステップ / MD の dump の間隔ごとの構造)、opt.log / md.log。"""
@@ -289,7 +289,7 @@ class MlipGenerator(InputGenerator):
             prep += [L(f"  モデル: chgnet のバージョンごとの既定 (使ったバージョンは output.log の adit-mlip: の行)。chgnet のライセンスは配布元 ({CHGNET_URL}) の LICENSE を見てください。",
                        f"  Model: the default of the installed chgnet version (on the adit-mlip: line of output.log). See the LICENSE at {CHGNET_URL}.")]
         prep += [L("  同じ MACE のモデルを LAMMPS で使うには (ADIT の LAMMPS の生成器の欄で書けます):",
-                   "  To use the same MACE model in LAMMPS (the adit LAMMPS generator has fields for this):"),
+                   "  To use the same MACE model in LAMMPS (the ADIT LAMMPS generator has fields for this):"),
                  L(f"    1. mace の create_lammps_model.py でモデルを LAMMPS 用 (*.model-lammps.pt) に変換します ({MACE_LAMMPS_DOC})",
                    f"    1. convert the model for LAMMPS (*.model-lammps.pt) with mace's create_lammps_model.py ({MACE_LAMMPS_DOC})"),
                  L("    2. LAMMPS の生成器で units = metal、atom_style = atomic、pair_style = mace no_domain_decomposition、",

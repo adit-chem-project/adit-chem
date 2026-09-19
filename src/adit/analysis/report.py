@@ -641,7 +641,7 @@ def run_analysis(run_dir: Path | str, opts: AnalysisOptions | None = None) -> An
                 "別の rmax や別の計算の g(r) とは比べられません。rmax に依らない量は rdf.json の density [Å⁻³] と n(r) です (周期系はセルの体積で規格化するので rmax に依りません)",
                 f"g(r) normalization: this system is not periodic, so the volume of a sphere of rmax = {rmax:.2f} Å (V = {v:.1f} Å³) is used. The absolute "
                 "value of g(r) changes with rmax, so it cannot be compared with a g(r) from another rmax or another run; the rmax-independent quantities "
-                "are density [Å⁻³] and n(r) in rdf.json (periodic systems are normalised by the cell volume and do not depend on rmax)"))
+                "are density [Å⁻³] and n(r) in rdf.json (periodic systems are normalized by the cell volume and do not depend on rmax)"))
         if rmax < opts.rdf_rmax:
             res.notes.append(L(f"RDF はセルの幅の半分 ({rmax:.2f} Å) までしか数えられません (周期境界の最小像のため。指定は {opts.rdf_rmax:.1f} Å)",
                                f"the RDF can only be counted up to half the cell width ({rmax:.2f} Å) because of the minimum-image convention (requested {opts.rdf_rmax:.1f} Å)"))
@@ -1239,7 +1239,7 @@ def _add_local_order(res: AnalysisResult, data: RunData, frames, opts: AnalysisO
             values = np.array(got["centrosymmetry_A2"], dtype=float)
             res.notes.append(L(f"中心対称性パラメータ (相手 {got['n_neighbors']} 個): 最小 {np.nanmin(values):.4g}、"
                                f"最大 {np.nanmax(values):.4g} Å² (どこからを欠陥と呼ぶかは判定していません)",
-                               f"centrosymmetry parameter ({got['n_neighbors']} neighbours): min {np.nanmin(values):.4g}, "
+                               f"centrosymmetry parameter ({got['n_neighbors']} neighbors): min {np.nanmin(values):.4g}, "
                                f"max {np.nanmax(values):.4g} Å² (no threshold for calling an atom a defect)"))
         if opts.steinhardt_cutoff:
             got = LO.steinhardt(last, opts.steinhardt_cutoff)
@@ -1431,7 +1431,7 @@ def _add_structure_extras(res: AnalysisResult, data: RunData, frames, opts: Anal
                 ok = ls.neighbors >= 3
                 if not ok.any():
                     res.notes.append(L(f"カットオフ {opts.strain_cutoff:g} Å の中に近傍が 3 個以上ある原子がありません",
-                                       f"no atom has three or more neighbours within {opts.strain_cutoff:g} Å"))
+                                       f"no atom has three or more neighbors within {opts.strain_cutoff:g} Å"))
                 else:
                     res.tables["local_strain"] = {
                         "cutoff_ang": opts.strain_cutoff,
@@ -1443,7 +1443,7 @@ def _add_structure_extras(res: AnalysisResult, data: RunData, frames, opts: Anal
                         f"体積ひずみ 平均 {ls.volumetric[ok].mean():+.5f}、せん断 平均 {ls.shear[ok].mean():.5f}・"
                         f"最大 {ls.shear[ok].max():.5f}、当てはめの残差 平均 {ls.residual[ok].mean():.4f} Å",
                         f"local strain (cutoff {opts.strain_cutoff:g} Å, {int(ok.sum())} atoms with three or more "
-                        f"neighbours): volumetric mean {ls.volumetric[ok].mean():+.5f}, shear mean "
+                        f"neighbors): volumetric mean {ls.volumetric[ok].mean():+.5f}, shear mean "
                         f"{ls.shear[ok].mean():.5f} and max {ls.shear[ok].max():.5f}, fit residual "
                         f"{ls.residual[ok].mean():.4f} Å"))
     if opts.voronoi:
@@ -2065,7 +2065,7 @@ def _vibration_note(data: RunData, spec) -> str:
 _ANALYZE_JA = '''#!/usr/bin/env python
 """adit が生成した解析スクリプト。このディレクトリの計算結果を読み、analysis/ に図 (PNG) と summary.txt を書く。
 使い方:  python analyze.py [--rdf] [--msd [元素]] [--dos] [--zdens] [--export] [--skip N] [--stride N] [--rmax R] [--sigma S]
-adit が入った Python 環境で実行する (pip install adit)。"""
+ADIT が入った Python 環境で実行する (pip install adit)。"""
 import argparse
 from pathlib import Path
 

@@ -262,7 +262,7 @@ def parameter_notes(report: RunReport) -> list[str]:
     if spec.method.code == "dftbplus":
         out.append(L("Slater-Koster のパラメータに交換相関汎関数の記載はありません (DFTB のパラメータ化そのものが近似です)。"
                      "使ったセットの名前と照合用のハッシュは上の表にあります。",
-                     "Slater-Koster parameters record no exchange-correlation functional (the parameterisation itself is the "
+                     "Slater-Koster parameters record no exchange-correlation functional (the parameterization itself is the "
                      "approximation); the set name and fingerprints are in the table above."))
     return out
 
@@ -408,7 +408,7 @@ def methods_section(reports: list[RunReport]) -> list[str]:
         if rows:
             lines += [L("### 条件 (spec.json に記録された値)", "### Settings (as recorded in spec.json)"), ""]
             lines += _table((L("項目", "Field"), L("値", "Value"), L("単位", "Unit")), rows)
-            lines += [L("空欄の項目と、値が 0 の方法の欄 (この案件では「指定しない」の意味) は出していません。"
+            lines += [L("空欄の項目と、値が 0 の方法の欄 (ADIT では「指定しない」の意味) は出していません。"
                         "**この表は `spec.json` の記録であって、計算コードの入力に実際に書かれたかは別です** "
                         "(共通の欄には、そのコードへ写されないものがあります)。実際に書かれた項目だけを照合するには "
                         "`adit-convert verify <ディレクトリ>` を使ってください "

@@ -32,7 +32,7 @@ class OpenmxGenerator(InputGenerator):
     def validate(self, spec: CalculationSpec, cfg: Config) -> list[ValidationError]:
         m, st = spec.method, spec.structure
         if not isinstance(m, OpenmxMethod):
-            return [ValidationError("method.code", L("OpenMX の条件ではありません", "not an OpenMX method"))]
+            return [ValidationError("method.code", L("OpenMX の条件ではありません", "the settings are not for OpenMX"))]
         errors: list[ValidationError] = []
         if spec.task.type != "single_point":
             errors.append(ValidationError("task.type", L(

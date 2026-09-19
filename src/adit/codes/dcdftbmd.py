@@ -26,7 +26,7 @@ class DcdftbmdGenerator(InputGenerator):
     def validate(self, spec: CalculationSpec, cfg: Config) -> list[ValidationError]:
         m, st, t = spec.method, spec.structure, spec.task
         if not isinstance(m, DcdftbmdMethod):
-            return [ValidationError("method.code", L("DCDFTBMD の条件ではありません", "not a DCDFTBMD method"))]
+            return [ValidationError("method.code", L("DCDFTBMD の条件ではありません", "the settings are not for DCDFTBMD"))]
         errs = []
         if m.scc is None or m.divide_and_conquer is None:
             errs.append(ValidationError("method.scc", L("SCC と分割統治法 (divide_and_conquer) を明示してください", "set both SCC and divide_and_conquer explicitly")))

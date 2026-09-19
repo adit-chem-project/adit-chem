@@ -79,7 +79,7 @@ class StructurePanel(QGroupBox):
         for name in self._preset_names:
             self.preset.addItem(pretty_formula(name), name)
         self.preset.setCurrentIndex(max(0, self.preset.findData("H2O")))
-        self.preset_search = QLineEdit(); self.preset_search.setPlaceholderText(L("式・英語名・日本語名で絞り込み", "Filter by formula or name"))
+        self.preset_search = QLineEdit(); self.preset_search.setPlaceholderText(L("式・英語名・日本語名で絞り込み", "Filter by formula, English name or Japanese name"))
         self.preset_search.setClearButtonEnabled(True)
         self.smiles = QLineEdit()
         self.smiles.setPlaceholderText("例 CCO")

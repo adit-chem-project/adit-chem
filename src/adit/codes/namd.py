@@ -62,7 +62,7 @@ class NamdGenerator(InputGenerator):
     def validate(self, spec: CalculationSpec, cfg: Config) -> list[ValidationError]:
         m, st, task = spec.method, spec.structure, spec.task
         if not isinstance(m, NamdMethod):
-            return [ValidationError("method.code", L("NAMD の条件ではありません", "not a NAMD method"))]
+            return [ValidationError("method.code", L("NAMD の条件ではありません", "the settings are not for NAMD"))]
         errors: list[ValidationError] = []
         if task.type != "molecular_dynamics" or task.md.ensemble != "NVE":
             errors.append(ValidationError("task.type", L(

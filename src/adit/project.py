@@ -423,7 +423,7 @@ def _readme(spec: CalculationSpec, profile, notes: ReadmeNotes, output_dir: Path
         lines += [
             L(f"     計算の記録は output.log、submit.sh 自体のエラー (module が読めない等) は {joblog} に書かれます",
               f"     the calculation log is output.log; errors of submit.sh itself (e.g. a module that fails to load) go to {joblog}"),
-            L(f"     リソース: ノード数 {r.nodes}、ノードあたりのコア数 {r.ncpus}、MPI プロセス数 {r.mpiprocs}、OpenMP スレッド数 {r.omp_threads}、制限時間 {r.walltime}",
+            L(f"     リソース: ノード数 {r.nodes}、ノードあたりのコア数 {r.ncpus}、ノードあたりの MPI プロセス数 {r.mpiprocs}、OpenMP スレッド数 {r.omp_threads}、制限時間 {r.walltime}",
               f"     Resources: nodes {r.nodes}, cores/node {r.ncpus}, MPI processes/node {r.mpiprocs}, OpenMP threads {r.omp_threads}, walltime {r.walltime}"),
         ]
     lines += [

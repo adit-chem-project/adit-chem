@@ -107,9 +107,9 @@ def readme_lines(spec: CalculationSpec) -> list[str]:
     code = spec.method.code
     how = {"lammps": L("LAMMPS は PLUMED パッケージを入れてビルドしたものが要ります (fix plumed)。",
                        "LAMMPS must be built with the PLUMED package (fix plumed)."),
-           "gromacs": L("GROMACS は PLUMED を使えるビルドが要ります (mdrun -plumed)。手元の GROMACS 2026.3 では、-plumed があっても "
-                        "実行時に環境変数 PLUMED_KERNEL が libplumedKernel.so を指していないと「not available」で止まりました。",
-                        "GROMACS must support PLUMED (mdrun -plumed). With GROMACS 2026.3 here, having -plumed was not enough: "
+           "gromacs": L("GROMACS は PLUMED を使えるビルドが要ります (mdrun -plumed)。GROMACS 2026.3 では、-plumed があっても "
+                        "実行時に環境変数 PLUMED_KERNEL が libplumedKernel.so を指していないと「not available」で止まることがあります。",
+                        "GROMACS must support PLUMED (mdrun -plumed). With GROMACS 2026.3, having -plumed may not be enough: "
                         "it stopped with 'not available' unless the PLUMED_KERNEL environment variable pointed at libplumedKernel.so."),
            "openmm": L("実行する環境に openmm-plumed が要ります (conda install -c conda-forge openmm-plumed)。",
                        "the environment needs openmm-plumed (conda install -c conda-forge openmm-plumed).")}.get(code, "")
@@ -132,5 +132,5 @@ def output_lines(spec: CalculationSpec) -> list[str]:
         lines.append(L(f"  {PLUMED_LOG}   PLUMED 自身のログ (fix plumed の outfile)",
                        f"  {PLUMED_LOG}   the PLUMED log (outfile of fix plumed)"))
     lines.append(L("  ADIT の解析は、PLUMED の COLVAR 形式のファイル (先頭が #! FIELDS) があれば、その列を読んで要約に入れます。",
-                   "  adit's analysis reads any PLUMED COLVAR-format file (starting with #! FIELDS) and lists its columns in the summary."))
+                   "  ADIT's analysis reads any PLUMED COLVAR-format file (starting with #! FIELDS) and lists its columns in the summary."))
     return lines

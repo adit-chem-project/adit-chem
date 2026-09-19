@@ -36,7 +36,7 @@ class NwchemGenerator(InputGenerator):
     def validate(self, spec: CalculationSpec, cfg: Config) -> list[ValidationError]:
         m, st, task = spec.method, spec.structure, spec.task
         if not isinstance(m, NwchemMethod):
-            return [ValidationError("method.code", L("NWChem の条件ではありません", "not a NWChem method"))]
+            return [ValidationError("method.code", L("NWChem の条件ではありません", "the settings are not for NWChem"))]
         errors: list[ValidationError] = []
         if st.periodic or any(st.atoms.pbc):
             errors.append(ValidationError("structure.atoms", L("この NWChem 生成器は分子の計算だけに対応します", "this NWChem generator supports molecular calculations only")))
