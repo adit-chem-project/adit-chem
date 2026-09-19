@@ -12,7 +12,7 @@ LANGUAGE = "ja"
 _EN: dict[str, str] = {
     "構造": "Structure", "プリセット": "Preset", "ファイル": "File", "バルク": "Bulk", "スラブ": "Slab",
     "3D 構造を生成": "Build 3D structure", "参照…": "Browse…", "全電荷": "Total charge", "スピン多重度": "Spin multiplicity",
-    "固定原子": "Fixed atoms", "立方晶セル": "Cubic cell", "層": "layers", "真空層 [Å]": "Vacuum [Å]",
+    "固定原子": "Fixed atoms", "立方晶セル": "Cubic cell", "層": "layers", "真空層": "vacuum",
     "周期セルに入れる": "Put in a periodic cell", "分子を立方体の周期セルに置きます。VASP と pw.x では周期セルが必須です": "Place the molecule in a cubic periodic cell. VASP and pw.x require a periodic cell", "一辺 [Å]": "edge [Å]",
     "ase gui で構造を確認": "View structure with ase gui", "例 CCO": "e.g. CCO",
     "1 始まりの番号 (例 1-4,7)。軸を指定するなら 7:xy (x, y を固定)。空欄なら全原子を動かします":
@@ -68,7 +68,6 @@ _EN: dict[str, str] = {
     "密度から自動 [g/cm³]": "From density [g/cm³]", "一辺を指定 [Å]": "Edge [Å]", "セル": "Box", "分子間の最短距離 [Å]": "Min. distance [Å]",
     "Draw: 分子を描いて SMILES にします (RDKit が要ります)": "Draw: sketch the molecule and turn it into SMILES (needs RDKit)", "構造の作り方": "Source", "共通設定": "Common settings", "環境設定…": "Preferences…",
     "元に戻す (1 つ前の設定)": "Undo (previous settings)", "やり直す": "Redo", "環境設定ファイル (cluster.toml) を編集": "Open and edit the settings file (cluster.toml)",
-    "青字は必須項目です。ラベルにカーソルを合わせると説明が表示されます": "Blue labels are required. Hover a label for an explanation",
     "左ドラッグで回転、ホイールで拡大縮小、右ドラッグで移動、ダブルクリックでリセット": "Left-drag to rotate, wheel to zoom, right-drag to pan, double-click to reset",
     "分子系 (非周期) では使いません": "Not used for molecules", "生成ファイル": "Generated files", "実行": "Run",
     "この PC で実行": "Run on this PC", "視点": "Viewpoint", "繰り返し数": "Repeat", "ASE GUI で開く": "Open in ASE GUI", "斜め": "oblique", "z 軸から": "along z",
