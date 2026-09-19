@@ -208,10 +208,10 @@ class DensityGrid:
         voxel = abs(float(np.linalg.det(self.cell))) / float(np.prod(self.shape))
         values = self.counts / (self.n_frames * voxel)
         return {"values": values, "shape": self.shape, "n_frames": self.n_frames, "voxel_A3": voxel,
-                "note": L("軌跡を通した数密度 [Å⁻³] です。分割数は利用者の指定で、等値面は描きません "
-                          "(cube に書き出して VMD・VESTA・OVITO で見てください)。",
-                          "number density in Å⁻³ accumulated over the trajectory; the grid is yours and no isosurface "
-                          "is drawn (write a cube file and view it in VMD, VESTA or OVITO).")}
+                "note": L("軌跡を通した数密度 [Å⁻³] です。分割数は利用者の指定です。cube に書き出すと、解析タブの「等値面」の枠や "
+                          "VMD・VESTA・OVITO で等値面を見られます。",
+                          "number density in Å⁻³ accumulated over the trajectory; the grid is yours. Written as a cube file, "
+                          "the Isosurface box of the analysis tab, VMD, VESTA or OVITO can draw its isosurface.")}
 
     def write_cube(self, path, comment: str = "") -> "Path":
         from ase.io.cube import write_cube
