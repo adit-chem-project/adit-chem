@@ -43,6 +43,7 @@ class Editor(QPlainTextEdit):
         self.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
         self.path: Path | None = None
         self._dirty = False
+        self._newline = "\n"
         self.textChanged.connect(self._on_changed)
 
     def _on_changed(self) -> None:
@@ -56,26 +57,49 @@ class Editor(QPlainTextEdit):
 
     def open_file(self, path: Path) -> str:
         """Show the file. Returns an empty string, or the reason it cannot be shown."""
-        if path.stat().st_size > MAX_EDIT_BYTES:
-            return L(f"大きすぎて開けません ({path.stat().st_size // 1024} KB)。ターミナルで開いてください",
-                     f"too large to open ({path.stat().st_size // 1024} KB); open it in the terminal")
+        try:
+            size = path.stat().st_size
+        except OSError as ex:
+            return str(ex)
+        if size > MAX_EDIT_BYTES:
+            return L(f"大きすぎて開けません ({size // 1024} KB)。ターミナルで開いてください",
+                     f"too large to open ({size // 1024} KB); open it in the terminal")
         if not _looks_like_text(path):
             return L("テキストではないので開けません", "not a text file")
         try:
-            text = path.read_text(encoding="utf-8", errors="replace")
+            raw = path.read_bytes()
         except OSError as ex:
             return str(ex)
-        self.path = None                      # 読み込み中の textChanged を「変更」と数えない
-        self.setPlainText(text)
+        try:
+            text = raw.decode("utf-8")
+        except UnicodeDecodeError:
+            # Show it, but never write it back: saving would replace the unknown bytes.
+            self.path = None
+            self.setPlainText(raw.decode("utf-8", errors="replace"))
+            self.setReadOnly(True)
+            self._dirty = False
+            self.dirty_changed.emit(False)
+            return L("文字コードが UTF-8 でないので編集できません", "not UTF-8, so it cannot be edited here")
+        self._newline = "\r\n" if "\r\n" in text else "\n"
+        self.path = None                      # textChanged during loading is not an edit
+        self.setReadOnly(False)
+        self.setPlainText(text.replace("\r\n", "\n"))
         self.path, self._dirty = path, False
         self.dirty_changed.emit(False)
         return ""
+
+    def discard(self) -> None:
+        self.path = None
+        self.clear()
+        self._dirty = False
+        self.dirty_changed.emit(False)
 
     def save(self) -> str:
         if self.path is None:
             return L("開いているファイルがありません", "no file is open")
         try:
-            self.path.write_text(self.toPlainText(), encoding="utf-8")
+            with open(self.path, "w", encoding="utf-8", newline="") as f:
+                f.write(self.toPlainText().replace("\n", self._newline))
         except OSError as ex:
             return str(ex)
         self._dirty = False
@@ -190,13 +214,14 @@ class WorkspacePanel(QWidget):
 
         self.terminal = TerminalTabs(cwd=self.root, dark=dark)
         self.btn_here = QPushButton(L("ここへ移動 (cd)", "cd here"))
-        self.btn_here.clicked.connect(lambda: self.terminal.send(f"cd {self._quoted(self.root)}\n"))
+        self.btn_here.clicked.connect(lambda: self.terminal.send(f"cd {self._quoted(self.root)}\r"))
         self.btn_restart = QPushButton(L("シェルを起動し直す", "Restart the shell"))
         self.btn_restart.setVisible(False)
         self.btn_restart.clicked.connect(self._restart_terminal)
         self._watch_terminal()
 
         save = QShortcut(QKeySequence.StandardKey.Save, self)      # Ctrl+S
+        save.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
         save.activated.connect(self.save)
 
         left = QWidget()
@@ -289,6 +314,7 @@ class WorkspacePanel(QWidget):
         if not path.is_dir():
             return
         self.root = path
+        self.terminal.cwd = path
         self.model.setRootPath(str(path))
         self.tree.setRootIndex(self.model.index(str(path)))
         self.path_label.setText(str(path))
@@ -297,11 +323,17 @@ class WorkspacePanel(QWidget):
         self.terminal.set_dark(dark)
 
     def _watch_terminal(self) -> None:
-        """いま見えているターミナルのシェルが終わったら、起動し直す案内を出す。"""
+        for i in range(self.terminal.tabs.count()):
+            self._watch_view(self.terminal.tabs.widget(i))
+        self.terminal.tab_added.connect(self._watch_view)
+        self.terminal.tabs.currentChanged.connect(lambda *_: self._show_restart())
+
+    def _watch_view(self, view) -> None:
+        view.terminal.finished.connect(self._show_restart)
+
+    def _show_restart(self) -> None:
         current = self.terminal.current
-        if current is not None:
-            current.finished.connect(lambda: self.btn_restart.setVisible(True))
-        self.terminal.tabs.currentChanged.connect(lambda *_: self.btn_restart.setVisible(False))
+        self.btn_restart.setVisible(current is not None and (current.session is None or not current.session.alive))
 
     def _restart_terminal(self) -> None:
         current = self.terminal.current
@@ -358,15 +390,12 @@ class WorkspacePanel(QWidget):
         if chosen is act_open:
             self._open_index(self.tree.currentIndex())
         elif chosen is act_term:
-            self.terminal.send(f"cd {self._quoted(path if path.is_dir() else path.parent)}\n")
+            self.terminal.send(f"cd {self._quoted(path if path.is_dir() else path.parent)}\r")
         elif chosen is act_rename:
             name, ok = QInputDialog.getText(self, L("名前を変える", "Rename"), L("新しい名前", "New name"),
                                             QLineEdit.EchoMode.Normal, path.name)
-            if ok and name.strip():
-                try:
-                    path.rename(path.with_name(name.strip()))
-                except OSError as ex:
-                    QMessageBox.warning(self, L("変えられません", "Cannot rename"), str(ex))
+            if ok:
+                self.rename(path, name)
         elif chosen is act_new:
             name, ok = QInputDialog.getText(self, L("フォルダを作る", "New folder"), L("名前", "Name"))
             if ok and name.strip():
@@ -375,6 +404,27 @@ class WorkspacePanel(QWidget):
                     (base / name.strip()).mkdir()
                 except OSError as ex:
                     QMessageBox.warning(self, L("作れません", "Cannot create"), str(ex))
+
+    def rename(self, path: Path, name: str) -> str:
+        name = name.strip()
+        if not name or name == path.name:
+            return ""
+        target = path.with_name(name)
+        if target.exists():
+            why = L(f"{target.name} はすでにあります", f"{target.name} already exists")
+        else:
+            try:
+                path.rename(target)
+                why = ""
+            except OSError as ex:
+                why = str(ex)
+        if why:
+            QMessageBox.warning(self, L("変えられません", "Cannot rename"), why)
+            return why
+        if self.editor.path == path:
+            self.editor.path = target
+            self._on_dirty(self.editor.dirty)
+        return ""
 
     def close_session(self) -> None:
         self.terminal.close_session()

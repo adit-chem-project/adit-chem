@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import QRect, Qt, QTimer, Signal
+from PySide6.QtCore import QEvent, QRect, Qt, QTimer, Signal
 from PySide6.QtGui import QColor, QFont, QFontDatabase, QFontMetricsF, QKeyEvent, QPainter
 from PySide6.QtWidgets import QApplication, QWidget
 
@@ -176,10 +176,30 @@ class TerminalWidget(QWidget):
 
     # ---- keyboard ----
     KEYS = {Qt.Key.Key_Return: "\r", Qt.Key.Key_Enter: "\r", Qt.Key.Key_Backspace: "\x7f",
-            Qt.Key.Key_Tab: "\t", Qt.Key.Key_Escape: "\x1b", Qt.Key.Key_Delete: "\x1b[3~",
+            Qt.Key.Key_Tab: "\t", Qt.Key.Key_Backtab: "\x1b[Z", Qt.Key.Key_Escape: "\x1b", Qt.Key.Key_Delete: "\x1b[3~",
             Qt.Key.Key_Up: "\x1b[A", Qt.Key.Key_Down: "\x1b[B", Qt.Key.Key_Right: "\x1b[C", Qt.Key.Key_Left: "\x1b[D",
             Qt.Key.Key_Home: "\x1b[H", Qt.Key.Key_End: "\x1b[F",
             Qt.Key.Key_PageUp: "\x1b[5~", Qt.Key.Key_PageDown: "\x1b[6~"}
+
+    @staticmethod
+    def _wants_key(event: QKeyEvent) -> bool:
+        key, mods = event.key(), event.modifiers()
+        if key in (Qt.Key.Key_Tab, Qt.Key.Key_Backtab):
+            return True
+        if not mods & Qt.KeyboardModifier.ControlModifier or not Qt.Key.Key_A <= key <= Qt.Key.Key_Z:
+            return False
+        return not (mods & Qt.KeyboardModifier.ShiftModifier and key in (Qt.Key.Key_C, Qt.Key.Key_V))
+
+    def event(self, event) -> bool:  # noqa: N802 (Qt)
+        # Ctrl+letter and Tab belong to the shell; without this the window's
+        # QActions (Ctrl+Z, Ctrl+D, ...) and the focus chain would take them first.
+        if self.session is not None and event.type() in (QEvent.Type.ShortcutOverride, QEvent.Type.KeyPress) \
+                and self._wants_key(event):
+            if event.type() == QEvent.Type.KeyPress:
+                self.keyPressEvent(event)
+            event.accept()
+            return True
+        return super().event(event)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:  # noqa: N802 (Qt)
         if self.session is None:
@@ -273,7 +293,8 @@ class TerminalWidget(QWidget):
             QApplication.clipboard().setText(text)
 
     def paste(self) -> None:
-        self.send(QApplication.clipboard().text())
+        # A pasted line break must reach the shell as a single Enter (CRLF would give two).
+        self.send(QApplication.clipboard().text().replace("\r\n", "\n").replace("\n", "\r"))
 
     def contextMenuEvent(self, event) -> None:  # noqa: N802 (Qt)
         if self.session is not None and self.session.mouse_wanted():
