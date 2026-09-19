@@ -160,6 +160,9 @@ class AnalysisResult:
     def summary_text(self) -> str:
         lines = [L(f"コード: {self.code}   ディレクトリ: {self.run_dir}", f"code: {self.code}   directory: {self.run_dir}")]
         t = self.tables
+        if "diagnostics" in t:
+            from adit.analysis.diagnostics import summary_lines_from_dict
+            lines += summary_lines_from_dict(t["diagnostics"])
         if "energy" in t:
             e = t["energy"]
             lines.append(L(f"エネルギー: {e['n']} 点、最終値 {e['last_ev']:.6f} eV (最小 {e['min_ev']:.6f}、最大 {e['max_ev']:.6f})",
@@ -470,6 +473,8 @@ def run_analysis(run_dir: Path | str, opts: AnalysisOptions | None = None) -> An
     out = Path(opts.out_dir).expanduser() if opts.out_dir else run_dir / OUT_SUBDIR
     out.mkdir(parents=True, exist_ok=True)
     res = AnalysisResult(code=data.code, run_dir=str(run_dir), notes=list(data.notes))
+    from adit.analysis.diagnostics import scan_diagnostics
+    res.tables["diagnostics"] = scan_diagnostics(run_dir, data.code).as_dict()
     msd_memory = None
     if opts.msd:
         if isinstance(data.frames, Trajectory):
