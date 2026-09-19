@@ -65,6 +65,23 @@ adit-analyze runs/ --compare "ads=1:slab_mol,-1:slab,-1:mol"
 adit-analyze out/conformers/crest --conformer-temperature 298.15
 ```
 
+### 3D で再生 (軌跡・最適化のステップ・振動モード)
+
+解析タブで「解析を実行」すると、要約の下に「3D で再生」の枠が出ます (ウェブ版と `adit-analyze` にはありません)。
+
+- **軌跡・ステップ**: 解析が読むのと同じフレーム (DFTB+ geo_end.xyz、xtb xtb.trj / xtbopt.log、VASP vasprun.xml / XDATCAR、pw.x output.log、ORCA trajectory.xyz、LAMMPS・GROMACS・CP2K の軌跡など) を、詳しい条件の「平衡化として捨てるフレーム数」と「間引き」を反映して読みます。メモリの上限 (`--memory-mb` と同じ既定 1024 MB) を超える大きさなら、収まる間隔に自動で間引き、その旨を枠の下に書きます。
+  フレーム番号と、時間刻みが分かるときは時刻 [fs] を表示します。下のグラフはエネルギー (MD なら温度も) の推移で、縦線がフレームに追従します。エネルギーの点数とフレーム数が違うときは縦線の位置を比例で合わせ、そのことを書きます。
+- **振動モード**: 対応するコードの出力から振動数と各原子の変位の向きを読み、選んだモードに沿って往復させます。振幅の欄は「いちばん大きく動く原子の変位 [Å]」です (数値の意味づけはしません)。下のグラフは振動数の一覧で、縦線が選んだモード、クリックで最も近いモードに移ります。
+
+| コード | 読むファイル | 注 |
+|---|---|---|
+| DFTB+ | hessian.out と最終構造 | 質量重み付きヘシアンの固有ベクトル。並進・回転は落としていないので、0 付近のモードも並びます |
+| xtb | g98.out | xtb が書く Gaussian 98 形式 |
+| Gaussian | 出力ログの Frequencies / Atom AN の表 | HPModes 形式 (座標ごとの行) は未対応 |
+| ORCA | output.log の VIBRATIONAL FREQUENCIES と NORMAL MODES | 振動数 0 で変位も 0 の並進・回転は除く |
+
+上にないコード (VASP、Quantum ESPRESSO、CP2K など) は、振動数が読めても再生は「未対応」と表示します。
+
 ### 水素結合の寿命と、距離 × 角度の分布
 
 `--hbond 距離,角度` で数えた水素結合 (水素 i と受容体 j の組) について、各フレームの存在 h_ij(t) (条件を満たせば 1、
