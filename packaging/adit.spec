@@ -85,7 +85,7 @@ else:
     coll = COLLECT(exe, cli, a.binaries, a.datas, strip=False, upx=False, name="adit")
 
 # macOS only: also produce a double-clickable .app. It is neither signed nor notarised,
-# so the first launch needs right-click -> Open in Finder (docs/MACOS_BUILD.md).
+# so the first launch needs right-click -> Open in Finder (docs/INSTALL.md).
 if os.sys.platform == "darwin" and not ONEFILE:
     app = BUNDLE(coll, name="ADIT.app", icon=None, bundle_identifier="org.adit.app",
                  info_plist={
