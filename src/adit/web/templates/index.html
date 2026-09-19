@@ -99,6 +99,8 @@ ol.steps { list-style:none; margin:6px 0; padding:4px; border:1px solid var(--li
 ol.steps li { display:flex; flex-wrap:wrap; gap:6px; align-items:center; justify-content:space-between; padding:4px 8px; border-radius:8px; }
 ol.steps li.current { outline:1px solid var(--accent); }
 ol.steps li a { color:var(--fg); text-decoration:none; flex:1 1 200px; overflow-wrap:anywhere; }
+ol.steps li[data-off] a { color:var(--muted); }
+ol.steps li input[type=checkbox] { margin:0 2px 0 0; }
 .step-btns { display:flex; gap:4px; } .step-btns button { padding:3px 10px; font-size:12px; }
 .recipe-add button, .step-btns button, .recipe-build button { white-space:nowrap; }
 /* 手順の中はラベルの列を狭く (構造の列は画面の 3 分の 1 しかなく、180 px だと入力欄が細くなっていた)。スマホ幅では 1 列に */

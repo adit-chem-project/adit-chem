@@ -665,7 +665,7 @@ class WebApp:
         self.recipe_open = 1 if R.step_count(self.form) else None
 
     def recipe_view(self) -> dict:
-        from adit.builder import op_label
+        from adit.builder import has_op, op_label
         from adit.structure import StructureError
         from adit.web import recipe_form as R
 
@@ -689,7 +689,7 @@ class WebApp:
         items = []
         for k, s in enumerate(steps, start=1):
             it = {"k": k, "op": s.op, "label": op_label(s.op), "summary": R.summary(s), "p": f"st{k}_", "note": "", "note_ok": True,
-                  "auto_fit": s.op == "supercell" and bool(s.fit_components),
+                  "enabled": s.enabled, "auto_fit": s.op == "supercell" and bool(s.fit_components),
                   "terms": [], "rows": []}
             if s.op == "slab":
                 names = R.terminations(rec, k - 1) if rec is not None else None
@@ -718,7 +718,7 @@ class WebApp:
         open_k = self.recipe_open if self.recipe_open and 1 <= self.recipe_open <= len(items) else (1 if items else None)
         if status and status[0] == "ng" and R.failed_step(status[1]):
             open_k = R.failed_step(status[1])
-        return {"items": items, "status": status, "lines": lines, "open": open_k, "has_fix": any(s.op == "fix" for s in steps),
+        return {"items": items, "status": status, "lines": lines, "open": open_k, "has_fix": has_op(steps, "fix"),
                 "add_opts": [(op, op_label(op)) for op in R.ADD_ORDER] + [(R.INTERFACE, L("電極と電解質の界面 (面 + 断面の自動調整 + 溶液 + 固定)",
                                                                                        "Electrode–electrolyte interface (surface cut + auto-sized cross-section + solution + fixed layer)"))]}
 
