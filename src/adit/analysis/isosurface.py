@@ -115,11 +115,9 @@ def check_budget(values: np.ndarray, levels, stride: int = 1, periodic: bool = F
         suggested = max(int(max(1, stride)) + 1, math.ceil(max(1, stride) * factor))
         raise IsosurfaceTooLarge(L(
             f"等値面の三角形が多すぎるので描かずに止めました。見積もり: 約 {int(est):,} 枚 (上限 {max_triangles:,} 枚、"
-            f"格子 {'×'.join(str(n) for n in values.shape)})。格子を間引いてください: 例 {suggested} 点に 1 点。"
-            "上限そのものは max_triangles で変えられます",
+            f"格子 {'×'.join(str(n) for n in values.shape)})。格子を間引いてください: 例 {suggested} 点に 1 点",
             f"the isosurface has too many triangles, so it was not drawn. Estimate: about {int(est):,} (limit {max_triangles:,}; "
-            f"grid {'×'.join(str(n) for n in values.shape)}). Thin the grid, e.g. every {suggested}th point. "
-            "The limit itself can be changed with max_triangles"), suggested)
+            f"grid {'×'.join(str(n) for n in values.shape)}). Thin the grid, e.g. every {suggested}th point"), suggested)
     return info
 
 
