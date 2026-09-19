@@ -186,7 +186,7 @@ def test_english_ui(app, quiet, sk_root, tmp_path):
         assert tr("生成できます") == "Ready to generate" and tr("未知の文") == "未知の文"
         assert win.ribbon.page_titles() == ["File", "Insert", "View", "Run", "Settings", "Help"]
         assert win.act_open.iconText() == "Open" and win.act_open.text() == "Open calculation settings (spec.json)…"
-        assert win.act_back.toolTip() == "Undo (previous settings)"
+        assert win.act_back.toolTip() == "Back to the previous settings (Ctrl+Z)"
         assert [b.text() for b in win.ribbon.pages[0].groups[0].buttons] == ["Open", "Save"]
         assert win.ribbon.pages[0].groups[0].caption.text() == "Calculation settings"
         win.refresh_preview()

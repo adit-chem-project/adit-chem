@@ -303,6 +303,14 @@ def _draw(name: str, p: QPainter, t: Tokens) -> None:
         path = QPainterPath(QPointF(10, 50)); path.quadTo(QPointF(50, 8), QPointF(90, 50)); path.quadTo(QPointF(50, 92), QPointF(10, 50))
         _pen(p, fg, 7); p.drawPath(path)
         _dot(p, 50, 50, 14, accent)
+    elif name == "search":
+        _pen(p, fg, 8); p.drawEllipse(QPointF(42, 42), 26, 26)
+        _line(p, 62, 62, 84, 84, accent, 10)
+    elif name == "keyboard":
+        _pen(p, fg, 7); p.drawRoundedRect(QRectF(10, 28, 80, 44), 8, 8)
+        for x in (26, 42, 58, 74):
+            _dot(p, x, 42, 4, fg)
+        _line(p, 30, 58, 70, 58, accent, 7)
     elif name in ("chevron_up", "chevron_down"):
         y0, y1 = (62, 38) if name == "chevron_up" else (38, 62)
         _poly(p, [(26, y0), (50, y1), (74, y0)], muted, 10, close=False)

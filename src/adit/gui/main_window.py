@@ -73,7 +73,7 @@ class MainWindow(QMainWindow):
         limit_combo_popups()
         self.act_open = QAction(icons.icon("open", 32), "計算設定 (spec.json) を開く…", self); self.act_open.setShortcut("Ctrl+O"); self.act_open.setIconText("開く")
         self.act_reload = QAction(icons.icon("reload", 32), "環境設定を再読み込み", self); self.act_reload.setIconText("再読み込み")
-        self.act_back = QAction(icons.icon("undo", 32), "元に戻す", self); self.act_back.setToolTip("元に戻す (1 つ前の設定)"); self.act_back.setShortcut("Ctrl+Z")
+        self.act_back = QAction(icons.icon("undo", 32), "元に戻す", self); self.act_back.setToolTip("1 つ前の設定に戻す"); self.act_back.setShortcut("Ctrl+Z")
         self.act_forward = QAction(icons.icon("redo", 32), "やり直す", self); self.act_forward.setToolTip("やり直す"); self.act_forward.setShortcut("Ctrl+Shift+Z")
         self.act_settings = QAction(icons.icon("settings", 32), "環境設定…", self); self.act_settings.setToolTip("環境設定ファイル (cluster.toml) を編集"); self.act_settings.setIconText("環境設定")
         self._history: list[str] = []; self._hist_pos = -1; self._applying = False
@@ -189,19 +189,72 @@ class MainWindow(QMainWindow):
         found = (exact or starts or holds)
         if not found:
             return mode, None, None
-        label = found[0]
-        field = None
+        return mode, found[0], self._field_of(found[0])
+
+    @staticmethod
+    def _field_of(label):
+        from PySide6.QtWidgets import QFormLayout
+
         parent = label.parentWidget()
-        layout = parent.layout() if parent is not None else None
-        if isinstance(layout, QFormLayout):
+        if parent is None:
+            return None
+        forms = [lay for lay in (parent.layout(), *parent.findChildren(QFormLayout)) if isinstance(lay, QFormLayout)]
+        for layout in forms:
             for row in range(layout.rowCount()):
                 item = layout.itemAt(row, QFormLayout.ItemRole.LabelRole)
                 if item is not None and item.widget() is label:
                     field_item = layout.itemAt(row, QFormLayout.ItemRole.FieldRole)
-                    if field_item is not None:
-                        field = field_item.widget() or (field_item.layout() and field_item.layout().itemAt(0).widget())
-                    break
-        return mode, label, field
+                    if field_item is None:
+                        return None
+                    return field_item.widget() or (field_item.layout() and field_item.layout().itemAt(0).widget())
+        return None
+
+    def _reveal(self, mode: int, label, field) -> bool:
+        from PySide6.QtWidgets import QScrollArea
+
+        self.set_mode(mode)
+        target = field or label
+        if target is None:
+            return False
+        parent = target.parentWidget()
+        while parent is not None and not isinstance(parent, QScrollArea):
+            parent = parent.parentWidget()
+        if isinstance(parent, QScrollArea):
+            parent.ensureWidgetVisible(target, 60, 60)
+        if field is not None:
+            field.setFocus(Qt.FocusReason.OtherFocusReason)
+        return True
+
+    def _mode_of(self, w) -> int:
+        for i in range(self.main_stack.count()):
+            if self.main_stack.widget(i).isAncestorOf(w):
+                return i
+        return -1
+
+    def field_entries(self) -> list[tuple[object, int, str]]:
+        # (label or checkbox, mode, group title) for every field that is shown right now
+        from PySide6.QtWidgets import QCheckBox, QGroupBox
+
+        out = []
+        for mode in range(self.main_stack.count()):
+            page = self.main_stack.widget(mode)
+            for w in [*page.findChildren(QLabel), *page.findChildren(QCheckBox)]:
+                if not w.property("adit_key") or not w.isVisibleTo(page):
+                    continue
+                box = w.parentWidget()
+                while box is not None and not isinstance(box, QGroupBox):
+                    box = box.parentWidget()
+                out.append((w, mode, box.title() if box is not None else ""))
+        return out
+
+    def jump_to_label(self, label) -> bool:
+        from PySide6.QtWidgets import QCheckBox
+
+        mode = self._mode_of(label)
+        if mode < 0:
+            return False
+        field = label if isinstance(label, QCheckBox) else self._field_of(label)
+        return self._reveal(mode, label, field)
 
     def clear_error_marks(self) -> None:
         for w in getattr(self, "_error_marked", []):
@@ -210,31 +263,19 @@ class MainWindow(QMainWindow):
         self._error_marked = []
 
     def focus_error(self, index: int = 0) -> bool:
-        from PySide6.QtWidgets import QScrollArea
-
         locations = getattr(self, "_error_locations", [])
         if not locations:
             return False
         index %= len(locations)
         self._error_index = index
         mode, label, field = self._find_field(locations[index])
-        self.set_mode(mode)
         self.clear_error_marks()
         marks = [w for w in (label, field) if w is not None]
         for w in marks:
             w.setProperty("adit_error", True)
             w.style().unpolish(w); w.style().polish(w)
         self._error_marked = marks
-        target = field or label
-        if target is not None:
-            parent = target.parentWidget()
-            while parent is not None and not isinstance(parent, QScrollArea):
-                parent = parent.parentWidget()
-            if isinstance(parent, QScrollArea):
-                parent.ensureWidgetVisible(target, 60, 60)
-            if field is not None:
-                field.setFocus(Qt.FocusReason.OtherFocusReason)
-        return target is not None
+        return self._reveal(mode, label, field)
 
     def _on_gen_hint_clicked(self) -> None:
         if not self.focus_error(getattr(self, "_error_index", -1) + 1):
@@ -692,6 +733,13 @@ class MainWindow(QMainWindow):
                                                     ("native", "OS に任せる", "OS の枠")), self.cfg.window_frame, self._set_frame, "frame_")
         self.act_readme = QAction(icons.icon("help", 32), "README を開く", self); self.act_readme.setIconText("README"); self.act_readme.triggered.connect(self._open_readme)
         self.act_about = QAction(icons.icon("about", 32), "ADIT について", self); self.act_about.triggered.connect(self._about)
+        self.act_palette = QAction(icons.icon("search", 32), L("コマンドパレット…", "Command palette…"), self)
+        self.act_palette.setIconText(L("コマンド", "Commands")); self.act_palette.setShortcut("Ctrl+K")
+        self.act_palette.setToolTip(L("操作・欄・プリセットを名前で探して実行します", "Find a command, a field or a preset by name and run it"))
+        self.act_palette.triggered.connect(self.open_palette)
+        self.act_shortcuts = QAction(icons.icon("keyboard", 32), L("キーボードショートカット一覧", "Keyboard shortcuts"), self)
+        self.act_shortcuts.setIconText(L("ショートカット", "Shortcuts")); self.act_shortcuts.setShortcuts(["Ctrl+/", "?"])
+        self.act_shortcuts.triggered.connect(self.open_shortcuts)
 
         rb = self.ribbon = Ribbon(collapsed=bool(self.cfg.ribbon_collapsed))
         rb.collapsed_changed.connect(self._remember_ribbon)
@@ -721,6 +769,7 @@ class MainWindow(QMainWindow):
         g = p.add_group("テーマ (再起動後に反映)"); g.add_small([a for _c, a in self._theme_actions])
         g = p.add_group("ウィンドウの枠 (再起動後に反映)"); g.add_small([a for _c, a in self._frame_actions])
         p = rb.add_page("ヘルプ")
+        g = p.add_group(L("探す", "Find")); g.add_large(self.act_palette); g.add_large(self.act_shortcuts)
         g = p.add_group("ヘルプ"); g.add_large(self.act_readme); g.add_large(self.act_about)
         for a in (self.act_back, self.act_forward, *rb.all_actions()):
             if not a.shortcut().isEmpty():
@@ -736,10 +785,78 @@ class MainWindow(QMainWindow):
             rb.set_leading(self.quick_access)
         tl.addWidget(rb)
         self.setMenuWidget(self.top_area)
+        self._apply_shortcut_tips()
 
     def _remember_ribbon(self, collapsed: bool) -> None:
         if bool(self.cfg.ribbon_collapsed) != collapsed:
             self.cfg.ribbon_collapsed = collapsed; self._save_cfg()
+
+    def _apply_shortcut_tips(self) -> None:
+        from adit.gui.palette import with_shortcut
+
+        for a in self.findChildren(QAction):
+            if not a.shortcut().isEmpty() and a.text():
+                a.setToolTip(with_shortcut(a.toolTip(), a))
+
+    def shortcut_rows(self) -> list[tuple[str, str]]:
+        from adit.gui.palette import shortcut_text
+
+        rows, seen = [], set()
+        for a in self.findChildren(QAction):
+            key = shortcut_text(a)
+            if key and a.text() and key not in seen:
+                seen.add(key); rows.append((key, a.text().rstrip("…")))
+        rows.append(("Ctrl+S", L("ワークスペース: 開いているファイルを保存", "Workspace: save the open file")))
+        return sorted(rows, key=lambda r: (len(r[0].split("+")), r[0]))
+
+    def palette_items(self) -> list:
+        from adit.gui.i18n import _EN
+        from adit.gui.palette import Item, shortcut_text
+        from adit.structure import preset_search_text, pretty_formula
+
+        items = []
+        names = [tr(t) for t in ("構造", "計算条件", "解析", "ワークスペース")]
+        for a in [self.act_back, self.act_forward, *self.ribbon.all_actions()]:
+            if not a.text() or a is self.act_palette:
+                continue
+            en = _EN.get(a.text(), "")
+            items.append(Item("action", a.text().rstrip("…"), shortcut_text(a), a.trigger, (a.iconText(), en, _EN.get(a.iconText(), "")),
+                              a.icon(), a.isEnabled()))
+        for w, mode, group in self.field_entries():
+            key = str(w.property("adit_key"))
+            where = names[mode] + (f" › {tr(group)}" if group else "")
+            items.append(Item("field", tr(key), where, lambda w=w: self.jump_to_label(w), (key, _EN.get(key, ""), group, tr(group))))
+        for name in getattr(self.structure, "_preset_names", []):
+            items.append(Item("preset", pretty_formula(name), L("プリセットの分子", "Preset molecule"), lambda n=name: self.use_preset(n),
+                              (preset_search_text(name),), icons.icon("preset", 16)))
+        return items
+
+    def use_preset(self, name: str) -> None:
+        self.set_mode(self.MODE_STRUCTURE)
+        self.structure.set_source("preset")
+        if hasattr(self.structure, "preset_search"):
+            self.structure.preset_search.setText("")
+        self.structure.preset.setCurrentIndex(max(0, self.structure.preset.findData(name)))
+        self.structure.preset.setFocus(Qt.FocusReason.OtherFocusReason)
+
+    def open_palette(self):
+        from adit.gui.i18n import translate_widgets
+        from adit.gui.palette import CommandPalette
+
+        dlg = CommandPalette(self.palette_items(), self)
+        translate_widgets(dlg)
+        dlg.place_over(self)
+        dlg.show(); dlg.search.setFocus(Qt.FocusReason.OtherFocusReason)
+        return dlg
+
+    def open_shortcuts(self):
+        from adit.gui.i18n import translate_widgets
+        from adit.gui.palette import ShortcutsDialog
+
+        dlg = ShortcutsDialog(self.shortcut_rows(), self)
+        translate_widgets(dlg)
+        dlg.show()
+        return dlg
 
     def _save_cfg(self) -> None:
         try:
