@@ -213,8 +213,9 @@ def test_compare_dialog_and_tables(app, tmp_path):
     views = p.section_views()
     assert [v.section.key for v in views] == ["compare_reactions", "compare_runs", "compare_conditions"]
     reac = views[0]
-    assert reac.table.rowCount() == 2 and reac.table.item(0, 6).text() == "釣り合う"
-    assert "H:+2 O:+1" in reac.table.item(1, 6).text()
+    assert reac.table.rowCount() == 2 and reac.table.item(0, 10).text() == "釣り合う"
+    assert "H:+2 O:+1" in reac.table.item(1, 10).text()
+    assert "thermo.csv" in reac.table.item(0, 6).text() and reac.table.item(0, 7).text() == "-"
     assert float(reac.table.item(0, 2).text()) == pytest.approx(cres.reactions[0]["delta_e_ev"], abs=1e-6)
     cond = views[2]
     assert [cond.table.horizontalHeaderItem(j).text() for j in range(cond.table.columnCount())] == \

@@ -59,6 +59,8 @@ LABELS: dict[str, tuple[str, str]] = {
     "adf_cutoff": ("結合角の分布のカットオフ [Å]", "Angle-distribution cutoff [Å]"),
     "sq": ("構造因子 S(q) を出す", "Structure factor S(q)"),
     "hbond": ("水素結合 (距離 [Å], 角度 [度])", "Hydrogen bonds (distance [Å], angle [deg])"),
+    "hbond_lifetime": ("水素結合の寿命 (存在の自己相関)", "Hydrogen-bond lifetime (presence autocorrelation)"),
+    "hbond_cdf": ("水素結合の距離×角度の分布 (距離の上限 [Å])", "Hydrogen-bond distance-angle map (upper distance [Å])"),
     "rg": ("慣性半径 Rg の時系列", "Radius of gyration over time"),
     "density_grid": ("3 次元の数密度の格子", "3D number-density grid"),
     "voronoi": ("Voronoi の体積と面の数", "Voronoi volumes and face counts"),
@@ -79,6 +81,7 @@ LABELS: dict[str, tuple[str, str]] = {
     "fes": ("自由エネルギー面の温度 [K]", "Temperature for the free-energy surface [K]"),
     "fes_bins": ("自由エネルギー面の区間の数", "Bins for the free-energy surface"),
     "fes_unit": ("自由エネルギーの単位", "Unit for the free energy"),
+    "conformer_temperature": ("CREST の配座の重みの温度 [K]", "Temperature for the CREST conformer weights [K]"),
     "bands_window": ("バンド図の縦軸の幅 [eV]", "Band-plot energy window [eV]"),
     "effective_mass_points": ("有効質量に使う k 点の数", "k-points used for the effective mass"),
     "bader": ("Bader の ACF.dat", "Bader ACF.dat"),
@@ -139,6 +142,7 @@ PLACEHOLDERS: dict[str, tuple[str, str]] = {
     "clusters": ("空欄なら出しません", "Empty = not computed"),
     "adf": ("例: O または O,H", "e.g. O or O,H"),
     "hbond": ("例: 3.5,150。既定値はありません", "e.g. 3.5,150; there is no default"),
+    "hbond_cdf": ("例: 4.0。空欄なら出しません", "e.g. 4.0; empty = not computed"),
     "density_grid": ("例: 48,48,48", "e.g. 48,48,48"),
     "voronoi_face": ("空欄なら 0 (全部数える)", "Empty = 0 (count every face)"),
     "sasa": ("例: bondi,1.4", "e.g. bondi,1.4"),
@@ -154,6 +158,7 @@ PLACEHOLDERS: dict[str, tuple[str, str]] = {
     "cluster": ("主成分分析が要ります", "The PCA is required"),
     "fes": ("空欄なら出しません", "Empty = not computed"),
     "fes_bins": ("空欄なら 50", "Empty = 50"),
+    "conformer_temperature": ("空欄なら重みを出しません", "Empty = no weights"),
     "bands_window": ("空欄なら 10", "Empty = 10"),
     "effective_mass_points": ("空欄なら 5", "Empty = 5"),
     "bader": ("外部の bader が書いたファイル", "written by the external bader program"),
@@ -324,6 +329,8 @@ def _extra_options(f: dict) -> dict:
         "adf_cutoff": _num(f, "adf_cutoff", positive=True) or 0.0,
         "structure_factor": _on(f, "sq"),
         "hbond": _text(f, "hbond"),
+        "hbond_lifetime": _on(f, "hbond_lifetime"),
+        "hbond_cdf": _num(f, "hbond_cdf", positive=True) or 0.0,
         "radius_of_gyration": _on(f, "rg"),
         "density_grid": _text(f, "density_grid"),
         "voronoi": _on(f, "voronoi"),
@@ -344,6 +351,7 @@ def _extra_options(f: dict) -> dict:
         "fes_temperature_k": _num(f, "fes", positive=True) or 0.0,
         "fes_bins": fes_bins or 50,
         "fes_unit": _text(f, "fes_unit") or "kJ/mol",
+        "conformer_temperature_k": _num(f, "conformer_temperature", positive=True) or 0.0,
         "bands_window_ev": _num(f, "bands_window", positive=True) or 10.0,
         "effective_mass_points": _num(f, "effective_mass_points", int, positive=True) or 5,
         "bader": _text(f, "bader"),
@@ -405,7 +413,7 @@ def _extra_fields(o) -> dict[str, str]:
          "zdens_axis": o.zdens_axis, "coordination": g(o.coordination_cutoff),
          "centrosymmetry": g(o.centrosymmetry_neighbors), "steinhardt": g(o.steinhardt_cutoff),
          "clusters": g(o.cluster_cutoff), "adf": o.adf or "", "adf_cutoff": g(o.adf_cutoff),
-         "hbond": o.hbond, "density_grid": o.density_grid, "voronoi_face": g(o.voronoi_face_threshold),
+         "hbond": o.hbond, "hbond_cdf": g(o.hbond_cdf), "density_grid": o.density_grid, "voronoi_face": g(o.voronoi_face_threshold),
          "sasa": o.sasa, "distances": "; ".join(o.distances), "angles": "; ".join(o.angles),
          "dihedrals": "; ".join(o.dihedrals), "rmsd_reference": g(o.rmsd_reference),
          "conductivity_charge": g(o.conductivity_charge),
@@ -413,6 +421,7 @@ def _extra_fields(o) -> dict[str, str]:
          "displacement": g(o.displacement_reference), "strain": g(o.strain_cutoff),
          "pca": g(o.pca), "cluster": g(o.cluster), "fes": g(o.fes_temperature_k),
          "fes_bins": "" if o.fes_bins == 50 else str(o.fes_bins), "fes_unit": o.fes_unit,
+         "conformer_temperature": g(o.conformer_temperature_k),
          "bands_window": "" if o.bands_window_ev == 10.0 else g(o.bands_window_ev),
          "effective_mass_points": "" if o.effective_mass_points == 5 else str(o.effective_mass_points),
          "bader": o.bader, "bader_valence": o.bader_valence, "xrd": o.xrd,
@@ -425,7 +434,7 @@ def _extra_fields(o) -> dict[str, str]:
          "plot_spines": o.plot_spines, "plot_line_width": g(o.plot_line_width),
          "plot_font_size": g(o.plot_font_size), "plot_dpi": g(o.plot_dpi),
          "figure_format": o.figure_format}
-    for key, on in (("sq", o.structure_factor), ("rg", o.radius_of_gyration), ("voronoi", o.voronoi),
+    for key, on in (("sq", o.structure_factor), ("rg", o.radius_of_gyration), ("voronoi", o.voronoi), ("hbond_lifetime", o.hbond_lifetime),
                     ("rmsf", o.rmsf), ("vacf", o.vacf), ("viscosity", o.viscosity),
                     ("work_function", o.work_function)):
         f[key] = "on" if on else ""
@@ -610,6 +619,35 @@ def result_sections(res) -> list[Section]:
         out.append(_cut(Section("uvvis", L("UV-Vis の遷移", "UV-Vis transitions"), [L("遷移", "Transition"), "E [eV]", "λ [nm]", L("振動子強度 f", "Oscillator strength f")],
                                 rows, [False, True, True, True], [L(f"出典: {uv['source']}", f"source: {uv['source']}")] + list(uv.get("reasons", []))),
                         uv.get("file_transitions", summary_json)))
+    if "hbond_lifetime" in t:
+        h = t["hbond_lifetime"]
+        u = h["unit"]
+
+        def v(x) -> str:
+            return "-" if x is None else f"{x:.4g}"
+
+        rows = [[L("intermittent (切れて戻っても数える)", "intermittent (re-formed bonds count)"), v(h["lifetime_intermittent"]["integral"]),
+                 v(h["lifetime_intermittent"]["one_over_e"]), v(h["lifetime_intermittent"]["last_value"])],
+                [L("continuous (切れたら終わり)", "continuous (ends at the first break)"), v(h["lifetime_continuous"]["integral"]),
+                 v(h["lifetime_continuous"]["one_over_e"]), v(h["lifetime_continuous"]["last_value"])]]
+        out.append(_cut(Section("hbond_lifetime", L("水素結合の寿命", "Hydrogen-bond lifetime"),
+                                [L("定義", "Definition"), L(f"C(τ) の積分 [{u}]", f"Integral of C(τ) [{u}]"), L(f"1/e の時間 [{u}]", f"1/e time [{u}]"),
+                                 L("τ_max での C", "C at τ_max")], rows, [False, True, True, True],
+                                [L(f"τ_max = {h['tau_max']} {u}、{h['n_frames']} フレーム、{h['n_pairs']} 組。", f"tau_max = {h['tau_max']} {u}, {h['n_frames']} frames, {h['n_pairs']} pairs. ")
+                                 + h["definition"], L(f"出典: {h['source']}", f"source: {h['source']}")]), h.get("file", summary_json)))
+    if "crest_conformers" in t:
+        c = t["crest_conformers"]
+        weighted = c.get("temperature_k") is not None and all("weight" in r for r in c.get("conformers", []))
+        rows = [[str(r["index"]), _g(r.get("relative_kcal_mol"), ".3f"), _g(r.get("relative_kj_mol"), ".2f"), str(r["degeneracy"]),
+                 _g(r.get("rmsd_heavy_A"), ".3f")] + ([_g(r.get("weight"), ".4f")] if weighted else []) for r in c.get("conformers", [])]
+        cols = [L("番号", "Index"), "E−E(lowest) [kcal/mol]", "E−E(lowest) [kJ/mol]", L("縮退度", "Degeneracy"), L("重原子 RMSD [Å]", "Heavy-atom RMSD [Å]")]
+        if weighted:
+            cols.append(L(f"重み ({c['temperature_k']:g} K)", f"Weight ({c['temperature_k']:g} K)"))
+        notes = [c.get("rmsd_note", "")] + list(c.get("reasons", []))
+        if weighted:
+            notes.append(c.get("weight_formula", ""))
+        out.append(_cut(Section("crest_conformers", L("CREST の配座", "CREST conformers"), cols, rows, [True] * len(cols),
+                                [n for n in notes if n]), (c.get("files") or {}).get("table", summary_json)))
     if "export" in t:
         x = t["export"]
         rows = [[L("書き出し先", "Folder"), x["dir"]], [L("フレーム数", "Frames"), str(x["n_frames"])],
@@ -653,14 +691,27 @@ def compare_sections(cres) -> list[Section]:
     for x in cres.reactions:
         de = x["delta_e_ev"]
         bal = L("釣り合う", "balanced") if x["balanced"] else (L("釣り合わない: ", "not balanced: ") + str(x["imbalance"]))
+        th = x.get("thermo") or []
+
+        def tcol(k: str, fmt: str, first: bool = False) -> str:
+            if th:
+                return "; ".join(_g(t.get(k), fmt) for t in th)
+            return (x.get("thermo_note") or "-") if first else "-"
+
         rows.append([x["name"], x["terms"], _g(de, "+.6f"), _g(x.get("delta_e_kj_mol"), "+.3f"), _g(x.get("delta_e_kcal_mol"), "+.3f"),
-                     _g(x.get("delta_g_code_ev"), "+.6f"), bal, f"{x['n_differing']}: " + " ".join(x["differing"]) if x["differing"] else "0"])
+                     _g(x.get("delta_g_code_ev"), "+.6f"), tcol("T_K", "g", True), tcol("delta_h_kj_mol", "+.3f"), tcol("delta_s_j_mol_k", "+.3f"),
+                     tcol("delta_g_kj_mol", "+.3f"), bal, f"{x['n_differing']}: " + " ".join(x["differing"]) if x["differing"] else "0"])
     out.append(_cut(Section("compare_reactions", L("反応ごと (ΔE = ΣνE)", "Per reaction (ΔE = ΣνE)"),
                             [L("名前", "Name"), L("組 (ν·ディレクトリ)", "Terms (ν·directory)"), "ΔE [eV]", "ΔE [kJ/mol]", "ΔE [kcal/mol]",
-                             L("コードの G の差 ΣνG [eV]", "Difference of code G, ΣνG [eV]"), L("組成の釣り合い", "Composition balance"),
+                             L("コードの G の差 ΣνG [eV]", "Difference of code G, ΣνG [eV]"), L("熱化学の T [K]", "Thermo T [K]"),
+                             "ΔH [kJ/mol]", "ΔS [J/(mol K)]", L("ΔG (F) [kJ/mol]", "ΔG (F) [kJ/mol]"), L("組成の釣り合い", "Composition balance"),
                              L("条件が違う項目", "Settings that differ")],
-                            rows, [False, False, True, True, True, True, False, False],
-                            [L("ν は生成したファイルが正、反応物が負。組成の釣り合いは Σν·(元素ごとの原子数)", "ν is positive for products and negative for reactants; balance is Σν·(atoms per element)")]),
+                            rows, [False, False, True, True, True, True, True, True, True, True, False, False],
+                            [L("ν は生成したファイルが正、反応物が負。組成の釣り合いは Σν·(元素ごとの原子数)", "ν is positive for products and negative for reactants; balance is Σν·(atoms per element)"),
+                             L("ΔH・ΔS・ΔG は各計算の analysis/thermo.csv (ASE の熱化学) の H・S・G の ΣνX。温度 (と圧力) が全部の計算で揃っているときだけ出します。"
+                               "振動だけのモデルでは H は無く、G の列は F = U − TS の差です",
+                               "ΔH, ΔS and ΔG are ΣνX of H, S and G from analysis/thermo.csv (ASE thermochemistry) of each run, given only when every run has the same temperatures (and pressures). "
+                               "Vibration-only models have no H, and the G column is then the difference of F = U − TS")]),
                     cres.files.get("reactions", "")))
     rows = [[r["dir"], r["code"] or "-", r["task"] or "-", r["formula"] or "-", "-" if r["natoms"] is None else str(r["natoms"]),
              _g(r["energy_ev"], ".6f"), r["energy_source"] or "-", r["note"] or ""] for r in cres.runs]

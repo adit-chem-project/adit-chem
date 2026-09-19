@@ -28,6 +28,8 @@ def detect_collection(run_dir: Path | str) -> str | None:
             return kind
     if (run_dir / "scan.json").is_file():
         return "scan"
+    if (run_dir / "crest_conformers.xyz").is_file():
+        return "crest"
     return None
 
 

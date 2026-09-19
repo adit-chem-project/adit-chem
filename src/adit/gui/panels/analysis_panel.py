@@ -179,6 +179,8 @@ class AnalysisPanel(QWidget):
         self.adf_cutoff = narrow(QLineEdit())
         self.cb_sq = _check("sq")
         self.hbond = narrow(QLineEdit()); self.hbond.setPlaceholderText(AF.PLACEHOLDERS["hbond"][0])
+        self.cb_hbond_lifetime = _check("hbond_lifetime")
+        self.hbond_cdf = narrow(QLineEdit()); self.hbond_cdf.setPlaceholderText(AF.PLACEHOLDERS["hbond_cdf"][0])
         self.cb_rg = _check("rg")
         self.density_grid = narrow(QLineEdit()); self.density_grid.setPlaceholderText(AF.PLACEHOLDERS["density_grid"][0])
         self.cb_voronoi = _check("voronoi")
@@ -198,6 +200,7 @@ class AnalysisPanel(QWidget):
         self.cluster = narrow(QLineEdit()); self.cluster.setPlaceholderText(AF.PLACEHOLDERS["cluster"][0])
         self.fes = narrow(QLineEdit()); self.fes.setPlaceholderText(AF.PLACEHOLDERS["fes"][0])
         self.fes_bins = narrow(QLineEdit()); self.fes_bins.setPlaceholderText(AF.PLACEHOLDERS["fes_bins"][0])
+        self.conformer_temperature = narrow(QLineEdit()); self.conformer_temperature.setPlaceholderText(AF.PLACEHOLDERS["conformer_temperature"][0])
         self.fes_unit = _combo(AF.FES_UNITS)
         self.bands_window = narrow(QLineEdit()); self.bands_window.setPlaceholderText(AF.PLACEHOLDERS["bands_window"][0])
         self.effective_mass_points = narrow(QLineEdit())
@@ -273,18 +276,19 @@ class AnalysisPanel(QWidget):
         add_row(mform, AF.LABELS["zdens_axis"][0], self.zdens_axis)
         for key, widget in (("coordination", self.coordination), ("centrosymmetry", self.centrosymmetry),
                             ("steinhardt", self.steinhardt), ("clusters", self.clusters),
-                            ("adf", self.adf), ("adf_cutoff", self.adf_cutoff), ("hbond", self.hbond),
+                            ("adf", self.adf), ("adf_cutoff", self.adf_cutoff), ("hbond", self.hbond), ("hbond_cdf", self.hbond_cdf),
                             ("density_grid", self.density_grid), ("voronoi_face", self.voronoi_face),
                             ("sasa", self.sasa)):
             add_row(mform, AF.LABELS[key][0], widget)
-        mform.addRow(self.cb_sq); mform.addRow(self.cb_rg); mform.addRow(self.cb_voronoi)
+        mform.addRow(self.cb_sq); mform.addRow(self.cb_hbond_lifetime); mform.addRow(self.cb_rg); mform.addRow(self.cb_voronoi)
         mform.addRow(self._subhead(L("時系列と分布", "Time series and distributions")))
         for key, widget in (("distances", self.distances), ("angles", self.angles), ("dihedrals", self.dihedrals),
                             ("rmsd_reference", self.rmsd_reference), ("conductivity_charge", self.conductivity_charge),
                             ("conductivity_temperature", self.conductivity_temperature),
                             ("displacement", self.displacement), ("strain", self.strain),
                             ("pca", self.pca), ("cluster", self.cluster),
-                            ("fes", self.fes), ("fes_bins", self.fes_bins), ("fes_unit", self.fes_unit)):
+                            ("fes", self.fes), ("fes_bins", self.fes_bins), ("fes_unit", self.fes_unit),
+                            ("conformer_temperature", self.conformer_temperature)):
             add_row(mform, AF.LABELS[key][0], widget)
         mform.addRow(self.cb_rmsf); mform.addRow(self.cb_vacf); mform.addRow(self.cb_viscosity)
         mform.addRow(self._subhead(L("電子・回折・体積データ", "Electronic structure, diffraction and volumetric data")))
@@ -535,7 +539,8 @@ class AnalysisPanel(QWidget):
                 "coordination": self.coordination.text(), "centrosymmetry": self.centrosymmetry.text(),
                 "steinhardt": self.steinhardt.text(), "clusters": self.clusters.text(),
                 "adf": self.adf.text(), "adf_cutoff": self.adf_cutoff.text(), "sq": on(self.cb_sq),
-                "hbond": self.hbond.text(), "rg": on(self.cb_rg), "density_grid": self.density_grid.text(),
+                "hbond": self.hbond.text(), "hbond_lifetime": on(self.cb_hbond_lifetime), "hbond_cdf": self.hbond_cdf.text(),
+                "rg": on(self.cb_rg), "density_grid": self.density_grid.text(),
                 "voronoi": on(self.cb_voronoi), "voronoi_face": self.voronoi_face.text(), "sasa": self.sasa.text(),
                 "distances": self.distances.text(), "angles": self.angles.text(), "dihedrals": self.dihedrals.text(),
                 "rmsd_reference": self.rmsd_reference.text(), "rmsf": on(self.cb_rmsf), "vacf": on(self.cb_vacf),
@@ -544,6 +549,7 @@ class AnalysisPanel(QWidget):
                 "displacement": self.displacement.text(), "strain": self.strain.text(),
                 "pca": self.pca.text(), "cluster": self.cluster.text(),
                 "fes": self.fes.text(), "fes_bins": self.fes_bins.text(), "fes_unit": data(self.fes_unit),
+                "conformer_temperature": self.conformer_temperature.text(),
                 "bands_window": self.bands_window.text(), "effective_mass_points": self.effective_mass_points.text(),
                 "bader": self.bader.text(), "bader_valence": self.bader_valence.text(),
                 "xrd": self.xrd.text(), "xrd_range": self.xrd_range.text(), "xrd_measured": self.xrd_measured.text(),
