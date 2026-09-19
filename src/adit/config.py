@@ -73,6 +73,7 @@ class Config(BaseModel):
     language: str = "ja"
     theme: str = "auto"
     window_frame: str = "auto"
+    ribbon_collapsed: bool = True
     profiles: dict[str, Profile] = Field(default_factory=dict)
 
     @property
