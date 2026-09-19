@@ -3,7 +3,10 @@
   "meta": {
     "created": "2026-09-10T08:58:20+00:00",
     "app_version": "0.0.1",
-    "comment": ""
+    "comment": "",
+    "continued_from": null,
+    "template": null,
+    "stage": null
   },
   "structure": {
     "source": "preset",
@@ -57,7 +60,8 @@
     "charge": 0,
     "multiplicity": 1,
     "fixed_atoms": [],
-    "fixed_axes": {}
+    "fixed_axes": {},
+    "velocities": null
   },
   "method": {
     "code": "xtb",
@@ -65,11 +69,21 @@
     "accuracy": 1.0,
     "etemp": 300.0,
     "max_iterations": 250,
-    "opt_level": "normal"
+    "opt_level": "normal",
+    "solvation": "none",
+    "solvent": "",
+    "md_hmass": 4.0,
+    "md_shake": 2,
+    "md_sccacc": 2.0
   },
   "kpoints": null,
   "task": {
     "type": "vibrations",
+    "bands": {
+      "path": "",
+      "npoints": 60,
+      "empty_bands": 4
+    },
     "optimizer": "Rational",
     "md": {
       "ensemble": "NVT",
@@ -94,5 +108,30 @@
     "omp_threads": 4,
     "walltime": "01:00:00",
     "job_name": "water"
+  },
+  "handoff": null,
+  "plumed": null,
+  "provenance": {
+    "adit_version": "0.1.0a1",
+    "generated_utc": "2026-09-19T01:29:48+00:00",
+    "python": "3.14.7",
+    "ase": "3.29.0",
+    "files": [],
+    "generated_files": [],
+    "inputs": [
+      {
+        "name": "struct.xyz",
+        "sha256": "2e82d28b802d4a4830dfd317ffa9c66dd5bda4e00644d1193fe3f1c524d6b965"
+      },
+      {
+        "name": "submit.sh",
+        "sha256": "1725791ccc9bfca9720560cc5a607a675303bcb740783fa51dcfee9c47516704"
+      },
+      {
+        "name": "xtb.inp",
+        "sha256": "980a5797cf508597fa75a5e30060b8acb1544a8fe69cf411b1510f037d7fd580"
+      }
+    ],
+    "code_version_file": "code_version.txt"
   }
 }

@@ -1,4 +1,4 @@
-ADIT 0.0.1 が生成した、配座の候補の計算です (xtb)
+ADIT 0.1.0a1 が生成した、配座の候補の計算です (xtb)
 
   元の分子: CCO
   RDKit の ETKDG で 10 個を頼み 10 個を作り (乱数の種 12345)、MMFF94 で最適化 (反復の上限 200)。
@@ -12,15 +12,15 @@ ADIT 0.0.1 が生成した、配座の候補の計算です (xtb)
 
   conformers.json  全部の配座 (重複として外したものと、その相手と RMSD を含む)
   conformers.sdf   残した配座 (分子ビューアで開けます)
-  crest/           CREST の入力 (ADIT は走らせません。crest/README.txt)
+  crest/           CREST の入力 (ADIT は実行しません。crest/README.txt)
 
-== 走らせたあと ==
+== 実行したあと ==
   adit-analyze <このディレクトリ> --scan   (配座ごとの最終エネルギーの表 scan_energies.csv)
 
-== この PC で走らせる ==
-  bash submit.sh   (配座の計算を順に走らせます。1 つずつ走らせるなら、各ディレクトリで bash submit.sh)
+== この PC で実行する ==
+  bash submit.sh   (配座の計算を順に実行します。1 つずつ実行するなら、各ディレクトリで bash submit.sh)
 
-== クラスタで走らせる (ADIT は投入しません) ==
+== クラスタで実行する (ADIT は投入しません) ==
   各ディレクトリの submit.sh をクラスタのプロファイルで生成したうえで、このディレクトリで次のように投入します (互いに独立)。
   PBS:   for d in conf_001 conf_002 conf_003; do (cd $d && qsub submit.sh); done
   Slurm: for d in conf_001 conf_002 conf_003; do (cd $d && sbatch submit.sh); done
