@@ -650,7 +650,6 @@ button.link:hover { text-decoration:underline; background:none; }
       "To run it, open a terminal in the generated directory: bash submit.sh (for a cluster, use the commands in transfer_and_submit.sh)") }}</span>{% endif %}
     {% if written %}<a class="btn" href="/analysis?dir={{ written|urlencode }}">{{ T("解析へ進む", "Go to analysis") }}</a>{% endif %}
   </div>
-  <pre id="log" hidden></pre>
 </fieldset>
 <fieldset><legend>{{ T("計算設定 (spec.json) を開く", "Open calculation settings (spec.json)") }}</legend>
   <input type="file" name="spec_file" id="spec_file" aria-label="spec.json"> <button type="submit" formaction="/load" formnovalidate>{{ T("読み込み", "Load") }}</button>
@@ -661,7 +660,7 @@ button.link:hover { text-decoration:underline; background:none; }
 {% if scene_json %}<script>window.ADIT_SCENE = {{ scene_json | safe }};</script>
 <script>{{ viewer_js | safe }}</script>{% endif %}
 <script>
-/* 欄の出し分けは CSS (上の :has()) が行う。ここはプレビューのタブと実行ログの更新、3D の表示だけ */
+/* Field visibility is handled by CSS (:has() above); this only switches the preview tabs. */
 (function () {
   document.querySelectorAll('#tabs button').forEach(function (b) {
     b.addEventListener('click', function () {
@@ -669,17 +668,6 @@ button.link:hover { text-decoration:underline; background:none; }
       document.querySelectorAll('pre.tab').forEach(function (p) { p.hidden = p.dataset.tab !== b.dataset.tab; });
     });
   });
-  var log = document.getElementById('log');
-  function poll() {
-    fetch('/status').then(function (r) { return r.json(); }).then(function (s) {
-      if (s.dir && (s.running || s.exit_code !== null)) {
-        log.hidden = false;
-        log.textContent = (s.running ? '{{ T("実行中", "Running") }}' : '{{ T("終了しました (終了コード ", "Finished (exit code ") }}' + s.exit_code + ')') + ' — ' + s.dir + '\n\n' + s.tail;
-      }
-      if (s.running) setTimeout(poll, 2000); else if (s.exit_code !== null && !log.dataset.done) { log.dataset.done = '1'; location.reload(); }
-    }).catch(function () {});
-  }
-  poll();
 })();
 </script>
 {% endblock %}

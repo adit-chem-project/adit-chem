@@ -352,19 +352,53 @@ def template_marks(spec) -> dict[str, str]:
     return {lab: t["name"] for lab, good in ok.items() if good}
 
 
+# Spec fields the web form has no widget for. PrepOrigin keeps them from the loaded
+# spec.json so that load -> preview -> generate does not silently reset them.
+HIDDEN_METHOD_FIELDS = {
+    "xtb": ("md_hmass", "md_shake", "md_sccacc"),
+    "espresso": ("dipole_correction", "dipole_direction", "dipole_maxpos", "dipole_decrease", "dipole_amplitude"),
+    "lammps": ("thermo_pressure_tensor",),
+}
+HIDDEN_META_FIELDS = ("comment", "stage")
+
+
+def hidden_method_values(method) -> dict:
+    fields = type(method).model_fields
+    return {k: getattr(method, k) for k in HIDDEN_METHOD_FIELDS.get(method.code, ()) if getattr(method, k) != fields[k].default}
+
+
+def hidden_meta_values(meta) -> dict:
+    return {k: getattr(meta, k) for k in HIDDEN_META_FIELDS if getattr(meta, k)}
+
+
+def uneven_shift(kpoints):
+    # The form has one shift field for all three directions.
+    if kpoints is None or len(set(kpoints.shift)) == 1:
+        return None
+    return tuple(kpoints.shift)
+
+
+def _shift_text(shift) -> str:
+    return "(" + ", ".join(f"{x:g}" for x in shift) + ")"
+
+
 class PrepOrigin:
 
     def __init__(self, spec=None):
         self.continued_from = self.handoff = self.velocities = self.template = None
         self.plumed = None
         self.code, self.source_ref, self.symbols = "", "", []
+        self.hidden_code, self.hidden_method, self.hidden_meta, self.kp_shift = "", {}, {}, None
         if spec is not None:
             self.take(spec)
 
     def take(self, spec, *, template_only: bool = False) -> None:
         self.template = spec.meta.template
+        self.hidden_code, self.hidden_method = spec.method.code, hidden_method_values(spec.method)
+        self.kp_shift = uneven_shift(spec.kpoints)
         if template_only:
             return
+        self.hidden_meta = hidden_meta_values(spec.meta)
         self.plumed = spec.plumed
         self.continued_from, self.handoff = spec.meta.continued_from, spec.handoff
         self.velocities = spec.structure.velocities
@@ -376,7 +410,13 @@ class PrepOrigin:
 
     @property
     def active(self) -> bool:
-        return bool(self.continued_from or self.handoff or self.template)
+        return bool(self.continued_from or self.handoff or self.template or self.hidden_method or self.hidden_meta or self.kp_shift)
+
+    def _shift_kept(self, spec) -> bool:
+        kp = spec.kpoints
+        if self.kp_shift is None or kp is None or len(set(kp.shift)) != 1:
+            return False
+        return f"{kp.shift[0]:g}" == f"{self.kp_shift[0]:g}"
 
     def same_structure(self, st) -> bool:
         return bool(self.source_ref) and st.source_ref == self.source_ref and list(st.atoms.symbols) == self.symbols
@@ -407,6 +447,13 @@ class PrepOrigin:
 
             if spec.method.code in SUPPORTED_CODES and spec.task.type == "molecular_dynamics":
                 upd["plumed"] = self.plumed
+        if self.hidden_method and spec.method.code == self.hidden_code:
+            upd["method"] = spec.method.model_copy(update=dict(self.hidden_method))
+        if self._shift_kept(spec):
+            upd["kpoints"] = spec.kpoints.model_copy(update={"shift": self.kp_shift})
+        for k, v in self.hidden_meta.items():
+            if not getattr(spec.meta, k):
+                meta_upd[k] = v
         if meta_upd:
             upd["meta"] = spec.meta.model_copy(update=meta_upd)
         return spec.model_copy(update=upd) if upd else spec
@@ -426,6 +473,16 @@ class PrepOrigin:
         if self.template:
             lines.append(L(f"研究室の雛形 {self.template.get('name')} から読み込みました。雛形の値のままの欄には、ラベルの下に小さく印を付けています",
                            f"Loaded from the group template {self.template.get('name')}; fields still at the template value are marked under their labels"))
+        kept_shift = self.kp_shift is not None and (spec is None or (spec.kpoints is not None and tuple(spec.kpoints.shift) == self.kp_shift))
+        if kept_shift:
+            shown = _shift_text(self.kp_shift)
+            lines.append(L(f"k 点シフトは {shown} のまま (シフトの欄には 1 つ目の成分だけ出ています)",
+                           f"k-point shift kept at {shown} (the shift field shows the first component only)"))
+        kept = [f"{k}={v}" for k, v in self.hidden_method.items()] if (spec is None or spec.method.code == self.hidden_code) else []
+        kept += [f"meta.{k}" for k in self.hidden_meta]
+        if kept:
+            lines.append(L("画面に欄の無い設定は、読み込んだ値のまま: " + ", ".join(kept),
+                           "Settings without a field on this page keep the loaded values: " + ", ".join(kept)))
         return "\n".join(lines)
 
 

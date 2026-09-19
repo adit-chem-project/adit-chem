@@ -198,3 +198,62 @@ def test_english_page(web):
             assert text in page, text
     finally:
         lang.set_language("ja")
+
+
+def _hidden_cases():
+    # Specs whose values the form cannot show; everything else is form-shaped already.
+    from adit.spec import KPoints, LammpsMethod, Meta
+
+    xtb = spec_from_form({**default_form(), "code": "xtb", "task_type": "molecular_dynamics"})
+    qe = spec_from_form({**default_form(), "code": "espresso", "source": "bulk", "bulk_el": "Si", "kp_mode": "mesh", "k1": "4", "k2": "4", "k3": "1"})
+    lmp = spec_from_form({**default_form(), "code": "lammps", "source": "bulk", "bulk_el": "Cu", "lmp_units": "metal", "lmp_pair_style": "eam"})
+    return [
+        xtb.model_copy(update={"method": XtbMethod(md_hmass=2.0, md_shake=0, md_sccacc=1.0),
+                               "meta": Meta(comment="hello", stage={"index": 1, "name": "nvt"})}),
+        qe.model_copy(update={"method": EspressoMethod(dipole_correction=True, dipole_direction=3, dipole_maxpos=0.9, dipole_decrease=0.1,
+                                                       dipole_amplitude=0.01),
+                              "kpoints": KPoints(mode="mesh", mesh=(4, 4, 1), shift=(0.5, 0.5, 0.0))}),
+        lmp.model_copy(update={"method": LammpsMethod(units="metal", pair_style="eam", thermo_pressure_tensor=True)}),
+    ]
+
+
+def test_fields_without_a_form_field_survive_the_round_trip():
+    from adit.web.codefields import PrepOrigin
+
+    skip = {"meta": {"created", "app_version"}}
+    for spec in _hidden_cases():
+        plain = spec_from_form({**default_form(), **form_from_spec(spec)})
+        assert plain.model_dump(exclude=skip) != spec.model_dump(exclude=skip), spec.method.code
+        origin = PrepOrigin(spec)
+        assert origin.active
+        back = origin.apply(plain)
+        assert back.model_dump(exclude=skip) == spec.model_dump(exclude=skip), spec.method.code
+        note = origin.describe(back)
+        assert "読み込んだ値のまま" in note or "k 点シフトは (0.5, 0.5, 0) のまま" in note
+    qe = _hidden_cases()[1]
+    origin = PrepOrigin(qe)
+    assert "k 点シフトは (0.5, 0.5, 0) のまま" in origin.describe(origin.apply(spec_from_form({**default_form(), **form_from_spec(qe)})))
+    changed = spec_from_form({**default_form(), **form_from_spec(qe), "kp_shift": "0"})
+    assert origin.apply(changed).kpoints.shift == (0.0, 0.0, 0.0)
+
+
+def test_loaded_spec_json_is_written_back_unchanged(web):
+    from adit.spec import CalculationSpec
+
+    app, base = web
+    spec = _hidden_cases()[0]
+    b = "----adittest"
+    body = (f"--{b}\r\nContent-Disposition: form-data; name=\"spec_file\"; filename=\"spec.json\"\r\nContent-Type: application/json\r\n\r\n").encode() \
+        + spec.model_dump_json().encode() + f"\r\n--{b}--\r\n".encode()
+    req = urllib.request.Request(base + "/load", data=body, headers={"Content-Type": f"multipart/form-data; boundary={b}"})
+    page = urllib.request.urlopen(req, timeout=60).read().decode()
+    assert not _error(page), _error(page)
+    assert app.files is not None
+    skip = {"meta": {"created", "app_version"}}
+    written = CalculationSpec.from_json(app.files.texts["spec.json"])
+    assert written.model_dump(exclude=skip) == spec.model_dump(exclude=skip)
+    assert "md_hmass=2.0" in h.unescape(page) and "meta.comment" in h.unescape(page)
+    page = _post(base + "/preview", {**app.form, "xtb_etemp": "500"})
+    assert app.spec.method.md_hmass == 2.0 and app.spec.method.etemp == 500.0 and app.spec.meta.stage == {"index": 1, "name": "nvt"}
+    _post(base + "/origin_clear", dict(app.form))
+    assert app.spec.method.md_hmass == 4.0 and app.spec.meta.comment == ""

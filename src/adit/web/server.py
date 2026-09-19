@@ -9,9 +9,10 @@ import html
 import io
 import json
 import os
+import re
 import secrets
 import shutil
-import subprocess
+import socket
 
 from adit.compat import ensure_printable_stdio, upload_basename
 import sys
@@ -71,6 +72,10 @@ class WebApp:
 
     def __init__(self, cfg: Config, cfg_path: Path):
         self.cfg, self.cfg_path = cfg, cfg_path
+        # Requests run one at a time per page group, because the form, spec, figures and recipe caches are shared.
+        # Two locks so the analysis pages still answer while a slow recipe build holds the prepare page.
+        self.lock = threading.RLock()
+        self.analysis_lock = threading.RLock()
         self._cfg_mtime = _mtime(cfg_path)
         self.config_error = ""
         self.form: dict[str, str] = default_form(cfg.default_profile, Path.home() / "adit_runs" / f"run_{datetime.now():%Y%m%d_%H%M%S}")
@@ -81,7 +86,6 @@ class WebApp:
         self.written_kind: str = ""
         self.written_exe: str = ""
         self.written_code: str = ""
-        self.proc: subprocess.Popen | None = None
         self.figures: dict[str, str] = {}
         self.upload_dir = Path.home() / "adit_runs" / "uploads"
         self.scan_out: Path | None = None
@@ -532,7 +536,7 @@ class WebApp:
         self._fill_step_fields(f)
         self.recipe_status, self.recipe_note = None, None
         verb, _, arg = action.partition(":")
-        k = int(arg) if arg.isdigit() else 0
+        k = int(arg) if arg.isdecimal() else 0
         try:
             steps = R.steps_from_form(f)
         except StructureError as ex:
@@ -638,7 +642,12 @@ class WebApp:
                   "terms": [], "rows": []}
             if s.op == "slab":
                 names = R.terminations(rec, k - 1) if rec is not None else None
-                it["terms"] = R.term_options(names, forms._i(f.get(f"st{k}_term"), 0) if (f.get(f"st{k}_term") or "").strip().lstrip("-").isdigit() else s.termination)
+                raw_term = (f.get(f"st{k}_term") or "").strip()
+                try:
+                    term = forms._i(raw_term, 0) if raw_term.lstrip("-").isdecimal() else s.termination
+                except FormError:
+                    term = s.termination
+                it["terms"] = R.term_options(names, term)
             if s.op == "solvent_layer":
                 it["rows"] = [(str(i), f"{i + 1}: {R.pretty_name(c.name())}") for i, c in enumerate(s.components)]
             if self.recipe_note and self.recipe_note[0] == k:
@@ -663,17 +672,6 @@ class WebApp:
                                                                                        "Electrode–electrolyte interface (slab + auto-sized surface + electrolyte + fixed layer)"))]}
 
 
-
-    def status(self) -> dict:
-        running = self.proc is not None and self.proc.poll() is None
-        code = None if self.proc is None or running else self.proc.returncode
-        tail = ""
-        if self.written is not None:
-            p = self.written / "output.log"
-            if p.is_file():
-                text = p.read_text(encoding="utf-8", errors="replace")
-                tail = "\n".join(text.splitlines()[-40:])
-        return {"running": running, "exit_code": code, "tail": tail, "dir": str(self.written or "")}
 
     def analyze(self, run_dir: str, opts: AnalysisOptions):
         res = run_analysis(run_dir, opts)
@@ -856,8 +854,32 @@ def _executable_of(run_command: str) -> str:
 
 
 # ---- HTTP ----
+MAX_BODY_BYTES = 256 * 1024 * 1024
+
+
+class BadRequest(Exception):
+
+    def __init__(self, status: HTTPStatus, message: str):
+        super().__init__(message)
+        self.status = status
+
+
+def _body_length(handler: BaseHTTPRequestHandler) -> int:
+    raw = (handler.headers.get("Content-Length") or "0").strip()
+    try:
+        length = int(raw)
+    except ValueError:
+        length = -1
+    if length < 0:
+        raise BadRequest(HTTPStatus.BAD_REQUEST, L(f"Content-Length が数値ではありません: {raw!r}", f"Content-Length is not a number: {raw!r}"))
+    if length > MAX_BODY_BYTES:
+        raise BadRequest(HTTPStatus(413), L(f"送られた本文が大きすぎます ({length} バイト、上限 {MAX_BODY_BYTES})",
+                                            f"request body too large ({length} bytes, limit {MAX_BODY_BYTES})"))
+    return length
+
+
 def _parse_body(handler: BaseHTTPRequestHandler) -> tuple[dict[str, str], dict[str, tuple[str, bytes]]]:
-    length = int(handler.headers.get("Content-Length") or 0)
+    length = _body_length(handler)
     body = handler.rfile.read(length) if length else b""
     ctype = handler.headers.get("Content-Type", "")
     fields: dict[str, str] = {}
@@ -881,20 +903,39 @@ def _parse_body(handler: BaseHTTPRequestHandler) -> tuple[dict[str, str], dict[s
 
 
 LOCAL_HOSTS = ("127.0.0.1", "localhost", "::1")
-TOKEN_COOKIE = "adit_token"
+READ_ONLY_PATHS = ("/file", "/spec.json")
+ANALYSIS_PATHS = ("/analysis", "/compare", "/report", "/audit_runs")
+WILDCARD_HOSTS = ("", "0.0.0.0", "::")
+TOKEN_CHARS = re.compile(r"[A-Za-z0-9_-]+")
+
+
+def cookie_name(port: int) -> str:
+    # One cookie per port, so two servers on the same PC do not overwrite each other's login.
+    return f"adit_token_{port}"
 
 
 def new_token() -> str:
     return secrets.token_urlsafe(24)
 
 
+def redact_token(text: str) -> str:
+    return re.sub(r"token=[^&\s]*", "token=***", text)
+
+
 def make_handler(app: WebApp, token: str | None = None):
     class Handler(BaseHTTPRequestHandler):
         server_version = f"adit-web/{__version__}"
+        _pending_cookie: str | None = None
 
         def log_message(self, fmt, *args):
             if os.environ.get("ADIT_WEB_LOG"):
-                super().log_message(fmt, *args)
+                super().log_message(fmt, *[redact_token(str(a)) for a in args])
+
+        def end_headers(self) -> None:
+            if self._pending_cookie is not None:
+                self.send_header("Set-Cookie", self._pending_cookie)
+                self._pending_cookie = None
+            super().end_headers()
 
         def _send(self, text: str, status: HTTPStatus = HTTPStatus.OK, ctype: str = "text/html; charset=utf-8") -> None:
             data = text.encode("utf-8")
@@ -989,16 +1030,23 @@ def make_handler(app: WebApp, token: str | None = None):
         def _authorized(self) -> bool:
             if not token:
                 return True
+            want = token.encode("utf-8")
+            name = cookie_name(self.server.server_port)
             u = urlparse(self.path)
             given = parse_qs(u.query).get("token", [""])[-1]
-            if given and hmac.compare_digest(given, token):
+            if given and hmac.compare_digest(given.encode("utf-8"), want):
+                cookie = f"{name}={token}; Path=/; HttpOnly; SameSite=Lax"
+                if self.command == "POST":
+                    # A redirect would drop the request body; answer directly and set the cookie on that response.
+                    self._pending_cookie = cookie
+                    return True
                 rest = urlencode([(k, val) for k, vals in parse_qs(u.query, keep_blank_values=True).items() for val in vals if k != "token"])
                 self.send_response(HTTPStatus.SEE_OTHER)
-                self.send_header("Set-Cookie", f"{TOKEN_COOKIE}={token}; Path=/; HttpOnly; SameSite=Strict")
+                self.send_header("Set-Cookie", cookie)
                 self.send_header("Location", u.path + ("?" + rest if rest else "")); self.send_header("Content-Length", "0"); self.end_headers()
                 return False
             cookie = SimpleCookie(self.headers.get("Cookie", ""))
-            if TOKEN_COOKIE in cookie and hmac.compare_digest(cookie[TOKEN_COOKIE].value, token):
+            if name in cookie and hmac.compare_digest(cookie[name].value.encode("utf-8"), want):
                 return True
             self._send(L("この画面を開くには、adit-web を起動した端末に表示された URL (token=… 付き) を開いてください。",
                          "Open the URL (with token=...) printed in the terminal where adit-web was started."),
@@ -1009,7 +1057,12 @@ def make_handler(app: WebApp, token: str | None = None):
             try:
                 if not self._authorized():
                     return
-                fn()
+                path = urlparse(self.path).path
+                if path in READ_ONLY_PATHS:
+                    fn()
+                else:
+                    with (app.analysis_lock if path in ANALYSIS_PATHS else app.lock):
+                        fn()
             except (BrokenPipeError, ConnectionResetError):
                 raise
             except Exception as ex:
@@ -1032,8 +1085,6 @@ def make_handler(app: WebApp, token: str | None = None):
                 if app.spec is None:
                     self._send(L("先にプレビューしてください", "Preview first"), HTTPStatus.NOT_FOUND, "text/plain; charset=utf-8"); return
                 self._send_bytes(app.spec.model_dump_json(indent=2).encode(), "application/json", "spec.json")
-            elif u.path == "/status":
-                self._send(json.dumps(app.status()), ctype="application/json")
             elif u.path == "/analysis":
                 d = q.get("dir") or str(app.written or "")
                 md = _is_md(d) if d else False
@@ -1079,7 +1130,10 @@ def make_handler(app: WebApp, token: str | None = None):
         def _do_POST(self) -> None:
             app.refresh_config()
             u = urlparse(self.path)
-            fields, files = _parse_body(self)
+            try:
+                fields, files = _parse_body(self)
+            except BadRequest as ex:
+                self._send(str(ex), ex.status, "text/plain; charset=utf-8"); return
             if u.path == "/preview":
                 self._save_upload(fields, files)
                 status_text, err = app.preview(fields)
@@ -1424,7 +1478,7 @@ def make_handler(app: WebApp, token: str | None = None):
                 except (CompareError, ValueError, OSError, KeyError) as ex:
                     self._compare_page(base, rows, None, L(f"compare.json を読めません: {ex}", f"cannot read compare.json: {ex}")); return
                 self._compare_page(base, rows, None, ""); return
-            if not base or not Path(base).expanduser().is_dir():
+            if not base or not os.path.isdir(os.path.expanduser(base)):
                 self._compare_page(base, rows, None, L(f"{AF.lab('compare_base')}: ディレクトリがありません ({base!r})",
                                                        f"{AF.lab('compare_base')}: directory not found ({base!r})")); return
             try:
@@ -1451,7 +1505,7 @@ def make_handler(app: WebApp, token: str | None = None):
                 opts = None
             elif opts is not None and run_dir:
                 d = Path(run_dir).expanduser()
-                if d.is_dir() and not any((d / f).exists() for f in RESULT_FILES):
+                if os.path.isdir(d) and not any(os.path.exists(d / f) for f in RESULT_FILES):
                     notice = L("計算結果が見つかりません (output.log などの出力ファイルがありません)。まだ実行していないようです。"
                                "下の要約は、出力が無いまま入力ファイルだけから求めたものです。",
                                "No calculation results found (no output files such as output.log). It seems the calculation has not been run yet; "
@@ -1486,17 +1540,46 @@ def make_handler(app: WebApp, token: str | None = None):
     return Handler
 
 
+class _ThreadingHTTPServer6(ThreadingHTTPServer):
+    address_family = socket.AF_INET6
+
+    def server_bind(self) -> None:
+        if self.server_address[0] in ("", "::"):
+            try:
+                self.socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
+            except (OSError, AttributeError):
+                pass
+        super().server_bind()
+
+
 def serve(app: WebApp, host: str = "127.0.0.1", port: int = 8765, open_browser: bool = False,
           token: str | None = None) -> ThreadingHTTPServer:
-    httpd = ThreadingHTTPServer((host, port), make_handler(app, token))
+    cls = _ThreadingHTTPServer6 if ":" in host else ThreadingHTTPServer
+    httpd = cls((host, port), make_handler(app, token))
     if open_browser:
-        threading.Timer(0.5, lambda: webbrowser.open(server_url(host, httpd.server_port, token))).start()
+        threading.Timer(0.5, lambda: webbrowser.open(server_url(browse_host(host), httpd.server_port, token))).start()
     return httpd
+
+
+def browse_host(host: str) -> str:
+    return "127.0.0.1" if host in WILDCARD_HOSTS else host
 
 
 def server_url(host: str, port: int, token: str | None = None) -> str:
     shown = f"[{host}]" if ":" in host else host
-    return f"http://{shown}:{port}/" + (f"?token={token}" if token else "")
+    return f"http://{shown}:{port}/" + (f"?token={quote(token, safe='')}" if token else "")
+
+
+def server_lines(host: str, port: int, token: str | None = None) -> list[str]:
+    stop = "(Ctrl-C で停止 / Ctrl-C to stop)"
+    if host not in WILDCARD_HOSTS:
+        return [f"adit-web {__version__}: {server_url(host, port, token)}  {stop}"]
+    return [f"adit-web {__version__}:",
+            L("  この PC で開く:   ", "  on this PC:       ") + server_url("127.0.0.1", port, token),
+            L("  他の PC から開く: ", "  from other PCs:   ") + server_url(socket.getfqdn(), port, token),
+            L("  (繋がらなければ、ホスト名をこの PC の IP アドレスに置き換えてください)",
+              "  (if it does not connect, replace the host name with this PC's IP address)"),
+            f"  {stop}"]
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -1512,6 +1595,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--config", help=L("cluster.toml のパス", "path to cluster.toml"))
     ap.add_argument("--open", action="store_true", help=L("起動後にブラウザを開きます", "open the browser after start"))
     args = ap.parse_args(argv)
+    if args.token is not None and not TOKEN_CHARS.fullmatch(args.token):
+        print(L("--token に使えるのは英数字と _ - だけです", "--token may contain only letters, digits, _ and -"), file=sys.stderr)
+        return 2
     try:
         cfg, path, created = ensure_config(Path(args.config).expanduser() if args.config else config_path())
     except ConfigError as ex:
@@ -1525,8 +1611,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.no_token and args.host not in LOCAL_HOSTS:
         print(L("警告: 合言葉なしのため、このアドレスに届く人は誰でも入力の生成と実行ができます", "warning: no token; anyone reaching this host can generate and run"), file=sys.stderr)
     app = WebApp(cfg, path)
-    httpd = serve(app, args.host, args.port, args.open, token)
-    print(f"adit-web {__version__}: {server_url(args.host, httpd.server_port, token)}  (Ctrl-C で停止 / Ctrl-C to stop)", file=sys.stderr)
+    try:
+        httpd = serve(app, args.host, args.port, args.open, token)
+    except OSError as ex:
+        print(L(f"そのアドレスでは待ち受けできません: {args.host}:{args.port} ({ex})", f"cannot listen on {args.host}:{args.port} ({ex})"), file=sys.stderr)
+        return 2
+    print("\n".join(server_lines(args.host, httpd.server_port, token)), file=sys.stderr)
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
