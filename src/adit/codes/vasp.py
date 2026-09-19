@@ -372,7 +372,8 @@ class VaspGenerator(InputGenerator):
         elif md.thermostat == "nose_hoover":
             out += ["MDALGO = 2"]
         elif md.thermostat == "csvr":
-            out += ["MDALGO = 5", f"CSVR_PERIOD = {_inc(md.coupling_time_fs)}"]
+            # CSVR_PERIOD counts MD steps (interpreted together with POTIM), not fs: wiki CSVR_PERIOD page.
+            out += ["MDALGO = 5", f"CSVR_PERIOD = {max(1, round(md.coupling_time_fs / md.timestep_fs))}"]
         else:
             raise GenerationError(L(f"VASP に対応していない熱浴: {md.thermostat} (andersen / langevin / nose_hoover / csvr)", f"thermostat not supported for VASP: {md.thermostat} (andersen / langevin / nose_hoover / csvr)"))
         if md.ensemble == "NPT":
