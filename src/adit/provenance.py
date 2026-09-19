@@ -83,7 +83,7 @@ def read_provenance(output_dir: Path | str) -> dict | None:
 def readme_lines(prov: dict) -> list[str]:
     lines = [L("== 作成時の記録 ==", "== Provenance =="),
              L(f"  ADIT {prov['adit_version']} / Python {prov['python']} / ASE {prov['ase']} / 生成 {prov['generated_utc']} (UTC)",
-               f"  adit {prov['adit_version']} / Python {prov['python']} / ASE {prov['ase']} / generated {prov['generated_utc']} (UTC)")]
+               f"  ADIT {prov['adit_version']} / Python {prov['python']} / ASE {prov['ase']} / generated {prov['generated_utc']} (UTC)")]
     if prov["files"] or prov["generated_files"]:
         lines.append(L("  パラメータなどのファイルの SHA-256 (中身から計算する照合用のハッシュ。同じ値なら同じファイル。spec.json の provenance にも同じもの):",
                        "  SHA-256 of parameter and other files (a fingerprint of the contents; equal values mean identical files; also under provenance in spec.json):"))

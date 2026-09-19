@@ -52,7 +52,7 @@ LABELS: dict[str, tuple[str, str]] = {
     "rdf_pairs": ("RDF の元素の組", "RDF element pairs"),
     "zdens_axis": ("密度分布を取る軸", "Axis for the density profile"),
     "coordination": ("配位数のカットオフ [Å]", "Coordination cutoff [Å]"),
-    "centrosymmetry": ("中心対称性の相手の数", "Centrosymmetry neighbours"),
+    "centrosymmetry": ("中心対称性の相手の数", "Centrosymmetry neighbors"),
     "steinhardt": ("Steinhardt q4・q6 のカットオフ [Å]", "Steinhardt q4 and q6 cutoff [Å]"),
     "clusters": ("かたまりのカットオフ [Å]", "Cluster cutoff [Å]"),
     "adf": ("結合角の分布の元素", "Elements for the angle distribution"),

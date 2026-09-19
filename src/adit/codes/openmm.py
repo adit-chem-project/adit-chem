@@ -428,7 +428,7 @@ class OpenmmGenerator(InputGenerator):
         if t == "molecular_dynamics":
             if m.write_xyz_trajectory:
                 outputs.append(L("  trajectory.extxyz   軌跡をテキストの拡張 xyz でも書いたもの (ADIT の解析の RDF・MSD はこちらを読みます。DCD より大きくなります)",
-                                 "  trajectory.extxyz   the trajectory also as a text extended xyz (adit's RDF and MSD read this; larger than the DCD)"))
+                                 "  trajectory.extxyz   the trajectory also as a text extended xyz (ADIT's RDF and MSD read this; larger than the DCD)"))
             outputs.append(L("  md.log / trajectory.dcd   時刻・エネルギー・温度・体積・密度の記録 (CSV。OpenMM の StateDataReporter) と軌跡 (DCD)",
                              "  md.log / trajectory.dcd   time, energies, temperature, volume and density (CSV from the OpenMM StateDataReporter) and the trajectory (DCD)"))
         if spec.plumed is not None:

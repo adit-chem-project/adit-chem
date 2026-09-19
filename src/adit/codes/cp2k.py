@@ -218,7 +218,7 @@ class Cp2kGenerator(InputGenerator):
         m = spec.method
         fname = m.potential_file if potential else m.basis_file
         src = data.resolve(fname)
-        lines = [f"# adit: {src} から、この計算で使う項目だけを写したもの (CP2K の配布物。GPL-2.0-or-later)", ""]
+        lines = [f"# ADIT: {src} から、この計算で使う項目だけを写したもの (CP2K の配布物。GPL-2.0-or-later)", ""]
         for e in spec.elements:
             name = _pick(m, data, e, potential=potential)
             entry = data.find(fname, e, name, potential=potential) if name else None

@@ -108,7 +108,7 @@ def main(argv: list[str] | None = None) -> int:
         "coordination number per atom within the cutoff in Å (ADIT has no default)"))
     ap.add_argument("--centrosymmetry", nargs="?", const=12, type=int, default=0, metavar="N", help=L(
         "中心対称性パラメータ (相手の数。FCC なら 12、BCC なら 8)。欠陥かどうかは判定しません",
-        "centrosymmetry parameter with N neighbours (12 for FCC, 8 for BCC); no defect judgement is made"))
+        "centrosymmetry parameter with N neighbors (12 for FCC, 8 for BCC); no defect judgement is made"))
     ap.add_argument("--steinhardt", type=float, default=0.0, metavar="Å", help=L(
         "Steinhardt の q4・q6 (カットオフ [Å])。どの値がどの構造かは言いません",
         "Steinhardt q4 and q6 within the cutoff in Å; ADIT does not say which structure a value means"))
@@ -138,16 +138,16 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--spectrum-measured", default="", metavar="FILE", help=L(
         "赤外・ラマンの図に重ねる測定の表 (1 列目 波数 [cm⁻¹]、2 列目 強度)。強度は最大値で規格化して重ねます",
         "measured spectrum to overlay on the IR and Raman plots (column 1 wavenumber in cm^-1, column 2 intensity); "
-        "both are normalised to their maximum"))
+        "both are normalized to their maximum"))
     ap.add_argument("--plot-colors", default="", metavar="色,色,...", help=L(
         "図の線の色を順に使います (例 --plot-colors black,#1f77b4,tab:red)",
         "colors used for the lines, in order (e.g. --plot-colors black,#1f77b4,tab:red)"))
     ap.add_argument("--plot-ticks", default="", choices=("", "in", "out", "inout"), help=L(
-        "目盛りの向き (in は内向き、out は外向き)", "tick direction (in, out or inout)"))
+        "目盛りの向き (in は内向き、out は外向き、inout は両側)", "tick direction (in, out or inout)"))
     ap.add_argument("--plot-grid", default="", choices=("", "both", "x", "y", "none"), help=L(
         "目盛り線を引く軸 (none なら引きません)", "which axes get grid lines (none draws no grid)"))
     ap.add_argument("--plot-spines", default="", choices=("", "all", "left-bottom", "none"), help=L(
-        "グラフを囲む枠 (all は四方、left-bottom は左と下だけ)",
+        "グラフを囲む枠 (all は四方、left-bottom は左と下だけ、none は枠なし)",
         "which spines are drawn (all, left and bottom only, or none)"))
     ap.add_argument("--plot-line-width", type=float, default=0.0, metavar="pt", help=L("線の太さ [pt]", "line width in points"))
     ap.add_argument("--plot-font-size", type=float, default=0.0, metavar="pt", help=L("図の文字の大きさ [pt]", "font size in the figures, in points"))
@@ -249,7 +249,7 @@ def main(argv: list[str] | None = None) -> int:
         "活性化自由エネルギー ΔG‡ [kJ/mol] から Eyring の式で速度定数を出す (複数回書ける)。どの差が ΔG‡ かは利用者が決める",
         "compute a rate constant from an activation free energy dG# in kJ/mol using the Eyring equation (repeatable); you decide which difference is the barrier"))
     ap.add_argument("--eyring-temperature", type=float, default=298.15, metavar="K", help=L("Eyring の式の温度 [K] (既定 298.15)", "temperature in K for the Eyring equation (default 298.15)"))
-    ap.add_argument("--eyring-kappa", type=float, default=1.0, metavar="KAPPA", help=L("透過係数 κ (既定 1。トンネル効果は入れない)", "transmission coefficient kappa (default 1; no tunnelling correction)"))
+    ap.add_argument("--eyring-kappa", type=float, default=1.0, metavar="KAPPA", help=L("透過係数 κ (既定 1。トンネル効果は入れない)", "transmission coefficient kappa (default 1; no tunneling correction)"))
     ap.add_argument("--xrd", nargs="?", const="CuKa", default="", metavar="RADIATION", help=L(
         "最終構造 (周期系) から粉末 X 線回折のパターンを計算する (既定の線源 CuKa。pymatgen が要る)",
         "compute a powder XRD pattern from the final (periodic) structure (default radiation CuKa; needs pymatgen)"))

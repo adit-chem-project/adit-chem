@@ -98,7 +98,7 @@ class AmberGenerator(InputGenerator):
     def validate(self, spec: CalculationSpec, cfg: Config) -> list[ValidationError]:
         m, st = spec.method, spec.structure
         if not isinstance(m, AmberMethod):
-            return [ValidationError("method.code", L("Amber の条件ではありません", "not an Amber method"))]
+            return [ValidationError("method.code", L("Amber の条件ではありません", "the settings are not for Amber"))]
         errors: list[ValidationError] = []
         if spec.task.type != "geometry_optimization":
             errors.append(ValidationError("task.type", L(

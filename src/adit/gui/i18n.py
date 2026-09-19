@@ -29,7 +29,7 @@ _EN: dict[str, str] = {
     "SCC の最大反復回数": "Max SCC iterations", "最適化の収束レベル (--opt)": "Optimization level (--opt)", "GFN-FF (力場)": "GFN-FF (force field)",
     "パラメータファイルは不要です (計算手法に内蔵)。分子系のみ。電荷とスピン多重度は構造パネルの値をコマンドライン引数で渡します":
         "No parameter files are needed (built into the method). Molecules only. Charge and multiplicity are passed from the structure panel as command-line arguments",
-    "擬ポテンシャルのセット": "Pseudopotential set", "元素ごとの UPF ファイル": "UPF file per element", "ecutwfc [Ry]": "ecutwfc [Ry] (required)",
+    "擬ポテンシャルのセット": "Pseudopotential set", "元素ごとの UPF ファイル": "UPF file per element", "ecutwfc [Ry]": "ecutwfc [Ry]",
     "ecutrho [Ry] (0 = 指定しない)": "ecutrho [Ry] (0 = omit)", "追加の変数 (名前空間.変数 = 値)": "Additional variables (namelist.variable = value)",
     "画面にない変数を 1 行に 1 つ、名前空間.変数 = 値 の形で (例 system.nbnd = 20)": "Variables not in the GUI, one per line: namelist.var = value (e.g. system.nbnd = 20)",
     "空欄なら UPF の汎関数を使用 (例 PBE, PBEsol)": "Empty = functional from the UPF (e.g. PBE, PBEsol)",
@@ -263,7 +263,7 @@ _EN.update({
     "RDF の元素の組": "RDF element pairs",
     "密度分布を取る軸": "Axis for the density profile",
     "配位数のカットオフ [Å]": "Coordination cutoff [Å]",
-    "中心対称性の相手の数": "Centrosymmetry neighbours",
+    "中心対称性の相手の数": "Centrosymmetry neighbors",
     "Steinhardt q4・q6 のカットオフ [Å]": "Steinhardt q4 and q6 cutoff [Å]",
     "かたまりのカットオフ [Å]": "Cluster cutoff [Å]",
     "結合角の分布の元素": "Elements for the angle distribution",

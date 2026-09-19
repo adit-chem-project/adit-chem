@@ -579,7 +579,7 @@ class SolventLayerEditor(_ComponentsEditor):
                 n = counts[r] = new
             if n < 1:
                 msg = L(f"帯の体積 {v:.0f} Å³ では {self.conc.value():g} mol/L は 1 個未満です。成分を増やすか濃度を上げてください",
-                        f"{self.conc.value():g} mol/L is less than one ion in a band of {v:.0f} Å³; add more solvent or raise the concentration")
+                        f"{self.conc.value():g} mol/L is less than one ion in a band of {v:.0f} Å³; add more components or raise the concentration")
                 self.mix.info.setText(msg); return msg
             actual = salt_count(self.conc.value(), v)[1]
         except Exception as ex:
@@ -675,7 +675,7 @@ class RecipeEditor(QWidget):
         for op in ADD_ORDER:
             self.add_kind.addItem(op_label(op), op)
         self.add_kind.insertSeparator(self.add_kind.count())
-        self.add_kind.addItem(icons.icon("slab"), L("電極と電解質の界面 (面 + 断面の自動調整 + 溶液 + 固定)", "Electrode–electrolyte interface (slab + auto-sized surface + electrolyte + fixed layer)"), INTERFACE)
+        self.add_kind.addItem(icons.icon("slab"), L("電極と電解質の界面 (面 + 断面の自動調整 + 溶液 + 固定)", "Electrode–electrolyte interface (surface cut + auto-sized cross-section + solution + fixed layer)"), INTERFACE)
         limit_combo(self.add_kind)
         self.add_kind.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
         self.add_kind.setMinimumContentsLength(12)
