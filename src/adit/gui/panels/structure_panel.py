@@ -4,12 +4,11 @@ from __future__ import annotations
 import subprocess
 import sys
 import tempfile
-import threading
 from pathlib import Path
 
 import numpy as np
 from ase.io import write
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Signal
 from ase.data import chemical_symbols
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QFileDialog, QFormLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
                                QPushButton, QSpinBox, QVBoxLayout, QWidget)
@@ -51,7 +50,6 @@ def _compact(model, extra: dict) -> dict:
 class StructurePanel(QGroupBox):
     changed = Signal()
     built = Signal()
-    _build_done = Signal(int, object, object, str)
 
     def __init__(self, parent: QWidget | None = None):
         super().__init__("構造", parent)
@@ -61,7 +59,6 @@ class StructurePanel(QGroupBox):
         self._restoring = False
         self._raw: Structure | None = None
         self._built_ref = ""
-        self._token = 0
         self._building = False
         self._pending_ref = ""
         self._auto_charge: int | None = None
@@ -206,7 +203,10 @@ class StructurePanel(QGroupBox):
         self.recipe.build_requested.connect(self.build_recipe)
         self.recipe.cancel_requested.connect(self.cancel_build)
         self.recipe.draw_requested.connect(self._draw_into)
-        self._build_done.connect(self._on_built, Qt.ConnectionType.QueuedConnection)
+        from adit.gui.progress import Job
+        self.job = Job(self)
+        self.job.finished.connect(self._on_built)
+        self.job.progress.connect(self.recipe.progress.update)
         self._rebuild()
 
     def _build_new_base_widgets(self) -> None:
@@ -366,7 +366,7 @@ class StructurePanel(QGroupBox):
         if s.source != "recipe" and s.source not in SOURCES:
             raise StructureError(L(f"構造の作り方 {s.source} は画面では編集できません。CLI で spec.json を使ってください",
                                    f"structures made by {s.source} cannot be edited here; use spec.json with the CLI"))
-        self._token += 1; self._building = False
+        self.job.cancel(); self._building = False
         self._restore_problems: list[str] = []
         rec = None
         if s.source == "recipe":
@@ -674,33 +674,32 @@ class StructurePanel(QGroupBox):
         except (StructureError, ValueError, OSError) as ex:
             self._structure, self._error = None, str(ex)
             self.recipe.show_result([], str(ex)); self._show(); self.changed.emit(); self.built.emit(); return
-        self._token += 1
-        token, ref = self._token, rec.to_ref()
-        self._pending_ref = ref
+        self._pending_ref = rec.to_ref()
         self._building = True
         self.recipe.set_building(True)
-        threading.Thread(target=self._build_worker, args=(token, ref, self.charge.value(), self.multiplicity.value()), daemon=True).start()
+        self.job.start(self._build_work, self._pending_ref, self.charge.value(), self.multiplicity.value())
 
-    def _build_worker(self, token: int, ref: str, charge: int, multiplicity: int) -> None:
+    @staticmethod
+    def _build_work(ref: str, charge: int, multiplicity: int):
         from adit.builder import recipe_structure
-        try:
-            st, logs = recipe_structure(ref, charge=charge, multiplicity=multiplicity)
-            self._build_done.emit(token, st, [x.line() for x in logs], "")
-        except StructureError as ex:
-            self._build_done.emit(token, None, [], str(ex))
-        except Exception as ex:
-            self._build_done.emit(token, None, [], L(f"作れませんでした ({type(ex).__name__}: {ex})", f"could not build ({type(ex).__name__}: {ex})"))
+        st, logs = recipe_structure(ref, charge=charge, multiplicity=multiplicity)
+        return st, [x.line() for x in logs]
 
     def cancel_build(self) -> None:
         if not self._building:
             return
-        self._token += 1; self._building = False
+        self.job.cancel(); self._building = False
         self.recipe.show_cancelled()
 
-    def _on_built(self, token: int, st, lines, error: str) -> None:
-        if token != self._token:
-            return
+    def _on_built(self, result, failure) -> None:
         self._building = False
+        st, lines = result if result is not None else (None, [])
+        if failure is None:
+            error = ""
+        elif isinstance(failure, StructureError):
+            error = str(failure)
+        else:
+            error = L(f"作れませんでした ({type(failure).__name__}: {failure})", f"could not build ({type(failure).__name__}: {failure})")
         if error:
             self._raw = None
             self._structure, self._error = None, error

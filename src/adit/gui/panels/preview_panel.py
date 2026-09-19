@@ -1,7 +1,7 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QLabel, QPlainTextEdit, QTabWidget, QVBoxLayout, QWidget
 
 from adit.lang import L
@@ -13,9 +13,14 @@ ORDER = ["dftb_in.hsd", "geometry.gen", "INCAR", "POSCAR", "KPOINTS", "potcar.sp
 
 
 class PreviewPanel(QWidget):
+    fix_requested = Signal()
+
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         from PySide6.QtWidgets import QHBoxLayout, QPushButton
+        from adit.gui.progress import EmptyState
+        self.empty = EmptyState(L("生成できません", "Cannot generate"), "", L("欄へ移動", "Go to the field"))
+        self.empty.clicked.connect(self.fix_requested.emit); self.empty.hide()
         self.status = QLabel("")
         self.detail = QLabel(""); self.detail.setObjectName("hint"); self.detail.setWordWrap(True)
         self.origin = QLabel(""); self.origin.setObjectName("hint"); self.origin.setWordWrap(True)
@@ -39,6 +44,7 @@ class PreviewPanel(QWidget):
         self.btn_prov.toggled.connect(self._toggle_prov)
         lay = QVBoxLayout(self); lay.setContentsMargins(12, 12, 12, 12); lay.setSpacing(10)
         lay.addWidget(self.status); lay.addWidget(self.detail); lay.addWidget(self.origin_row); lay.addWidget(self.tabs, 1)
+        lay.addWidget(self.empty, 1)
         lay.addWidget(self.prov_row); lay.addWidget(self.prov_text)
 
     def _toggle_prov(self, on: bool) -> None:
@@ -72,6 +78,7 @@ class PreviewPanel(QWidget):
     def show_files(self, files: ProjectFiles) -> None:
         names = [n for n in ORDER if n in files.texts] + [n for n in files.texts if n not in ORDER]
         self._set_tabs(names)
+        self.tabs.show(); self.empty.hide()
         for name, ed in self.editors.items():
             ed.setPlainText(files.texts.get(name, ""))
         copies = ", ".join(sorted(files.copies))
@@ -85,7 +92,7 @@ class PreviewPanel(QWidget):
             prov = None
         self.set_provenance(prov)
 
-    def show_errors(self, message: str) -> None:
+    def show_errors(self, message: str, *, can_jump: bool = False) -> None:
         self.set_provenance(None)
         error_tab = L("エラー", "Errors")
         self._set_tabs([error_tab])
@@ -94,3 +101,7 @@ class PreviewPanel(QWidget):
         self.status.setText(first)
         self.status.setObjectName("status_ng"); self.status.style().polish(self.status)
         self.detail.setText(rest)
+        items = [x.strip() for x in rest.splitlines() if x.strip()]
+        line = first if not items else items[0] + (L(f" (ほか {len(items) - 1} 件)", f" (+{len(items) - 1} more)") if len(items) > 1 else "")
+        self.empty.set_texts(line=line, button=L("欄へ移動", "Go to the field") if can_jump else "")
+        self.tabs.hide(); self.empty.show()

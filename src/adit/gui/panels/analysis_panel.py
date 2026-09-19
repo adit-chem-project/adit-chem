@@ -147,6 +147,13 @@ class AnalysisPanel(QWidget):
         self.cb_unwrap = _check("export_unwrap")
         self.summary = SummaryLabel()
         self.summary.setStyleSheet("font-family: monospace;")
+        from adit.gui.progress import EmptyState, Job, ProgressStrip
+        self.progress = ProgressStrip()
+        self.job = Job(self)
+        self.empty = EmptyState(L("まだ結果がありません", "No results yet"),
+                                L("計算結果のディレクトリを指定して「解析を実行」を押すと、要約と図がここに出ます",
+                                  "Choose the run directory and press Run analysis; the summary and the figures appear here"),
+                                L("解析を実行", "Run analysis"))
 
         self.stride = narrow(QSpinBox()); self.stride.setRange(1, 10_000_000); self.stride.setValue(1)
         self.msd_fit_from = narrow(QLineEdit()); self.msd_fit_to = narrow(QLineEdit())
@@ -334,6 +341,7 @@ class AnalysisPanel(QWidget):
                          self.cb_vanhove, self.vanhove_taus, self.vanhove_displacement]
         row = QHBoxLayout(); row.addWidget(self.btn_run); row.addWidget(self.btn_compare)
         row.addWidget(self.btn_report); row.addStretch(); form.addRow(row)
+        form.addRow(self.progress)
         row = QHBoxLayout(); row.addWidget(self.btn_export); row.addStretch(); form.addRow(row)
         form.addRow(self.cb_unwrap)
         for f in (form, mform):
@@ -370,7 +378,7 @@ class AnalysisPanel(QWidget):
 
         content = QWidget()
         lay = QVBoxLayout(content); lay.setContentsMargins(12, 12, 12, 12); lay.setSpacing(10)
-        for w in (box, self.too_large, self.scan_table, self.summary, self.export_box, self.sections, self.figs):
+        for w in (box, self.too_large, self.empty, self.scan_table, self.summary, self.export_box, self.sections, self.figs):
             lay.addWidget(w)
         lay.addStretch(1)
         self.scroll = QScrollArea(); self.scroll.setWidget(content); self.scroll.setWidgetResizable(True)
@@ -380,8 +388,12 @@ class AnalysisPanel(QWidget):
 
         self._compare_rows: list[tuple[str, str, str]] = []
         self.browse.clicked.connect(self._browse)
-        self.btn_run.clicked.connect(self.run)
-        self.btn_export.clicked.connect(self.export)
+        self.btn_run.clicked.connect(lambda *_: self.run_async())
+        self.btn_export.clicked.connect(lambda *_: self.run_async(export=True))
+        self.empty.clicked.connect(self.run_async)
+        self.progress.cancel_requested.connect(self.cancel)
+        self.job.finished.connect(self._on_job_done)
+        self.job.progress.connect(self.progress.update)
         self.btn_compare.clicked.connect(self._open_compare)
         self.btn_report.clicked.connect(self._open_report)
         self.btn_use_stride.clicked.connect(self.use_suggested_stride)
@@ -569,32 +581,84 @@ class AnalysisPanel(QWidget):
                                                           self.cb_vib.isChecked())
         return o
 
-    def run(self, export: bool = False):
-        from adit.analysis.trajectory import TrajectoryTooLarge
+    def _prepare(self, export: bool):
+        # Everything that reads widgets happens here, on the GUI thread.
         d = self.run_dir.text().strip()
         if not d or not Path(d).is_dir():
             self.summary.setPlainText(L(f"ディレクトリがありません: {d!r}", f"directory not found: {d!r}"))
+            self.empty.hide()
             return None
         scan = self.is_scan_dir(d)
         self.scan_table.hide(); self.too_large.hide()
         try:
-            if scan:
-                from adit.scan import analyze_scan
-                res = analyze_scan(d)
-            else:
-                opts = self.options()
-                opts.export = bool(export)
-                res = run_analysis(d, opts)
+            opts = None if scan else self.options()
         except AF.FieldError as ex:
             self.summary.setPlainText(L(f"解析の条件を読めません: {ex}", f"cannot read the analysis options: {ex}"))
+            self.empty.hide()
             return None
-        except TrajectoryTooLarge as ex:
+        if opts is not None:
+            opts.export = bool(export)
+        return d, scan, opts
+
+    @staticmethod
+    def _compute(d: str, scan: bool, opts):
+        if scan:
+            from adit.scan import analyze_scan
+            return analyze_scan(d)
+        return run_analysis(d, opts)
+
+    def _present_error(self, ex: Exception) -> None:
+        from adit.analysis.trajectory import TrajectoryTooLarge
+        self.empty.hide()
+        if isinstance(ex, AF.FieldError):
+            self.summary.setPlainText(L(f"解析の条件を読めません: {ex}", f"cannot read the analysis options: {ex}"))
+            return
+        if isinstance(ex, TrajectoryTooLarge):
             self._show_too_large(ex)
-            self.summary.setPlainText(L(f"解析できません: {ex}", f"cannot analyze: {ex}"))
+        self.summary.setPlainText(L(f"解析できません: {ex}", f"cannot analyze: {ex}"))
+
+    def run_async(self, export: bool = False) -> bool:
+        # The button path: the same computation on a worker thread, with the progress strip and Cancel.
+        prepared = self._prepare(export)
+        if prepared is None:
+            return False
+        self._pending_scan = prepared[1]
+        self.btn_run.setEnabled(False); self.btn_export.setEnabled(False)
+        self.progress.begin(L("解析しています…", "Analyzing…"))
+        self.job.start(self._compute, *prepared)
+        return True
+
+    def cancel(self) -> None:
+        if self.job.is_running():
+            self.job.cancel()
+            self._job_ended()
+            self.summary.setPlainText(L("中止しました", "cancelled"))
+            self.empty.hide()
+
+    def _job_ended(self) -> None:
+        self.progress.end()
+        self.btn_run.setEnabled(True); self.btn_export.setEnabled(True)
+
+    def _on_job_done(self, res, error) -> None:
+        self._job_ended()
+        if error is not None:
+            self._present_error(error)
+        else:
+            self._present(self._pending_scan, res)
+
+    def run(self, export: bool = False):
+        prepared = self._prepare(export)
+        if prepared is None:
             return None
+        try:
+            res = self._compute(*prepared)
         except Exception as ex:
-            self.summary.setPlainText(L(f"解析できません: {ex}", f"cannot analyze: {ex}"))
+            self._present_error(ex)
             return None
+        return self._present(prepared[1], res)
+
+    def _present(self, scan: bool, res):
+        self.empty.hide()
         if scan:
             self._show_scan_table(res.rows, res.reference)
             self.summary.setPlainText(res.summary_text(include_table=False))

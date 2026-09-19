@@ -156,6 +156,7 @@ class MainWindow(QMainWindow):
         self.method.gromacs.use_as_structure.connect(self._use_structure_file)
         self.act_open.triggered.connect(self.open_spec)
         self.preview.btn_clear_origin.clicked.connect(self.clear_origin)
+        self.preview.fix_requested.connect(self._on_gen_hint_clicked)
         self.act_reload.triggered.connect(self.reload_config)
         self.btn_generate.clicked.connect(self.generate)
         self.act_lang.triggered.connect(self._toggle_language)
@@ -398,9 +399,9 @@ class MainWindow(QMainWindow):
             if isinstance(ex, PydanticError):
                 from adit.validate_types import friendly_pydantic
                 ex = ProjectError(friendly_pydantic(ex))
-            self.preview.show_errors(str(ex))
             self.btn_generate.setEnabled(False); self.act_generate.setEnabled(False)
             self._show_gen_hint(ex)
+            self.preview.show_errors(str(ex), can_jump=bool(self._error_locations))
         self._show_origin()
         self._show_doc_values()
         self._on_structure_or_errors_changed()
