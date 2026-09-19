@@ -285,7 +285,7 @@ def main(argv: list[str] | None = None) -> int:
         "--audit-with の点検対象: msd (既定) または energy",
         "what --audit-with checks: msd (default) or energy"))
     ap.add_argument("--compare", nargs="?", const="", default=None, metavar="REACTIONS", help=L(
-        "組にして比べる表。「名前=係数:ディレクトリ,…」(係数は生成したファイルが正、反応物が負。反応は ; で区切る。ディレクトリは run_dir からの相対パス)。"
+        "組にして比べる表。「名前=係数:ディレクトリ,…」(係数は生成物が正、反応物が負。反応は ; で区切る。ディレクトリは run_dir からの相対パス)。"
         "値を省くと run_dir/compare.json を読む。例 --compare \"ads=1:slab_mol,-1:slab,-1:mol\"",
         "table comparing runs: name=coef:dir,... (products positive, reactants negative; separate reactions with ;; dirs relative to run_dir). "
         "Without a value, run_dir/compare.json is read. e.g. --compare \"ads=1:slab_mol,-1:slab,-1:mol\""))

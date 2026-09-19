@@ -660,7 +660,7 @@ def compare_sections(cres) -> list[Section]:
                              L("コードの G の差 ΣνG [eV]", "Difference of code G, ΣνG [eV]"), L("組成の釣り合い", "Composition balance"),
                              L("条件が違う項目", "Settings that differ")],
                             rows, [False, False, True, True, True, True, False, False],
-                            [L("ν は生成したファイルが正、反応物が負。組成の釣り合いは Σν·(元素ごとの原子数)", "ν is positive for products and negative for reactants; balance is Σν·(atoms per element)")]),
+                            [L("ν は生成物が正、反応物が負。組成の釣り合いは Σν·(元素ごとの原子数)", "ν is positive for products and negative for reactants; balance is Σν·(atoms per element)")]),
                     cres.files.get("reactions", "")))
     rows = [[r["dir"], r["code"] or "-", r["task"] or "-", r["formula"] or "-", "-" if r["natoms"] is None else str(r["natoms"]),
              _g(r["energy_ev"], ".6f"), r["energy_source"] or "-", r["note"] or ""] for r in cres.runs]

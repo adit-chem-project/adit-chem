@@ -519,7 +519,7 @@ button.link:hover { text-decoration:underline; background:none; }
   {%- for c, ph in [("name", T("例 h2o", "e.g. h2o")), ("file", T("空欄なら画面の構造", "empty = the structure on screen")), ("nu", T("例 -1", "e.g. -1")), ("charge", "0"), ("mult", "1")] %}
   <td><input type="text" name="cmp_rx{{ i }}_{{ c }}" id="cmp_rx{{ i }}_{{ c }}" value="{{ row[c] }}" placeholder="{{ ph }}" aria-label="{{ c }} {{ i }}"></td>{% endfor %}</tr>{% endfor %}
   </tbody></table></div>
-  <span class="hint">{{ T("生成したファイルは正の係数、反応物は負の係数。空の行は使いません", "Products have a positive coefficient, reactants a negative one; empty rows are not used") }}</span>{% endcall %}
+  <span class="hint">{{ T("生成物は正の係数、反応物は負の係数。空の行は使いません", "Products have a positive coefficient, reactants a negative one; empty rows are not used") }}</span>{% endcall %}
   <div class="actions"><button type="submit" formaction="/batch" name="batch_action" value="add_row">{{ T("行を追加", "Add row") }}</button></div>
   </div>
   <div class="only" data-cmpkind="solvation">
