@@ -135,3 +135,21 @@ def test_too_many_kpoints_is_caught_in_density_mode_even_with_a_zero_in_mesh(sk_
     kp = KPoints(mode="density", density=1000.0, mesh=(0, 1, 1))
     errs = validate(water_spec(structure=st, kpoints=kp), cfg_for(sk_root))
     assert "kpoints.density" in locations(errs)
+
+
+def test_profile_limits_stop_the_generation(sk_root):
+    from adit.config import Profile
+
+    cfg = cfg_for(sk_root)
+    cfg.profiles["cluster"] = Profile(kind="pbs", cores_max=64, nodes_max=2, walltime_max="72:00:00")
+    ok = water_spec(runtime=Runtime(profile="cluster", nodes=2, ncpus=32, walltime="72:00:00", job_name="w"))
+    assert validate(ok, cfg) == []
+    over = water_spec(runtime=Runtime(profile="cluster", nodes=3, ncpus=32, walltime="73:00:00", job_name="w"))
+    errs = validate(over, cfg)
+    assert locations(errs) == ["runtime.ncpus", "runtime.nodes", "runtime.walltime"]
+    msgs = " ".join(e.message for e in errs)
+    assert "cores_max = 64" in msgs and "3 × ノードあたりのコア数 32 = 96" in msgs and "walltime_max = 72:00:00" in msgs
+    cfg.profiles["cluster"] = Profile(kind="pbs", walltime_max="3 days")
+    errs = validate(ok, cfg)
+    assert locations(errs) == ["runtime.profile"] and "HH:MM:SS" in errs[0].message
+    assert validate(ok, cfg_for(sk_root)) == []   # no limits by default

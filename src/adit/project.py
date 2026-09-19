@@ -19,6 +19,7 @@ SPEC_FILE = "spec.json"
 SUBMIT_FILE = "submit.sh"
 README_FILE = "README.txt"
 TRANSFER_FILE = "transfer_and_submit.sh"
+CHECK_FILE = "check_remote.sh"
 ANALYZE_FILE = "analyze.py"
 
 
@@ -132,8 +133,21 @@ def build_project(spec: CalculationSpec, cfg: Config, *, output_dir: Path | str 
                                      settings_path=cfg.source_path)
     if profile.kind != "direct":
         files.texts[TRANSFER_FILE] = _transfer_commands(profile, output_dir)
+        from adit.scripts.render import render_check_remote
+
+        files.texts[CHECK_FILE] = render_check_remote(spec, profile, _programs_to_check(spec.method.code, profile, notes.program))
     _check_names_stay_inside(list(files.texts) + list(files.copies))
     return files
+
+
+def _programs_to_check(code: str, profile, program: str) -> list[str]:
+    # The program the README tells the user to look for, plus the launcher named in commands.<code> (mpirun, or a path).
+    out = [program] if program else []
+    custom = profile.commands.get(code, "").strip()
+    first = shlex.split(custom)[0] if custom else ""
+    if first and "{" not in first and first not in out:
+        out.append(first)
+    return out
 
 
 def _check_names_stay_inside(names: list[str]) -> None:
@@ -397,7 +411,11 @@ def _readme(spec: CalculationSpec, profile, notes: ReadmeNotes, output_dir: Path
                        "qstat -u $USER     (PBS)   /   squeue -u $USER    (Slurm)")
     else:
         lines += [L("  ADIT はジョブを預けません。次の手順を自分で行います (<...> は自分の値に置き換えます)。",
-                    "  ADIT does not submit jobs; do the following yourself (replace <...> with your own values).")]
+                    "  ADIT does not submit jobs; do the following yourself (replace <...> with your own values)."),
+                  L("  投入する前に、手元の PC で  bash check_remote.sh  を実行すると、ログイン (ssh)、module、実行ファイル、作業ディレクトリ、キューの疎通を 1 行ずつ OK / NG で確かめられます。",
+                    "  Before submitting, run  bash check_remote.sh  on your PC to check the login (ssh), modules, executable, work directory and queue, one OK / NG line each."),
+                  L("  (環境設定に host と remote_dir が要ります。このスクリプトも投入はしません)",
+                    "  (host and remote_dir must be set in the settings; this script does not submit either)")]
         submit_cmd, status_cmd = f"{profile.submit} submit.sh", profile.status
     lines += [
         L("  1. このディレクトリごとクラスタへ写します (手元の PC のターミナルで。scp / rsync = ネットワーク越しにファイルを写すコマンド)",

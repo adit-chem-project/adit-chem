@@ -42,6 +42,7 @@ description = "この PC で bash submit.sh を実行"
 使わない行は、行頭に `#` を付けて無効にしたままにします。
 
 `host` と `remote_dir` を書いておくと、生成した `transfer_and_submit.sh` に、そのまま貼れる `rsync` と `ssh`、投入コマンドが書き出されます (**ADIT は実行しません**)。
+`cores_max` / `nodes_max` / `walltime_max` を書いておくと、画面や `spec.json` の runtime がそれを超えたとき、「仮の値のままです」と同じ形で生成の前に止まります (既定は無し = 照合しない)。
 
 ```toml
 [profiles.remote]
@@ -54,6 +55,9 @@ status_command = "qstat -u $USER"   # 状態確認のコマンド (同上)
 host = "<クラスタのホスト名>"          # 転送と投入のコマンドに使います (空でも生成できます。その場合は <...> のまま出ます)
 user = "<ログイン名>"                 # 空なら手元のログイン名を使う想定で、host だけを書きます
 remote_dir = "<クラスタでの作業ディレクトリ>"  # 転送先
+cores_max = 0                       # そのキューで使えるコア数の上限 (ノード数 × ノードあたりのコア数と照合)。0 なら照合しません
+nodes_max = 0                       # ノード数の上限。0 なら照合しません
+walltime_max = ""                   # 制限時間の上限 (HH:MM:SS)。空なら照合しません。超えていると生成の前の検証で止まります
 modules = []                        # どの計算コードでも module load するもの (例 ["intel-mpi"])。下の code_modules の前に読み込みます
 
 [profiles.remote.code_modules]   # 計算コードごとに module load するもの (クラスタで module avail と打つと一覧が出ます)
@@ -82,6 +86,9 @@ ssh <クラスタ> 'qstat -u $USER'                                      # 3. �
 ```
 
 `#!/bin/sh` で `module` コマンドが定義されていない環境があるため、`submit.sh` は `module` を使う前に `/etc/profile` を読み、それでも見つからなければ理由を表示して止まります。
+
+クラスタ向けのプロファイルでは `check_remote.sh` も生成されます。手元の PC で `bash check_remote.sh` と打つと、`ssh -o BatchMode=yes` でのログイン、`module load`、実行ファイルの有無 (`command -v`)、
+`remote_dir` に書けるか、Slurm なら `sbatch --test-only submit.sh`、PBS なら `qstat -Q <キュー名>` を順に試し、1 行ずつ OK / NG を出します。**投入はしません** (`host` と `remote_dir` が要ります)。
 
 ## 各計算コードで用意するもの
 
@@ -118,6 +125,7 @@ ORCA は本体が再配布できないため、入力ファイルの内容だけ
   README.txt     実行手順と出力ファイルの見方
   analyze.py     解析スクリプト (analysis/ に図と要約を書きます)。解析に対応した計算コードのときだけ
   transfer_and_submit.sh   転送と投入のコマンド。プロファイルが pbs / slurm のときだけ
+  check_remote.sh          投入前の疎通確認 (ssh、module、実行ファイル、作業ディレクトリ、キュー)。同上。投入はしません
   dftb_in.hsd, geometry.gen, skf/       DFTB+ の場合
   INCAR, POSCAR, KPOINTS, potcar.spec, make_potcar.sh   VASP の場合
   struct.xyz, xtb.inp                   xtb の場合

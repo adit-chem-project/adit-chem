@@ -167,3 +167,33 @@ def test_the_transfer_and_submit_commands_are_written_for_a_cluster(tmp_path, cf
     assert 'rsync -av "$HERE" me@cluster.example.ac.jp:/work/me/' in filled
     assert "cd /work/me/calc && qsub submit.sh" in filled and "<" not in filled
     assert "transfer_and_submit.sh" not in build_project(water_spec(), cfg, output_dir=out).texts   # local profile
+
+
+def test_check_remote_script_is_written_for_a_cluster_and_never_submits(tmp_path, cfg):
+    import subprocess
+
+    from adit.spec import Runtime
+
+    out = tmp_path / "calc"
+    spec = water_spec(runtime=Runtime(profile="cluster", ncpus=8, walltime="01:00:00", job_name="w"))
+    assert "check_remote.sh" not in build_project(water_spec(), cfg, output_dir=out).texts   # local profile
+    plain = build_project(spec, cfg, output_dir=out).texts["check_remote.sh"]
+    assert 'TARGET="<user>@<host>"' in plain and "*'<'*)" in plain
+    for name, profile in (("cluster", "pbs"), ("slurm", "slurm")):
+        p = cfg.profiles[name]
+        p.host, p.user, p.remote_dir = "cluster.example.ac.jp", "me", "/work/me"
+        p.commands = {"dftbplus": "mpirun -np {mpiprocs} dftb+"}
+        files = build_project(water_spec(runtime=Runtime(profile=name, ncpus=8, job_name="w")), cfg, output_dir=out)
+        s = files.texts["check_remote.sh"]
+        assert "ssh -o BatchMode=yes -o ConnectTimeout=10" in s and 'TARGET="me@cluster.example.ac.jp"' in s
+        assert 'REMOTE_DIR="/work/me"' in s and "mkdir -p '$REMOTE_DIR' && touch" in s
+        assert "command -v dftb+" in s and "command -v mpirun" in s and "load dftbplus/25.1 || exit 1" in s
+        if profile == "pbs":
+            assert 'QUEUE="normal"' in s and "qstat -Q $QUEUE" in s and "module -s load" in s and "sbatch" not in s
+        else:
+            assert "sbatch --test-only" in s and "qsub" not in s and "module load dftbplus/25.1" in s
+        assert "qsub submit.sh" not in s and "sbatch submit.sh" not in s
+        (tmp_path / f"check_{profile}.sh").write_text(s, encoding="utf-8")
+        r = subprocess.run(["bash", "-n", str(tmp_path / f"check_{profile}.sh")], capture_output=True, text=True)
+        assert r.returncode == 0, r.stderr
+        assert "check_remote.sh" in files.texts["README.txt"]
