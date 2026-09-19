@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (QDialog, QFileDialog, QFormLayout, QHBoxLayout, Q
 
 from adit.lang import L
 from adit.gui.style import GROUP_SPACING, PANEL_MARGIN, ROW_SPACING
-from adit.gui.widgets import add_row
+from adit.gui.widgets import add_row, confirm_overwrite
 
 from adit.web.scan_choices import OTHER, Choice, choices_for  # noqa: E402,F401
 
@@ -22,6 +22,7 @@ class ScanDialog(QDialog):
         self.setWindowTitle(L("1 つの条件を変えて一括生成", "Parameter scan"))
         self.make_spec, self.cfg = make_spec, cfg
         self.out_dir: Path | None = None
+        self.backup_dir: Path | None = None
         self.dirs: list[Path] = []
         self.choices = choices_for(code, periodic)
 
@@ -126,15 +127,11 @@ class ScanDialog(QDialog):
         try:
             scan = parse_scan(self.scan_text())
             spec = self.make_spec()
-            overwrite = False
-            if out.exists() and any(out.iterdir()):
-                ans = QMessageBox.question(self, L("上書きの確認", "Overwrite?"),
-                                           L(f"{out} は空ではありません。中のファイルを上書きしますか?",
-                                             f"{out} is not empty. Overwrite the files inside?"))
-                if ans != QMessageBox.StandardButton.Yes:
-                    return
-                overwrite = True
+            overwrite, keep = confirm_overwrite(self, out)
+            if overwrite is None:
+                return
             dirs = write_scan(spec, self.cfg, out, scan, overwrite=overwrite)
+            self.backup_dir = keep.finish() if keep is not None else None
         except (ScanError, ProjectError, ConfigError, ValueError, OSError) as ex:
             if isinstance(ex, PydanticError):
                 from adit.validate_types import friendly_pydantic

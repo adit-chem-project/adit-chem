@@ -14,7 +14,8 @@ from PySide6.QtWidgets import (QBoxLayout, QFileDialog, QHBoxLayout, QMainWindow
                                QWidget)
 
 from adit.config import Config, ConfigError, load_config
-from adit.project import ProjectError, ProjectFiles, build_project, load_project, write_project
+from adit.project import (Backup, ProjectError, ProjectFiles, build_project, has_files, load_project, new_backup_dir, overwrite_plan,
+                          restore_backup, write_project)
 from adit.gui import icons
 from adit.gui.i18n import tr
 from adit.lang import L
@@ -85,15 +86,31 @@ class MainWindow(QMainWindow):
         home = str(Path.home())
         shown = str(cfg_path).replace(home, "~", 1) if str(cfg_path).startswith(home) else str(cfg_path)
         self.act_settings.setToolTip(L(f"環境設定ファイル (cluster.toml) を編集: {shown}", f"Edit the settings file (cluster.toml): {shown}"))
-        self.gen_hint = QPushButton(""); self.gen_hint.setObjectName("gen_hint"); self.gen_hint.setFlat(True)
-        self.gen_hint.setMaximumWidth(560); self.gen_hint.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.gen_hint.clicked.connect(self._on_gen_hint_clicked)
+        # Left of "Generate": a badge with the number of problems; it opens the full list, each row jumps to its field.
+        self.error_badge = QPushButton(""); self.error_badge.setObjectName("error_badge")
+        self.error_badge.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.error_badge.clicked.connect(self.show_error_list)
+        self.error_menu = None
+        self._errors: list[str] = []
+        self._error_locations: list[str] = []
+        self._error_index = -1
+        self._error_marked: list = []
+        self._inline_errors: dict = {}
         spacer = QWidget(); spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         tb.addWidget(spacer)
-        self.gen_hint_action = tb.addWidget(self.gen_hint)
-        self.gen_hint_action.setVisible(False)
+        self.error_badge_action = tb.addWidget(self.error_badge)
+        self.error_badge_action.setVisible(False)
         tb.addWidget(self.btn_generate)
         self.statusBar().addWidget(self.run_hint)
+        # After an overwrite: a link that puts the previous files back, shown for 10 s.
+        self.undo_link = QPushButton(L("元に戻す", "Undo")); self.undo_link.setObjectName("link")
+        self.undo_link.setToolTip(L("いま上書きしたファイルを、上書き前の内容に戻します (足したファイルは消します)",
+                                    "restore the files just overwritten and remove the ones just added"))
+        self.undo_link.clicked.connect(self.undo_write); self.undo_link.hide()
+        self.statusBar().addWidget(self.undo_link)
+        self._undo_dir: Path | None = None
+        self._undo_timer = QTimer(self); self._undo_timer.setSingleShot(True); self._undo_timer.setInterval(10_000)
+        self._undo_timer.timeout.connect(self.undo_link.hide)
         # Right side of the status bar: the keys that work right now (Blender-style); the left side is the state.
         self.key_hints = QLabel(""); self.key_hints.setObjectName("hint")
         self.statusBar().addPermanentWidget(self.key_hints)
@@ -135,6 +152,20 @@ class MainWindow(QMainWindow):
         self.mode_bar = ModeBar([("tab_structure", "構造"), ("settings", "計算条件"), ("tab_analysis", "解析"),
                                  ("tab_workspace", "ワークスペース")])
         self.mode_bar.changed.connect(self.set_mode)
+        # Settings mode only: show just the rows whose value differs from the code default (VS Code's "modified" filter)
+        from PySide6.QtWidgets import QToolButton
+        self.filter_changed = QToolButton(); self.filter_changed.setObjectName("mode_button"); self.filter_changed.setCheckable(True)
+        self.filter_changed.setText(L("変えた欄だけ", "Changed only")); self.filter_changed.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.filter_changed.setToolTip(L("既定 (コードの既定値) から変えた欄だけを表示します。欄の左の細い線が変えた印です (灰色は雛形の値)",
+                                         "show only the fields whose value differs from the code default; the thin bar left of a label marks them (gray: from a template)"))
+        self.filter_changed.toggled.connect(self._apply_row_filter)
+        self.mode_bar.add_trailing(self.filter_changed)
+        self.filter_changed.hide()
+        self._changes: dict = {}
+        self._template_marks: dict[str, str] = {}
+        self._hidden_by_filter: list = []
+        self._hidden_groups: list = []
+        self.field_menu = None
 
         split = QSplitter(); split.addWidget(self.main_stack); split.addWidget(self.right_tabs); split.setSizes([1200, 580])
         split.setHandleWidth(GROUP_SPACING)
@@ -157,24 +188,12 @@ class MainWindow(QMainWindow):
         self.method.gromacs.use_as_structure.connect(self._use_structure_file)
         self.act_open.triggered.connect(self.open_spec)
         self.preview.btn_clear_origin.clicked.connect(self.clear_origin)
-        self.preview.fix_requested.connect(self._on_gen_hint_clicked)
+        self.preview.fix_requested.connect(self.focus_next_error)
         self.act_reload.triggered.connect(self.reload_config)
         self.btn_generate.clicked.connect(self.generate)
         self.act_lang.triggered.connect(self._toggle_language)
         self.refresh_preview()
         limit_combo_popups(self)
-
-    def _fit_gen_hint(self) -> None:
-        width = self.width()
-        self.gen_hint.setMaximumWidth(560 if width >= 1600 else 380 if width >= 1400 else 260)
-
-    def resizeEvent(self, event):  # noqa: N802 
-        super().resizeEvent(event)
-        self._fit_gen_hint()
-        text = getattr(self, "_gen_hint_full", "")
-        if text and self.gen_hint_action.isVisible():
-            fm = self.gen_hint.fontMetrics()
-            self.gen_hint.setText(fm.elidedText(text, Qt.TextElideMode.ElideRight, self.gen_hint.maximumWidth() - 16))
 
     def _find_field(self, location: str):
         from PySide6.QtWidgets import QFormLayout, QLabel
@@ -182,15 +201,21 @@ class MainWindow(QMainWindow):
         from adit.validate_types import place_key
 
         mode = self.MODE_STRUCTURE if location.startswith("structure") else self.MODE_SETTINGS
-        key = place_key(location)
+        from adit.web.codefields import label_for_path
+
+        key = label_for_path(self.method.current_code(), location) or place_key(location)
+        from PySide6.QtWidgets import QCheckBox
+
         page = self.main_stack.widget(mode)
-        labels = [w for w in page.findChildren(QLabel) if w.property("adit_key")]
+        labels = [w for w in [*page.findChildren(QLabel), *page.findChildren(QCheckBox)] if w.property("adit_key")]
         exact = [w for w in labels if w.property("adit_key") == key]
         starts = [w for w in labels if str(w.property("adit_key")).startswith(key)]
         holds = [w for w in labels if key in str(w.property("adit_key"))]
         found = (exact or starts or holds)
         if not found:
             return mode, None, None
+        if isinstance(found[0], QCheckBox):
+            return mode, found[0], found[0]
         return mode, found[0], self._field_of(found[0])
 
     @staticmethod
@@ -259,29 +284,90 @@ class MainWindow(QMainWindow):
         return self._reveal(mode, label, field)
 
     def clear_error_marks(self) -> None:
-        for w in getattr(self, "_error_marked", []):
+        for w in self._error_marked:
             w.setProperty("adit_error", False)
             w.style().unpolish(w); w.style().polish(w)
         self._error_marked = []
+        for line in self._inline_errors.values():
+            self._set_inline_visible(line, False)
+
+    @staticmethod
+    def _form_row(widget):
+        # (form, row) of the row that holds this label / check box, or (None, -1)
+        from PySide6.QtWidgets import QFormLayout
+
+        parent = widget.parentWidget()
+        if parent is None:
+            return None, -1
+        forms = [lay for lay in (parent.layout(), *parent.findChildren(QFormLayout)) if isinstance(lay, QFormLayout)]
+        for form in forms:
+            row, _role = form.getWidgetPosition(widget)
+            if row >= 0:
+                return form, row
+        return None, -1
+
+    def _set_inline_visible(self, line, on: bool) -> None:
+        form, row = self._form_row(line)
+        if form is not None:
+            form.setRowVisible(row, on)
+        else:
+            line.setVisible(on)
+
+    def _show_inline_error(self, anchor, message: str) -> None:
+        line = self._inline_errors.get(anchor)
+        if line is None:
+            form, row = self._form_row(anchor)
+            if form is None or not form.isRowVisible(row):
+                return
+            line = QLabel(""); line.setObjectName("field_error"); line.setWordWrap(True)
+            form.insertRow(row + 1, QLabel(""), line)
+            self._inline_errors[anchor] = line
+        line.setText(message)
+        self._set_inline_visible(line, True)
+
+    def mark_errors(self) -> None:
+        # Every problem at once: the field and its label turn red, and the reason sits under the field (GOV.UK style).
+        self.clear_error_marks()
+        reasons: dict = {}      # label -> the reasons, in order (two problems on one field share the line)
+        for location, text in zip(self._error_locations, self._errors):
+            _mode, label, field = self._find_field(location)
+            for w in (label, field):
+                if w is not None and w not in self._error_marked:
+                    w.setProperty("adit_error", True)
+                    w.style().unpolish(w); w.style().polish(w)
+                    self._error_marked.append(w)
+            if label is not None:
+                _where, _sep, why = text.partition(": ")
+                reasons.setdefault(label, []).append(why or text)
+        for label, lines in reasons.items():
+            self._show_inline_error(label, "\n".join(lines))
 
     def focus_error(self, index: int = 0) -> bool:
-        locations = getattr(self, "_error_locations", [])
+        locations = self._error_locations
         if not locations:
             return False
         index %= len(locations)
         self._error_index = index
         mode, label, field = self._find_field(locations[index])
-        self.clear_error_marks()
-        marks = [w for w in (label, field) if w is not None]
-        for w in marks:
-            w.setProperty("adit_error", True)
-            w.style().unpolish(w); w.style().polish(w)
-        self._error_marked = marks
         return self._reveal(mode, label, field)
 
-    def _on_gen_hint_clicked(self) -> None:
-        if not self.focus_error(getattr(self, "_error_index", -1) + 1):
+    def focus_next_error(self) -> None:
+        if not self.focus_error(self._error_index + 1):
             self.right_tabs.setCurrentWidget(self.files_pane)
+
+    def show_error_list(self):
+        from PySide6.QtWidgets import QMenu
+
+        menu = QMenu(self)
+        for i, text in enumerate(self._errors):
+            a = menu.addAction(text)
+            if i < len(self._error_locations):
+                a.triggered.connect(lambda _c=False, i=i: self.focus_error(i))
+            else:
+                a.triggered.connect(lambda _c=False: self.right_tabs.setCurrentWidget(self.files_pane))
+        self.error_menu = menu
+        menu.popup(self.error_badge.mapToGlobal(self.error_badge.rect().bottomLeft()))
+        return menu
 
     MODE_STRUCTURE, MODE_SETTINGS, MODE_ANALYSIS, MODE_WORKSPACE = 0, 1, 2, 3
 
@@ -291,6 +377,8 @@ class MainWindow(QMainWindow):
         self.main_stack.setCurrentIndex(index)
         self.right_tabs.setVisible(index != self.MODE_WORKSPACE)   # the workspace uses the whole width
         self.mode_bar.set_current(index)
+        if hasattr(self, "filter_changed"):
+            self.filter_changed.setVisible(index == self.MODE_SETTINGS)
         if hasattr(self, "act_save"):
             # In the workspace Ctrl+S saves the edited file; two shortcuts on one key would cancel each other.
             self.act_save.setShortcut("" if index == self.MODE_WORKSPACE else "Ctrl+S")
@@ -394,7 +482,9 @@ class MainWindow(QMainWindow):
         except Exception:
             spec = None
         self.preview.set_origin(self.origin.describe(spec) if self.origin.active else "")
-        self._apply_template_marks(template_marks(spec) if spec is not None else {})
+        self._template_marks = template_marks(spec) if spec is not None else {}
+        self._apply_template_marks(self._template_marks)
+        self._apply_change_marks(spec)
 
     def _apply_template_marks(self, marks: dict[str, str]) -> None:
         import html
@@ -415,6 +505,120 @@ class MainWindow(QMainWindow):
                 w.setText(f"{tr(key)}  ({note})")
             self._marked.add(w)
 
+    def _apply_change_marks(self, spec) -> None:
+        from PySide6.QtWidgets import QCheckBox
+
+        from adit.defaults import changed_fields, format_value
+        from adit.gui.widgets import FieldLabel
+
+        self._changes = changed_fields(spec) if spec is not None else {}
+        for w in [*self._left.findChildren(QLabel), *self._left.findChildren(QCheckBox)]:
+            key = w.property("adit_key")
+            if not key:
+                continue
+            ch = self._changes.get(key)
+            kind = "" if ch is None else ("template" if key in self._template_marks else "user")
+            if isinstance(w, FieldLabel):
+                w.set_changed(kind)
+            elif w.property("adit_changed") != kind:
+                w.setProperty("adit_changed", kind)
+                w.style().unpolish(w); w.style().polish(w)
+            if w.property("adit_base_tip") is None:
+                w.setProperty("adit_base_tip", w.toolTip())
+            base = w.property("adit_base_tip") or ""
+            if ch is not None:
+                who = L(f"雛形 {self._template_marks[key]} の値", f"value from template {self._template_marks[key]}") if kind == "template" else L("変えた欄", "changed")
+                note = L(f"{who}: いまの値 {format_value(ch.value)}、コードの既定 {format_value(ch.default)}。右クリックで既定に戻せます",
+                         f"{who}: now {format_value(ch.value)}, code default {format_value(ch.default)}. Right-click to reset")
+                w.setToolTip((base + "\n\n" if base else "") + note)
+            elif w.toolTip() != base:
+                w.setToolTip(base)
+            if not w.property("adit_menu"):
+                w.setProperty("adit_menu", True)
+                w.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+                w.customContextMenuRequested.connect(lambda pos, w=w: self.field_context_menu(w, pos))
+        n = len(self._changes)
+        self.filter_changed.setText(L(f"変えた欄だけ ({n})", f"Changed only ({n})") if n else L("変えた欄だけ", "Changed only"))
+        if self.filter_changed.isChecked():
+            self._apply_row_filter(True)
+
+    def field_context_menu(self, w, pos):
+        from PySide6.QtWidgets import QMenu
+
+        from adit.defaults import format_value
+
+        key = w.property("adit_key")
+        ch = self._changes.get(key)
+        menu = QMenu(self)
+        if ch is not None:
+            a = menu.addAction(L(f"既定に戻す (コードの既定: {format_value(ch.default)})", f"Reset to default (code default: {format_value(ch.default)})"))
+            a.triggered.connect(lambda _c=False, key=key: self.reset_field(key))
+        else:
+            a = menu.addAction(L("既定のままです", "At the code default")); a.setEnabled(False)
+        self.field_menu = menu
+        menu.popup(w.mapToGlobal(pos))
+        return menu
+
+    def reset_field(self, key: str) -> bool:
+        from adit.defaults import with_default
+
+        ch = self._changes.get(key)
+        if ch is None:
+            return False
+        for path in ch.paths:
+            parts = path.split(".")
+            if parts[0] == "task":
+                self.task.set_task(with_default(self.task.task(), parts[1:]))
+            elif parts[0] == "kpoints":
+                self.kpoints.set_kpoints(with_default(self.kpoints.kpoints(), parts[1:]))
+            elif parts[0] == "method":
+                self.method.set_method(with_default(self.method.method(), parts[1:]))
+        self._timer.stop(); self.refresh_preview()
+        self.statusBar().showMessage(L(f"{tr(key)} を既定に戻しました", f"{tr(key)} reset to the code default"))
+        return True
+
+    def _resync_rows(self) -> None:
+        # Re-run the panels' own row logic without their change signals (the values did not change)
+        panels = [(self.task, self.task._on_type), (self.kpoints, self.kpoints._on_mode), (self.runtime, self.runtime._on_profile),
+                  (self.method.xtb, self.method.xtb._refill), (self.method.orca, self.method.orca._on_ts), (self.method.orca, self.method.orca._refill)]
+        for panel, fn in panels:
+            panel.blockSignals(True)
+            try:
+                fn()
+            finally:
+                panel.blockSignals(False)
+
+    def _apply_row_filter(self, on: bool) -> None:
+        from PySide6.QtWidgets import QFormLayout
+
+        for form, row in self._hidden_by_filter:
+            form.setRowVisible(row, True)
+        for box in self._hidden_groups:
+            box.show()
+        self._hidden_by_filter = []; self._hidden_groups = []
+        self._resync_rows()
+        if not on:
+            return
+        keep = set(self._changes) | {"計算コード"}
+        anchors = {line: lab for lab, line in self._inline_errors.items()}
+        for form in self._left.findChildren(QFormLayout):
+            for row in range(form.rowCount()):
+                if not form.isRowVisible(row):
+                    continue
+                item = form.itemAt(row, QFormLayout.ItemRole.LabelRole) or form.itemAt(row, QFormLayout.ItemRole.SpanningRole)
+                w = item.widget() if item is not None else None
+                key = w.property("adit_key") if w is not None else None
+                field = form.itemAt(row, QFormLayout.ItemRole.FieldRole)
+                line = field.widget() if field is not None else None
+                if key in keep or (line in anchors and anchors[line].property("adit_key") in keep):
+                    continue
+                form.setRowVisible(row, False)
+                self._hidden_by_filter.append((form, row))
+        from PySide6.QtWidgets import QGroupBox
+        for box in (self.task, self.kpoints, self.runtime, self.method):
+            if not box.isHidden() and not any(form.isRowVisible(row) for form in box.findChildren(QFormLayout) for row in range(form.rowCount())):
+                box.hide(); self._hidden_groups.append(box)
+
     def clear_origin(self) -> None:
         self.origin = PrepOrigin()
         self.refresh_preview()
@@ -422,11 +626,13 @@ class MainWindow(QMainWindow):
     def refresh_preview(self) -> None:
         try:
             if not self.runtime.output_dir().strip():
-                raise ProjectError(L("出力ディレクトリ: 生成したファイルを置く場所を指定してください", "Output directory: choose where to put the generated files"))
+                from adit.validate_types import ValidationError as FieldError
+                why = L("生成したファイルを置く場所を指定してください", "choose where to put the generated files")
+                raise ProjectError(str(FieldError("output_dir", why)), [FieldError("output_dir", why)])
             self.preview.show_files(self.build())
             self.btn_generate.setEnabled(True); self.act_generate.setEnabled(True)
-            self.gen_hint_action.setVisible(False)
-            self._error_locations = []; self._error_index = -1
+            self.error_badge_action.setVisible(False)
+            self._errors = []; self._error_locations = []; self._error_index = -1
             self.clear_error_marks()
         except (ProjectError, ConfigError, ValueError, TypeError) as ex:
             from pydantic import ValidationError as PydanticError
@@ -434,7 +640,7 @@ class MainWindow(QMainWindow):
                 from adit.validate_types import friendly_pydantic
                 ex = ProjectError(friendly_pydantic(ex))
             self.btn_generate.setEnabled(False); self.act_generate.setEnabled(False)
-            self._show_gen_hint(ex)
+            self._show_errors(ex)
             self.preview.show_errors(str(ex), can_jump=bool(self._error_locations))
         self._show_origin()
         self._show_doc_values()
@@ -463,20 +669,28 @@ class MainWindow(QMainWindow):
             groups = {}
         self.method.set_doc_values(groups)
 
-    def _show_gen_hint(self, ex: Exception) -> None:
+    def _error_text(self, err) -> str:
+        # "<label as shown on screen>: <reason>" whenever the location has a label of its own
+        from adit.web.codefields import label_for_path
+
+        lab = label_for_path(self.method.current_code(), err.location)
+        return f"{tr(lab)}: {err.message}" if lab else str(err)
+
+    def _show_errors(self, ex: Exception) -> None:
         errs = getattr(ex, "errors", None) or (ex.args[1] if len(ex.args) > 1 and isinstance(ex.args[1], list) else None)
-        first = str(errs[0]) if errs else (str(ex).splitlines() or [""])[0]
-        more = L(f" (ほか {len(errs) - 1} 件)", f" (+{len(errs) - 1} more)") if errs and len(errs) > 1 else ""
-        full = L("生成できません: ", "cannot generate: ") + first + more
-        fm = self.gen_hint.fontMetrics()
-        self._fit_gen_hint()
-        self._gen_hint_full = full
-        self.gen_hint.setText(fm.elidedText(full, Qt.TextElideMode.ElideRight, self.gen_hint.maximumWidth() - 16))
-        self._error_locations = [e.location for e in errs] if errs else []
+        if errs:
+            self._errors = [self._error_text(e) for e in errs]
+            self._error_locations = [e.location for e in errs]
+        else:
+            self._errors = [x.strip() for x in str(ex).splitlines() if x.strip()] or [str(ex)]
+            self._error_locations = []
         self._error_index = -1
-        count = L(f" (全 {len(errs)} 件。押すたびに次へ)", f" ({len(errs)} in total; click again for the next one)") if errs and len(errs) > 1 else ""
-        self.gen_hint.setToolTip(L("押すと、その欄へ移動して赤い枠で囲みます", "click to jump to the field and outline it in red") + count + "\n\n" + str(ex))
-        self.gen_hint_action.setVisible(True)
+        n = len(self._errors)
+        self.error_badge.setText(L(f"{n} 件の不足", f"{n} issue" + ("s" if n != 1 else "")))
+        self.error_badge.setToolTip(L("押すと全件の一覧が出ます。行を選ぶとその欄へ移動します", "click for the full list; pick a row to jump to its field")
+                                    + "\n\n" + "\n".join(self._errors))
+        self.error_badge_action.setVisible(True)
+        self.mark_errors()
 
     def _on_structure_or_errors_changed(self) -> None:
         pass
@@ -516,16 +730,19 @@ class MainWindow(QMainWindow):
         out = Path(self.runtime.output_dir()).expanduser()
         try:
             spec = self.current_spec()
-            overwrite = False
-            if out.exists() and any(out.iterdir()):
-                ans = QMessageBox.question(self, tr("上書きの確認"), L(f"{out} は空ではありません。中のファイルを上書きしますか?", f"{out} is not empty. Overwrite the files inside?"))
+            overwrite, backup = False, None
+            if has_files(out):
+                plan = overwrite_plan(out, build_project(spec, self.cfg, output_dir=out))
+                backup = new_backup_dir(out)
+                ans = QMessageBox.question(self, tr("上書きの確認"), plan.message(backup))
                 if ans != QMessageBox.StandardButton.Yes:
                     return
                 overwrite = True
-            written = write_project(spec, self.cfg, out, overwrite=overwrite)
+            written = write_project(spec, self.cfg, out, overwrite=overwrite, backup=backup)
         except (ProjectError, ConfigError, ValueError, OSError) as ex:
             QMessageBox.critical(self, tr("生成できません"), str(ex))
             return
+        self.offer_undo(backup)
         self.last_written = out
         self.analysis.set_run_dir(out, spec.elements)
         self.workspace.set_root(out)          # point the tree and the terminal at the directory just written
@@ -541,9 +758,33 @@ class MainWindow(QMainWindow):
                 if kind == "direct" else
                 L("transfer_and_submit.sh のコマンドで、クラスタへ送って投入します。",
                   "Use the commands in transfer_and_submit.sh to send it to the cluster and submit it."))
-        self.run_hint.setText(L(f"次: {step}", f"Next: {step}"))
-        self.statusBar().showMessage(L(f"{len(written)} ファイルを {out} に書きました", f"wrote {len(written)} files to {out}"))
+        self.say(L(f"{len(written)} ファイルを {out} に書きました。次: {step}", f"Wrote {len(written)} files to {out}. Next: {step}"))
         QMessageBox.information(self, tr("生成しました"), f"{out}\n\n{step}")
+
+    def say(self, text: str) -> None:
+        # The state, at the left of the status bar (a temporary message would hide the Undo link next to it)
+        self.statusBar().clearMessage()
+        self.run_hint.setText(text)
+
+    def offer_undo(self, backup: Path | None) -> None:
+        self._undo_timer.stop()
+        self._undo_dir = backup if backup is not None and backup.is_dir() else None
+        self.undo_link.setVisible(self._undo_dir is not None)
+        if self._undo_dir is not None:
+            self._undo_timer.start()
+
+    def undo_write(self) -> None:
+        d, self._undo_dir = self._undo_dir, None
+        self._undo_timer.stop(); self.undo_link.hide()
+        if d is None:
+            return
+        try:
+            restored, removed = restore_backup(d)
+        except (ProjectError, OSError) as ex:
+            QMessageBox.critical(self, L("戻せません", "Cannot undo"), str(ex)); return
+        self.last_written = None; self.run_hint.clear()
+        self.statusBar().showMessage(L(f"元に戻しました: {len(restored)} ファイルを上書き前に戻し、{len(removed)} ファイルを消しました (控え: {d})",
+                                       f"undone: {len(restored)} files restored, {len(removed)} files removed (copy kept in {d})"))
 
     def scan_dialog(self):
         from adit.gui.scan_dialog import ScanDialog
@@ -558,10 +799,11 @@ class MainWindow(QMainWindow):
         dlg = self.scan_dialog()
         if dlg.exec() and dlg.out_dir is not None:
             self.scan_written(dlg.out_dir)
+            self.offer_undo(dlg.backup_dir)
 
     def scan_written(self, out: Path) -> None:
         self.analysis.set_run_dir(out)
-        self.statusBar().showMessage(L(f"値ごとの入力を {out} に作りました", f"wrote the scan inputs to {out}"))
+        self.say(L(f"値ごとの入力を {out} に作りました", f"wrote the scan inputs to {out}"))
 
     def _flush(self) -> bool:
         # The preview may still be pending (250 ms debounce): settle it before acting on the button state.
@@ -600,7 +842,8 @@ class MainWindow(QMainWindow):
         if dlg.exec() and dlg.out_dir is not None:
             if dlg.dirs:
                 self.analysis.set_run_dir(dlg.dirs[0])
-            self.statusBar().showMessage(L(f"段階に分けた入力を {dlg.out_dir} に作りました", f"wrote the staged inputs to {dlg.out_dir}"))
+            self.say(L(f"段階に分けた入力を {dlg.out_dir} に作りました", f"wrote the staged inputs to {dlg.out_dir}"))
+            self.offer_undo(dlg.backup_dir)
 
     def batch_dialog(self, kind: str):
         from adit.gui.prep23_dialogs import DIALOGS
@@ -616,14 +859,14 @@ class MainWindow(QMainWindow):
         dlg = self.batch_dialog(kind)
         if dlg.exec() and dlg.result is not None:
             self.batch_written(dlg.result)
+            self.offer_undo(dlg.backup_dir)
 
     def batch_written(self, res) -> None:
         if res.compare_base and res.dirs:
             self.analysis.set_run_dir(res.dirs[0])
         elif res.analysis_dir:
             self.analysis.set_run_dir(Path(res.analysis_dir))
-        self.statusBar().showMessage(L(f"{res.out} に {len(res.dirs)} 個のディレクトリを作りました",
-                                       f"wrote {len(res.dirs)} directories in {res.out}"))
+        self.say(L(f"{res.out} に {len(res.dirs)} 個のディレクトリを作りました", f"wrote {len(res.dirs)} directories in {res.out}"))
 
     def template_load_dialog(self):
         from adit.gui.prep_dialogs import TemplateLoadDialog

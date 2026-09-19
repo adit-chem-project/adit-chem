@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pydantic
 
+from adit.builder.model import has_op
 from adit.lang import L
 from adit.validate_types import friendly_pydantic
 from adit.spec import (AtomsData, BandSettings, CalculationSpec, Cp2kMethod, DftbMethod, EspressoMethod, GromacsMethod, KPoints, LammpsMethod,
@@ -214,7 +215,7 @@ def _recipe_structure(f: dict[str, str], state) -> Structure:
             size = _f(f.get("box_size"), 15.0)
             atoms.set_cell([size, size, size]); atoms.center(); atoms.pbc = True
             upd["atoms"] = AtomsData.from_ase(atoms)
-        if not any(s.op == "fix" for s in rec.steps):
+        if not has_op(rec.steps, "fix"):
             upd["fixed_atoms"], upd["fixed_axes"] = parse_constraints(_s(f.get("fixed")), len(atoms))
         return st.model_copy(update=upd)
     except (StructureError, ValueError) as ex:
@@ -469,7 +470,7 @@ def form_from_spec(spec: CalculationSpec) -> dict[str, str]:
     parts =[str(i + 1) for i in st.fixed_atoms]
     parts += [f"{int(k) + 1}:{''.join(c for c, mv in zip('xyz', v) if not mv)}" for k, v in st.fixed_axes.items()]
     f["fixed"] = ",".join(parts)
-    if rec is not None and any(s.op == "fix" for s in rec.steps):
+    if rec is not None and has_op(rec.steps, "fix"):
         f["fixed"] = ""
     f["code"] = m.code
     if isinstance(m, DftbMethod):

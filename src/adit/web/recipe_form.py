@@ -127,7 +127,7 @@ def summary(s) -> str:
 
 def step_fields(k: int, s) -> dict[str, str]:
     p = f"st{k}_"
-    f: dict[str, str] = {p + "op": s.op}
+    f: dict[str, str] = {p + "op": s.op, p + "enabled": "1" if s.enabled else ""}
 
     def sel(w: Selection) -> None:
         f.update({p + "elements": " ".join(w.elements), p + "zmin": _fmt(w.z_min), p + "zmax": _fmt(w.z_max)})
@@ -246,6 +246,7 @@ def _merge(k: int, s, f: dict):
             u["padding"] = num("padding", L("余白", "padding"))
     elif op == "fix":
         u = {"bottom_layers": num("layers", L("下から数えた層", "bottom layers"), integer=True), "where": where(s.where)}
+    u["enabled"] = g("enabled") == "1"      # an unticked check box is absent from the posted form
     return type(s).model_validate({**s.model_dump(), **u})
 
 

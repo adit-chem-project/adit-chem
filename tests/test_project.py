@@ -6,7 +6,8 @@ from pathlib import Path
 import pytest
 
 from adit.config import Config, ConfigError, Profile, config_path, default_config, load_config, save_config
-from adit.project import ProjectError, build_project, load_project, write_project
+from adit.project import (BACKUP_DIR, Backup, ProjectError, build_project, has_files, load_project, overwrite_plan, restore_backup,
+                          write_project)
 from adit.spec import DftbMethod, Runtime
 from tests.conftest import REAL_SK_ROOT, water_spec, pbs_profile
 
@@ -198,3 +199,57 @@ def test_check_remote_script_is_written_for_a_cluster_and_never_submits(tmp_path
             r = subprocess.run(["bash", "-n", str(tmp_path / f"check_{profile}.sh")], capture_output=True, text=True)
             assert r.returncode == 0, r.stderr
         assert "check_remote.sh" in files.texts["README.txt"]
+
+
+def test_backup_keeps_only_the_overwritten_files_and_restores_them(tmp_path, cfg):
+    out = tmp_path / "calc"
+    write_project(water_spec(), cfg, out)
+    (out / "dftb_in.hsd").write_text("old input\n", encoding="utf-8")
+    (out / "notes.txt").write_text("mine\n", encoding="utf-8")
+    (out / "skf" / "LICENSE").unlink()
+    files = build_project(water_spec(), cfg, output_dir=out)
+    plan = overwrite_plan(out, files)
+    assert len(plan.existing) == 12 and "notes.txt" in plan.existing
+    assert plan.overwritten == sorted(n for n in files.names() if n != "skf/LICENSE")
+    backup = out / BACKUP_DIR / "20260101_000000"
+    text = plan.message(backup)
+    assert "12 ファイル" in text and "11 件" in text and "dftb_in.hsd" in text and str(backup) in text
+    written = write_project(water_spec(), cfg, out, overwrite=True, backup=backup)
+    assert len(written) == 12 and (out / "dftb_in.hsd").read_text(encoding="utf-8") != "old input\n"
+    saved = sorted(p.relative_to(backup).as_posix() for p in backup.rglob("*") if p.is_file())
+    assert saved == sorted(plan.overwritten + ["manifest.json"])       # the untouched notes.txt is not copied
+    assert (backup / "dftb_in.hsd").read_text(encoding="utf-8") == "old input\n"
+    assert has_files(out) and not has_files(tmp_path / "nothing")
+    restored, removed = restore_backup(backup)
+    assert sorted(restored) == plan.overwritten and removed == ["skf/LICENSE"]
+    assert (out / "dftb_in.hsd").read_text(encoding="utf-8") == "old input\n" and not (out / "skf" / "LICENSE").exists()
+    assert (out / "notes.txt").read_text(encoding="utf-8") == "mine\n"
+    # a directory holding only old backups counts as empty
+    for p in out.iterdir():
+        if p.name != BACKUP_DIR:
+            (p.unlink() if p.is_file() else shutil.rmtree(p))
+    assert not has_files(out)
+    write_project(water_spec(), cfg, out)
+    assert plan.message(None) == plan.message(None) and "元に戻せません" in plan.message(None)
+
+
+def test_snapshot_backup_is_pruned_to_what_the_write_changed(tmp_path, cfg):
+    out = tmp_path / "set"
+    (out / "a").mkdir(parents=True)
+    (out / "a" / "keep.txt").write_text("k\n", encoding="utf-8")
+    (out / "a" / "old.txt").write_text("o\n", encoding="utf-8")
+    keep = Backup(out)
+    assert keep.can_snapshot() and keep.snapshot() and sorted(keep.saved) == ["a/keep.txt", "a/old.txt"]
+    import time
+    time.sleep(0.01)
+    (out / "a" / "old.txt").write_text("new\n", encoding="utf-8")
+    (out / "b").mkdir(); (out / "b" / "made.txt").write_text("m\n", encoding="utf-8")
+    d = keep.finish()
+    assert d == keep.dir and sorted(p.relative_to(d).as_posix() for p in d.rglob("*") if p.is_file()) == ["a/old.txt", "manifest.json"]
+    restored, removed = restore_backup(d)
+    assert restored == ["a/old.txt"] and removed == ["b/made.txt"]
+    assert (out / "a" / "old.txt").read_text(encoding="utf-8") == "o\n" and not (out / "b").exists()
+    untouched = Backup(out); untouched.snapshot()
+    assert untouched.finish() is None and not untouched.dir.exists()
+    plan = overwrite_plan(out, None)
+    assert "同じ名前のファイルを上書きします" in plan.message(keep.dir) and "50 MB" in plan.message(None, too_large=True)

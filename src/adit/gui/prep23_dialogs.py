@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QComboBox, QDialog,
 
 from adit.gui.i18n import translate_widgets
 from adit.gui.style import GROUP_SPACING, PANEL_MARGIN, ROW_SPACING
-from adit.gui.widgets import add_row, narrow
+from adit.gui.widgets import add_row, confirm_overwrite, narrow
 from adit.lang import L
 from adit.web import prep23 as P
 
@@ -65,6 +65,7 @@ class BatchDialog(QDialog):
         super().__init__(parent)
         self.make_spec, self.cfg = make_spec, cfg
         self.out_dir: Path | None = None
+        self.backup_dir: Path | None = None
         self.dirs: list[Path] = []
         self.result = None
         self._rows: dict = {}
@@ -121,14 +122,11 @@ class BatchDialog(QDialog):
         out = Path(self.folder.text().strip()).expanduser()
         try:
             spec = self.make_spec()
-            overwrite = False
-            if out.exists() and any(out.iterdir()):
-                ans = QMessageBox.question(self, L("上書きの確認", "Overwrite?"),
-                                           L(f"{out} は空ではありません。中のファイルを上書きしますか?", f"{out} is not empty. Overwrite the files inside?"))
-                if ans != QMessageBox.StandardButton.Yes:
-                    return
-                overwrite = True
+            overwrite, keep = confirm_overwrite(self, out)
+            if overwrite is None:
+                return
             res = P.run_batch(self.kind, spec, self.cfg, out, self.values(), overwrite=overwrite)
+            self.backup_dir = keep.finish() if keep is not None else None
         except ImportError as ex:
             QMessageBox.critical(self, L("生成できません", "Cannot generate"),
                                  L(f"必要なパッケージがありません: {ex}", f"a required package is missing: {ex}"))

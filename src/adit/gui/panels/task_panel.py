@@ -44,7 +44,7 @@ class TaskPanel(QGroupBox):
         self.pressure = narrow(SciDoubleSpinBox(0, 1e7, 1.0, 1))
         self.barostat_time = narrow(SciDoubleSpinBox(1e-3, 1e7, 1000.0, 100))
         self.band_path = QLineEdit(); self.band_path.setPlaceholderText("空欄なら格子の標準経路 (例 GXWKGLUWLK,UX)")
-        self.band_npoints = narrow(QSpinBox()); self.band_npoints.setRange(2, 10000)
+        self.band_npoints = narrow(QSpinBox()); self.band_npoints.setRange(2, 10000); self.band_npoints.setValue(BandSettings().npoints)
         self.band_empty = narrow(QSpinBox()); self.band_empty.setRange(0, 1000); self.band_empty.setValue(4)
 
         form = QFormLayout(self); form.setVerticalSpacing(ROW_SPACING); self._form = form

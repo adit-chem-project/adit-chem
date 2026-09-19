@@ -148,7 +148,7 @@ def test_scan_generates_directories(web, tmp_path):
     assert "MaxSccIterations = 100" in (out / "max_scc_iterations_100" / "dftb_in.hsd").read_text(encoding="utf-8")
     page = _post(base + "/scan", _water(app, tmp_path, scan_item="other", scan_path="method.max_scc_iterations",
                                         scan_values="50,100", scan_dir=str(out)))
-    assert "は空ではありません" in _error(page) and "上書きを許可" in _error(page)
+    assert "ファイルがあります" in _error(page) and "上書きを許可" in _error(page)
     page = _post(base + "/scan", _water(app, tmp_path, scan_item="other", scan_path="method.max_scc_iterations",
                                         scan_values="50,100", scan_dir=str(out), scan_overwrite="on"))
     assert not _error(page) and _banner(page, "message-banner")
