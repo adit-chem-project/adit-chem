@@ -10,7 +10,6 @@ from PySide6.QtWidgets import QComboBox, QFileDialog, QFormLayout, QGroupBox, QH
 from adit.lang import L
 from adit.config import Config
 from adit.gui.style import ROW_SPACING
-from adit.gui.style import NARROW_FIELD
 from adit.gui import icons
 from adit.gui.widgets import add_row, label, narrow
 from adit.spec import Runtime
@@ -44,7 +43,7 @@ class RuntimePanel(QGroupBox):
         self.mpiprocs = narrow(QSpinBox()); self.mpiprocs.setRange(1, 4096)
         self.omp = narrow(QSpinBox()); self.omp.setRange(1, 4096); self.omp.setValue(8)
         self.walltime = narrow(QLineEdit("01:00:00"))
-        self.job_name = QLineEdit("adit"); self.job_name.setMaximumWidth(2 * NARROW_FIELD)
+        self.job_name = QLineEdit("adit")
         base = Path.home() / "adit_runs"
         base.mkdir(exist_ok=True)
         self.outdir = QLineEdit(str(base / datetime.now().strftime("run_%Y%m%d_%H%M%S")))
