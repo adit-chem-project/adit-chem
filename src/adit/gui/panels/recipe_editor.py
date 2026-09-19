@@ -695,22 +695,23 @@ class RecipeEditor(QWidget):
         self.btn_build = QPushButton(icons.icon("generate", 16), L("作る", "Build")); self.btn_build.setObjectName("primary")
         self.btn_build.setToolTip(L("組み立て手順を順に実行して構造を作ります (溶液の詰め込みやポリマーは数秒〜数十秒かかります)",
                                     "runs the steps in order to make the structure (packing a solution or a polymer takes seconds to tens of seconds)"))
-        self.btn_cancel = QPushButton(L("中止", "Cancel")); self.btn_cancel.setVisible(False)
+        from adit.gui.progress import ProgressStrip
+        self.progress = ProgressStrip(); self.btn_cancel = self.progress.btn_cancel
         self.status = QLabel(""); self.status.setObjectName("hint"); self.status.setWordWrap(True)
         self.log = QLabel(""); self.log.setObjectName("hint"); self.log.setWordWrap(True)
         self.log.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
 
         add_row_w = hrow(self.add_kind, self.btn_add, stretch=False)
         edit_row = hrow(self.btn_up, self.btn_down, self.btn_del)
-        self.build_row = hrow(self.btn_build, self.btn_cancel)
+        self.build_row = hrow(self.btn_build)
         lay = QVBoxLayout(self); lay.setContentsMargins(0, 0, 0, 0); lay.setSpacing(6)
-        for w in (add_row_w, self.list, edit_row, self.empty, self.step_title, self.stack, self.build_row, self.status, self.log):
+        for w in (add_row_w, self.list, edit_row, self.empty, self.step_title, self.stack, self.build_row, self.progress, self.status, self.log):
             lay.addWidget(w)
         self.btn_add.clicked.connect(self._on_add)
         self.btn_up.clicked.connect(lambda: self.move(-1)); self.btn_down.clicked.connect(lambda: self.move(1))
         self.btn_del.clicked.connect(self.remove_current)
         self.list.currentRowChanged.connect(self._on_row)
-        self.btn_build.clicked.connect(self.build_requested.emit); self.btn_cancel.clicked.connect(self.cancel_requested.emit)
+        self.btn_build.clicked.connect(self.build_requested.emit); self.progress.cancel_requested.connect(self.cancel_requested.emit)
         self._refresh()
 
     def count(self) -> int:
@@ -810,10 +811,12 @@ class RecipeEditor(QWidget):
         self.build_row.setVisible(on)
 
     def set_building(self, on: bool) -> None:
-        self.btn_build.setEnabled(not on); self.btn_cancel.setVisible(on)
+        self.btn_build.setEnabled(not on)
         if on:
-            self.status.setObjectName("hint"); self._restyle(self.status)
-            self.status.setText(L("作っています…", "Building…"))
+            self.status.setObjectName("hint"); self._restyle(self.status); self.status.setText("")
+            self.progress.begin(L("作っています…", "Building…"))
+        else:
+            self.progress.end()
 
     def show_stale(self, text: str) -> None:
         self.status.setObjectName("hint"); self._restyle(self.status); self.status.setText(text)

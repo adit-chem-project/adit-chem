@@ -9,9 +9,10 @@ from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QSizePolicy, QStacke
 from adit.gui import icons
 from adit.lang import L
 
-LARGE_ICON = 24
+LARGE_ICON = 16
 SMALL_ICON = 16
 HEADER_HEIGHT = 30
+PAGE_PADDING = 5
 
 
 def _bind(button: QToolButton, action: QAction) -> QToolButton:
@@ -21,31 +22,35 @@ def _bind(button: QToolButton, action: QAction) -> QToolButton:
     return button
 
 
-def large_button(action: QAction) -> QToolButton:
-    b = QToolButton(); b.setObjectName("ribbon_large")
-    b.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
-    b.setIconSize(QSize(LARGE_ICON, LARGE_ICON)); b.setAutoRaise(True)
-    b.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+def _row_button(action: QAction, name: str) -> QToolButton:
+    # One row of 16 px icons with the label beside: the ribbon body stays about 40 px tall.
+    b = QToolButton(); b.setObjectName(name)
+    b.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+    b.setIconSize(QSize(SMALL_ICON, SMALL_ICON)); b.setAutoRaise(True)
+    b.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
     return _bind(b, action)
+
+
+def large_button(action: QAction) -> QToolButton:
+    return _row_button(action, "ribbon_large")
 
 
 def small_button(action: QAction) -> QToolButton:
-    b = QToolButton(); b.setObjectName("ribbon_small")
-    b.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-    b.setIconSize(QSize(SMALL_ICON, SMALL_ICON)); b.setAutoRaise(True)
-    b.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-    return _bind(b, action)
+    return _row_button(action, "ribbon_small")
 
 
 class RibbonGroup(QWidget):
+
+    triggered = Signal()
 
     def __init__(self, title: str, parent: QWidget | None = None):
         super().__init__(parent)
         self.setObjectName("ribbon_group")
         self.body = QHBoxLayout(); self.body.setContentsMargins(0, 0, 0, 0); self.body.setSpacing(2)
-        self.caption = QLabel(title); self.caption.setObjectName("ribbon_caption")
-        self.caption.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignBottom)
-        lay = QVBoxLayout(self); lay.setContentsMargins(4, 1, 4, 0); lay.setSpacing(1)
+        # The caption is kept for the group name (tooltip, translation) but no longer takes a row.
+        self.caption = QLabel(title); self.caption.setObjectName("ribbon_caption"); self.caption.hide()
+        self.setToolTip(title)
+        lay = QVBoxLayout(self); lay.setContentsMargins(4, 0, 4, 0); lay.setSpacing(0)
         lay.addLayout(self.body, 1); lay.addWidget(self.caption)
         self.buttons: list[QToolButton] = []
         self.separator: QFrame | None = None
@@ -53,6 +58,7 @@ class RibbonGroup(QWidget):
     def _track(self, b: QToolButton) -> None:
         self.buttons.append(b)
         b.defaultAction().changed.connect(self.sync_visibility)
+        b.defaultAction().triggered.connect(lambda *_: self.triggered.emit())
 
     def sync_visibility(self) -> None:
         show = any(b.defaultAction().isVisible() for b in self.buttons)
@@ -65,22 +71,21 @@ class RibbonGroup(QWidget):
         return b
 
     def add_small(self, actions: list[QAction]) -> list[QToolButton]:
-        col = QVBoxLayout(); col.setContentsMargins(0, 0, 0, 0); col.setSpacing(0)
         made = [small_button(a) for a in actions]
         for b in made:
-            col.addWidget(b); self._track(b)
-        col.addStretch(1)
-        self.body.addLayout(col)
+            self.body.addWidget(b); self._track(b)
         return made
 
 
 class RibbonPage(QWidget):
 
+    triggered = Signal()
+
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         self.setObjectName("ribbon_page")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self._lay = QHBoxLayout(self); self._lay.setContentsMargins(8, 3, 8, 2); self._lay.setSpacing(6)
+        self._lay = QHBoxLayout(self); self._lay.setContentsMargins(8, PAGE_PADDING, 8, PAGE_PADDING); self._lay.setSpacing(6)
         self._lay.addStretch(1)
         self.groups: list[RibbonGroup] = []
 
@@ -90,6 +95,7 @@ class RibbonPage(QWidget):
             sep = QFrame(); sep.setObjectName("ribbon_sep"); sep.setFixedWidth(1)
             self._lay.insertWidget(self._lay.count() - 1, sep); g.separator = sep
         self._lay.insertWidget(self._lay.count() - 1, g)
+        g.triggered.connect(self.triggered.emit)
         self.groups.append(g)
         return g
 
@@ -98,7 +104,7 @@ class Ribbon(QWidget):
 
     collapsed_changed = Signal(bool)
 
-    def __init__(self, parent: QWidget | None = None):
+    def __init__(self, parent: QWidget | None = None, *, collapsed: bool = True):
         super().__init__(parent)
         self.setObjectName("ribbon")
         self.tabs = QTabBar(); self.tabs.setObjectName("ribbon_tabs")
@@ -106,11 +112,11 @@ class Ribbon(QWidget):
         self.stack = QStackedWidget(); self.stack.setObjectName("ribbon_stack")
         self.stack.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
         self.toggle = QToolButton(); self.toggle.setObjectName("ribbon_toggle"); self.toggle.setAutoRaise(True)
-        self.toggle.setIconSize(QSize(SMALL_ICON, SMALL_ICON)); self.toggle.clicked.connect(lambda: self.set_collapsed(not self._collapsed))
+        self.toggle.setIconSize(QSize(SMALL_ICON, SMALL_ICON)); self.toggle.clicked.connect(self._on_toggle)
         self.toggle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.toggle.setFixedSize(HEADER_HEIGHT, HEADER_HEIGHT)
         self.act_toggle = QAction(L("リボンを畳む / 開く", "Collapse / expand the ribbon"), self)
-        self.act_toggle.setShortcut("Ctrl+F1"); self.act_toggle.triggered.connect(lambda: self.set_collapsed(not self._collapsed))
+        self.act_toggle.setShortcut("Ctrl+F1"); self.act_toggle.triggered.connect(self._on_toggle)
         self.addAction(self.act_toggle)
         self._header = QHBoxLayout(); self._header.setContentsMargins(8, 2, 8, 1); self._header.setSpacing(6)
         self._lead = QHBoxLayout(); self._lead.setContentsMargins(0, 0, 0, 0)
@@ -123,7 +129,9 @@ class Ribbon(QWidget):
         lay.addLayout(self._header)
         pad = QHBoxLayout(); pad.setContentsMargins(8, 0, 8, 4); pad.addWidget(self.stack); lay.addLayout(pad)
         self.pages: list[RibbonPage] = []
-        self._collapsed = False
+        self._collapsed = collapsed
+        self._peek = False          # opened from the collapsed state by a tab click: closes again after a command
+        self.stack.setVisible(not collapsed)
         self.tabs.tabBarClicked.connect(self._on_tab_clicked)
         self.tabs.currentChanged.connect(self.stack.setCurrentIndex)
         self._update_toggle()
@@ -131,6 +139,7 @@ class Ribbon(QWidget):
     def add_page(self, title: str) -> RibbonPage:
         page = RibbonPage()
         self.stack.addWidget(page); self.tabs.addTab(title)
+        page.triggered.connect(self._on_command)
         self.pages.append(page)
         self._align_leading()
         return page
@@ -165,27 +174,40 @@ class Ribbon(QWidget):
     def is_collapsed(self) -> bool:
         return self._collapsed
 
-    def set_collapsed(self, collapsed: bool) -> None:
-        if collapsed == self._collapsed:
-            return
-        self._collapsed = collapsed
-        self.stack.setVisible(not collapsed)
+    def is_peeking(self) -> bool:
+        return self._peek
+
+    def set_collapsed(self, collapsed: bool, *, remember: bool = True) -> None:
+        # remember=False opens the ribbon only until the next command (a peek); it is not saved.
+        self._peek = not collapsed and not remember
+        if collapsed != self._collapsed:
+            self._collapsed = collapsed
+            self.stack.setVisible(not collapsed)
         self._update_toggle()
-        self.collapsed_changed.emit(collapsed)
+        if remember:
+            self.collapsed_changed.emit(collapsed)
 
     def show_page(self, i: int) -> None:
-        self.tabs.setCurrentIndex(i); self.set_collapsed(False)
+        self.tabs.setCurrentIndex(i); self.set_collapsed(False, remember=False)
+
+    def _on_toggle(self) -> None:
+        # While peeking the button means "keep it open"; otherwise it flips the state.
+        self.set_collapsed(False if self._peek else not self._collapsed)
 
     def _on_tab_clicked(self, i: int) -> None:
         if i < 0:
             return
         if self._collapsed:
-            self.set_collapsed(False)
+            self.set_collapsed(False, remember=False)
         elif i == self.tabs.currentIndex():
             self.set_collapsed(True)
 
+    def _on_command(self) -> None:
+        if self._peek:
+            self.set_collapsed(True, remember=False)
+
     def _update_toggle(self) -> None:
-        if self._collapsed:
+        if self._collapsed or self._peek:
             self.toggle.setIcon(icons.icon("chevron_down", SMALL_ICON))
             self.toggle.setToolTip(L("リボンを開いたままにする (Ctrl+F1)", "Keep the ribbon open (Ctrl+F1)"))
         else:
