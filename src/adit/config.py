@@ -283,7 +283,20 @@ def set_top_level_value(path: Path, key: str, value) -> None:
     except tomllib.TOMLDecodeError as ex:
         raise ConfigError(describe_config_error(ex, text, path)) from ex
     lines = text.splitlines()
-    end = next((i for i, s in enumerate(lines) if s.lstrip().startswith("[")), len(lines))
+    _replace_top_level(lines, key, value)
+    out = "\n".join(lines) + "\n"
+    tomllib.loads(out)
+    path.write_text(out, encoding="utf-8")
+
+
+def _first_table(lines: list[str]) -> int:
+    return next((i for i, s in enumerate(lines) if s.lstrip().startswith("[")), len(lines))
+
+
+def _replace_top_level(lines: list[str], key: str, value) -> None:
+    import re
+
+    end = _first_table(lines)
     new_line = tomli_w.dumps({key: value}).strip()
     literal = new_line.split("=", 1)[1].strip()
     pat = re.compile(rf"""^(\s*{re.escape(key)}\s*=\s*)("[^"]*"|'[^']*'|[^\s#]+)(.*)$""")
@@ -296,15 +309,45 @@ def set_top_level_value(path: Path, key: str, value) -> None:
         while at > 0 and not lines[at - 1].strip():
             at -= 1
         lines.insert(at, new_line)
-    out = "\n".join(lines) + "\n"
+
+
+def _merged_config_text(data: dict, path: Path) -> str | None:
+    # Keep the user's comments and unknown keys above the first table, and unknown keys inside
+    # [profiles.*]; the tables themselves are rewritten from the model (comments in them are lost).
+    if not path.is_file():
+        return None
+    try:
+        text = read_config_text(path)
+        old = tomllib.loads(text)
+    except (OSError, tomllib.TOMLDecodeError):
+        return None
+    lines = text.splitlines()
+    top = lines[:_first_table(lines)]
+    tables = {k: v for k, v in data.items() if isinstance(v, dict)}
+    if any(k in tomllib.loads("\n".join(top)) for k in tables):
+        return None
+    for key, value in data.items():
+        if key not in tables:
+            _replace_top_level(top, key, value)
+    merged: dict = {name: body for name, body in old.items() if isinstance(body, dict) and name not in tables}
+    known_profile = set(Profile.model_fields)
+    for name, table in tables.items():
+        if name == "profiles":
+            old_profiles = old.get("profiles") if isinstance(old.get("profiles"), dict) else {}
+            table = {pname: {**{k: v for k, v in (old_profiles.get(pname) or {}).items() if k not in known_profile}, **body}
+                     for pname, body in table.items()}
+        merged[name] = table
+    out = "\n".join(top).rstrip("\n") + "\n\n" + tomli_w.dumps(merged)
     tomllib.loads(out)
-    path.write_text(out, encoding="utf-8")
+    return out
 
 
 def save_config(cfg: Config, path: Path | None = None) -> Path:
     path = path or config_path()
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(tomli_w.dumps(cfg.model_dump(mode="json")), encoding="utf-8")
+    data = cfg.model_dump(mode="json")
+    text = _merged_config_text(data, path)
+    path.write_text(text if text is not None else tomli_w.dumps(data), encoding="utf-8")
     cfg._source_path = path.absolute()
     return path
 
