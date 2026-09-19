@@ -54,6 +54,7 @@ def validate(spec: CalculationSpec, cfg: Config, *, output_dir: Path | str | Non
         errs.append(ValidationError("runtime.profile", L(f"プロファイル {spec.runtime.profile!r} が設定ファイルにありません", f"profile {spec.runtime.profile!r} is not in the settings file")))
     elif spec.runtime.profile in cfg.profiles:
         errs += _check_placeholders(spec.runtime.profile, cfg.profiles[spec.runtime.profile], spec.method.code)
+        errs += _check_limits(spec.runtime.profile, cfg.profiles[spec.runtime.profile], spec.runtime)
         jn = spec.runtime.job_name.strip()
         if cfg.profiles[spec.runtime.profile].kind != "direct" and jn and not _JOB_NAME.match(jn):
             errs.append(ValidationError("runtime.job_name", L(
@@ -114,6 +115,37 @@ def _check_placeholders(name: str, profile, code: str) -> list[ValidationError]:
                 "要らない行なら行頭に # を付けて無効にしてください",
                 f"a placeholder is still in the settings: {key} = {value!r} in [profiles.{name}]. Replace the <...> or /path/to part with your own value, "
                 "or put # at the start of the line if it is not needed")))
+    return errs
+
+
+def walltime_seconds(text: str) -> int | None:
+    if not _WALLTIME.match(text.strip()):
+        return None
+    h, m, s = (int(x) for x in text.strip().split(":"))
+    return h * 3600 + m * 60 + s
+
+
+def _check_limits(name: str, profile, r) -> list[ValidationError]:
+    errs: list[ValidationError] = []
+    over = L("環境設定の上限を超えています", "over the limit in the settings")
+    if profile.nodes_max > 0 and r.nodes > profile.nodes_max:
+        errs.append(ValidationError("runtime.nodes", L(
+            f"{over}: [profiles.{name}] の nodes_max = {profile.nodes_max} に対して、ノード数 {r.nodes}",
+            f"{over}: nodes_max = {profile.nodes_max} in [profiles.{name}], but nodes = {r.nodes}")))
+    if profile.cores_max > 0 and r.nodes * r.ncpus > profile.cores_max:
+        errs.append(ValidationError("runtime.ncpus", L(
+            f"{over}: [profiles.{name}] の cores_max = {profile.cores_max} に対して、ノード数 {r.nodes} × ノードあたりのコア数 {r.ncpus} = {r.nodes * r.ncpus}",
+            f"{over}: cores_max = {profile.cores_max} in [profiles.{name}], but nodes {r.nodes} x cores/node {r.ncpus} = {r.nodes * r.ncpus}")))
+    if profile.walltime_max.strip():
+        limit = walltime_seconds(profile.walltime_max)
+        if limit is None:
+            errs.append(ValidationError("runtime.profile", L(
+                f"環境設定の [profiles.{name}] の walltime_max = {profile.walltime_max!r} が HH:MM:SS の形ではありません",
+                f"walltime_max = {profile.walltime_max!r} in [profiles.{name}] is not of the form HH:MM:SS")))
+        elif (walltime_seconds(r.walltime) or 0) > limit:
+            errs.append(ValidationError("runtime.walltime", L(
+                f"{over}: [profiles.{name}] の walltime_max = {profile.walltime_max} に対して、制限時間 {r.walltime}",
+                f"{over}: walltime_max = {profile.walltime_max} in [profiles.{name}], but walltime = {r.walltime}")))
     return errs
 
 
