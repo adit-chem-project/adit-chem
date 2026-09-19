@@ -84,3 +84,69 @@ def test_ribbon_state_is_saved_in_the_settings(app, quiet, sk_root, tmp_path):
     win2 = make_window(sk_root, tmp_path, ribbon_collapsed=False)
     assert not win2.ribbon.is_collapsed() and win2.ribbon.stack.isVisibleTo(win2)
     win2.close()
+
+
+# ---- proposal 2: the command palette, shortcut tooltips and the shortcut list ----
+
+def test_palette_search_scores_prefix_over_substring_and_needs_every_word():
+    from adit.gui.palette import Item, search
+    items = [Item("action", "生成", "Ctrl+G", lambda: None, ("generate",)),
+             Item("field", "温度 [K]", "計算条件 › 計算の種類", lambda: None, ("温度 [K]", "Temperature [K]")),
+             Item("field", "電子温度 [K]", "計算条件 › 計算手法", lambda: None, ("電子温度 [K]", "Electronic temperature [K]")),
+             Item("preset", "H₂O", "プリセット", lambda: None, ("H2O H₂O water 水",))]
+    assert [i.title for i in search(items, "温度")] == ["温度 [K]", "電子温度 [K]"]
+    assert [i.title for i in search(items, "temp")] == ["温度 [K]", "電子温度 [K]"]     # a word start beats a substring
+    assert [i.title for i in search(items, "gen")] == ["生成"]
+    assert [i.title for i in search(items, "water")] == ["H₂O"] and [i.title for i in search(items, "水")] == ["H₂O"]
+    assert search(items, "電子 温度")[0].title == "電子温度 [K]" and search(items, "電子 圧力") == []
+    assert [i.kind for i in search(items, "")] == ["action", "field", "field", "preset"]   # commands first when nothing is typed
+
+
+def test_palette_jumps_to_a_field_runs_a_command_and_picks_a_preset(app, quiet, sk_root, tmp_path):
+    win = make_window(sk_root, tmp_path); win.show(); settle(app)
+    win.set_mode(win.MODE_SETTINGS)
+    dlg = win.open_palette(); settle(app)
+    dlg.search.setText("スピン")
+    hits = dlg.shown()
+    assert hits and hits[0].kind == "field" and hits[0].title == "スピン多重度" and hits[0].detail.startswith("構造")
+    assert dlg.run_current() and win.mode() == win.MODE_STRUCTURE
+    assert win.focusWidget() is win.structure.multiplicity
+    dlg = win.open_palette(); dlg.search.setText("一括")
+    assert dlg.shown()[0].kind == "action" and dlg.shown()[0].detail == "" and "一括生成" in dlg.shown()[0].title
+    dlg.reject()
+    dlg = win.open_palette(); dlg.search.setText("エタノール")
+    assert [i.kind for i in dlg.shown()] == ["preset"]
+    assert dlg.run_current() and win.structure.current_source() == "preset" and win.structure.preset.currentData() == "CH3CH2OH"
+    dlg = win.open_palette(); dlg.search.setText("undo")
+    assert dlg.shown()[0].detail == "Ctrl+Z", "the shortcut is the detail of a command"
+    dlg.reject()
+    win.close()
+
+
+def test_tooltips_carry_the_shortcut_once(app, quiet, sk_root, tmp_path):
+    from adit.gui.i18n import set_language, translate_widgets
+    win = make_window(sk_root, tmp_path)
+    assert win.act_generate.toolTip() == "生成 (Ctrl+G)"
+    assert win.act_open.toolTip() == "計算設定 (spec.json) を開く… (Ctrl+O)"
+    assert win.act_back.toolTip() == "1 つ前の設定に戻す (Ctrl+Z)"
+    assert win.ribbon.act_toggle.toolTip().count("Ctrl+F1") == 1
+    assert win.act_palette.toolTip().endswith("(Ctrl+K)") and win.act_shortcuts.toolTip().endswith("(Ctrl+/)")
+    win.close()
+    set_language("en")
+    try:
+        win = make_window(sk_root, tmp_path); translate_widgets(win)
+        assert win.act_open.toolTip() == "Open calculation settings (spec.json)… (Ctrl+O)"
+        assert win.act_back.toolTip() == "Back to the previous settings (Ctrl+Z)"
+        win.close()
+    finally:
+        set_language("ja")
+
+
+def test_shortcut_list_names_every_key(app, quiet, sk_root, tmp_path):
+    win = make_window(sk_root, tmp_path)
+    rows = dict(win.shortcut_rows())
+    for key in ("Ctrl+K", "Ctrl+/", "Ctrl+G", "Ctrl+Z", "Ctrl+Shift+Z", "Ctrl+F1", "Ctrl+S", "Ctrl+O", "Ctrl+Q"):
+        assert key in rows, key
+    dlg = win.open_shortcuts()
+    assert dlg.rows() == win.shortcut_rows()
+    dlg.close(); win.close()
