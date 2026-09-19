@@ -150,3 +150,142 @@ def test_shortcut_list_names_every_key(app, quiet, sk_root, tmp_path):
     dlg = win.open_shortcuts()
     assert dlg.rows() == win.shortcut_rows()
     dlg.close(); win.close()
+
+
+# ---- proposal 9: one progress strip with the NN/g thresholds, and empty states with the next action ----
+
+def test_progress_strip_follows_the_thresholds(app):
+    from adit.gui.progress import EmptyState, ProgressStrip
+    strip = ProgressStrip()
+    now = [100.0]
+    strip.clock = lambda: now[0]
+    assert strip.phase() == "idle" and strip.isHidden()
+    strip.begin("作っています…")
+    strip._tick()
+    assert strip.phase() == "hidden" and strip.isHidden(), "nothing under a second"
+    now[0] += 1.5; strip._tick()
+    assert strip.phase() == "busy" and not strip.isHidden() and strip.bar.maximum() == 0 and strip.btn_cancel.isVisibleTo(strip)
+    strip.update(3, 10, "分子を置いています")
+    assert strip.phase() == "busy" and strip.label.text() == "分子を置いています  3 / 10"
+    now[0] += 10.0; strip._tick()
+    assert strip.phase() == "percent" and strip.bar.maximum() == 100 and strip.bar.value() == 30
+    assert "30 %" in strip.label.text() and "残り約" in strip.label.text()
+    strip.end()
+    assert strip.phase() == "idle" and strip.isHidden()
+    strip.begin("x", cancellable=False); now[0] += 2; strip._tick()
+    assert not strip.btn_cancel.isVisibleTo(strip)
+    strip.end()
+    empty = EmptyState("見出し", "1 行", "次へ")
+    assert empty.button.isVisibleTo(empty) and empty.title.text() == "見出し"
+    empty.set_texts(button="")
+    assert not empty.button.isVisibleTo(empty)
+
+
+def test_job_runs_in_the_background_and_drops_a_cancelled_result(app):
+    from PySide6.QtCore import QEventLoop, QTimer
+
+    from adit import progress as reports
+    from adit.gui.progress import Job
+
+    def spin(ms):
+        loop = QEventLoop(); QTimer.singleShot(ms, loop.quit); loop.exec()
+
+    got = []
+    job = Job(); job.finished.connect(lambda r, e: got.append((r, e))); job.progress.connect(lambda d, t, w: got.append((d, t, w)))
+
+    def work(n):
+        reports.report(1, 2, "half")
+        return n * 2
+
+    job.start(work, 21); spin(300)
+    assert (1, 2, "half") in got and (42, None) in got
+    got.clear()
+    job.start(lambda: 1 / 0); spin(300)
+    assert len(got) == 1 and got[0][0] is None and isinstance(got[0][1], ZeroDivisionError)
+    got.clear()
+    import time
+    job.start(lambda: time.sleep(0.2) or "late"); job.cancel(); spin(500)
+    assert got == [] and not job.is_running()
+
+
+def test_the_build_shows_the_strip_and_reports_steps(app, quiet, sk_root, tmp_path):
+    from PySide6.QtCore import QEventLoop, QTimer
+
+    def spin(ms):
+        loop = QEventLoop(); QTimer.singleShot(ms, loop.quit); loop.exec()
+
+    win = make_window(sk_root, tmp_path)
+    p = win.structure
+    p.set_source("mixture")
+    seen = []
+    p.job.progress.connect(lambda d, t, w: seen.append((d, t, w)))
+    strip = p.recipe.progress
+    now = [1000.0]; strip.clock = lambda: now[0]
+    p.recipe.btn_build.click()
+    assert p.is_building() and strip.phase() == "hidden" and strip.isHidden()
+    now[0] += 2.0; strip._tick()
+    assert strip.phase() == "busy"
+    for _ in range(40):
+        spin(100)
+        if not p.is_building():
+            break
+    assert not p.is_building() and strip.phase() == "idle"
+    assert any(w == "分子を置いています" for _, _, w in seen), seen[:3]
+    assert p.structure() is not None
+    win.close()
+
+
+def test_analysis_runs_in_the_background_with_cancel(app, quiet, tmp_path):
+    import shutil
+    from pathlib import Path
+
+    from PySide6.QtCore import QEventLoop, QTimer
+
+    from adit.gui.panels.analysis_panel import AnalysisPanel
+
+    def spin(ms):
+        loop = QEventLoop(); QTimer.singleShot(ms, loop.quit); loop.exec()
+
+    d = tmp_path / "run"
+    shutil.copytree(Path(__file__).resolve().parent.parent / "examples" / "dftb_md_water_generated", d)
+    p = AnalysisPanel()
+    assert not p.empty.isHidden() and p.empty.button.text() == "解析を実行"
+    p.set_run_dir(d, ["O", "H"])
+    assert p.run_async()
+    assert not p.btn_run.isEnabled() and p.job.is_running()
+    p.cancel()
+    assert p.btn_run.isEnabled() and not p.job.is_running() and p.summary.toPlainText() == "中止しました"
+    assert p.run_async()
+    for _ in range(100):
+        spin(100)
+        if not p.job.is_running():
+            break
+    assert not p.job.is_running() and p.empty.isHidden() and "温度" in p.summary.toPlainText() and p.figs_lay.count() >= 2
+    p.run_dir.setText(str(tmp_path / "nowhere"))
+    assert not p.run_async() and "ディレクトリがありません" in p.summary.toPlainText()
+
+
+def test_empty_states_offer_the_next_action(app, quiet, sk_root, tmp_path):
+    win = make_window(sk_root, tmp_path)
+    ws = win.workspace
+    assert ws.editor_stack.currentWidget() is ws.editor_empty and ws.editor_empty.title.text() == "ファイルを開いていません"
+    (tmp_path / "out").mkdir(exist_ok=True); (tmp_path / "out" / "submit.sh").write_text("#!/bin/bash\n", encoding="utf-8")
+    ws.set_root(tmp_path / "out")
+    assert ws.editor_empty.button.text() == "submit.sh を開く"
+    ws.editor_empty.button.click()
+    assert ws.editor_stack.currentWidget() is ws.editor and ws.editor.path == tmp_path / "out" / "submit.sh"
+    win.method.reload_sets("")
+    win.refresh_preview()
+    pv = win.preview
+    assert pv.tabs.isHidden() and not pv.empty.isHidden() and pv.empty.title.text() == "生成できません"
+    assert "Slater-Koster" in pv.empty.line.text() and pv.empty.button.text() == "欄へ移動"
+    pv.empty.button.click()
+    assert win.mode() == win.MODE_SETTINGS and win.method.sk_set.property("adit_error") is True
+    win.method.reload_sets(str(sk_root)); win.method.sk_set.setCurrentText("fake-1-0"); win.refresh_preview()
+    assert not pv.tabs.isHidden() and pv.empty.isHidden()
+    dlg = win.scan_dialog()
+    assert dlg.empty.button.text() == "例の値を入れる" and dlg.values.text() == ""
+    dlg.empty.button.click()
+    assert dlg.values.text() == dlg.current_choice().example and dlg.empty.title.text().endswith("個のディレクトリ")
+    assert not dlg.empty.button.isVisibleTo(dlg)
+    dlg.close(); win.close()
