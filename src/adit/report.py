@@ -18,6 +18,7 @@ from adit.provenance import read_provenance, sha256_file, verify_inputs
 
 MANIFEST_FILE = "manifest.json"
 METHODS_FILE = "methods.md"
+BIB_FILE = "references.bib"
 _UNITS = (
     ("_ev_per_ang", "eV/Å"), ("_per_bar", "1/bar"), ("_kj_per_mol_nm", "kJ/mol/nm"), ("_cm1", "cm⁻¹"),
     ("_ha", "Hartree"), ("_ry", "Ry"), ("_ev", "eV"), ("_nm", "nm"), ("_ang", "Å"), ("_fs", "fs"),
@@ -380,6 +381,47 @@ def _fingerprint_rows(report: RunReport) -> list[tuple[str, str, str]]:
     return rows
 
 
+def run_citations(report: RunReport):
+    from adit.citations import citations_for
+
+    return citations_for(report.spec, report.run_dir)
+
+
+def citation_lines(report: RunReport) -> list[str]:
+    cs = run_citations(report)
+    keys = cs.keys
+    from adit.citations import adit_citation
+
+    own = adit_citation()
+    if own is not None:
+        keys = keys + [own.key]
+    lines = [L("### 引用 (文献)", "### References to cite"), ""]
+    if keys:
+        lines.append(L(f"引用: {', '.join(keys)} (BibTeX は `adit-report <ディレクトリ> --bib {BIB_FILE}` で書き出せます。"
+                       "各コードの公式の「引用してください」のページから写した鍵です)",
+                       f"Cite: {', '.join(keys)} (write the BibTeX with `adit-report <directory> --bib {BIB_FILE}`; "
+                       "the keys come from each code's official 'how to cite' page)"))
+    if own is None:
+        cs.not_recorded.append(L("ADIT 自身の文献 (CITATION.cff が見つかりません)", "reference for ADIT itself (CITATION.cff not found)"))
+    for item in cs.not_recorded:
+        lines.append(L(f"未記録: {item}", f"Not on record: {item}"))
+    return lines + [""]
+
+
+def references_bibtex(reports: list[RunReport]) -> str:
+    """The BibTeX entries of every run given, plus ADIT itself, each once."""
+    from adit.citations import adit_citation, bibtex_text
+
+    entries = []
+    for report in reports:
+        entries += run_citations(report).entries
+    own = adit_citation()
+    if own is not None:
+        entries.append(own)
+    return bibtex_text(entries, header=L("ADIT の adit-report --bib が書いた文献の一覧。各エントリの前の行に出典 (引用を求めている公式ページ) がある",
+                                         "References written by adit-report --bib of ADIT; the line before each entry names the official page that asks for it"))
+
+
 def _table(header: tuple[str, ...], rows: list[tuple[str, ...]]) -> list[str]:
     if not rows:
         return []
@@ -459,6 +501,7 @@ def methods_section(reports: list[RunReport]) -> list[str]:
                                              for ch in report.analysis_summary):
                 lines += ["The summary above is in Japanese because `adit-analyze` was run with the Japanese interface; "
                           "re-run it with `--lang en` (or `ADIT_LANG=en`) to get an English summary.", ""]
+        lines += citation_lines(report)
         if report.notes:
             lines += [L("### 記録が無いもの", "### Not on record"), ""]
             lines += [f"- {n}" for n in report.notes] + [""]
@@ -669,10 +712,12 @@ def write_bundle(reports: list[RunReport], dest: Path | str, *, language: str = 
                             f"already exists: {out} (choose another name; nothing is overwritten)"))
     methods = methods_markdown(reports, language)
     data = json.dumps(manifest(reports), indent=2, ensure_ascii=False) + "\n"
+    bib = references_bibtex(reports)
     if out.suffix.lower() == ".zip":
         with zipfile.ZipFile(out, "w", compression=zipfile.ZIP_DEFLATED) as zf:
             zf.writestr(METHODS_FILE, methods)
             zf.writestr(MANIFEST_FILE, data)
+            zf.writestr(BIB_FILE, bib)
             for report in reports:
                 for name in bundle_files(report):
                     zf.write(report.run_dir / name, f"{report.run_dir.name}/{name}")
@@ -680,6 +725,7 @@ def write_bundle(reports: list[RunReport], dest: Path | str, *, language: str = 
     out.mkdir(parents=True)
     (out / METHODS_FILE).write_text(methods, encoding="utf-8")
     (out / MANIFEST_FILE).write_text(data, encoding="utf-8")
+    (out / BIB_FILE).write_text(bib, encoding="utf-8")
     for report in reports:
         target = out / report.run_dir.name
         for name in bundle_files(report):
@@ -753,6 +799,9 @@ def main(argv: list[str] | None = None) -> int:
         "write the results of several runs (final energy, mean temperature, completion, convergence) as one table"))
     p.add_argument("--bundle", metavar="pack.zip", help=L("再現に要るファイルと manifest.json をまとめる (.zip かディレクトリ)",
                                                           "collect the files needed to reproduce plus manifest.json (.zip or a directory)"))
+    p.add_argument("--bib", metavar=BIB_FILE, help=L(
+        "方法の節が引用する文献 (計算コード・パラメータのセット・汎関数・分散補正・ADIT 自身) を BibTeX で書き出す",
+        "write the references the methods section cites (code, parameter set, functional, dispersion, ADIT itself) as BibTeX"))
     p.add_argument("--check", action="store_true", help=L(
         "生成したときの照合用のハッシュと、いまのファイル (入力・写した擬ポテンシャルや力場) を突き合わせる。終了コード 0 = 一致、1 = 不一致、2 = 記録が無くて確かめられない",
         "compare the current files (inputs and copied pseudopotentials or force fields) with the fingerprints recorded at generation; "
@@ -786,6 +835,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.bundle:
             out = write_bundle(reports, args.bundle, language=args.lang)
             print(L(f"再現パッケージを書きました: {out}", f"wrote the reproducibility package: {out}"))
+        if args.bib:
+            Path(args.bib).expanduser().write_text(references_bibtex(reports), encoding="utf-8")
+            print(L(f"文献 (BibTeX) を書きました: {args.bib}", f"wrote the references (BibTeX): {args.bib}"))
         text = methods_markdown(reports, args.lang)
     except ReportError as ex:
         print(str(ex))
@@ -793,7 +845,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.out:
         Path(args.out).expanduser().write_text(text, encoding="utf-8")
         print(L(f"方法の節を書きました: {args.out}", f"wrote the methods section: {args.out}"))
-    elif not (args.csv or args.bundle or args.results_csv):
+    elif not (args.csv or args.bundle or args.results_csv or args.bib):
         print(text, end="")
     return 0
 

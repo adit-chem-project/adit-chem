@@ -8,6 +8,7 @@ from pathlib import Path
 import numpy as np
 from ase.data import atomic_numbers
 
+from adit.citations import Citation
 from adit.codes.base import InputGenerator, ReadmeNotes, register
 from adit.config import Config, Profile
 from adit.lang import L
@@ -290,3 +291,38 @@ class AbinitGenerator(InputGenerator):
 
 
 register(AbinitGenerator())
+
+
+# References from the ABINIT "Acknowledgments" page: the 2025 paper is required, the two 2020 papers are strongly suggested
+_ABINIT_CITE_URL = "https://docs.abinit.org/theory/acknowledgments/"
+CITATIONS = (
+    Citation("abinit_verstraete2025", r"""@article{abinit_verstraete2025,
+  author  = {Verstraete, Matthieu J. and Abreu, Joao and Allemand, Guillaume E. and Amadon, Bernard and Antonius, Gabriel and Azizi, Maryam and Baguet, Lucas and Barat, Cl{\'e}mentine and Bastogne, Louis and B{\'e}jaud, Romuald and Beuken, Jean-Michel and Bieder, Jordan and Blanchet, Augustin and Bottin, Francois and Bouchet, Johann and Bouquiaux, Julien and Bousquet, Eric and Boust, James and Brieuc, Fabien and Brousseau-Couture, V{\'e}ronique and Brouwer, Nils and Bruneval, Fabien and Castellano, Alo{\"i}s and Castiel, Emmanuel and Charraud, Jean-Baptiste and Cl{\'e}rouin, Jean and C{\^o}t{\'e}, Michel and Duval, Cl{\'e}ment and Gallo, Alejandro and Gendron, Frederic and Geneste, Gregory and Ghosez, Philippe and Giantomassi, Matteo and Gingras, Olivier and G{\'o}mez-Ortiz, Fernando and Gonze, Xavier and Goudreault, F{\'e}lix Antoine and Gr{\"u}neis, Andreas and Gupta, Raveena and Guster, Bogdan and Hamann, Donald R. and He, Xu and Hellman, Olle and Holzwarth, Natalie and Jollet, Francois and Kestener, Pierre and Lygatsika, Ioanna-Maria and Nadeau, Olivier and MacEnulty, L{\'o}rien and Marazzi, Enrico and Mignolet, Maxime and O'Regan, David D. and Outerovitch, Robinson and Paillard, Charles and Petretto, Guido and Ponc{\'e}, Samuel and Ricci, Francesco and Rignanese, Gian-Marco and Rodriguez-Mayorga, Mauricio and Romero, Aldo H. and Rostami, Samare and Royo, Miquel and Sarraute, Marc and Sasani, Alireza and Soubiran, Fran{\c c}ois and Stengel, Massimiliano and Tantardini, Christian and Torrent, Marc and Trinquet, Victor and Vasilchenko, Vasilii and Waroquiers, David and Zabalo, Asier and Zadoks, Austin and Zhang, Huazhang and Zwanziger, Josef},
+  title   = {{Abinit} 2025: New capabilities for the predictive modeling of solids and nanomaterials},
+  journal = {The Journal of Chemical Physics},
+  volume  = {163},
+  number  = {16},
+  pages   = {164126},
+  year    = {2025},
+  doi     = {10.1063/5.0288278}
+}""", doi="10.1063/5.0288278", source=_ABINIT_CITE_URL),
+    Citation("abinit_gonze2020", r"""@article{abinit_gonze2020,
+  author  = {Gonze, Xavier and Amadon, Bernard and Antonius, Gabriel and Arnardi, Fr{\'e}d{\'e}ric and Baguet, Lucas and Beuken, Jean-Michel and Bieder, Jordan and Bottin, Fran{\c c}ois and Bouchet, Johann and Bousquet, Eric and Brouwer, Nils and Bruneval, Fabien and Brunin, Guillaume and Cavignac, Th{\'e}o and Charraud, Jean-Baptiste and Chen, Wei and C{\^o}t{\'e}, Michel and Cottenier, Stefaan and Denier, Jules and Geneste, Gr{\'e}gory and Ghosez, Philippe and Giantomassi, Matteo and Gillet, Yannick and Gingras, Olivier and Hamann, Donald R. and Hautier, Geoffroy and He, Xu and Helbig, Nicole and Holzwarth, Natalie and Jia, Yongchao and Jollet, Fran{\c c}ois and Lafargue-Dit-Hauret, William and Lejaeghere, Kurt and Marques, Miguel A. L. and Martin, Alexandre and Martins, Cyril and Miranda, Henrique P. C. and Naccarato, Francesco and Persson, Kristin and Petretto, Guido and Planes, Valentin and Pouillon, Yann and Prokhorenko, Sergei and Ricci, Fabio and Rignanese, Gian-Marco and Romero, Aldo H. and Schmitt, Michael Marcus and Torrent, Marc and van Setten, Michiel J. and Van Troeye, Benoit and Verstraete, Matthieu J. and Z{\'e}rah, Gilles and Zwanziger, Josef W.},
+  title   = {The {Abinit} project: Impact, environment and recent developments},
+  journal = {Computer Physics Communications},
+  volume  = {248},
+  pages   = {107042},
+  year    = {2020},
+  doi     = {10.1016/j.cpc.2019.107042}
+}""", doi="10.1016/j.cpc.2019.107042", source=_ABINIT_CITE_URL),
+    Citation("abinit_romero2020", r"""@article{abinit_romero2020,
+  author  = {Romero, Aldo H. and Allan, Douglas C. and Amadon, Bernard and Antonius, Gabriel and Applencourt, Thomas and Baguet, Lucas and Bieder, Jordan and Bottin, Fran{\c c}ois and Bouchet, Johann and Bousquet, Eric and Bruneval, Fabien and Brunin, Guillaume and Caliste, Damien and C{\^o}t{\'e}, Michel and Denier, Jules and Dreyer, Cyrus and Ghosez, Philippe and Giantomassi, Matteo and Gillet, Yannick and Gingras, Olivier and Hamann, Donald R. and Hautier, Geoffroy and Jollet, Fran{\c c}ois and Jomard, G{\'e}rald and Martin, Alexandre and Miranda, Henrique P. C. and Naccarato, Francesco and Petretto, Guido and Pike, Nicholas A. and Planes, Valentin and Prokhorenko, Sergei and Rangel, Tonatiuh and Ricci, Fabio and Rignanese, Gian-Marco and Royo, Miquel and Stengel, Massimiliano and Torrent, Marc and van Setten, Michiel J. and Van Troeye, Benoit and Verstraete, Matthieu J. and Wiktor, Julia and Zwanziger, Josef W. and Gonze, Xavier},
+  title   = {{ABINIT}: Overview and focus on selected capabilities},
+  journal = {The Journal of Chemical Physics},
+  volume  = {152},
+  number  = {12},
+  pages   = {124102},
+  year    = {2020},
+  doi     = {10.1063/1.5144261}
+}""", doi="10.1063/1.5144261", source=_ABINIT_CITE_URL),
+)

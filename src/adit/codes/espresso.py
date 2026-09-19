@@ -10,6 +10,7 @@ import numpy as np
 from ase.io.espresso import write_espresso_in
 
 from adit.bandpath import KPATH_FILE, band_path, kpath_json, qe_crystal_b
+from adit.citations import Citation
 from adit.codes.base import GenerationError, InputGenerator, ReadmeNotes, register
 from adit.codes.upf import UpfError, UpfLibrary
 from adit.config import Config, Profile
@@ -420,3 +421,52 @@ class EspressoGenerator(InputGenerator):
 
 
 register(EspressoGenerator())
+
+
+# References the Quantum ESPRESSO user guide asks for (its "Terms of use" section)
+_QE_CITE_URL = "https://www.quantum-espresso.org/Doc/user_guide/node6.html"
+CITATIONS = (
+    Citation("qe_giannozzi2009", r"""@article{qe_giannozzi2009,
+  author  = {Giannozzi, Paolo and Baroni, Stefano and Bonini, Nicola and Calandra, Matteo and Car, Roberto and Cavazzoni, Carlo and Ceresoli, Davide and Chiarotti, Guido L. and Cococcioni, Matteo and Dabo, Ismaila and Dal Corso, Andrea and de Gironcoli, Stefano and Fabris, Stefano and Fratesi, Guido and Gebauer, Ralph and Gerstmann, Uwe and Gougoussis, Christos and Kokalj, Anton and Lazzeri, Michele and Martin-Samos, Layla and Marzari, Nicola and Mauri, Francesco and Mazzarello, Riccardo and Paolini, Stefano and Pasquarello, Alfredo and Paulatto, Lorenzo and Sbraccia, Carlo and Scandolo, Sandro and Sclauzero, Gabriele and Seitsonen, Ari P. and Smogunov, Alexander and Umari, Paolo and Wentzcovitch, Renata M.},
+  title   = {{QUANTUM ESPRESSO}: a modular and open-source software project for quantum simulations of materials},
+  journal = {Journal of Physics: Condensed Matter},
+  volume  = {21},
+  number  = {39},
+  pages   = {395502},
+  year    = {2009},
+  doi     = {10.1088/0953-8984/21/39/395502}
+}""", doi="10.1088/0953-8984/21/39/395502", source=_QE_CITE_URL),
+    Citation("qe_giannozzi2017", r"""@article{qe_giannozzi2017,
+  author  = {Giannozzi, P. and Andreussi, O. and Brumme, T. and Bunau, O. and Buongiorno Nardelli, M. and Calandra, M. and Car, R. and Cavazzoni, C. and Ceresoli, D. and Cococcioni, M. and Colonna, N. and Carnimeo, I. and Dal Corso, A. and de Gironcoli, S. and Delugas, P. and DiStasio, R. A. and Ferretti, A. and Floris, A. and Fratesi, G. and Fugallo, G. and Gebauer, R. and Gerstmann, U. and Giustino, F. and Gorni, T. and Jia, J. and Kawamura, M. and Ko, H.-Y. and Kokalj, A. and K{\"u}{\c{c}}{\"u}kbenli, E. and Lazzeri, M. and Marsili, M. and Marzari, N. and Mauri, F. and Nguyen, N. L. and Nguyen, H.-V. and Otero-de-la-Roza, A. and Paulatto, L. and Ponc{\'e}, S. and Rocca, D. and Sabatini, R. and Santra, B. and Schlipf, M. and Seitsonen, A. P. and Smogunov, A. and Timrov, I. and Thonhauser, T. and Umari, P. and Vast, N. and Wu, X. and Baroni, S.},
+  title   = {Advanced capabilities for materials modelling with {Quantum ESPRESSO}},
+  journal = {Journal of Physics: Condensed Matter},
+  volume  = {29},
+  number  = {46},
+  pages   = {465901},
+  year    = {2017},
+  doi     = {10.1088/1361-648X/aa8f79}
+}""", doi="10.1088/1361-648X/aa8f79", source=_QE_CITE_URL),
+)
+
+# Pseudopotential families, looked up by a substring of method.pseudo_set (lower case)
+PSEUDO_SET_CITATIONS: dict[str, tuple[Citation, ...]] = {
+    "sssp": (Citation("sssp_prandini2018", r"""@article{sssp_prandini2018,
+  author  = {Prandini, Gianluca and Marrazzo, Antimo and Castelli, Ivano E. and Mounet, Nicolas and Marzari, Nicola},
+  title   = {Precision and efficiency in solid-state pseudopotential calculations},
+  journal = {npj Computational Materials},
+  volume  = {4},
+  number  = {1},
+  pages   = {72},
+  year    = {2018},
+  doi     = {10.1038/s41524-018-0127-2}
+}""", doi="10.1038/s41524-018-0127-2", source="https://sssp.materialscloud.org/"),),
+    "pslibrary": (Citation("pslibrary_dalcorso2014", r"""@article{pslibrary_dalcorso2014,
+  author  = {Dal Corso, Andrea},
+  title   = {Pseudopotentials periodic table: From {H} to {Pu}},
+  journal = {Computational Materials Science},
+  volume  = {95},
+  pages   = {337--350},
+  year    = {2014},
+  doi     = {10.1016/j.commatsci.2014.07.043}
+}""", doi="10.1016/j.commatsci.2014.07.043", source="https://dalcorso.github.io/pslibrary/"),),
+}

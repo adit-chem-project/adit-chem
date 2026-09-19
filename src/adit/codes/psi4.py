@@ -6,6 +6,7 @@ from pathlib import Path
 
 from ase.data import atomic_numbers
 
+from adit.citations import Citation
 from adit.codes.base import InputGenerator, ReadmeNotes, register
 from adit.config import Config, Profile
 from adit.lang import L
@@ -188,3 +189,18 @@ class Psi4Generator(InputGenerator):
 
 
 register(Psi4Generator())
+
+
+# The reference the Psi4 manual asks for ("Citing Psi4")
+CITATIONS = (
+    Citation("psi4_smith2020", r"""@article{psi4_smith2020,
+  author  = {Smith, Daniel G. A. and Burns, Lori A. and Simmonett, Andrew C. and Parrish, Robert M. and Schieber, Matthew C. and Galvelis, Raimondas and Kraus, Peter and Kruse, Holger and Di Remigio, Roberto and Alenaizan, Asem and James, Andrew M. and Lehtola, Susi and Misiewicz, Jonathon P. and Scheurer, Maximilian and Shaw, Robert A. and Schriber, Jeffrey B. and Xie, Yi and Glick, Zachary L. and Sirianni, Dominic A. and O'Brien, Joseph Senan and Waldrop, Jonathan M. and Kumar, Ashutosh and Hohenstein, Edward G. and Pritchard, Benjamin P. and Brooks, Bernard R. and Schaefer, Henry F. and Sokolov, Alexander Yu. and Patkowski, Konrad and DePrince, A. Eugene and Bozkaya, U{\u{g}}ur and King, Rollin A. and Evangelista, Francesco A. and Turney, Justin M. and Crawford, T. Daniel and Sherrill, C. David},
+  title   = {{Psi4} 1.4: Open-source software for high-throughput quantum chemistry},
+  journal = {The Journal of Chemical Physics},
+  volume  = {152},
+  number  = {18},
+  pages   = {184108},
+  year    = {2020},
+  doi     = {10.1063/5.0006002}
+}""", doi="10.1063/5.0006002", source="https://psicode.org/psi4manual/master/introduction.html"),
+)

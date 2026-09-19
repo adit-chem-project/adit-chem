@@ -273,8 +273,10 @@ def main(argv: list[str] | None = None) -> int:
         "work function from the maximum of the plane-averaged profile (vacuum level) and the Fermi level "
         "(use with --plane-average; whether a vacuum region exists is not judged)"))
     ap.add_argument("--export", action="store_true",
-                    help=L("軌跡を analysis/export/ に書き出します (trajectory.extxyz / .xyz / .pdb、VMD の view.vmd、OVITO の ovito_pipeline.py、説明の export_README.txt)",
-                           "write the trajectory to analysis/export/ (trajectory.extxyz / .xyz / .pdb, VMD view.vmd, OVITO ovito_pipeline.py, export_README.txt)"))
+                    help=L("軌跡を analysis/export/ に書き出します (trajectory.extxyz / .xyz / .pdb、VMD の view.vmd と vmd_load.tcl、OVITO の ovito_pipeline.py、"
+                           "TRAVIS の答えファイル travis_*.in、説明の export_README.txt。--select があれば VMD と OVITO の選択式に直して入れます)",
+                           "write the trajectory to analysis/export/ (trajectory.extxyz / .xyz / .pdb, VMD view.vmd and vmd_load.tcl, OVITO ovito_pipeline.py, "
+                           "TRAVIS answer files travis_*.in, export_README.txt; a --select expression is rewritten for VMD and OVITO)"))
     ap.add_argument("--unwrap-molecules", action="store_true",
                     help=L("書き出す前に、分子を周期境界でつなぎ直します (最初のフレームの結合で分子を決め、最後まで同じ区切りを使います)",
                            "make molecules whole across periodic boundaries before writing (molecules are taken from the bonds of the first frame and kept)"))

@@ -263,3 +263,25 @@ def test_analysis_stops_when_the_calculation_has_not_run(run_dir, capsys):
     assert "まだ実行していないようです" in capsys.readouterr().err
     (run_dir / "output.log").write_text("Total Energy: -4.0 H\n", encoding="utf-8")
     assert not_run_yet(run_dir) is False
+
+
+def test_methods_section_names_the_references_to_cite(run_dir):
+    text = methods_markdown([load_run_report(run_dir)], "ja")
+    assert "### 引用 (文献)" in text
+    assert "引用: dftbplus_hourahine2025, dftbplus_hourahine2020, adit_" in text
+    assert "未記録: Slater-Koster セット fake-1-0 の文献" in text
+    english = methods_markdown([load_run_report(run_dir)], "en")
+    assert "### References to cite" in english and "Cite: dftbplus_hourahine2025" in english
+
+
+def test_bib_option_and_bundle_write_references(run_dir, tmp_path, capsys):
+    bib = tmp_path / "references.bib"
+    assert main([str(run_dir), "--bib", str(bib)]) == 0
+    text = bib.read_text(encoding="utf-8")
+    assert text.count("@article{dftbplus_hourahine2020,") == 1 and "@software{adit_" in text
+    assert "% 出典: https://dftbplus.org/about/index.html" in text
+    assert "文献 (BibTeX) を書きました" in capsys.readouterr().out
+    dest = tmp_path / "pack.zip"
+    write_bundle([load_run_report(run_dir)], dest)
+    with zipfile.ZipFile(dest) as zf:
+        assert "references.bib" in zf.namelist() and b"@article{dftbplus_hourahine2020," in zf.read("references.bib")

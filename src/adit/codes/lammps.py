@@ -8,6 +8,7 @@ from pathlib import Path
 import numpy as np
 from ase.data import atomic_numbers
 
+from adit.citations import Citation
 from adit.codes.base import GenerationError, InputGenerator, ReadmeNotes, register
 from adit.codes.plumed import PLUMED_FILE, PLUMED_LOG, output_lines as plumed_outputs, plumed_text, readme_lines as plumed_prepare
 from adit.config import Config, Profile
@@ -320,3 +321,17 @@ class LammpsGenerator(InputGenerator):
 
 
 register(LammpsGenerator())
+
+
+# The reference the LAMMPS manual asks for ("Citing LAMMPS")
+CITATIONS = (
+    Citation("lammps_thompson2022", r"""@article{lammps_thompson2022,
+  author  = {Thompson, Aidan P. and Aktulga, H. Metin and Berger, Richard and Bolintineanu, Dan S. and Brown, W. Michael and Crozier, Paul S. and in 't Veld, Pieter J. and Kohlmeyer, Axel and Moore, Stan G. and Nguyen, Trung Dac and Shan, Ray and Stevens, Mark J. and Tranchida, Julien and Trott, Christian and Plimpton, Steven J.},
+  title   = {{LAMMPS} - a flexible simulation tool for particle-based materials modeling at the atomic, meso, and continuum scales},
+  journal = {Computer Physics Communications},
+  volume  = {271},
+  pages   = {108171},
+  year    = {2022},
+  doi     = {10.1016/j.cpc.2021.108171}
+}""", doi="10.1016/j.cpc.2021.108171", source="https://docs.lammps.org/Intro_citing.html"),
+)
