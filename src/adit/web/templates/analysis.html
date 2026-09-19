@@ -81,10 +81,12 @@
     {% call arow("adf", "adf") %}{{ txt("adf", placeholder=ph("adf")) }}{% endcall %}
     {% call arow("adf_cutoff", "adf_cutoff") %}{{ txt("adf_cutoff") }}{% endcall %}
     {% call arow("hbond", "hbond") %}{{ txt("hbond", placeholder=ph("hbond")) }}{% endcall %}
+    {% call arow("hbond_cdf", "hbond_cdf") %}{{ txt("hbond_cdf", placeholder=ph("hbond_cdf")) }}{% endcall %}
     {% call arow("density_grid", "density_grid") %}{{ txt("density_grid", placeholder=ph("density_grid")) }}{% endcall %}
     {% call arow("voronoi_face", "voronoi_face") %}{{ txt("voronoi_face", placeholder=ph("voronoi_face")) }}{% endcall %}
     {% call arow("sasa", "sasa") %}{{ txt("sasa", placeholder=ph("sasa")) }}{% endcall %}
     <div class="row"><label></label><div class="inline">{{ chk("sq", "sq") }}</div></div>
+    <div class="row"><label></label><div class="inline">{{ chk("hbond_lifetime", "hbond_lifetime") }}</div></div>
     <div class="row"><label></label><div class="inline">{{ chk("rg", "rg") }}</div></div>
     <div class="row"><label></label><div class="inline">{{ chk("voronoi", "voronoi") }}</div></div>
     <div class="subhead">{{ T("時系列と分布", "Time series and distributions") }}</div>

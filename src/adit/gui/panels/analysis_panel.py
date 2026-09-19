@@ -179,6 +179,8 @@ class AnalysisPanel(QWidget):
         self.adf_cutoff = narrow(QLineEdit())
         self.cb_sq = _check("sq")
         self.hbond = narrow(QLineEdit()); self.hbond.setPlaceholderText(AF.PLACEHOLDERS["hbond"][0])
+        self.cb_hbond_lifetime = _check("hbond_lifetime")
+        self.hbond_cdf = narrow(QLineEdit()); self.hbond_cdf.setPlaceholderText(AF.PLACEHOLDERS["hbond_cdf"][0])
         self.cb_rg = _check("rg")
         self.density_grid = narrow(QLineEdit()); self.density_grid.setPlaceholderText(AF.PLACEHOLDERS["density_grid"][0])
         self.cb_voronoi = _check("voronoi")
@@ -274,11 +276,11 @@ class AnalysisPanel(QWidget):
         add_row(mform, AF.LABELS["zdens_axis"][0], self.zdens_axis)
         for key, widget in (("coordination", self.coordination), ("centrosymmetry", self.centrosymmetry),
                             ("steinhardt", self.steinhardt), ("clusters", self.clusters),
-                            ("adf", self.adf), ("adf_cutoff", self.adf_cutoff), ("hbond", self.hbond),
+                            ("adf", self.adf), ("adf_cutoff", self.adf_cutoff), ("hbond", self.hbond), ("hbond_cdf", self.hbond_cdf),
                             ("density_grid", self.density_grid), ("voronoi_face", self.voronoi_face),
                             ("sasa", self.sasa)):
             add_row(mform, AF.LABELS[key][0], widget)
-        mform.addRow(self.cb_sq); mform.addRow(self.cb_rg); mform.addRow(self.cb_voronoi)
+        mform.addRow(self.cb_sq); mform.addRow(self.cb_hbond_lifetime); mform.addRow(self.cb_rg); mform.addRow(self.cb_voronoi)
         mform.addRow(self._subhead(L("時系列と分布", "Time series and distributions")))
         for key, widget in (("distances", self.distances), ("angles", self.angles), ("dihedrals", self.dihedrals),
                             ("rmsd_reference", self.rmsd_reference), ("conductivity_charge", self.conductivity_charge),
@@ -537,7 +539,8 @@ class AnalysisPanel(QWidget):
                 "coordination": self.coordination.text(), "centrosymmetry": self.centrosymmetry.text(),
                 "steinhardt": self.steinhardt.text(), "clusters": self.clusters.text(),
                 "adf": self.adf.text(), "adf_cutoff": self.adf_cutoff.text(), "sq": on(self.cb_sq),
-                "hbond": self.hbond.text(), "rg": on(self.cb_rg), "density_grid": self.density_grid.text(),
+                "hbond": self.hbond.text(), "hbond_lifetime": on(self.cb_hbond_lifetime), "hbond_cdf": self.hbond_cdf.text(),
+                "rg": on(self.cb_rg), "density_grid": self.density_grid.text(),
                 "voronoi": on(self.cb_voronoi), "voronoi_face": self.voronoi_face.text(), "sasa": self.sasa.text(),
                 "distances": self.distances.text(), "angles": self.angles.text(), "dihedrals": self.dihedrals.text(),
                 "rmsd_reference": self.rmsd_reference.text(), "rmsf": on(self.cb_rmsf), "vacf": on(self.cb_vacf),
