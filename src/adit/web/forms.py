@@ -100,6 +100,8 @@ def source_ref(f: dict[str, str], source: str) -> str:
         ref = _s(f.get("smiles"))
     elif source == "file":
         ref = _s(f.get("file_path"))
+    elif source == "fetch":
+        ref = _s(f.get("fetch_file"))
     elif source == "bulk":
         parts = [_s(f.get("bulk_el"), "Si")]
         if _s(f.get("bulk_struct")):
@@ -131,8 +133,32 @@ def source_ref(f: dict[str, str], source: str) -> str:
 _SOURCE_LABELS = {
     "preset": ("プリセット", "Preset"), "smiles": ("SMILES", "SMILES"), "file": ("ファイル", "File"),
     "bulk": ("バルク", "Bulk"), "surface": ("スラブ", "Slab"), "mixture": ("溶液・混合物", "Solution / mixture"),
-    "recipe": ("組み立て手順", "Recipe"), "2d": ("2 次元材料", "2D material"),
+    "recipe": ("組み立て手順", "Recipe"), "2d": ("2 次元材料", "2D material"), "fetch": ("データベースから取得", "Fetch from a database"),
 }
+
+
+def fetch_record(f: dict[str, str]) -> dict | None:
+    """The fetch record kept in the hidden fetch_record field (JSON), or None."""
+    import json
+
+    text = _s(f.get("fetch_record"))
+    if not text:
+        return None
+    try:
+        rec = json.loads(text)
+    except ValueError:
+        return None
+    return rec if isinstance(rec, dict) and rec.get("file") else None
+
+
+def as_file_source(f: dict[str, str]) -> tuple[dict[str, str], dict | None]:
+    """A 'fetch' form is a 'file' form whose path is the fetched file; returns the form to use and the fetch record."""
+    if _s(f.get("source")) != "fetch":
+        return f, None
+    rec = fetch_record(f)
+    if rec is None:
+        raise FormError(L("データベースから取得: 「取得」を押して構造を取得してください", "Fetch from a database: press Fetch to get the structure first"))
+    return {**f, "source": "file", "file_path": _s(f.get("fetch_file")) or str(rec["file"])}, rec
 
 
 def _source_label(source: str) -> str:
@@ -145,9 +171,10 @@ def structure_from_form(f: dict[str, str], state=None) -> Structure:
 
     if recipe_form.recipe_mode(f):
         return _recipe_structure(f, state)
+    f, fetched = as_file_source(f)
     source = _s(f.get("source"), "preset")
     if _s(f.get("code")) == "gromacs" and _b(f.get("gmx_use_conf")) and _s(f.get("gmx_conf")):
-        source, f = "file", {**f, "file_path": _s(f.get("gmx_conf"))}
+        source, f, fetched = "file", {**f, "file_path": _s(f.get("gmx_conf"))}, None
     ref = source_ref(f, source)
     if not ref:
         raise FormError(L(f"{_source_label(source)}: 何も指定されていません", f"{_source_label(source)}: nothing given"))
@@ -167,7 +194,7 @@ def structure_from_form(f: dict[str, str], state=None) -> Structure:
             atoms.set_cell([size, size, size]); atoms.center(); atoms.pbc = True
             st = st.model_copy(update={"atoms": AtomsData.from_ase(atoms)})
         fixed_atoms, fixed_axes = parse_constraints(_s(f.get("fixed")), len(atoms))
-        return st.model_copy(update={"fixed_atoms": fixed_atoms, "fixed_axes": fixed_axes})
+        return st.model_copy(update={"fixed_atoms": fixed_atoms, "fixed_axes": fixed_axes, "fetched": fetched})
     except (StructureError, ValueError) as ex:
         raise FormError(_pydantic_text(ex)) from ex
 
@@ -177,11 +204,12 @@ def _recipe_structure(f: dict[str, str], state) -> Structure:
 
     charge, mult = _i(f.get("charge"), 0), _i(f.get("multiplicity"), 1)
     try:
+        f, fetched = as_file_source(f)
         st, new, rec = recipe_form.structure_for(f, getattr(state, "built", None), charge, mult)
         if new is not None and state is not None:
             state.built = new
         atoms = st.atoms.to_ase()
-        upd: dict = {"charge": charge, "multiplicity": mult}
+        upd: dict = {"charge": charge, "multiplicity": mult, "fetched": fetched}
         if _b(f.get("box")) and not any(atoms.pbc):
             size = _f(f.get("box_size"), 15.0)
             atoms.set_cell([size, size, size]); atoms.center(); atoms.pbc = True
@@ -398,6 +426,11 @@ def form_from_spec(spec: CalculationSpec) -> dict[str, str]:
         f["preset"] = sref
     elif src == "smiles":
         f["smiles"] = sref
+    elif src == "file" and st.fetched and str(st.fetched.get("file", "")) == sref:
+        import json
+
+        f.update(source="fetch", fetch_db=str(st.fetched.get("database", "pubchem")), fetch_query=str(st.fetched.get("query", "")),
+                 fetch_file=sref, fetch_record=json.dumps(st.fetched, ensure_ascii=False))
     elif src == "file":
         f["file_path"] = sref
     elif src == "bulk":

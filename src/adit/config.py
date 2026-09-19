@@ -68,6 +68,7 @@ class Config(BaseModel):
     pseudo_root: str = ""
     cp2k_data: str = ""
     templates_dir: str = ""
+    mp_api_key: str = ""     # Materials Project API key (fetching structures by mp-ID)
     default_profile: str = "local"
     enable_run: bool = True
     language: str = "ja"
