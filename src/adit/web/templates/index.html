@@ -310,7 +310,7 @@ button.link:hover { text-decoration:underline; background:none; }
   <div class="only" data-code="espresso">
   {% call row("擬ポテンシャルのセット", "Pseudopotential set", "pseudo_set") %}{{ txt("pseudo_set", "narrow") }}<span class="hint">{{ T("pseudo_root の下のフォルダ名 (pseudo_root は環境設定ファイル " ~ cfg_path ~ " に書きます。例 SSSP_efficiency)", "folder name under pseudo_root (pseudo_root is written in the settings file " ~ cfg_path ~ "; e.g. SSSP_efficiency)") }}</span>{% endcall %}
   {% call row("元素ごとの UPF ファイル", "UPF file per element", "pseudo_map") %}{{ area("pseudo_map", "Si = Si.pbe-n-rrkjus_psl.1.0.0.UPF") }}{% endcall %}
-  {% call row("ecutwfc [Ry]", "ecutwfc [Ry] (required)", "ecutwfc") %}{{ txt("ecutwfc", "narrow") }}<span class="hint">{{ T("目安は UPF ファイルに書かれた推奨値 wfc_cutoff。0 のままプレビューすると、使う UPF の推奨値がエラーの文に出ます", "The value suggested in the UPF file (wfc_cutoff) is a guide; preview with 0 to see the values of the UPFs in use in the error message") }}</span>{{ docv("ecutwfc") }}{% endcall %}
+  {% call row("ecutwfc [Ry]", "ecutwfc [Ry]", "ecutwfc") %}{{ txt("ecutwfc", "narrow") }}<span class="hint">{{ T("目安は UPF ファイルに書かれた推奨値 wfc_cutoff。0 のままプレビューすると、使う UPF の推奨値がエラーの文に出ます", "The value suggested in the UPF file (wfc_cutoff) is a guide; preview with 0 to see the values of the UPFs in use in the error message") }}</span>{{ docv("ecutwfc") }}{% endcall %}
   {% call row("ecutrho [Ry] (0 = 指定しない)", "ecutrho [Ry] (0 = omit)", "ecutrho") %}{{ txt("ecutrho", "narrow") }}{{ docv("ecutrho") }}{% endcall %}
   {% call row("conv_thr [Ry]", "conv_thr [Ry]", "conv_thr") %}{{ txt("conv_thr", "narrow") }}{% endcall %}
   {% call row("electron_maxstep", "electron_maxstep", "qe_maxstep") %}{{ txt("qe_maxstep", "narrow") }}{% endcall %}

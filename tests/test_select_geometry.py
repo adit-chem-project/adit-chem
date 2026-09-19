@@ -107,7 +107,7 @@ def test_rmsf_reports_per_atom_values():
         frames.append(fr)
     got = rmsf(frames)
     assert len(got["rmsf_A"]) == 3 and got["index"] == [1, 2, 3] and got["symbol"][0] == "O"
-    assert got["superposed"] and "判定" in got["note"] or "judgement" in got["note"]
+    assert got["superposed"] and "判定" in got["note"] or "judgment" in got["note"]
     with pytest.raises(GeometryError, match="2 つ以上|at least two"):
         rmsf([w])
 
