@@ -164,6 +164,7 @@ class MainWindow(QMainWindow):
         self._changes: dict = {}
         self._template_marks: dict[str, str] = {}
         self._hidden_by_filter: list = []
+        self._hidden_groups: list = []
         self.field_menu = None
 
         split = QSplitter(); split.addWidget(self.main_stack); split.addWidget(self.right_tabs); split.setSizes([1200, 580])
@@ -203,14 +204,18 @@ class MainWindow(QMainWindow):
         from adit.web.codefields import label_for_path
 
         key = label_for_path(self.method.current_code(), location) or place_key(location)
+        from PySide6.QtWidgets import QCheckBox
+
         page = self.main_stack.widget(mode)
-        labels = [w for w in page.findChildren(QLabel) if w.property("adit_key")]
+        labels = [w for w in [*page.findChildren(QLabel), *page.findChildren(QCheckBox)] if w.property("adit_key")]
         exact = [w for w in labels if w.property("adit_key") == key]
         starts = [w for w in labels if str(w.property("adit_key")).startswith(key)]
         holds = [w for w in labels if key in str(w.property("adit_key"))]
         found = (exact or starts or holds)
         if not found:
             return mode, None, None
+        if isinstance(found[0], QCheckBox):
+            return mode, found[0], found[0]
         return mode, found[0], self._field_of(found[0])
 
     @staticmethod
@@ -323,6 +328,7 @@ class MainWindow(QMainWindow):
     def mark_errors(self) -> None:
         # Every problem at once: the field and its label turn red, and the reason sits under the field (GOV.UK style).
         self.clear_error_marks()
+        reasons: dict = {}      # label -> the reasons, in order (two problems on one field share the line)
         for location, text in zip(self._error_locations, self._errors):
             _mode, label, field = self._find_field(location)
             for w in (label, field):
@@ -332,7 +338,9 @@ class MainWindow(QMainWindow):
                     self._error_marked.append(w)
             if label is not None:
                 _where, _sep, why = text.partition(": ")
-                self._show_inline_error(label, why or text)
+                reasons.setdefault(label, []).append(why or text)
+        for label, lines in reasons.items():
+            self._show_inline_error(label, "\n".join(lines))
 
     def focus_error(self, index: int = 0) -> bool:
         locations = self._error_locations
@@ -585,7 +593,9 @@ class MainWindow(QMainWindow):
 
         for form, row in self._hidden_by_filter:
             form.setRowVisible(row, True)
-        self._hidden_by_filter = []
+        for box in self._hidden_groups:
+            box.show()
+        self._hidden_by_filter = []; self._hidden_groups = []
         self._resync_rows()
         if not on:
             return
@@ -604,6 +614,10 @@ class MainWindow(QMainWindow):
                     continue
                 form.setRowVisible(row, False)
                 self._hidden_by_filter.append((form, row))
+        from PySide6.QtWidgets import QGroupBox
+        for box in (self.task, self.kpoints, self.runtime, self.method):
+            if not box.isHidden() and not any(form.isRowVisible(row) for form in box.findChildren(QFormLayout) for row in range(form.rowCount())):
+                box.hide(); self._hidden_groups.append(box)
 
     def clear_origin(self) -> None:
         self.origin = PrepOrigin()
@@ -744,9 +758,13 @@ class MainWindow(QMainWindow):
                 if kind == "direct" else
                 L("transfer_and_submit.sh のコマンドで、クラスタへ送って投入します。",
                   "Use the commands in transfer_and_submit.sh to send it to the cluster and submit it."))
-        self.run_hint.setText(L(f"次: {step}", f"Next: {step}"))
-        self.statusBar().showMessage(L(f"{len(written)} ファイルを {out} に書きました", f"wrote {len(written)} files to {out}"))
+        self.say(L(f"{len(written)} ファイルを {out} に書きました。次: {step}", f"Wrote {len(written)} files to {out}. Next: {step}"))
         QMessageBox.information(self, tr("生成しました"), f"{out}\n\n{step}")
+
+    def say(self, text: str) -> None:
+        # The state, at the left of the status bar (a temporary message would hide the Undo link next to it)
+        self.statusBar().clearMessage()
+        self.run_hint.setText(text)
 
     def offer_undo(self, backup: Path | None) -> None:
         self._undo_timer.stop()
@@ -785,7 +803,7 @@ class MainWindow(QMainWindow):
 
     def scan_written(self, out: Path) -> None:
         self.analysis.set_run_dir(out)
-        self.statusBar().showMessage(L(f"値ごとの入力を {out} に作りました", f"wrote the scan inputs to {out}"))
+        self.say(L(f"値ごとの入力を {out} に作りました", f"wrote the scan inputs to {out}"))
 
     def _flush(self) -> bool:
         # The preview may still be pending (250 ms debounce): settle it before acting on the button state.
@@ -824,7 +842,7 @@ class MainWindow(QMainWindow):
         if dlg.exec() and dlg.out_dir is not None:
             if dlg.dirs:
                 self.analysis.set_run_dir(dlg.dirs[0])
-            self.statusBar().showMessage(L(f"段階に分けた入力を {dlg.out_dir} に作りました", f"wrote the staged inputs to {dlg.out_dir}"))
+            self.say(L(f"段階に分けた入力を {dlg.out_dir} に作りました", f"wrote the staged inputs to {dlg.out_dir}"))
             self.offer_undo(dlg.backup_dir)
 
     def batch_dialog(self, kind: str):
@@ -848,8 +866,7 @@ class MainWindow(QMainWindow):
             self.analysis.set_run_dir(res.dirs[0])
         elif res.analysis_dir:
             self.analysis.set_run_dir(Path(res.analysis_dir))
-        self.statusBar().showMessage(L(f"{res.out} に {len(res.dirs)} 個のディレクトリを作りました",
-                                       f"wrote {len(res.dirs)} directories in {res.out}"))
+        self.say(L(f"{res.out} に {len(res.dirs)} 個のディレクトリを作りました", f"wrote {len(res.dirs)} directories in {res.out}"))
 
     def template_load_dialog(self):
         from adit.gui.prep_dialogs import TemplateLoadDialog
