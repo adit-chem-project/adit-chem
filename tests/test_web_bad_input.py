@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import html as h
+import http.client
 import json
+import os
 import threading
 import urllib.error
 import urllib.parse
@@ -145,3 +147,55 @@ def test_loading_molecule_clears_previous_box():
     assert back["box"] == ""
     s2 = spec_from_form({**default_form(), "box": "on", **back})
     assert not s2.structure.periodic and s2.kpoints is None
+
+
+def _raw_post(base: str, path: str, headers: dict, body: bytes) -> int:
+    u = urllib.parse.urlparse(base)
+    conn = http.client.HTTPConnection(u.hostname, u.port, timeout=60)
+    try:
+        conn.request("POST", path, body=body, headers=headers)
+        r = conn.getresponse(); r.read()
+        return r.status
+    finally:
+        conn.close()
+
+
+def test_content_length_is_checked(web):
+    _, base = web
+    form = {"Content-Type": "application/x-www-form-urlencoded"}
+    assert _raw_post(base, "/preview", {**form, "Content-Length": "abc"}, b"x=1") == 400
+    assert _raw_post(base, "/preview", {**form, "Content-Length": "-1"}, b"x=1") == 400
+    assert _raw_post(base, "/preview", {**form, "Content-Length": str(10 ** 12)}, b"x=1") == 413
+
+
+def test_superscript_digits_do_not_crash_the_recipe_page(web):
+    app, base = web
+    app.form.update(sk_set="fake-1-0", source="bulk", bulk_el="Si")
+    _post(base + "/recipe", {**app.form, "recipe_action": "add", "recipe_add": "slab"})
+    assert app.form.get("st1_op") == "slab"
+    page = _post(base + "/recipe", {**app.form, "recipe_action": "del:\u00b2"})
+    assert "内部エラー" not in page and app.form.get("st1_op") == "slab"
+    page = _post(base + "/recipe", {**app.form, "st1_term": "\u00b2", "recipe_action": "build"})
+    assert "内部エラー" not in page
+
+
+def test_unreadable_directory_is_reported_not_500(web, tmp_path):
+    if os.geteuid() == 0:
+        pytest.skip("root can read everything")
+    _, base = web
+    locked = tmp_path / "locked"; inner = locked / "inner"
+    inner.mkdir(parents=True); locked.chmod(0)
+    try:
+        page = urllib.request.urlopen(base + "/analysis?dir=" + urllib.parse.quote(str(inner)), timeout=60).read().decode()
+        assert "内部エラー" not in page and "解析できません" in h.unescape(page)
+        page = _post(base + "/compare", {"base": str(inner), "action": "compare"})
+        assert "ディレクトリがありません" in _error(page)
+    finally:
+        locked.chmod(0o700)
+
+
+def test_status_endpoint_is_gone(web):
+    _, base = web
+    with pytest.raises(urllib.error.HTTPError) as ex:
+        urllib.request.urlopen(base + "/status", timeout=60)
+    assert ex.value.code == 404
