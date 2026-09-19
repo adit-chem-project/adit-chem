@@ -359,7 +359,7 @@ def code_icon(code: str, size: int = 18) -> QIcon:
 
 
 def source_icon(source: str, size: int = 18) -> QIcon:
-    return icon({"surface": "slab"}.get(source, source), size)
+    return icon({"surface": "slab", "fetch": "file"}.get(source, source), size)
 
 
 def task_icon(task: str, size: int = 18) -> QIcon:

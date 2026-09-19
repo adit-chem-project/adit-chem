@@ -1,0 +1,195 @@
+{
+ "links": {
+  "next": "http://oqmd.org/optimade/v1/structures?filter=chemical_formula_reduced%3D%22Si%22&page_limit=3&page_offset=3",
+  "previous": null,
+  "self": "http://oqmd.org/optimade/v1/structures?filter=chemical_formula_reduced%3D%22Si%22&page_limit=3"
+ },
+ "data": [
+  {
+   "id": "4061352",
+   "type": "structures",
+   "attributes": {
+    "immutable_id": null,
+    "last_modified": null,
+    "chemical_formula_reduced": "Si",
+    "chemical_formula_hill": null,
+    "chemical_formula_anonymous": "A",
+    "nelements": 1,
+    "elements": [
+     "Si"
+    ],
+    "nsites": 1,
+    "lattice_vectors": [
+     [
+      1.932489,
+      -1.932489,
+      0.0
+     ],
+     [
+      -1.932489,
+      0.0,
+      -1.932489
+     ],
+     [
+      1.932489,
+      1.932489,
+      0.0
+     ]
+    ],
+    "species_at_sites": [
+     "Si"
+    ],
+    "dimension_types": [
+     1,
+     1,
+     1
+    ],
+    "nperiodic_dimensions": 3,
+    "elements_ratios": [
+     1.0
+    ],
+    "structure_features": [],
+    "chemical_formula_descriptive": "Si",
+    "species": [
+     {
+      "name": "Si",
+      "chemical_symbols": [
+       "Si"
+      ],
+      "concentration": [
+       1.0
+      ]
+     }
+    ],
+    "cartesian_site_positions": [
+     [
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "space_group_it_number": 225,
+    "space_group_symmetry_operations_xyz": null,
+    "space_group_symbol_hall": "-F 4 2 3",
+    "space_group_symbol_hermann_mauguin": "F m -3 m",
+    "space_group_symbol_hermann_mauguin_extended": null,
+    "assemblies": null,
+    "_oqmd_entry_id": 9287,
+    "_oqmd_calculation_id": 4137,
+    "_oqmd_icsd_id": 52458,
+    "_oqmd_band_gap": 0.0,
+    "_oqmd_delta_e": 0.5369,
+    "_oqmd_volume": 14.4338,
+    "_oqmd_stability": 0.537,
+    "_oqmd_prototype": "Cu",
+    "_oqmd_spacegroup": "Fm-3m"
+   }
+  },
+  {
+   "id": "4061379",
+   "type": "structures",
+   "attributes": {
+    "immutable_id": null,
+    "last_modified": null,
+    "chemical_formula_reduced": "Si",
+    "chemical_formula_hill": null,
+    "chemical_formula_anonymous": "A",
+    "nelements": 1,
+    "elements": [
+     "Si"
+    ],
+    "nsites": 1,
+    "lattice_vectors": [
+     [
+      2.650491,
+      0.0,
+      0.0
+     ],
+     [
+      -1.325245,
+      2.295392,
+      0.0
+     ],
+     [
+      0.0,
+      0.0,
+      2.474158
+     ]
+    ],
+    "species_at_sites": [
+     "Si"
+    ],
+    "dimension_types": [
+     1,
+     1,
+     1
+    ],
+    "nperiodic_dimensions": 3,
+    "elements_ratios": [
+     1.0
+    ],
+    "structure_features": [],
+    "chemical_formula_descriptive": "Si",
+    "species": [
+     {
+      "name": "Si",
+      "chemical_symbols": [
+       "Si"
+      ],
+      "concentration": [
+       1.0
+      ]
+     }
+    ],
+    "cartesian_site_positions": [
+     [
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "space_group_it_number": 191,
+    "space_group_symmetry_operations_xyz": null,
+    "space_group_symbol_hall": "-P 6 2",
+    "space_group_symbol_hermann_mauguin": "P 6/m m m",
+    "space_group_symbol_hermann_mauguin_extended": null,
+    "assemblies": null,
+    "_oqmd_entry_id": 18984,
+    "_oqmd_calculation_id": 4183,
+    "_oqmd_icsd_id": 109035,
+    "_oqmd_band_gap": 0.0,
+    "_oqmd_delta_e": 0.3079,
+    "_oqmd_volume": 15.0526,
+    "_oqmd_stability": 0.308,
+    "_oqmd_prototype": "BiIn(hP1)",
+    "_oqmd_spacegroup": "P6/mmm"
+   }
+  }
+ ],
+ "meta": {
+  "api_version": "1.2.0",
+  "query": {
+   "representation": "/structures?filter=chemical_formula_reduced%3D%22Si%22&page_limit=3"
+  },
+  "more_data_available": true,
+  "schema": "https://schemas.optimade.org/json-schema/v1.2.0/optimade.json",
+  "time_stamp": "2026-09-19T05:32:57Z",
+  "provider": {
+   "name": "OQMD",
+   "description": "The Open Quantum Materials Database",
+   "prefix": "oqmd",
+   "homepage": "https://oqmd.org"
+  },
+  "implementation": {
+   "name": "qmpy",
+   "version": "1.6.0",
+   "source_url": "https://github.com/wolverton-research-group/qmpy",
+   "issue_tracker": "https://github.com/wolverton-research-group/qmpy/issues"
+  },
+  "data_returned": 71,
+  "data_available": 1407395,
+  "warnings": [],
+  "_oqmd_data_in_response": 3,
+  "_oqmd_final_query": "( composition__formula__in=['Si1'] )"
+ }
+}

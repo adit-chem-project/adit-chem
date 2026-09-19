@@ -394,6 +394,13 @@ def base_from_form(f: dict) -> Base:
     from adit.web.forms import FormError, source_ref
 
     src = (f.get("source") or "preset").strip()
+    if src == "fetch":
+        from adit.web.forms import as_file_source
+        try:
+            f, _rec = as_file_source(f)
+        except FormError as ex:
+            raise RecipeFormError(_first_msg(ex)) from ex
+        src = "file"
     try:
         if src in NEW_BASES:
             return Base(source=src, ref=base_ref(f, src))

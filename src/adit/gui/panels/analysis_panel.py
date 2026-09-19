@@ -15,6 +15,7 @@ from adit.analysis.report import figure_title
 from adit.gui import analysis_fields as AF
 from adit.gui.analysis_views import Collapsible, SectionView, hint_label, open_folder
 from adit.gui.help import help_for
+from adit.gui.playback import PlaybackPanel
 from adit.lang import L
 from adit.gui.style import ROW_SPACING
 from adit.gui.widgets import SciDoubleSpinBox, add_row, narrow
@@ -371,6 +372,12 @@ class AnalysisPanel(QWidget):
         self._export_dir = ""
         self.last_open_ok: bool | None = None
 
+        self.play_box = Collapsible(L("3D で再生 (軌跡・最適化のステップ・振動モード)", "Play in 3D (trajectory, optimization steps, vibrational modes)"),
+                                    expanded=True)
+        self.playback = PlaybackPanel()
+        self.play_box.body_layout.addWidget(self.playback)
+        self.play_box.hide()
+
         self.sections = QWidget(); self.sections_lay = QVBoxLayout(self.sections)
         self.sections_lay.setContentsMargins(0, 0, 0, 0); self.sections_lay.setSpacing(8)
         self.figs = QWidget(); self.figs_lay = QVBoxLayout(self.figs); self.figs_lay.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -378,7 +385,7 @@ class AnalysisPanel(QWidget):
 
         content = QWidget()
         lay = QVBoxLayout(content); lay.setContentsMargins(12, 12, 12, 12); lay.setSpacing(10)
-        for w in (box, self.too_large, self.empty, self.scan_table, self.summary, self.export_box, self.sections, self.figs):
+        for w in (box, self.too_large, self.empty, self.scan_table, self.summary, self.play_box, self.export_box, self.sections, self.figs):
             lay.addWidget(w)
         lay.addStretch(1)
         self.scroll = QScrollArea(); self.scroll.setWidget(content); self.scroll.setWidgetResizable(True)
@@ -589,7 +596,7 @@ class AnalysisPanel(QWidget):
             self.empty.hide()
             return None
         scan = self.is_scan_dir(d)
-        self.scan_table.hide(); self.too_large.hide()
+        self.scan_table.hide(); self.too_large.hide(); self.play_box.hide(); self.playback.clear()
         try:
             opts = None if scan else self.options()
         except AF.FieldError as ex:
@@ -622,7 +629,7 @@ class AnalysisPanel(QWidget):
         prepared = self._prepare(export)
         if prepared is None:
             return False
-        self._pending_scan = prepared[1]
+        self._pending = prepared
         self.btn_run.setEnabled(False); self.btn_export.setEnabled(False)
         self.progress.begin(L("解析しています…", "Analyzing…"))
         self.job.start(self._compute, *prepared)
@@ -644,7 +651,7 @@ class AnalysisPanel(QWidget):
         if error is not None:
             self._present_error(error)
         else:
-            self._present(self._pending_scan, res)
+            self._present(*self._pending, res)
 
     def run(self, export: bool = False):
         prepared = self._prepare(export)
@@ -655,9 +662,9 @@ class AnalysisPanel(QWidget):
         except Exception as ex:
             self._present_error(ex)
             return None
-        return self._present(prepared[1], res)
+        return self._present(*prepared, res)
 
-    def _present(self, scan: bool, res):
+    def _present(self, d: str, scan: bool, opts, res):
         self.empty.hide()
         if scan:
             self._show_scan_table(res.rows, res.reference)
@@ -667,12 +674,20 @@ class AnalysisPanel(QWidget):
             self.summary.setPlainText(res.summary_text())
             self._show_sections(AF.result_sections(res))
             self._show_export(res)
+            self._show_playback(d, opts)
         self._show_figures(res.figures or {})
         self.analyzed.emit(res)
         return res
 
     def export(self):
         return self.run(export=True)
+
+    def _show_playback(self, run_dir: str, opts) -> None:
+        try:
+            ok = self.playback.load_run(run_dir, skip=int(opts.skip_frames), stride=int(opts.stride), memory_mb=opts.memory_budget_mb)
+        except Exception as ex:
+            self.playback.note.setText(L(f"再生できません: {ex}", f"cannot play: {ex}")); ok = False
+        self.play_box.setVisible(ok or bool(self.playback.note.text()))
 
     def _show_export(self, res) -> None:
         d, text = AF.read_export_readme(res)
@@ -732,7 +747,7 @@ class AnalysisPanel(QWidget):
 
     def run_compare(self, base: str | Path, reactions):
         from adit.analysis.compare import CompareError, analyze_compare
-        self.too_large.hide(); self.scan_table.hide(); self.export_box.hide()
+        self.too_large.hide(); self.scan_table.hide(); self.export_box.hide(); self.play_box.hide(); self.playback.clear()
         try:
             cres = analyze_compare(base, reactions)
         except (CompareError, ValueError, OSError) as ex:

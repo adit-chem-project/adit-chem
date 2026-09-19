@@ -1,7 +1,8 @@
-コード: dftbplus   ディレクトリ: examples/dftb_md_water_generated
-エネルギー: 21 点、最終値 -109.255500 eV (最小 -109.255500、最大 -108.220500)
-温度: 平均 4280.6 K (標準偏差 2078.0、21 点、先頭 0 点を除く)
+コード: dftbplus   ディレクトリ: /home/ramut/agent/qc-gui/examples/dftb_md_water_generated
+警告: 1 件 (output.log:40  WARNING! -> Current stacksize not set to unlimited or hard limit, which might cause)
+エネルギー: 21 点、最終値 -109.230600 eV (最小 -109.230600、最大 -108.220500)
+温度: 平均 2703.3 K (標準偏差 2041.0、21 点、先頭 0 点を除く)
 軌跡 (geo_end.xyz): 21 フレームのうち 21 フレームを使用 (先頭 0 フレームを除き、1 フレームに 1 回)、1 フレーム 5 fs
-結合長 (最終構造): O1-H2 1.041 Å, O1-H3 0.944 Å
-原子の電荷 (Mulliken、detailed.out:18、単位 e): O1 -0.606, H2 +0.294, H3 +0.312 (合計 +0.0000)。表は examples/dftb_md_water_generated/analysis/charges_Mulliken.csv
-注: MD の温度: 目標 300 K、平均 4281 K
+結合長 (最終構造): O1-H3 0.943 Å
+原子の電荷 (Mulliken、detailed.out:18、単位 e): O1 -0.613, H2 +0.282, H3 +0.331 (合計 +0.0000)。表は /home/ramut/agent/qc-gui/examples/dftb_md_water_generated/analysis/charges_Mulliken.csv
+注: MD の温度: 目標 300 K、平均 2703 K

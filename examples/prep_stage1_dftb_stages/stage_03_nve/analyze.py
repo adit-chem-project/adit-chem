@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """adit が生成した解析スクリプト。このディレクトリの計算結果を読み、analysis/ に図 (PNG) と summary.txt を書く。
 使い方:  python analyze.py [--rdf] [--msd [元素]] [--dos] [--zdens] [--export] [--skip N] [--stride N] [--rmax R] [--sigma S]
-adit が入った Python 環境で実行する (pip install adit)。"""
+ADIT が入った Python 環境で実行する (pip install adit)。"""
 import argparse
 from pathlib import Path
 

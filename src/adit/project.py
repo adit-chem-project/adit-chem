@@ -81,6 +81,16 @@ def _transfer_commands(profile, output_dir) -> str:
     ] if x is not None) + ""
 
 
+def _fetched_copies(spec: CalculationSpec) -> dict[str, Path]:
+    rec = spec.structure.fetched or {}
+    out: dict[str, Path] = {}
+    for key in ("file", "response_file"):
+        p = Path(str(rec.get(key) or "")).expanduser()
+        if rec.get(key) and p.is_file():
+            out.setdefault(p.name, p)
+    return out
+
+
 def build_project(spec: CalculationSpec, cfg: Config, *, output_dir: Path | str | None = None,
                   pre_command: str = "", extra_readme: list[str] | None = None,
                   extra_texts: dict[str, str] | None = None, drop: tuple[str, ...] = (), run_transform=None) -> ProjectFiles:
@@ -106,6 +116,8 @@ def build_project(spec: CalculationSpec, cfg: Config, *, output_dir: Path | str 
         if h is not None and not h.at_run:
             for dest, src in h.files.items():
                 files.copies[dest] = Path(h.previous_dir).expanduser() / src
+        for dest, src in _fetched_copies(spec).items():
+            files.copies.setdefault(dest, src)
         notes = gen.readme_notes(spec, res, files.copies)
         run_command = gen.run_command(spec, profile)
         if run_transform is not None:
@@ -125,6 +137,8 @@ def build_project(spec: CalculationSpec, cfg: Config, *, output_dir: Path | str 
 
         replaced = set(spec.handoff.files or {}) | set(rewritten_at_run(spec.method.code, spec.handoff.velocities))
     prov = provenance.collect(files.copies, files.texts, sources, probe, replaced_at_run=replaced)
+    if spec.structure.fetched:
+        prov["fetched_structure"] = dict(spec.structure.fetched)
     files.texts[SPEC_FILE] = provenance.spec_json_with(spec, prov)
     from adit.analysis.report import analyze_script_text
     if gen.supports_analysis:

@@ -11,8 +11,9 @@ LANGUAGE = "ja"
 
 _EN: dict[str, str] = {
     "構造": "Structure", "プリセット": "Preset", "ファイル": "File", "バルク": "Bulk", "スラブ": "Slab",
+    "データベースから取得": "Fetch from a database", "データベース": "Database", "取得": "Fetch",
     "3D 構造を生成": "Build 3D structure", "参照…": "Browse…", "全電荷": "Total charge", "スピン多重度": "Spin multiplicity",
-    "固定原子": "Fixed atoms", "立方晶セル": "Cubic cell", "層": "layers", "真空層 [Å]": "Vacuum [Å]",
+    "固定原子": "Fixed atoms", "立方晶セル": "Cubic cell", "層": "layers", "真空層": "vacuum",
     "周期セルに入れる": "Put in a periodic cell", "分子を立方体の周期セルに置きます。VASP と pw.x では周期セルが必須です": "Place the molecule in a cubic periodic cell. VASP and pw.x require a periodic cell", "一辺 [Å]": "edge [Å]",
     "ase gui で構造を確認": "View structure with ase gui", "例 CCO": "e.g. CCO",
     "1 始まりの番号 (例 1-4,7)。軸を指定するなら 7:xy (x, y を固定)。空欄なら全原子を動かします":
@@ -67,10 +68,15 @@ _EN: dict[str, str] = {
     "成分の種類": "Kind", "指定 (名前 / SMILES / ファイル)": "Reference (name / SMILES / path)", "個数": "Count", "電荷": "Charge", "表示名": "Label",
     "密度から自動 [g/cm³]": "From density [g/cm³]", "一辺を指定 [Å]": "Edge [Å]", "セル": "Box", "分子間の最短距離 [Å]": "Min. distance [Å]",
     "Draw: 分子を描いて SMILES にします (RDKit が要ります)": "Draw: sketch the molecule and turn it into SMILES (needs RDKit)", "構造の作り方": "Source", "共通設定": "Common settings", "環境設定…": "Preferences…",
-    "元に戻す (1 つ前の設定)": "Undo (previous settings)", "1 つ前の設定に戻す": "Back to the previous settings",
-    "探す": "Find", "やり直す": "Redo", "環境設定ファイル (cluster.toml) を編集": "Open and edit the settings file (cluster.toml)",
-    "青字は必須項目です。ラベルにカーソルを合わせると説明が表示されます": "Blue labels are required. Hover a label for an explanation",
+    "1 つ前の設定に戻す": "Back to the previous settings", "探す": "Find",
+    "元に戻す (1 つ前の設定)": "Undo (previous settings)", "やり直す": "Redo", "環境設定ファイル (cluster.toml) を編集": "Open and edit the settings file (cluster.toml)",
     "左ドラッグで回転、ホイールで拡大縮小、右ドラッグで移動、ダブルクリックでリセット": "Left-drag to rotate, wheel to zoom, right-drag to pan, double-click to reset",
+    "左ドラッグで回転、ホイールで拡大縮小、右ドラッグで移動、ダブルクリックでリセット。原子をクリックで選択、Shift+クリックで追加 (2 個で距離、3 個で角度、4 個で二面角)":
+        "Left-drag to rotate, wheel to zoom, right-drag to pan, double-click to reset. Click an atom to select it, Shift+click to add "
+        "(2 atoms give the distance, 3 the angle, 4 the dihedral)",
+    "選択を消す": "Clear selection", "欄に送る": "Send to a field", "固定原子の欄へ": "To the fixed-atoms field",
+    "解析の「原子の選び方」へ": "To the analysis \"Atom selection\" field",
+    "解析の時系列の欄へ (距離・角度・二面角)": "To the analysis series field (distance, angle, dihedral)",
     "分子系 (非周期) では使いません": "Not used for molecules", "生成ファイル": "Generated files", "実行": "Run",
     "この PC で実行": "Run on this PC", "視点": "Viewpoint", "繰り返し数": "Repeat", "ASE GUI で開く": "Open in ASE GUI", "斜め": "oblique", "z 軸から": "along z",
     "y 軸から": "along y", "x 軸から": "along x", "まだ実行していません": "Not run yet", "(元素の既定値)": "(element default)",

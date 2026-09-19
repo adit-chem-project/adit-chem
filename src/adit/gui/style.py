@@ -8,8 +8,9 @@ from dataclasses import dataclass
 from PySide6.QtGui import QFont, QFontDatabase
 from PySide6.QtWidgets import QApplication
 
-LABEL_WIDTH = 164
-NARROW_FIELD = 140
+LABEL_WIDTH = 120       # floor; the widest label of a group sets its column
+NARROW_FIELD = 120      # every numeric field
+LABEL_GAP = 12          # between the label column and the fields
 GROUP_SPACING = 14
 ROW_SPACING = 8
 PANEL_MARGIN = 14
@@ -33,21 +34,27 @@ class Tokens:
     ng: str
     bg_top: str = ""
     bg_bottom: str = ""
+    # Surfaces are (nearly) opaque so that text contrast does not depend on what lies underneath;
+    # only the ground keeps its gradient. The names are historical.
     glass: str = ""
     glass_field: str = ""
     glass_hover: str = ""
     glass_edge: str = ""
     accent_top: str = ""
+    pill_bg: str = ""
+    pill_fg: str = ""
 
 
 LIGHT = Tokens(bg="#EFEFF1", card="#FFFFFF", field="#F4F4F6", line="rgba(0, 0, 0, 30)", fg="#14161B", muted="#4B5260",
                accent="#0A7AFF", accent_hover="#0866D6", ok="#1F7A38", ng="#C8001A",
-               bg_top="#E9E9EC", bg_bottom="#F5F5F7", glass="rgba(255, 255, 255, 158)", glass_field="rgba(255, 255, 255, 190)",
-               glass_hover="rgba(255, 255, 255, 235)", glass_edge="rgba(255, 255, 255, 230)", accent_top="#3A95FF")
+               bg_top="#E9E9EC", bg_bottom="#F5F5F7", glass="rgba(255, 255, 255, 242)", glass_field="rgba(250, 250, 252, 250)",
+               glass_hover="rgba(255, 255, 255, 255)", glass_edge="rgba(255, 255, 255, 230)", accent_top="#3A95FF",
+               pill_bg="#E1E3E8", pill_fg="#3B4150")
 DARK = Tokens(bg="#1C1C1E", card="#2C2C2E", field="#3A3A3C", line="rgba(255, 255, 255, 34)", fg="#F0F1F4", muted="#B6B8C2",
               accent="#3D8CFF", accent_hover="#5C9EFF", ok="#5FD07A", ng="#FF6961",
-              bg_top="#1C1C1E", bg_bottom="#2A2A2D", glass="rgba(255, 255, 255, 16)", glass_field="rgba(255, 255, 255, 24)",
-              glass_hover="rgba(255, 255, 255, 40)", glass_edge="rgba(255, 255, 255, 38)", accent_top="#6AA8FF")
+              bg_top="#1C1C1E", bg_bottom="#2A2A2D", glass="rgba(48, 48, 51, 242)", glass_field="rgba(62, 62, 66, 250)",
+              glass_hover="rgba(78, 78, 83, 255)", glass_edge="rgba(255, 255, 255, 38)", accent_top="#6AA8FF",
+              pill_bg="#4A4B52", pill_fg="#E8E9EE")
 
 GROUP_COLORS = {"structure": "#0FA3A3", "task": "#F0883E", "method": "#8E5AD6", "kpoints": "#34A853", "runtime": "#5B7DB1", "analysis": "#D6567A"}
 
@@ -59,7 +66,7 @@ THEME_COLORS = {
 
 def qss(t: Tokens) -> str:
     r, rs = RADIUS, RADIUS_SMALL
-    group_css = "\n".join(f"QGroupBox#{k} {{ border-left: 5px solid {v}; }}" for k, v in GROUP_COLORS.items())
+    group_css = "\n".join(f"QGroupBox#{k} {{ border-left: 3px solid {v}; }}" for k, v in GROUP_COLORS.items())
     ground = f"qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 {t.bg_top}, stop:1 {t.bg_bottom})"
     primary = f"qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 {t.accent_top}, stop:1 {t.accent})"
     return f"""
@@ -79,7 +86,7 @@ QGroupBox {{
     font-size: 12.5pt;
     background: {t.glass};
     border: 1px solid {t.glass_edge};
-    border-left: 5px solid {t.line};
+    border-left: 3px solid {t.line};
     border-radius: {r}px;
     margin-top: 0px;
     padding: 34px {PANEL_MARGIN}px 12px {PANEL_MARGIN}px;
@@ -103,15 +110,19 @@ QLabel#hint {{ color: {t.muted}; font-size: 10pt; }}
 QLabel#status_ok {{ color: {t.ok}; font-weight: 600; }}
 QLabel#status_ng {{ color: {t.ng}; font-weight: 600; }}
 QLabel#title {{ font-weight: 700; font-size: 12.5pt; }}
-QLabel#subtitle {{ font-weight: 700; font-size: 11pt; color: {t.muted}; margin-top: 8px; }}
+/* Sub-headings inside a card are set apart by space above, not by weight */
+QLabel#subtitle {{ font-weight: 500; font-size: 11pt; color: {t.muted}; margin-top: 16px; }}
+QLabel#unit {{ color: {t.muted}; }}
 QLabel#required {{ color: {t.accent}; font-weight: 600; }}
+/* The word next to a required label; the color alone is not enough (also used by links) */
+QLabel#required_pill {{ background: {t.pill_bg}; color: {t.pill_fg}; border-radius: 9px; font-size: 8.5pt; font-weight: 600; }}
 
 QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox, QPlainTextEdit, QTextEdit {{
     background: {t.glass_field};
     border: 1px solid {t.line};
     border-radius: {rs}px;
-    padding: 1px 8px;
-    min-height: 18px;
+    padding: 3px 8px;
+    min-height: 24px;
     selection-background-color: {t.accent};
 }}
 QPlainTextEdit, QTextEdit {{ padding: 8px 10px; }}
@@ -134,8 +145,8 @@ QPushButton {{
     background: {t.glass_field};
     border: 1px solid {t.line};
     border-radius: {rs}px;
-    padding: 4px 14px;
-    min-height: 18px;
+    padding: 3px 14px;
+    min-height: 24px;
     font-weight: 500;
 }}
 QPushButton:hover {{ background: {t.glass_hover}; border: 1px solid {t.glass_edge}; }}
@@ -151,8 +162,10 @@ QPushButton#primary {{
 QPushButton#primary:hover {{ background: {t.accent_hover}; }}
 QPushButton#primary:disabled {{ background: {t.glass_field}; color: {t.muted}; border: 1px solid {t.line}; }}
 QPushButton#cell_button {{ padding: 2px 6px; min-height: 20px; }}
-QTableWidget QSpinBox, QTableWidget QComboBox, QTableWidget QLineEdit {{ padding: 1px 6px; }}
+QTableWidget QSpinBox, QTableWidget QComboBox, QTableWidget QLineEdit {{ padding: 1px 6px; min-height: 18px; }}
 QPushButton#link, QPushButton#gen_hint {{ border: none; background: transparent; color: {t.accent}; padding: 2px 6px; }}
+/* Underlined so that a link-style button is not mistaken for a required label */
+QPushButton#link {{ text-decoration: underline; }}
 QPushButton#link:hover, QPushButton#gen_hint:hover {{ text-decoration: underline; background: transparent; border: none; }}
 
 QToolBar {{ background: transparent; border: none; spacing: 8px; padding: 8px {PANEL_MARGIN}px 4px {PANEL_MARGIN}px; }}

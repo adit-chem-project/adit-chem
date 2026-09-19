@@ -72,11 +72,11 @@ Hamiltonian = DFTB {
   }
 }
 Options = {
+  RandomSeed = 12345
   WriteResultsTag = Yes
   WriteDetailedOut = Yes
   WriteAutotestTag = No
   WriteDetailedXML = No
-  RandomSeed = 0
   WriteHS = No
   WriteRealHS = No
   MinimiseMemoryUsage = No
