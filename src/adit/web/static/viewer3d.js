@@ -72,6 +72,8 @@
     var selected = [];
     var cell = scene.cell || null, inv = cell ? inv3(cell) : null;
     var projected = [];
+    var surfaces = [];   /* {tri: flat xyz (9 per triangle, scene coordinates), normal: flat (3 per triangle), rgb: [r,g,b], opacity} */
+    var LIGHT = [0.3, 0.5, 0.81];
 
     function rotate(p) {
       var cy = Math.cos(state.ry), sy = Math.sin(state.ry);
@@ -130,11 +132,24 @@
         ctx.beginPath(); ctx.moveTo(mx, my); ctx.lineTo(b[0], b[1]); ctx.stroke();
       }
       projected = scene.positions.map(function (p, k) { var q = project(p); return { x: q[0], y: q[1], z: q[2], r: Math.max(2, scene.radii[k] * 0.55 * q[3]) }; });
+      var tris = projectSurfaces();
       var order = projected.map(function (q, k) { return k; });
-      order.sort(function (u, v) { return projected[u].z - projected[v].z; });
+      for (i = 0; i < tris.length; i++) { order.push(projected.length + i); }
+      order.sort(function (u, v) {
+        var zu = u < projected.length ? projected[u].z : tris[u - projected.length].z;
+        var zv = v < projected.length ? projected[v].z : tris[v - projected.length].z;
+        return zu - zv;
+      });
       var accent = dark ? "#3A95FF" : "#0A7AFF";
       for (i = 0; i < order.length; i++) {
-        var k = order[i], q = projected[k], rad = q.r;
+        var k = order[i];
+        if (k >= projected.length) {
+          var t = tris[k - projected.length];
+          ctx.fillStyle = t.color;
+          ctx.beginPath(); ctx.moveTo(t.p[0], t.p[1]); ctx.lineTo(t.p[2], t.p[3]); ctx.lineTo(t.p[4], t.p[5]); ctx.closePath(); ctx.fill();
+          continue;
+        }
+        var q = projected[k], rad = q.r;
         var g = ctx.createRadialGradient(q.x - rad * 0.35, q.y - rad * 0.35, rad * 0.1, q.x, q.y, rad);
         g.addColorStop(0, "#ffffff"); g.addColorStop(0.35, scene.colors[k]); g.addColorStop(1, scene.colors[k]);
         ctx.fillStyle = g;
@@ -168,6 +183,24 @@
       }
       drawAxes(dark);
       if (opts.onSelection) { opts.onSelection(selected.slice(), measureText()); }
+    }
+
+    /* screen triangles of all surfaces with two-sided flat shading: [{p: [x0,y0,x1,y1,x2,y2], z, color}] */
+    function projectSurfaces() {
+      var out = [];
+      for (var s = 0; s < surfaces.length; s++) {
+        var sf = surfaces[s], tri = sf.tri, nrm = sf.normal, n = Math.floor(tri.length / 9);
+        for (var t = 0; t < n; t++) {
+          var a = project([tri[9 * t], tri[9 * t + 1], tri[9 * t + 2]]);
+          var b = project([tri[9 * t + 3], tri[9 * t + 4], tri[9 * t + 5]]);
+          var c = project([tri[9 * t + 6], tri[9 * t + 7], tri[9 * t + 8]]);
+          var rn = rotate([nrm[3 * t], nrm[3 * t + 1], nrm[3 * t + 2]]);
+          var shade = 0.45 + 0.55 * Math.abs(rn[0] * LIGHT[0] + rn[1] * LIGHT[1] + rn[2] * LIGHT[2]);
+          var col = "rgba(" + Math.round(sf.rgb[0] * shade) + "," + Math.round(sf.rgb[1] * shade) + "," + Math.round(sf.rgb[2] * shade) + "," + sf.opacity + ")";
+          out.push({ p: [a[0], a[1], b[0], b[1], c[0], c[1]], z: (a[2] + b[2] + c[2]) / 3, color: col });
+        }
+      }
+      return out;
     }
 
     function drawAxes(dark) {
@@ -272,7 +305,10 @@
       clearSelection: function () { setSelection([]); },
       measureText: measureText,
       measure: function () { return measure(scene.positions, selected, cell, inv); },
-      pick: pick
+      pick: pick,
+      setSurfaces: function (list) { surfaces = list || []; draw(); },
+      clearSurfaces: function () { surfaces = []; draw(); },
+      surfaceCount: function () { return surfaces.length; }
     };
   }
   window.ADIT_VIEWER = makeViewer;

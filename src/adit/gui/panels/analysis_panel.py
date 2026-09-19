@@ -15,6 +15,7 @@ from adit.analysis.report import figure_title
 from adit.gui import analysis_fields as AF
 from adit.gui.analysis_views import Collapsible, SectionView, hint_label, open_folder
 from adit.gui.help import help_for
+from adit.gui.isosurface_panel import IsosurfacePanel
 from adit.gui.playback import PlaybackPanel
 from adit.lang import L
 from adit.gui.style import ROW_SPACING
@@ -377,6 +378,11 @@ class AnalysisPanel(QWidget):
         self.playback = PlaybackPanel()
         self.play_box.body_layout.addWidget(self.playback)
         self.play_box.hide()
+        self.iso_box = Collapsible(L("等値面 (軌道・電子密度・静電ポテンシャル)", "Isosurface (orbitals, electron density, electrostatic potential)"),
+                                   expanded=True)
+        self.iso = IsosurfacePanel()
+        self.iso_box.body_layout.addWidget(self.iso)
+        self.iso_box.hide()
 
         self.sections = QWidget(); self.sections_lay = QVBoxLayout(self.sections)
         self.sections_lay.setContentsMargins(0, 0, 0, 0); self.sections_lay.setSpacing(8)
@@ -385,7 +391,7 @@ class AnalysisPanel(QWidget):
 
         content = QWidget()
         lay = QVBoxLayout(content); lay.setContentsMargins(12, 12, 12, 12); lay.setSpacing(10)
-        for w in (box, self.too_large, self.empty, self.scan_table, self.summary, self.play_box, self.export_box, self.sections, self.figs):
+        for w in (box, self.too_large, self.empty, self.scan_table, self.summary, self.play_box, self.iso_box, self.export_box, self.sections, self.figs):
             lay.addWidget(w)
         lay.addStretch(1)
         self.scroll = QScrollArea(); self.scroll.setWidget(content); self.scroll.setWidgetResizable(True)
@@ -420,9 +426,18 @@ class AnalysisPanel(QWidget):
         if cur and not all_atoms:
             self.msd_species.setCurrentText(cur)
         self._apply_defaults(str(path))
+        self._refresh_iso(str(path))
 
     def _on_dir_edited(self) -> None:
         self._apply_defaults(self.run_dir.text().strip())
+        self._refresh_iso(self.run_dir.text().strip())
+
+    def _refresh_iso(self, d: str) -> None:
+        try:
+            n = self.iso.set_run_dir(d if d and Path(d).is_dir() else None)
+        except Exception:
+            n = 0
+        self.iso_box.setVisible(n > 0)
 
     def _apply_defaults(self, d: str) -> None:
         scan = self.is_scan_dir(d)
