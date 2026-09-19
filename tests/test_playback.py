@@ -143,5 +143,5 @@ def test_analysis_panel_shows_the_player_after_a_run(app, tmp_path):
     assert panel.play_box.isVisibleTo(panel) and panel.playback.count() == 21
     panel.set_run_dir(opt, ["O", "H"])
     panel.run()
-    assert panel.play_box.isVisibleTo(panel)                               # one frame, no hessian: the box says why
+    assert not panel.play_box.isVisibleTo(panel)                           # one frame, no hessian: nothing to play, so no box
     assert panel.playback.count() == 0 and "フレームが 1 つ" in panel.playback.note.text()
