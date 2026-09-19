@@ -32,6 +32,8 @@ GUI の「解析」タブ、ウェブ版の「解析」ページ、`adit-analyze
 | 空間群 | 最終構造 (spglib が入っているとき) | 許容誤差ごとの空間群 |
 | フォノン分散・DOS | phonopy の band.yaml、total_dos.dat | phonon_bands.png、phonon_dos.png |
 | 組にして比べる表 | 複数の計算のディレクトリ (それぞれの analysis/thermo.csv があれば熱化学も) | ΣνE、組成の釣り合い、条件が違う項目 (compare_*.csv、compare_energy.png)。各計算に ASE の熱化学の表があれば ΔH・ΔS・ΔG (温度と圧力が揃っているときだけ) |
+| 水素結合の寿命 | MD の軌跡と `--hbond` の距離・角度 | 存在の自己相関 C(τ) (intermittent / continuous)、積分と 1/e の時間 (hbond_lifetime.png / .csv) |
+| 水素結合の距離×角度の分布 | MD の軌跡 (`--hbond-cdf` の距離の上限) | D–A 距離 × D–H···A 角の 2 次元ヒストグラム (hbond_map.png / .csv)。しきい値は決めない |
 | CREST の配座 | crest_conformers.xyz (コメント行の全エネルギー [Eh])、crest.energies、crest.log の最後の表 (縮退度) | 配座ごとの相対エネルギー (kcal/mol、kJ/mol、eV)、縮退度、最低配座との重原子 RMSD。温度を入れたときだけ Boltzmann の重み (crest_conformers.csv、crest_conformers.png) |
 
 `adit-analyze` の主なオプション (`adit-analyze --help-all` に全部):
@@ -49,6 +51,9 @@ GUI の「解析」タブ、ウェブ版の「解析」ページ、`adit-analyze
 | `--uvvis SHAPE:FWHM` | ORCA の UV-Vis を広げる形と半値全幅 [eV] (例 `gauss:0.3`) |
 | `--pdos` | PDOS のファイルが無いときも理由を書く (あれば指定しなくても描く) |
 | `--symprec Å[,Å…]` | 空間群の許容誤差 (既定は 1e-5、1e-3、1e-1 を並べる) |
+| `--hbond 3.5,150` | 水素結合の本数 (距離 [Å] と角度 [度] は必須で既定値は無い) |
+| `--hbond-lifetime` | 水素結合の寿命 (存在の自己相関。`--hbond` が要る) |
+| `--hbond-cdf Å` | D–A 距離 × D–H···A 角の 2 次元分布 (距離の上限を渡す) |
 | `--conformer-temperature K` | CREST の配座の Boltzmann の重みを出す温度。省くと相対エネルギーだけを出す (既定の温度は無い) |
 
 ```bash
@@ -58,6 +63,28 @@ adit-analyze out/vib --thermo ideal_gas --temperature 298.15 --pressure 100000 -
 adit-analyze runs/ --compare "ads=1:slab_mol,-1:slab,-1:mol"
 adit-analyze out/conformers/crest --conformer-temperature 298.15
 ```
+
+### 水素結合の寿命と、距離 × 角度の分布
+
+`--hbond 距離,角度` で数えた水素結合 (水素 i と受容体 j の組) について、各フレームの存在 h_ij(t) (条件を満たせば 1、
+満たさなければ 0) を追い、`--hbond-lifetime` で次の自己相関を出します (t0 は全フレーム、N(t0) > 0 のものだけで平均)。
+
+    C(τ) = ⟨ Σ_ij h_ij(t0) h_ij(t0+τ) / Σ_ij h_ij(t0) ⟩_t0
+
+- intermittent: 途中で切れて戻った組も t0+τ で数える (h_ij(t0) h_ij(t0+τ) そのまま)
+- continuous: t0 から t0+τ まで 1 度も切れなかった組だけを数える (h_ij(t0) h_ij(t0+1) … h_ij(t0+τ) の積)
+
+定義は MDAnalysis の `HydrogenBondAnalysis.lifetime` と `lib.correlations.autocorrelation`
+(https://docs.mdanalysis.org/stable/documentation_pages/analysis/hydrogenbonds.html: 「S(τ) = ⟨ N(t0, t0+τ) / N(t0) ⟩」、
+「intermittency 0 は continuous」) に合わせ、intermittent は intermittency = ∞ に当たります。
+組は MDAnalysis と同じく水素–受容体の対で区別します。
+寿命として、C(τ) の積分 (τ_max = フレーム数の半分で打ち切り。C が 0 に落ちていなければ下限) と、C が 1/e を切る τ を表に出します。
+指数関数の当てはめはしていません。時間の単位は 1 フレームの時間が分かれば fs、分からなければフレーム。
+メモリはフレーム数 × 組の数 (1 バイトずつ) を先に見積もり、`--memory-mb` の上限を超えたら計算せずに間引きの間隔を示します。
+
+`--hbond-cdf 上限` は、しきい値の根拠を見るための図です。D–H···A の全部の組 (H は 1.3 Å 以内のいちばん近い N / O / F に付く)
+のうち D–A が上限以内のものを、D–A 距離 (0〜上限) × D–H···A 角 (0〜180 度) の 2 次元ヒストグラム (60 × 60 区間) にします。
+密度は面積で割って全体を 1 にした値で、`--hbond` の距離と角度があれば破線で重ねます。しきい値は利用者が決めます。
 
 ### 反応式の ΔH・ΔS・ΔG (組にして比べる表)
 

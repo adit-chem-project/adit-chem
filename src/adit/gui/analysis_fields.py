@@ -59,6 +59,8 @@ LABELS: dict[str, tuple[str, str]] = {
     "adf_cutoff": ("結合角の分布のカットオフ [Å]", "Angle-distribution cutoff [Å]"),
     "sq": ("構造因子 S(q) を出す", "Structure factor S(q)"),
     "hbond": ("水素結合 (距離 [Å], 角度 [度])", "Hydrogen bonds (distance [Å], angle [deg])"),
+    "hbond_lifetime": ("水素結合の寿命 (存在の自己相関)", "Hydrogen-bond lifetime (presence autocorrelation)"),
+    "hbond_cdf": ("水素結合の距離×角度の分布 (距離の上限 [Å])", "Hydrogen-bond distance-angle map (upper distance [Å])"),
     "rg": ("慣性半径 Rg の時系列", "Radius of gyration over time"),
     "density_grid": ("3 次元の数密度の格子", "3D number-density grid"),
     "voronoi": ("Voronoi の体積と面の数", "Voronoi volumes and face counts"),
@@ -140,6 +142,7 @@ PLACEHOLDERS: dict[str, tuple[str, str]] = {
     "clusters": ("空欄なら出しません", "Empty = not computed"),
     "adf": ("例: O または O,H", "e.g. O or O,H"),
     "hbond": ("例: 3.5,150。既定値はありません", "e.g. 3.5,150; there is no default"),
+    "hbond_cdf": ("例: 4.0。空欄なら出しません", "e.g. 4.0; empty = not computed"),
     "density_grid": ("例: 48,48,48", "e.g. 48,48,48"),
     "voronoi_face": ("空欄なら 0 (全部数える)", "Empty = 0 (count every face)"),
     "sasa": ("例: bondi,1.4", "e.g. bondi,1.4"),
@@ -326,6 +329,8 @@ def _extra_options(f: dict) -> dict:
         "adf_cutoff": _num(f, "adf_cutoff", positive=True) or 0.0,
         "structure_factor": _on(f, "sq"),
         "hbond": _text(f, "hbond"),
+        "hbond_lifetime": _on(f, "hbond_lifetime"),
+        "hbond_cdf": _num(f, "hbond_cdf", positive=True) or 0.0,
         "radius_of_gyration": _on(f, "rg"),
         "density_grid": _text(f, "density_grid"),
         "voronoi": _on(f, "voronoi"),
@@ -408,7 +413,7 @@ def _extra_fields(o) -> dict[str, str]:
          "zdens_axis": o.zdens_axis, "coordination": g(o.coordination_cutoff),
          "centrosymmetry": g(o.centrosymmetry_neighbors), "steinhardt": g(o.steinhardt_cutoff),
          "clusters": g(o.cluster_cutoff), "adf": o.adf or "", "adf_cutoff": g(o.adf_cutoff),
-         "hbond": o.hbond, "density_grid": o.density_grid, "voronoi_face": g(o.voronoi_face_threshold),
+         "hbond": o.hbond, "hbond_cdf": g(o.hbond_cdf), "density_grid": o.density_grid, "voronoi_face": g(o.voronoi_face_threshold),
          "sasa": o.sasa, "distances": "; ".join(o.distances), "angles": "; ".join(o.angles),
          "dihedrals": "; ".join(o.dihedrals), "rmsd_reference": g(o.rmsd_reference),
          "conductivity_charge": g(o.conductivity_charge),
@@ -429,7 +434,7 @@ def _extra_fields(o) -> dict[str, str]:
          "plot_spines": o.plot_spines, "plot_line_width": g(o.plot_line_width),
          "plot_font_size": g(o.plot_font_size), "plot_dpi": g(o.plot_dpi),
          "figure_format": o.figure_format}
-    for key, on in (("sq", o.structure_factor), ("rg", o.radius_of_gyration), ("voronoi", o.voronoi),
+    for key, on in (("sq", o.structure_factor), ("rg", o.radius_of_gyration), ("voronoi", o.voronoi), ("hbond_lifetime", o.hbond_lifetime),
                     ("rmsf", o.rmsf), ("vacf", o.vacf), ("viscosity", o.viscosity),
                     ("work_function", o.work_function)):
         f[key] = "on" if on else ""
@@ -614,6 +619,22 @@ def result_sections(res) -> list[Section]:
         out.append(_cut(Section("uvvis", L("UV-Vis の遷移", "UV-Vis transitions"), [L("遷移", "Transition"), "E [eV]", "λ [nm]", L("振動子強度 f", "Oscillator strength f")],
                                 rows, [False, True, True, True], [L(f"出典: {uv['source']}", f"source: {uv['source']}")] + list(uv.get("reasons", []))),
                         uv.get("file_transitions", summary_json)))
+    if "hbond_lifetime" in t:
+        h = t["hbond_lifetime"]
+        u = h["unit"]
+
+        def v(x) -> str:
+            return "-" if x is None else f"{x:.4g}"
+
+        rows = [[L("intermittent (切れて戻っても数える)", "intermittent (re-formed bonds count)"), v(h["lifetime_intermittent"]["integral"]),
+                 v(h["lifetime_intermittent"]["one_over_e"]), v(h["lifetime_intermittent"]["last_value"])],
+                [L("continuous (切れたら終わり)", "continuous (ends at the first break)"), v(h["lifetime_continuous"]["integral"]),
+                 v(h["lifetime_continuous"]["one_over_e"]), v(h["lifetime_continuous"]["last_value"])]]
+        out.append(_cut(Section("hbond_lifetime", L("水素結合の寿命", "Hydrogen-bond lifetime"),
+                                [L("定義", "Definition"), L(f"C(τ) の積分 [{u}]", f"Integral of C(τ) [{u}]"), L(f"1/e の時間 [{u}]", f"1/e time [{u}]"),
+                                 L("τ_max での C", "C at τ_max")], rows, [False, True, True, True],
+                                [L(f"τ_max = {h['tau_max']} {u}、{h['n_frames']} フレーム、{h['n_pairs']} 組。", f"tau_max = {h['tau_max']} {u}, {h['n_frames']} frames, {h['n_pairs']} pairs. ")
+                                 + h["definition"], L(f"出典: {h['source']}", f"source: {h['source']}")]), h.get("file", summary_json)))
     if "crest_conformers" in t:
         c = t["crest_conformers"]
         weighted = c.get("temperature_k") is not None and all("weight" in r for r in c.get("conformers", []))

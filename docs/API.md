@@ -48,6 +48,7 @@ print(methods_markdown([load_run_report("out/run1")], "ja"))   # 論文の「方
 | 距離・角・二面角・RMSD・Rg の時系列 | `adit.analysis.geometry_series.*` | `numpy` の配列 |
 | 配位数・中心対称性・Steinhardt・かたまり・S(q) | `adit.analysis.local_order.*` | `numpy` の配列 / `dict` |
 | 水素結合を数える | `adit.analysis.hbond.count_series(frames, distance, angle)` | 1 フレームごとの本数 (しきい値は必須) |
+| 水素結合の寿命・距離×角度の分布 | `adit.analysis.hbond.lifetime(frames, distance, angle, dt_fs=None, tau_max=None, budget_mb=1024)` / `distance_angle_map(frames, rmax_A)` | 自己相関と寿命の `dict` / ヒストグラムの `dict` (`"distribution"` は `Distribution2D`) |
 | 組にして比べる (ΔE と、thermo.csv があれば ΔH・ΔS・ΔG) | `adit.analysis.compare.analyze_compare(base, reactions=None)` / `parse_compare(text)` | `CompareResult` (`.reactions[i]["thermo"]` に温度ごとの ΔH・ΔS・ΔG) / `list[Reaction]` |
 | CREST の配座を読む・重みを付ける | `adit.analysis.crest.analyze_crest(crest_dir, out_dir, temperature_k=None)` / `read_ensemble` / `read_energies` / `boltzmann_weights(relative_ev, degeneracy, temperature_k)` | 配座の表 (`dict`) / `list[(E [Eh], Atoms)]` / `dict` / 重みの配列 (温度を渡したときだけ) |
 | 速度自己相関と振動スペクトル | `adit.analysis.vacf.vacf(velocities, dt_fs, *, max_lag_fraction=0.5, source="velocities", window="hann")` (`velocities` は (フレーム, 原子, 3) の配列、Å/fs) | `VacfResult` |
