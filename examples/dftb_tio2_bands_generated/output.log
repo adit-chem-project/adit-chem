@@ -37,14 +37,14 @@ Starting initialization...
 WARNING!
 -> Dipole printed for extended system : value printed is not well defined
 OpenMP threads:              4
-Chosen random seed:          705143072
+Specified random seed:       12345
 Current stacksize:           8 [Mb] (recommended: unlimited)
 WARNING!
 -> Current stacksize not set to unlimited or hard limit, which might cause
    random crashes (e.g. segmentation faults). It is advised to unlimit the
    stacksize by issuing 'ulimit -s unlimited' (Linux) or setting it to the 
    hard limit by 'ulimit -s hard' (Mac) in advance.
-Mode:                        Geometry optimisation relaxation
+Mode:                        Static calculation
 Self consistent charges:     Yes
 SCC-tolerance:                 0.100000E-04
 Max. scc iterations:                    100
@@ -58,7 +58,6 @@ Mixer:                       Broyden mixer
 Mixing parameter:                  0.200000
 Nr. of chrg. vec. in memory:            100
 Max. SCC-cycles:                        100
-Max. nr. of geometry steps:             200
 Electronic temperature:              0.100000E-07 H      0.272114E-06 eV
 Initial charges:             Set automatically (system chrg:   0.000E+00)
 Included shells:            Ti:  s, p, d
@@ -143,6 +142,7 @@ Force type                   original
     2   -0.16249535E+02   -0.16241463E+02    0.97300343E+00
     3   -0.16258920E+02   -0.80727802E-02    0.21007057E-01
     4   -0.16258924E+02   -0.93843114E-02    0.56996383E-03
+>> Charges saved for restart in charges.bin
     5   -0.16258924E+02   -0.46131508E-05    0.20513343E-05
 
 Total Energy:                      -15.6210745499 H         -425.0711 eV
@@ -152,21 +152,15 @@ Force related energy:              -15.6210745499 H         -425.0711 eV
 
 Volume:                              0.475783E+03 au^3   0.705038E+02 A^3
 Pressure:                            0.213295E-06 au     0.627536E+07 Pa
->> Charges saved for restart in charges.bin
-
-total energy  -1.5621075E+01 H       energy change -1.5621075E+01 H
-gradient norm  5.8063356E-05 H/a0    max. gradient  3.5261959E-05 H/a0
-step length    0.0000000E+00 a0      max. step      0.0000000E+00 a0
-
-Geometry converged
 
 --------------------------------------------------------------------------------
 DFTB+ running times                          cpu [s]             wall clock [s]
 --------------------------------------------------------------------------------
-Pre-SCC initialisation                 +       0.06 (  3.6%)       0.01 (  4.2%)
-SCC                                    +       1.58 ( 88.7%)       0.26 ( 89.2%)
-Post-SCC processing                    +       0.11 (  6.2%)       0.01 (  5.2%)
+Pre-SCC initialisation                 +       0.11 (  3.9%)       0.02 (  4.3%)
+SCC                                    +       2.32 ( 79.6%)       0.38 ( 80.8%)
+Post-SCC processing                    +       0.45 ( 15.4%)       0.06 ( 13.8%)
+Post-geometry optimisation             +       0.02 (  0.8%)       0.00 (  0.9%)
 --------------------------------------------------------------------------------
-Missing                                +       0.03 (  1.5%)       0.00 (  1.4%)
-Total                                  =       1.78 (100.0%)       0.29 (100.0%)
+Missing                                +       0.01 (  0.3%)       0.00 (  0.2%)
+Total                                  =       2.91 (100.0%)       0.46 (100.0%)
 --------------------------------------------------------------------------------

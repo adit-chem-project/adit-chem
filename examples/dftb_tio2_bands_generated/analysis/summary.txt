@@ -1,4 +1,9 @@
-コード: dftbplus   ディレクトリ: <作業ディレクトリ>/dftb_bands
-エネルギー: 1 点。最終 -425.071100 eV (最小 -425.071100, 最大 -425.071100)
+コード: dftbplus   ディレクトリ: examples/dftb_tio2_bands_generated
+警告: 2 件 (output.log:37  WARNING! -> Dipole printed for extended system : value printed is not well defined / output.log:42  WARNING! -> Current stacksize not set to unlimited or hard limit, which might cause)
+エネルギー: 1 点、最終値 -425.071100 eV (最小 -425.071100、最大 -425.071100)
 結合長 (最終構造): Ti1-Ti2 3.089 Å, Ti1-O3 2.006 Å, Ti1-O4 1.911 Å, Ti1-O5 2.006 Å, Ti1-O6 1.911 Å, Ti2-O3 1.911 Å, Ti2-O4 2.006 Å, Ti2-O5 1.911 Å, Ti2-O6 2.006 Å
+原子の電荷 (Mulliken、detailed.out:13、単位 e): Ti1 +0.963, Ti2 +0.964, O3 -0.482, O4 -0.482, O5 -0.482, O6 -0.482 (合計 +0.0000)。表は examples/dftb_tio2_bands_generated/analysis/charges_Mulliken.csv
 バンド: 60 k 点 × 34 本 (経路 G X Y S G Z S1 N P Y1 Z X P)、フェルミ準位をまたぐ最小の間隔 3.260 eV
+空間群 (最終構造、spglib 2.7.0): P1 (No. 1, symprec 1e-05 Å), Fdd2 (No. 43, symprec 0.001 Å), Fdd2 (No. 43, symprec 0.1 Å)
+注: バンドギャップ 3.260 eV: 価電子帯の頂上は Z (k 点 28)、伝導帯の底は G (k 点 1)。別の k 点です (間接遷移)。同じ k 点で最小の間隔は 3.369 eV。与えた経路の中での話で、経路の外はこの計算では分かりません
+注: 有効質量 正孔 (価電子帯の頂上): m*/m_e = -1.735 (5 点、幅 0.5379 1/Å、決定係数 0.9826)。経路に沿った向きの値で、テンソルではありません

@@ -35,7 +35,7 @@ Processed input in HSD format written to 'dftb_pin.hsd'
 Starting initialization...
 --------------------------------------------------------------------------------
 OpenMP threads:              1
-Chosen random seed:          27122271
+Specified random seed:       12345
 Current stacksize:           8 [Mb] (recommended: unlimited)
 WARNING!
 -> Current stacksize not set to unlimited or hard limit, which might cause
@@ -276,8 +276,8 @@ Geometry converged
 --------------------------------------------------------------------------------
 DFTB+ running times                          cpu [s]             wall clock [s]
 --------------------------------------------------------------------------------
-SCC                                    +       0.02 ( 74.8%)       0.04 ( 88.9%)
+SCC                                    +       0.01 ( 74.2%)       0.01 ( 68.4%)
 --------------------------------------------------------------------------------
-Missing                                +       0.01 ( 25.2%)       0.01 ( 11.1%)
-Total                                  =       0.02 (100.0%)       0.05 (100.0%)
+Missing                                +       0.01 ( 25.8%)       0.01 ( 31.6%)
+Total                                  =       0.02 (100.0%)       0.02 (100.0%)
 --------------------------------------------------------------------------------
