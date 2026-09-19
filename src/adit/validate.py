@@ -33,8 +33,13 @@ def validate(spec: CalculationSpec, cfg: Config, *, output_dir: Path | str | Non
         from adit.codes.plumed import validate_plumed
         errs += validate_plumed(spec)
     if output_dir is not None:
-        parent = Path(output_dir).expanduser().resolve().parent
-        if not parent.is_dir():
+        target = Path(output_dir).expanduser()
+        parent = target.resolve().parent
+        if target.exists() and not target.is_dir():
+            errs.append(ValidationError("output_dir", L(
+                f"出力先がディレクトリではありません (同じ名前のファイルがあります): {target}",
+                f"the output path is not a directory (a file with that name exists): {target}")))
+        elif not parent.is_dir():
             errs.append(ValidationError("output_dir", L(
                 f"親ディレクトリがありません: {parent} (打ち間違いを防ぐため、ADIT は途中のディレクトリを勝手に作りません。"
                 f"`mkdir -p {parent}` で作ってから、もう一度実行してください)",
