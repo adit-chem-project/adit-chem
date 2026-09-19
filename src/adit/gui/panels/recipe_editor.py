@@ -108,6 +108,7 @@ class StepEditor(QWidget):
         super().__init__(parent)
         self.setObjectName("rowbox")
         self._model = step
+        self.enabled = bool(getattr(step, "enabled", True))
         self.form = QFormLayout(self); self.form.setContentsMargins(0, 0, 0, 0); self.form.setVerticalSpacing(ROW_SPACING)
         self.build()
         self.load(step)
@@ -121,10 +122,12 @@ class StepEditor(QWidget):
     def step(self):
         data = self._model.model_dump()
         data.update(self.values())
+        data["enabled"] = self.enabled
         return type(self._model).model_validate(data)
 
     def set_step(self, step) -> None:
         self._model = step
+        self.enabled = bool(getattr(step, "enabled", True))
         self.blockSignals(True)
         try:
             self.load(step)
@@ -672,6 +675,8 @@ class RecipeEditor(QWidget):
 
         self.list = QListWidget(); self.list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.list.setMinimumHeight(64); self.list.setMaximumHeight(150)
+        self.list.setToolTip(L("チェックを外した手順は、削除せずに飛ばして作ります (抜いたらどうなるかを試せます)",
+                               "an unticked step is skipped when building, without deleting it (try what happens without it)"))
         self.add_kind = QComboBox()
         for op in ADD_ORDER:
             self.add_kind.addItem(op_label(op), op)
@@ -711,6 +716,7 @@ class RecipeEditor(QWidget):
         self.btn_up.clicked.connect(lambda: self.move(-1)); self.btn_down.clicked.connect(lambda: self.move(1))
         self.btn_del.clicked.connect(self.remove_current)
         self.list.currentRowChanged.connect(self._on_row)
+        self.list.itemChanged.connect(self._on_item_changed)
         self.btn_build.clicked.connect(self.build_requested.emit); self.progress.cancel_requested.connect(self.cancel_requested.emit)
         self._refresh()
 
@@ -732,7 +738,24 @@ class RecipeEditor(QWidget):
         return out
 
     def has_op(self, op: str) -> bool:
-        return any(ed.op == op for ed in self.editors)
+        # Disabled steps do not count: a skipped fix step must not take over the fixed-atoms field.
+        return any(ed.op == op and ed.enabled for ed in self.editors)
+
+    def is_enabled(self, k: int) -> bool:
+        return self.editors[k - 1].enabled
+
+    def set_enabled(self, k: int, on: bool) -> None:
+        ed = self.editors[k - 1]
+        if ed.enabled == on:
+            return
+        ed.enabled = on
+        self._refresh_row(k - 1)
+        self.changed.emit()
+
+    def _on_item_changed(self, item) -> None:
+        r = self.list.row(item)
+        if 0 <= r < len(self.editors):
+            self.set_enabled(r + 1, item.checkState() == Qt.CheckState.Checked)
 
     def add_step(self, step, *, select: bool = True, emit: bool = True) -> StepEditor:
         ed = EDITORS[step.op](step)
@@ -868,7 +891,22 @@ class RecipeEditor(QWidget):
             s = L("欄に読めない値があります", "a field cannot be read")
         item = self.list.item(r)
         if item is not None:
-            item.setText(f"{r + 1}. {op_label(ed.op)}" + (f"  —  {s}" if s else ""))
+            self.list.blockSignals(True)
+            try:
+                item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+                item.setCheckState(Qt.CheckState.Checked if ed.enabled else Qt.CheckState.Unchecked)
+                text = f"{r + 1}. {op_label(ed.op)}" + (f"  —  {s}" if s else "")
+                item.setText(text if ed.enabled else text + L("  (無効: 飛ばします)", "  (off: skipped)"))
+                item.setForeground(self._muted() if not ed.enabled else self.list.palette().text())
+            finally:
+                self.list.blockSignals(False)
+
+    @staticmethod
+    def _muted():
+        from PySide6.QtGui import QBrush, QColor
+        from adit.gui.style import current_theme, tokens_for
+
+        return QBrush(QColor(tokens_for(current_theme()).muted))
 
     def _refresh(self) -> None:
         while self.list.count() < len(self.editors):

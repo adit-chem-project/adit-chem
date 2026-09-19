@@ -40,7 +40,7 @@ def ops(app) -> list[str]:
 
 
 def list_rows(html: str) -> list[str]:
-    return [unescape(re.sub(r"\s+", " ", x)).strip() for x in re.findall(r'<li(?: class="current")?><a href="#step\d+">(.*?)</a>', html, re.S)]
+    return [unescape(re.sub(r"\s+", " ", x)).strip() for x in re.findall(r'<li[^>]*>(?:<input[^>]*>)?<a href="#step\d+">(.*?)</a>', html, re.S)]
 
 
 def status(html: str) -> str:
@@ -261,3 +261,24 @@ def test_enter_key_goes_to_preview(web):
     main = html[html.index('<form method="post" action="/preview"'):]
     first = re.search(r"<button[^>]*type=\"submit\"[^>]*>", main).group(0)
     assert 'formaction="/preview"' in first
+
+
+def test_unticked_step_is_skipped_without_deleting_it(web):
+    app, base = web
+    app.form.update(source="bulk", bulk_cubic="on")
+    act(app, base, "add", recipe_add="supercell")
+    html = act(app, base, "add", recipe_add="fix")
+    assert 'name="st2_enabled" value="1" checked' in html and 'name="fixed" id="fixed" value="" disabled' in html
+    posted = {k: v for k, v in app.form.items() if k != "st2_enabled"}      # an unticked box is not posted
+    html = _post(base + "/recipe", {**posted, "st1_r0": "2", "st1_r1": "1", "st1_r2": "1", "recipe_action": "build"})
+    steps = json.loads(app.form["recipe_steps"])
+    assert steps[1]["op"] == "fix" and steps[1]["enabled"] is False and app.form["st2_enabled"] == ""
+    assert 'name="st2_enabled" value="1" aria-label' in html and "(無効: 飛ばします)" in list_rows(html)[1]
+    assert 'name="fixed" id="fixed" value="" disabled' not in html
+    assert any("2. 固定: 無効なので飛ばしました" in x for x in log_lines(html))
+    _post(base + "/preview", app.form)
+    assert app.spec is not None and len(app.spec.structure.atoms.symbols) == 16 and app.spec.structure.fixed_atoms == []
+    act(app, base, "build", st2_enabled="1")
+    assert json.loads(app.form["recipe_steps"])[1]["enabled"] is True
+    _post(base + "/preview", app.form)
+    assert app.spec is not None and app.spec.structure.fixed_atoms

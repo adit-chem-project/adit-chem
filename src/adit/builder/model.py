@@ -85,7 +85,12 @@ class MoleculeRef(_M):
     ref: str
 
 
-class Supercell(_M):
+class _Step(_M):
+    # A disabled step stays in the recipe but is skipped when building (OVITO-style pipeline toggle).
+    enabled: bool = True
+
+
+class Supercell(_Step):
 
     op: Literal["supercell"] = "supercell"
     repeat: tuple[int, int, int] | None = None
@@ -105,7 +110,7 @@ class Supercell(_M):
         return self
 
 
-class Slab(_M):
+class Slab(_Step):
 
     op: Literal["slab"] = "slab"
     miller: tuple[int, int, int]
@@ -114,14 +119,14 @@ class Slab(_M):
     termination: int = 0
 
 
-class Vacuum(_M):
+class Vacuum(_Step):
 
     op: Literal["vacuum"] = "vacuum"
     axis: Literal[0, 1, 2] = 2
     thickness: float = 10.0
 
 
-class Box(_M):
+class Box(_Step):
 
     op: Literal["box"] = "box"
     padding: float = 5.0
@@ -129,7 +134,7 @@ class Box(_M):
     max_multiple: int = 8
 
 
-class Adsorb(_M):
+class Adsorb(_Step):
 
     op: Literal["adsorb"] = "adsorb"
     molecule: MoleculeRef
@@ -147,7 +152,7 @@ class Adsorb(_M):
         return self
 
 
-class _Pick(_M):
+class _Pick(_Step):
     where: Selection = Field(default_factory=Selection)
     count: int | None = None
     fraction: float | None = None
@@ -171,7 +176,7 @@ class Substitute(_Pick):
     to: str
 
 
-class SolventLayer(_M):
+class SolventLayer(_Step):
 
     op: Literal["solvent_layer"] = "solvent_layer"
     components: list[Component]
@@ -184,7 +189,7 @@ class SolventLayer(_M):
     max_tries: int = 2000
 
 
-class Solvate(_M):
+class Solvate(_Step):
 
     op: Literal["solvate"] = "solvate"
     components: list[Component]
@@ -195,7 +200,7 @@ class Solvate(_M):
     max_tries: int = 2000
 
 
-class Fix(_M):
+class Fix(_Step):
 
     op: Literal["fix"] = "fix"
     where: Selection = Field(default_factory=Selection)
@@ -234,7 +239,16 @@ class Recipe(_M):
     steps: list[Step] = Field(default_factory=list)
 
     def to_ref(self) -> str:
-        return self.model_dump_json(exclude_none=True)
+        import json
+
+        data = self.model_dump(mode="json", exclude_none=True)
+        for step in data["steps"]:
+            if step.get("enabled", True):
+                step.pop("enabled", None)     # only "enabled": false is written, so older refs compare equal
+        return json.dumps(data, ensure_ascii=False, separators=(",", ":"))
+
+    def active_steps(self) -> list[Any]:
+        return [s for s in self.steps if s.enabled]
 
     @classmethod
     def from_ref(cls, ref: str) -> "Recipe":
@@ -254,7 +268,12 @@ class Recipe(_M):
         q = 0
         if self.base.source == "mixture" and isinstance(self.base.ref, str):
             q += MixtureSpec.from_ref(self.base.ref).total_charge()
-        for s in self.steps:
+        for s in self.active_steps():
             if isinstance(s, (SolventLayer, Solvate)):
                 q += sum(c.count * c.charge for c in s.components)
         return q
+
+
+def has_op(steps: list, op: str) -> bool:
+    """True when an enabled step of this kind is in the list."""
+    return any(s.op == op and getattr(s, "enabled", True) for s in steps)

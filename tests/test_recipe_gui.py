@@ -302,3 +302,27 @@ def test_english_labels(app, sk_root, tmp_path):
         w.close()
     finally:
         set_language("ja")
+
+
+def test_unticked_step_is_skipped_without_deleting_it(win):
+    from PySide6.QtCore import Qt
+
+    p = win.structure
+    p.set_source("bulk"); p.bulk_cubic.setChecked(True)
+    ed = add(p, "supercell"); ed.rep[0].setValue(2); ed.rep[1].setValue(1); ed.rep[2].setValue(1)
+    add(p, "fix")
+    assert not p.fixed.isEnabled()
+    item = p.recipe.list.item(1)
+    assert item.checkState() == Qt.CheckState.Checked
+    item.setCheckState(Qt.CheckState.Unchecked)
+    assert not p.recipe.editors[1].enabled and p.fixed.isEnabled() and "(無効" in rows(p)[1]
+    assert p.recipe.count() == 2 and not p.current_recipe().steps[1].enabled
+    build_and_wait(p)
+    st = p.structure()
+    assert st is not None and len(st.atoms.symbols) == 16 and st.fixed_atoms == []
+    assert "2. 固定: 無効なので飛ばしました" in p.recipe.log.text()
+    assert Recipe.from_ref(st.source_ref).steps[1].enabled is False
+    p.recipe.set_enabled(2, True)
+    assert item.checkState() == Qt.CheckState.Checked and not p.fixed.isEnabled() and p.structure() is None
+    p.set_structure(st)
+    assert p.recipe.list.item(1).checkState() == Qt.CheckState.Unchecked and p.fixed.isEnabled()

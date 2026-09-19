@@ -37,8 +37,11 @@ class StepLog:
     min_distance: float
     seconds: float
     note: str = ""
+    skipped: bool = False
 
     def line(self) -> str:
+        if self.skipped:
+            return L(f"{self.index}. {op_label(self.op)}: 無効なので飛ばしました", f"{self.index}. {op_label(self.op)}: disabled, skipped")
         d = "> 3 Å" if not np.isfinite(self.min_distance) else f"{self.min_distance:.2f} Å"
         return L(f"{self.index}. {op_label(self.op)}: {self.n_atoms} 原子、分子どうしの最短距離 {d}、{self.seconds:.2f} 秒{('、' + self.note) if self.note else ''}",
                  f"{self.index}. {op_label(self.op)}: {self.n_atoms} atoms, shortest distance between molecules {d}, {self.seconds:.2f} s{(', ' + self.note) if self.note else ''}")
@@ -90,9 +93,9 @@ def check_step(atoms: Atoms, index: int, op: str) -> tuple[Atoms, StepLog]:
 
 def order_notes(steps: list) -> dict[int, str]:
     notes: dict[int, list[str]] = {}
-    slabs = [k for k, s in enumerate(steps, start=1) if s.op == "slab"]
+    slabs = [k for k, s in enumerate(steps, start=1) if s.op == "slab" and s.enabled]
     for k in slabs:
-        before = [j for j, s in enumerate(steps[:k - 1], start=1) if s.op == "supercell"]
+        before = [j for j, s in enumerate(steps[:k - 1], start=1) if s.op == "supercell" and s.enabled]
         if before:
             notes.setdefault(k, []).append(
                 L(f"注意: 手順 {'、'.join(str(j) for j in before)} の超格子より後ろで切っています。ミラー指数はいまのセルの格子ベクトルに対する指数なので、"
@@ -117,6 +120,9 @@ def build_recipe(recipe: Recipe) -> tuple[Atoms, list[StepLog]]:
     logs.append(log)
     notes = order_notes(recipe.steps)
     for k, step in enumerate(recipe.steps, start=1):
+        if not step.enabled:
+            logs.append(StepLog(k, step.op, len(atoms), float("inf"), 0.0, skipped=True))
+            continue
         report(k, len(recipe.steps) + 1, L(f"手順 {k}: {op_label(step.op)}", f"step {k}: {op_label(step.op)}"))
         t0 = time.perf_counter()
         try:

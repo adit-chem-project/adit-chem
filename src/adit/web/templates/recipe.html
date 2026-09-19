@@ -33,7 +33,7 @@
 {% else %}
 <ol class="steps">
 {%- for it in rc["items"] %}
-  <li{% if it.k == rc.open %} class="current"{% endif %}><a href="#step{{ it.k }}">{{ it.k }}. {{ it.label }}{% if it.summary %}  —  {{ it.summary }}{% endif %}</a>
+  <li{% if it.k == rc.open %} class="current"{% endif %}{% if not it.enabled %} data-off="1"{% endif %}><input type="checkbox" name="{{ it.p }}enabled" value="1"{% if it.enabled %} checked{% endif %} aria-label="{{ T('手順を使う', 'Use this step') }} {{ it.k }}" title="{{ T('チェックを外した手順は、削除せずに飛ばして作ります (次にボタンを押したときから)', 'an unticked step is skipped when building, without deleting it (from the next button press)') }}"><a href="#step{{ it.k }}">{{ it.k }}. {{ it.label }}{% if it.summary %}  —  {{ it.summary }}{% endif %}{% if not it.enabled %}  {{ T("(無効: 飛ばします)", "(off: skipped)") }}{% endif %}</a>
     <span class="step-btns"><button type="submit" formaction="/recipe" name="recipe_action" value="up:{{ it.k }}"{% if loop.first %} disabled{% endif %} aria-label="{{ T('上へ', 'Up') }} {{ it.k }}">{{ T("上へ", "Up") }}</button><button type="submit" formaction="/recipe" name="recipe_action" value="down:{{ it.k }}"{% if loop.last %} disabled{% endif %} aria-label="{{ T('下へ', 'Down') }} {{ it.k }}">{{ T("下へ", "Down") }}</button><button type="submit" formaction="/recipe" name="recipe_action" value="del:{{ it.k }}" aria-label="{{ T('削除', 'Remove') }} {{ it.k }}">{{ T("削除", "Remove") }}</button></span></li>
 {%- endfor %}
 </ol>
