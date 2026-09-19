@@ -158,6 +158,28 @@
 {% elif result %}
 <fieldset><legend>{{ T("要約", "Summary") }}</legend><pre>{{ result.summary_text() }}</pre>
   <div class="hint">{{ T("図と要約の保存先", "Figures and summary saved to") }}: {{ result.run_dir }}/analysis/</div></fieldset>
+{% if frames_url %}
+<fieldset id="adit-play"><legend>{{ T("3D で再生 (軌跡・最適化のステップ)", "Play in 3D (trajectory, optimization steps)") }}</legend>
+  <canvas id="adit3d-play" width="420" height="300" style="width:100%;max-width:640px;height:300px;border-radius:10px;border:1px solid rgba(0,0,0,0.12)"></canvas>
+  <div class="actions">
+    <button type="button" id="adit-play-first" title="{{ T('最初のフレーム', 'First frame') }}">|&lt;</button>
+    <button type="button" id="adit-play-prev" title="{{ T('1 つ前 (コマ送り)', 'Previous frame') }}">&lt;</button>
+    <button type="button" id="adit-play-toggle">{{ T("再生", "Play") }}</button>
+    <button type="button" id="adit-play-next" title="{{ T('1 つ先 (コマ送り)', 'Next frame') }}">&gt;</button>
+    <button type="button" id="adit-play-last" title="{{ T('最後のフレーム', 'Last frame') }}">&gt;|</button>
+    <input type="range" id="adit-play-slider" min="0" max="0" value="0" style="width:40%;vertical-align:middle" aria-label="{{ T('フレーム', 'frame') }}">
+    <span class="hint" id="adit-play-pos"></span>
+  </div>
+  <canvas id="adit-play-series" width="420" height="180" style="width:100%;max-width:640px;height:180px;border-radius:10px;border:1px solid rgba(0,0,0,0.12)"></canvas>
+  <div class="hint" id="adit-play-note">{{ T("フレームを読み込んでいます…", "loading the frames…") }}</div>
+  <div class="hint">{{ T("解析が読むのと同じ軌跡を、平衡化の捨てるフレーム数と間引きを反映して送ります (ブラウザには最大 200 フレーム)。振動モードの再生はデスクトップ版の解析タブにあります。",
+                        "The same trajectory the analysis reads, after the skip and stride settings (at most 200 frames are sent to the browser). Vibrational-mode playback is in the desktop analysis tab.") }}</div>
+  <noscript><div class="hint">{{ T("この再生はブラウザの中の小さなプログラム (JavaScript) で動きます。JavaScript を切っていると出ません。", "The player runs on a small program in the browser (JavaScript) and does not appear with JavaScript disabled.") }}</div></noscript>
+</fieldset>
+<script>window.ADIT_FRAMES_URL = "{{ frames_url }}"; window.ADIT_LANG = "{{ lang }}";</script>
+<script>{{ viewer_js | safe }}</script>
+<script>{{ playback_js | safe }}</script>
+{% endif %}
 {% if export_dir %}
 <fieldset id="export"><legend>{{ T("書き出したファイル (export_README.txt)", "Exported files (export_README.txt)") }}</legend>
   <div class="hint">{{ T("書き出し先", "Written to") }}: {{ export_dir }}</div>
