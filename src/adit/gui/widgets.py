@@ -174,3 +174,30 @@ def limit_combo_popups(root: QWidget | None = None) -> None:
     if root is not None:
         for c in root.findChildren(QComboBox):
             limit_combo(c)
+
+
+def confirm_overwrite(parent: QWidget, out) -> tuple[bool | None, object]:
+    """Ask before writing into a non-empty directory. Returns (overwrite, backup): overwrite is None when the user declined.
+
+    The generated file names are not known in advance here, so the backup starts as a snapshot and is pruned to
+    the overwritten files by backup.finish() after the write.
+    """
+    from pathlib import Path
+
+    from PySide6.QtWidgets import QMessageBox
+
+    from adit.lang import L
+    from adit.project import Backup, has_files, overwrite_plan
+
+    out = Path(out).expanduser()
+    if not has_files(out):
+        return False, None
+    keep = Backup(out)
+    fits = keep.can_snapshot()
+    text = overwrite_plan(out, None).message(keep.dir if fits else None, too_large=not fits)
+    if QMessageBox.question(parent, L("上書きの確認", "Overwrite?"), text) != QMessageBox.StandardButton.Yes:
+        return None, None
+    if not fits:
+        return True, None
+    keep.snapshot()
+    return True, keep

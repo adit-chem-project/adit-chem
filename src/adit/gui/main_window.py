@@ -14,7 +14,8 @@ from PySide6.QtWidgets import (QBoxLayout, QFileDialog, QHBoxLayout, QMainWindow
                                QWidget)
 
 from adit.config import Config, ConfigError, load_config
-from adit.project import ProjectError, ProjectFiles, build_project, load_project, write_project
+from adit.project import (Backup, ProjectError, ProjectFiles, build_project, has_files, load_project, new_backup_dir, overwrite_plan,
+                          restore_backup, write_project)
 from adit.gui import icons
 from adit.gui.i18n import tr
 from adit.lang import L
@@ -94,6 +95,15 @@ class MainWindow(QMainWindow):
         self.gen_hint_action.setVisible(False)
         tb.addWidget(self.btn_generate)
         self.statusBar().addWidget(self.run_hint)
+        # After an overwrite: a link that puts the previous files back, shown for 10 s.
+        self.undo_link = QPushButton(L("元に戻す", "Undo")); self.undo_link.setObjectName("link")
+        self.undo_link.setToolTip(L("いま上書きしたファイルを、上書き前の内容に戻します (足したファイルは消します)",
+                                    "restore the files just overwritten and remove the ones just added"))
+        self.undo_link.clicked.connect(self.undo_write); self.undo_link.hide()
+        self.statusBar().addWidget(self.undo_link)
+        self._undo_dir: Path | None = None
+        self._undo_timer = QTimer(self); self._undo_timer.setSingleShot(True); self._undo_timer.setInterval(10_000)
+        self._undo_timer.timeout.connect(self.undo_link.hide)
         # Right side of the status bar: the keys that work right now (Blender-style); the left side is the state.
         self.key_hints = QLabel(""); self.key_hints.setObjectName("hint")
         self.statusBar().addPermanentWidget(self.key_hints)
@@ -516,16 +526,19 @@ class MainWindow(QMainWindow):
         out = Path(self.runtime.output_dir()).expanduser()
         try:
             spec = self.current_spec()
-            overwrite = False
-            if out.exists() and any(out.iterdir()):
-                ans = QMessageBox.question(self, tr("上書きの確認"), L(f"{out} は空ではありません。中のファイルを上書きしますか?", f"{out} is not empty. Overwrite the files inside?"))
+            overwrite, backup = False, None
+            if has_files(out):
+                plan = overwrite_plan(out, build_project(spec, self.cfg, output_dir=out))
+                backup = new_backup_dir(out)
+                ans = QMessageBox.question(self, tr("上書きの確認"), plan.message(backup))
                 if ans != QMessageBox.StandardButton.Yes:
                     return
                 overwrite = True
-            written = write_project(spec, self.cfg, out, overwrite=overwrite)
+            written = write_project(spec, self.cfg, out, overwrite=overwrite, backup=backup)
         except (ProjectError, ConfigError, ValueError, OSError) as ex:
             QMessageBox.critical(self, tr("生成できません"), str(ex))
             return
+        self.offer_undo(backup)
         self.last_written = out
         self.analysis.set_run_dir(out, spec.elements)
         self.workspace.set_root(out)          # point the tree and the terminal at the directory just written
@@ -545,6 +558,26 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(L(f"{len(written)} ファイルを {out} に書きました", f"wrote {len(written)} files to {out}"))
         QMessageBox.information(self, tr("生成しました"), f"{out}\n\n{step}")
 
+    def offer_undo(self, backup: Path | None) -> None:
+        self._undo_timer.stop()
+        self._undo_dir = backup if backup is not None and backup.is_dir() else None
+        self.undo_link.setVisible(self._undo_dir is not None)
+        if self._undo_dir is not None:
+            self._undo_timer.start()
+
+    def undo_write(self) -> None:
+        d, self._undo_dir = self._undo_dir, None
+        self._undo_timer.stop(); self.undo_link.hide()
+        if d is None:
+            return
+        try:
+            restored, removed = restore_backup(d)
+        except (ProjectError, OSError) as ex:
+            QMessageBox.critical(self, L("戻せません", "Cannot undo"), str(ex)); return
+        self.last_written = None; self.run_hint.clear()
+        self.statusBar().showMessage(L(f"元に戻しました: {len(restored)} ファイルを上書き前に戻し、{len(removed)} ファイルを消しました (控え: {d})",
+                                       f"undone: {len(restored)} files restored, {len(removed)} files removed (copy kept in {d})"))
+
     def scan_dialog(self):
         from adit.gui.scan_dialog import ScanDialog
         st = self.structure.structure()
@@ -558,6 +591,7 @@ class MainWindow(QMainWindow):
         dlg = self.scan_dialog()
         if dlg.exec() and dlg.out_dir is not None:
             self.scan_written(dlg.out_dir)
+            self.offer_undo(dlg.backup_dir)
 
     def scan_written(self, out: Path) -> None:
         self.analysis.set_run_dir(out)
@@ -601,6 +635,7 @@ class MainWindow(QMainWindow):
             if dlg.dirs:
                 self.analysis.set_run_dir(dlg.dirs[0])
             self.statusBar().showMessage(L(f"段階に分けた入力を {dlg.out_dir} に作りました", f"wrote the staged inputs to {dlg.out_dir}"))
+            self.offer_undo(dlg.backup_dir)
 
     def batch_dialog(self, kind: str):
         from adit.gui.prep23_dialogs import DIALOGS
@@ -616,6 +651,7 @@ class MainWindow(QMainWindow):
         dlg = self.batch_dialog(kind)
         if dlg.exec() and dlg.result is not None:
             self.batch_written(dlg.result)
+            self.offer_undo(dlg.backup_dir)
 
     def batch_written(self, res) -> None:
         if res.compare_base and res.dirs:

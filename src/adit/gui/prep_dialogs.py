@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QComboBox, QDialog,
                                QTableWidget, QVBoxLayout, QWidget)
 
 from adit.gui.style import GROUP_SPACING, PANEL_MARGIN, ROW_SPACING
-from adit.gui.widgets import add_row
+from adit.gui.widgets import add_row, confirm_overwrite
 from adit.lang import L
 from adit.web.codefields import (STAGE_COLUMNS, carry_table, continuation_summary, row_from_stage, stage_choices, stage_column_titles,
                                   stage_from_row)
@@ -120,6 +120,7 @@ class StagesDialog(QDialog):
         self.setWindowTitle(L("段階に分けて生成", "Staged calculation"))
         self.make_spec, self.cfg = make_spec, cfg
         self.out_dir: Path | None = None
+        self.backup_dir: Path | None = None
         self.dirs: list[Path] = []
         self.table = QTableWidget(0, len(STAGE_COLUMNS))
         self.table.setHorizontalHeaderLabels(stage_column_titles())
@@ -277,14 +278,11 @@ class StagesDialog(QDialog):
             spec = self.make_spec()
             data = self.stages_data(spec.task.type)
             stages = parse_stages(data)
-            overwrite = False
-            if out.exists() and any(out.iterdir()):
-                ans = QMessageBox.question(self, L("上書きの確認", "Overwrite?"), L(f"{out} は空ではありません。中のファイルを上書きしますか?",
-                                                                                 f"{out} is not empty. Overwrite the files inside?"))
-                if ans != QMessageBox.StandardButton.Yes:
-                    return
-                overwrite = True
+            overwrite, keep = confirm_overwrite(self, out)
+            if overwrite is None:
+                return
             dirs = write_stages(spec, self.cfg, out, stages, overwrite=overwrite)
+            self.backup_dir = keep.finish() if keep is not None else None
         except (StageError, ProjectError, ConfigError, ValueError, OSError) as ex:
             QMessageBox.critical(self, L("生成できません", "Cannot generate"), _generator_error(ex)); return
         self.out_dir, self.dirs = out, dirs
