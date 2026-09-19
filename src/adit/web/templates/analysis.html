@@ -2,7 +2,7 @@
 {% block title %}ADIT — {{ T("解析", "Analysis") }}{% endblock %}
 {#- 部品。欄の名前・説明・選択肢はデスクトップ版の解析タブと同じ (gui/analysis_fields.py の LABELS、gui/help.py)。
     f は欄の値 (文字列)、off は一括生成のディレクトリで欄を無効にする属性。JS は使わない (折りたたみは <details>) -#}
-{% macro arow(key, for_id) -%}{% set h = hlp(key) %}<div class="row"><label for="{{ for_id }}"{% if h and h.required %} class="required"{% endif %}{% if h %} title="{{ h.text() }}"{% endif %}>{{ lab(key) }}</label><div class="inline">{{ caller() }}</div></div>{%- endmacro %}
+{% macro arow(key, for_id) -%}{% set h = hlp(key) %}<div class="row"><label for="{{ for_id }}"{% if h and h.required %} class="required"{% endif %}{% if h %} title="{{ h.text() }}"{% endif %}>{{ lab(key) }}{% if h and h.required %}<span class="pill">{{ T("必須", "required") }}</span>{% endif %}</label><div class="inline">{{ caller() }}</div></div>{%- endmacro %}
 {% macro txt(name, cls="tiny", placeholder="", aria="") -%}<input type="text" id="{{ name }}" name="{{ name }}" class="{{ cls }}" value="{{ f[name] }}"{% if placeholder %} placeholder="{{ placeholder }}"{% endif %}{% if aria %} aria-label="{{ aria }}"{% endif %}{{ off }}>{%- endmacro %}
 {% macro sel(name, opts) -%}<select id="{{ name }}" name="{{ name }}"{{ off }}>{% for v, t in opts %}<option value="{{ v }}"{% if f[name] == v %} selected{% endif %}>{{ t }}</option>{% endfor %}</select>{%- endmacro %}
 {% macro chk(name, key) -%}{% set h = hlp(key) %}<label{% if h %} title="{{ h.text() }}"{% endif %}><input type="checkbox" id="{{ name }}" name="{{ name }}"{% if f[name] %} checked{% endif %}{{ off }}> {{ lab(key) }}</label>{%- endmacro %}
@@ -12,7 +12,7 @@
 {% if message %}<div class="message-banner" role="status">{{ message }}</div>{% endif %}
 <fieldset><legend>{{ T("解析", "Analysis") }}</legend>
   {% set h = HELP("計算結果のディレクトリ") %}
-  <div class="row"><label for="run_dir"{% if h and h.required %} class="required"{% endif %}{% if h %} title="{{ h.text() }}"{% endif %}>{{ T("計算結果のディレクトリ", "Run directory") }}</label><div class="inline"><input type="text" id="run_dir" name="run_dir" value="{{ run_dir }}"></div></div>
+  <div class="row"><label for="run_dir"{% if h and h.required %} class="required"{% endif %}{% if h %} title="{{ h.text() }}"{% endif %}>{{ T("計算結果のディレクトリ", "Run directory") }}{% if h and h.required %}<span class="pill">{{ T("必須", "required") }}</span>{% endif %}</label><div class="inline"><input type="text" id="run_dir" name="run_dir" value="{{ run_dir }}"></div></div>
   {#- 一括生成 (scan.json) のディレクトリのとき: 普段のチェック項目は使わないので無効にし、代わりにこの 1 行を出す (デスクトップ版と同じ文) -#}
   <div class="row"><label>{{ T("解析項目", "Items") }}</label><div class="inline">
     <span class="hint">{{ T("エネルギー・温度・結合長・振動数・バンドは常に解析します", "Energy, temperature, bond lengths, frequencies and bands are always analyzed") }}</span>
