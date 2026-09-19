@@ -186,3 +186,140 @@ def describe(atoms: Atoms, expression: str | None) -> str:
     kinds = ", ".join(f"{s} {int((syms == s).sum())}" for s in sorted(set(syms.tolist())))
     return L(f"選んだ原子: {len(idx)} 個 ({kinds or '無し'}) / 全 {len(atoms)} 個",
              f"selected atoms: {len(idx)} ({kinds or 'none'}) out of {len(atoms)}")
+
+
+class _Translator:
+    """Rewrite an ADIT selection as a VMD selection or an OVITO expression (same grammar, no atoms needed)."""
+
+    def __init__(self, text: str, target: str):
+        self.tokens = [m.group(1) for m in _TOKEN.finditer(text)]
+        self.pos = 0
+        self.target = target
+
+    def peek(self) -> str | None:
+        return self.tokens[self.pos] if self.pos < len(self.tokens) else None
+
+    def take(self) -> str:
+        if self.pos >= len(self.tokens):
+            raise SelectionError(L("選び方が途中で終わっています", "the selection ends unexpectedly"))
+        self.pos += 1
+        return self.tokens[self.pos - 1]
+
+    def parse(self) -> str:
+        text = self.parse_or()
+        if self.peek() is not None:
+            raise SelectionError(L(f"余分な文字があります: {' '.join(self.tokens[self.pos:])!r}",
+                                   f"unexpected text: {' '.join(self.tokens[self.pos:])!r}"))
+        return text
+
+    def parse_or(self) -> str:
+        parts = [self.parse_and()]
+        while (self.peek() or "").lower() == "or":
+            self.take()
+            parts.append(self.parse_and())
+        joiner = " or " if self.target == "vmd" else " || "
+        return joiner.join(parts) if len(parts) == 1 else "(" + joiner.join(parts) + ")"
+
+    def parse_and(self) -> str:
+        parts = [self.parse_unit()]
+        while (self.peek() or "").lower() == "and":
+            self.take()
+            parts.append(self.parse_unit())
+        joiner = " and " if self.target == "vmd" else " && "
+        return parts[0] if len(parts) == 1 else "(" + joiner.join(parts) + ")"
+
+    def parse_unit(self) -> str:
+        from ase.data import chemical_symbols
+
+        token = self.take()
+        low = token.lower()
+        if low == "not":
+            inner = self.parse_unit()
+            # muparser has no documented unary not; a comparison with 0 uses only documented operators
+            return f"not {inner}" if self.target == "vmd" else f"({inner}) == 0"
+        if token == "(":
+            inner = self.parse_or()
+            if self.peek() != ")":
+                raise SelectionError(L("括弧が閉じていません", "a parenthesis is not closed"))
+            self.take()
+            return inner if inner.startswith("(") else f"({inner})"
+        if low == "element" or token in chemical_symbols:
+            if token in chemical_symbols:
+                self.pos -= 1
+            return self._elements()
+        if low == "index":
+            return self._indices()
+        if low in ("x", "y", "z"):
+            return self._coordinate(low)
+        if low == "within":
+            return self._within()
+        if low == "all":
+            return "all" if self.target == "vmd" else "1"
+        raise SelectionError(L(f"分からない言葉です: {token!r} (使えるのは element / index / x y z / within / and / or / not / all)",
+                               f"unknown word {token!r} (use element, index, x/y/z, within, and, or, not, all)"))
+
+    def _elements(self) -> str:
+        from ase.data import chemical_symbols
+
+        wanted = []
+        while (t := self.peek()) is not None and t in chemical_symbols:
+            wanted.append(self.take())
+        if not wanted:
+            raise SelectionError(L("element のあとに元素記号が要ります", "element must be followed by chemical symbols"))
+        if self.target == "vmd":
+            return "name " + " ".join(wanted)
+        parts = [f'ParticleType == "{s}"' for s in wanted]
+        return parts[0] if len(parts) == 1 else "(" + " || ".join(parts) + ")"
+
+    def _indices(self) -> str:
+        parts = []
+        while (t := self.peek()) is not None and (t == "," or t == "-" or re.fullmatch(r"-?\d+", t)):
+            parts.append(self.take())
+        idx = parse_indices("".join(parts))
+        if not idx:
+            raise SelectionError(L("index のあとに番号が要ります", "index must be followed by numbers"))
+        runs: list[tuple[int, int]] = []
+        for i in idx:
+            if runs and runs[-1][1] == i - 1:
+                runs[-1] = (runs[-1][0], i)
+            else:
+                runs.append((i, i))
+        if self.target == "vmd":
+            return "index " + " ".join(f"{a}" if a == b else f"{a} to {b}" for a, b in runs)
+        terms = [f"ParticleIndex == {a}" if a == b else f"(ParticleIndex >= {a} && ParticleIndex <= {b})" for a, b in runs]
+        return terms[0] if len(terms) == 1 else "(" + " || ".join(terms) + ")"
+
+    def _coordinate(self, axis: str) -> str:
+        op = self.take()
+        if op not in ("<", "<=", ">", ">="):
+            raise SelectionError(L(f"{axis} のあとは < <= > >= のどれかです", f"{axis} must be followed by <, <=, > or >="))
+        try:
+            value = float(self.take())
+        except ValueError as ex:
+            raise SelectionError(L(f"{axis} {op} のあとに数が要ります", f"a number must follow {axis} {op}")) from ex
+        if self.target == "vmd":
+            return f"{axis} {op} {value:g}"
+        return f"Position.{axis.upper()} {op} {value:g}"
+
+    def _within(self) -> str:
+        try:
+            radius = float(self.take())
+        except ValueError as ex:
+            raise SelectionError(L("within のあとに距離 [Å] が要ります", "within must be followed by a distance in Å")) from ex
+        if (self.take() or "").lower() != "of":
+            raise SelectionError(L("書き方は `within 5 of element O` です", "write it as `within 5 of element O`"))
+        other = self.parse_unit()
+        if self.target != "vmd":
+            raise SelectionError(L("within は OVITO の式に直せません (距離による選択は OVITO の Expand selection などで作ってください)",
+                                   "within cannot be written as an OVITO expression (build distance-based selections with e.g. Expand selection in OVITO)"))
+        return f"(within {radius:g} of {other})"
+
+
+def to_vmd(expression: str) -> str:
+    """Rewrite an ADIT selection in VMD's selection language (indices become 0-based, elements become names)."""
+    return _Translator(expression, "vmd").parse()
+
+
+def to_ovito(expression: str) -> str:
+    """Rewrite an ADIT selection as an OVITO expression-selection string (raises SelectionError for `within`)."""
+    return _Translator(expression, "ovito").parse()

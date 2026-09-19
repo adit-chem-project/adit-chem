@@ -5,6 +5,7 @@ import io
 import math
 from pathlib import Path
 
+from adit.citations import Citation
 from adit.codes.base import GenerationError, InputGenerator, ReadmeNotes, register
 from adit.config import Config, Profile
 from adit.spec import CalculationSpec, OrcaMethod, HARTREE_PER_BOHR_IN_EV_PER_ANG
@@ -298,3 +299,29 @@ class OrcaGenerator(InputGenerator):
 
 
 register(OrcaGenerator())
+
+
+# The two references the ORCA 6.1 "How to Cite" page always asks for; each run also prints its own list
+_ORCA_CITE_URL = "https://www.faccts.de/docs/orca/6.1/tutorials/first_steps/howtocite.html"
+CITATIONS = (
+    Citation("orca_neese2012", r"""@article{orca_neese2012,
+  author  = {Neese, Frank},
+  title   = {The {ORCA} program system},
+  journal = {WIREs Computational Molecular Science},
+  volume  = {2},
+  number  = {1},
+  pages   = {73--78},
+  year    = {2012},
+  doi     = {10.1002/wcms.81}
+}""", doi="10.1002/wcms.81", source=_ORCA_CITE_URL),
+    Citation("orca_neese2025", r"""@article{orca_neese2025,
+  author  = {Neese, Frank},
+  title   = {Software Update: The {ORCA} Program System---Version 6.0},
+  journal = {WIREs Computational Molecular Science},
+  volume  = {15},
+  number  = {2},
+  pages   = {e70019},
+  year    = {2025},
+  doi     = {10.1002/wcms.70019}
+}""", doi="10.1002/wcms.70019", source=_ORCA_CITE_URL),
+)

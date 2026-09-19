@@ -116,3 +116,20 @@ def test_parse_atom_list_checks_the_count():
     assert parse_atom_list("1,2,3", 3) == [0, 1, 2]
     with pytest.raises(GeometryError, match="4 個|give 4"):
         parse_atom_list("1,2", 4)
+
+
+def test_selection_rewritten_for_vmd_and_ovito():
+    from adit.analysis.select import to_ovito, to_vmd
+
+    assert to_vmd("element O") == "name O" and to_ovito("element O") == 'ParticleType == "O"'
+    assert to_vmd("index 1-10,12") == "index 0 to 9 11"
+    assert to_ovito("index 1-10,12") == "((ParticleIndex >= 0 && ParticleIndex <= 9) || ParticleIndex == 11)"
+    assert to_vmd("z < 10 and O H") == "(z < 10 and name O H)"
+    assert to_ovito("z < 10 and O H") == '(Position.Z < 10 && (ParticleType == "O" || ParticleType == "H"))'
+    assert to_vmd("not (element O or index 3)") == "not (name O or index 2)"
+    assert to_ovito("not element O") == '(ParticleType == "O") == 0'
+    assert to_vmd("within 5 of element O") == "(within 5 of name O)"
+    with pytest.raises(SelectionError):
+        to_ovito("within 5 of element O")
+    with pytest.raises(SelectionError):
+        to_vmd("element O extra")
