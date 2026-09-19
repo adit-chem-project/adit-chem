@@ -107,7 +107,10 @@
     "max_iterations": 250,
     "opt_level": "normal",
     "solvation": "none",
-    "solvent": ""
+    "solvent": "",
+    "md_hmass": 4.0,
+    "md_shake": 2,
+    "md_sccacc": 2.0
   },
   "kpoints": null,
   "task": {
@@ -143,13 +146,28 @@
     "job_name": "prep"
   },
   "handoff": null,
+  "plumed": null,
   "provenance": {
-    "adit_version": "0.0.1",
-    "generated_utc": "2026-09-11T19:01:44+00:00",
+    "adit_version": "0.1.0a1",
+    "generated_utc": "2026-09-19T01:29:59+00:00",
     "python": "3.14.7",
     "ase": "3.29.0",
     "files": [],
     "generated_files": [],
+    "inputs": [
+      {
+        "name": "struct.xyz",
+        "sha256": "2e0b79acc3211606f07431a9435a83d079bb1646977bc9f90a081bd04f326024"
+      },
+      {
+        "name": "submit.sh",
+        "sha256": "700febaa1e72bab0c405cf278438ac95325c6d80cb426aeb1a50470dce4ec370"
+      },
+      {
+        "name": "xtb.inp",
+        "sha256": "33099224982d8aca4584480deb0d304f8c4c1da69eca78944bb2479806bb3fd8"
+      }
+    ],
     "code_version_file": "code_version.txt"
   }
 }

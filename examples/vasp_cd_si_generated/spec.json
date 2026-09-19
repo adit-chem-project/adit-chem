@@ -3,7 +3,10 @@
   "meta": {
     "created": "2026-09-10T07:49:48+00:00",
     "app_version": "0.0.1",
-    "comment": ""
+    "comment": "",
+    "continued_from": null,
+    "template": null,
+    "stage": null
   },
   "structure": {
     "source": "file",
@@ -50,7 +53,9 @@
     },
     "charge": 0,
     "multiplicity": 1,
-    "fixed_atoms": []
+    "fixed_atoms": [],
+    "fixed_axes": {},
+    "velocities": null
   },
   "method": {
     "code": "vasp",
@@ -65,9 +70,22 @@
     "ispin": 1,
     "magmom": null,
     "ivdw": null,
+    "ibrion": 2,
     "algo": "Normal",
     "prec": "Normal",
     "lreal": "Auto",
+    "nelmin": 0,
+    "lasph": false,
+    "lmaxmix": 0,
+    "nbands": 0,
+    "isym": null,
+    "idipol": 0,
+    "ldipol": false,
+    "dipol": "",
+    "kpoints_centering": "monkhorst-pack",
+    "magmom_by_element": {},
+    "hubbard": {},
+    "ldau_type": 2,
     "extra_incar": {
       "ISTART": 0,
       "ICHARG": 2
@@ -89,7 +107,23 @@
   },
   "task": {
     "type": "geometry_optimization",
+    "bands": {
+      "path": "",
+      "npoints": 60,
+      "empty_bands": 4
+    },
     "optimizer": "Rational",
+    "md": {
+      "ensemble": "NVT",
+      "thermostat": "berendsen",
+      "temperature_k": 300.0,
+      "timestep_fs": 1.0,
+      "steps": 1000,
+      "dump_interval": 10,
+      "coupling_time_fs": 100.0,
+      "pressure_bar": 1.0,
+      "barostat_time_fs": 1000.0
+    },
     "max_steps": 10,
     "force_tolerance_ev_per_ang": 0.0001,
     "relax_cell": "no"
@@ -102,5 +136,42 @@
     "omp_threads": 1,
     "walltime": "01:00:00",
     "job_name": "si"
+  },
+  "handoff": null,
+  "plumed": null,
+  "provenance": {
+    "adit_version": "0.1.0a1",
+    "generated_utc": "2026-09-19T01:29:46+00:00",
+    "python": "3.14.7",
+    "ase": "3.29.0",
+    "files": [],
+    "generated_files": [],
+    "inputs": [
+      {
+        "name": "INCAR",
+        "sha256": "14fbaacf7a2b62b5a3df1e1545af4dc989f1840a63c43f34e512cbafa7050b8c"
+      },
+      {
+        "name": "KPOINTS",
+        "sha256": "9b27d407a1530e48afeabb0bec3a2b3f5349c813ead5baeb6fe8cad09840df66"
+      },
+      {
+        "name": "POSCAR",
+        "sha256": "a2f27956e97ca8ee9275b2a6bc9062e5a9335376e18e67b167e65dbefce5227a"
+      },
+      {
+        "name": "make_potcar.sh",
+        "sha256": "8a92ac5d942cdc92c5bd22d4d272da3318a6e872a80683defe4d27be16705e03"
+      },
+      {
+        "name": "potcar.spec",
+        "sha256": "5c01a3fda9212203fff6184af3fd97a89b9143cc91861c6b6e2b1bb2c7e7a890"
+      },
+      {
+        "name": "submit.sh",
+        "sha256": "613a22395f566c129a0fc4dd7982ba2b2380ee67199effa38a302617d5922960"
+      }
+    ],
+    "code_version_file": "code_version.txt"
   }
 }

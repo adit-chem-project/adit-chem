@@ -1,4 +1,4 @@
-# adit が生成した CP2K の入力 (キーワードは CP2K 2026.2 の入力の説明で確かめたもの)
+# ADIT が生成した CP2K の入力 (キーワードは CP2K 2026.2 の入力の説明で確かめたもの)
 &GLOBAL
   PROJECT adit
   RUN_TYPE MD

@@ -122,8 +122,8 @@
   "handoff": null,
   "plumed": null,
   "provenance": {
-    "adit_version": "0.0.1",
-    "generated_utc": "2026-09-12T21:20:57+00:00",
+    "adit_version": "0.1.0a1",
+    "generated_utc": "2026-09-19T01:29:52+00:00",
     "python": "3.14.7",
     "ase": "3.29.0",
     "files": [
@@ -138,11 +138,11 @@
     "inputs": [
       {
         "name": "input.abi",
-        "sha256": "0c0569bb9ad343e815c1928f6b51ca8bb38274756b3db3d37568bc3e91359def"
+        "sha256": "a5b0b341c169b4fd48c14e7fc91b092b61d205583048523c70ef8cb89b179101"
       },
       {
         "name": "submit.sh",
-        "sha256": "85042d1f667c5d2430e124faa0bc80b34698cb011fa739dc66f94b904b5062ab"
+        "sha256": "6f5e0335f750904733b34027a52d2a02701e5dbcd2c7d885e42c261b398ae0b0"
       }
     ],
     "code_version_file": "code_version.txt"

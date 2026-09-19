@@ -2,7 +2,7 @@
   "input_format": "gromacs",
   "topology_file": "topol.top",
   "coordinates_file": "conf.gro",
-  "include_dir": "/home/<user>/miniforge3/envs/gromacs/share/gromacs/top",
+  "include_dir": "miniforge3/envs/gromacs/share/gromacs/top",
   "defines": {},
   "nonbonded_method": "PME",
   "nonbonded_cutoff_nm": 0.8,

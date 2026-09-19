@@ -46,16 +46,17 @@ if ensemble == "NVE" or thermostat == "andersen":
     integrator = openmm.VerletIntegrator(step_size)
     if ensemble != "NVE":
         andersen = openmm.AndersenThermostat(temperature, collision)
-        andersen.setRandomNumberSeed(S["seed"])
+        andersen.setRandomNumberSeed(S["seed"])  # 乱数の種を残して、同じ結果を出せるようにする
         system.addForce(andersen)
 elif thermostat == "langevin":
     integrator = openmm.LangevinMiddleIntegrator(temperature, collision, step_size)
     integrator.setRandomNumberSeed(S["seed"])
 elif thermostat == "nose_hoover":
-    integrator = openmm.NoseHooverIntegrator(temperature, collision, step_size)
+    integrator = openmm.NoseHooverIntegrator(temperature, collision, step_size)  # 決定論的 (乱数を使わない)
 else:
     raise SystemExit(f"unsupported thermostat: {thermostat}")
 if S["plumed_file"]:
+    # openmm-plumed の PlumedForce に、利用者が書いた PLUMED の入力をそのまま渡す
     from openmmplumed import PlumedForce
     with open(S["plumed_file"], encoding="utf-8") as handle:
         system.addForce(PlumedForce(handle.read()))
@@ -95,7 +96,7 @@ class ExtxyzReporter:
     def __init__(self, path, interval, topology):
         self._path, self._interval = path, interval
         self._symbols = [a.element.symbol if a.element is not None else None for a in topology.atoms()]
-        if any(s is None for s in self._symbols):
+        if any(s is None for s in self._symbols):  # 仮想サイト (元素の無い粒子)。黙って falsify しない
             raise SystemExit("adit-openmm: this topology has particles without an element (virtual sites); "
                              "set write_xyz_trajectory to false and use trajectory.dcd")
 
@@ -151,7 +152,7 @@ else:
 
 final_state = simulation.context.getState(getPositions=True)
 final = final_state.getPositions()
-if S["periodic"]:
+if S["periodic"]:  # NPT では箱が変わるので、最後の箱を CRYST1 に書く
     simulation.topology.setPeriodicBoxVectors(final_state.getPeriodicBoxVectors())
 with open("final.pdb", "w", encoding="utf-8") as f:
     app.PDBFile.writeFile(simulation.topology, final, f)
