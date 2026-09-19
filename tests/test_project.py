@@ -77,6 +77,28 @@ def test_validation_blocks_writing(tmp_path, cfg):
     assert not out.exists()
 
 
+@pytest.mark.parametrize("name", ["../escape.txt", "a/../../escape.txt", "/tmp/escape.txt", "C:\\escape.txt", "..\\escape.txt"])
+def test_file_names_cannot_leave_the_output_directory(tmp_path, cfg, name):
+    with pytest.raises(ProjectError, match="escape"):
+        build_project(water_spec(), cfg, output_dir=tmp_path / "calc", extra_texts={name: "x"})
+    from adit.spec import Handoff
+    (tmp_path / "prev").mkdir()
+    (tmp_path / "prev" / "charges.bin").write_bytes(b"x")
+    h = Handoff(previous_dir=str(tmp_path / "prev"), previous_task="single_point", previous_code="dftbplus",
+                files={name: "charges.bin"})
+    with pytest.raises(ProjectError, match="escape"):
+        write_project(water_spec(handoff=h), cfg, tmp_path / "calc")
+    assert not (tmp_path / "escape.txt").exists() and not (tmp_path / "calc").exists()
+
+
+def test_output_path_that_is_a_file_is_reported(tmp_path, cfg):
+    (tmp_path / "calc").write_text("not a directory\n", encoding="utf-8")
+    with pytest.raises(ProjectError) as ex:
+        write_project(water_spec(), cfg, tmp_path / "calc")
+    assert [e.location for e in ex.value.errors] == ["output_dir"]
+    assert (tmp_path / "calc").read_text(encoding="utf-8") == "not a directory\n"
+
+
 def test_unknown_profile(tmp_path, cfg):
     with pytest.raises(ProjectError) as ex:
         build_project(water_spec(runtime=Runtime(profile="mars")), cfg)

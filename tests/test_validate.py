@@ -92,6 +92,9 @@ def test_output_dir_parent_must_exist(sk_root, tmp_path):
     assert validate(water_spec(), cfg_for(sk_root), output_dir=tmp_path / "new") == []
     errs = validate(water_spec(), cfg_for(sk_root), output_dir=tmp_path / "no" / "such" / "dir")
     assert locations(errs) == ["output_dir"]
+    (tmp_path / "file").write_text("x", encoding="utf-8")
+    errs = validate(water_spec(), cfg_for(sk_root), output_dir=tmp_path / "file")
+    assert locations(errs) == ["output_dir"] and "file" in errs[0].message
 
 
 def test_skset_reads_shells(sk_root):

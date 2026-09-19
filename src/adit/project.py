@@ -134,7 +134,19 @@ def build_project(spec: CalculationSpec, cfg: Config, *, output_dir: Path | str 
                                      settings_path=cfg.source_path)
     if profile.kind != "direct":
         files.texts[TRANSFER_FILE] = _transfer_commands(profile, output_dir)
+    _check_names_stay_inside(list(files.texts) + list(files.copies))
     return files
+
+
+def _check_names_stay_inside(names: list[str]) -> None:
+    # Destination names come from generators and from handoff.files (user data): never leave output_dir.
+    from pathlib import PureWindowsPath
+
+    bad = [n for n in names if not n.strip() or Path(n).is_absolute() or PureWindowsPath(n).is_absolute()
+           or PureWindowsPath(n).drive or ".." in Path(n).parts or ".." in PureWindowsPath(n).parts]
+    if bad:
+        raise ProjectError(L(f"出力ディレクトリの外を指すファイル名は書けません: {bad}",
+                             f"file names that point outside the output directory cannot be written: {bad}"))
 
 
 def write_project(spec: CalculationSpec, cfg: Config, output_dir: Path | str, *, overwrite: bool = False,
