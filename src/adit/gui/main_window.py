@@ -152,6 +152,19 @@ class MainWindow(QMainWindow):
         self.mode_bar = ModeBar([("tab_structure", "構造"), ("settings", "計算条件"), ("tab_analysis", "解析"),
                                  ("tab_workspace", "ワークスペース")])
         self.mode_bar.changed.connect(self.set_mode)
+        # Settings mode only: show just the rows whose value differs from the code default (VS Code's "modified" filter)
+        from PySide6.QtWidgets import QToolButton
+        self.filter_changed = QToolButton(); self.filter_changed.setObjectName("mode_button"); self.filter_changed.setCheckable(True)
+        self.filter_changed.setText(L("変えた欄だけ", "Changed only")); self.filter_changed.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.filter_changed.setToolTip(L("既定 (コードの既定値) から変えた欄だけを表示します。欄の左の細い線が変えた印です (灰色は雛形の値)",
+                                         "show only the fields whose value differs from the code default; the thin bar left of a label marks them (gray: from a template)"))
+        self.filter_changed.toggled.connect(self._apply_row_filter)
+        self.mode_bar.add_trailing(self.filter_changed)
+        self.filter_changed.hide()
+        self._changes: dict = {}
+        self._template_marks: dict[str, str] = {}
+        self._hidden_by_filter: list = []
+        self.field_menu = None
 
         split = QSplitter(); split.addWidget(self.main_stack); split.addWidget(self.right_tabs); split.setSizes([1200, 580])
         split.setHandleWidth(GROUP_SPACING)
@@ -356,6 +369,8 @@ class MainWindow(QMainWindow):
         self.main_stack.setCurrentIndex(index)
         self.right_tabs.setVisible(index != self.MODE_WORKSPACE)   # the workspace uses the whole width
         self.mode_bar.set_current(index)
+        if hasattr(self, "filter_changed"):
+            self.filter_changed.setVisible(index == self.MODE_SETTINGS)
         if hasattr(self, "act_save"):
             # In the workspace Ctrl+S saves the edited file; two shortcuts on one key would cancel each other.
             self.act_save.setShortcut("" if index == self.MODE_WORKSPACE else "Ctrl+S")
@@ -459,7 +474,9 @@ class MainWindow(QMainWindow):
         except Exception:
             spec = None
         self.preview.set_origin(self.origin.describe(spec) if self.origin.active else "")
-        self._apply_template_marks(template_marks(spec) if spec is not None else {})
+        self._template_marks = template_marks(spec) if spec is not None else {}
+        self._apply_template_marks(self._template_marks)
+        self._apply_change_marks(spec)
 
     def _apply_template_marks(self, marks: dict[str, str]) -> None:
         import html
@@ -479,6 +496,114 @@ class MainWindow(QMainWindow):
             else:
                 w.setText(f"{tr(key)}  ({note})")
             self._marked.add(w)
+
+    def _apply_change_marks(self, spec) -> None:
+        from PySide6.QtWidgets import QCheckBox
+
+        from adit.defaults import changed_fields, format_value
+        from adit.gui.widgets import FieldLabel
+
+        self._changes = changed_fields(spec) if spec is not None else {}
+        for w in [*self._left.findChildren(QLabel), *self._left.findChildren(QCheckBox)]:
+            key = w.property("adit_key")
+            if not key:
+                continue
+            ch = self._changes.get(key)
+            kind = "" if ch is None else ("template" if key in self._template_marks else "user")
+            if isinstance(w, FieldLabel):
+                w.set_changed(kind)
+            elif w.property("adit_changed") != kind:
+                w.setProperty("adit_changed", kind)
+                w.style().unpolish(w); w.style().polish(w)
+            if w.property("adit_base_tip") is None:
+                w.setProperty("adit_base_tip", w.toolTip())
+            base = w.property("adit_base_tip") or ""
+            if ch is not None:
+                who = L(f"雛形 {self._template_marks[key]} の値", f"value from template {self._template_marks[key]}") if kind == "template" else L("変えた欄", "changed")
+                note = L(f"{who}: いまの値 {format_value(ch.value)}、コードの既定 {format_value(ch.default)}。右クリックで既定に戻せます",
+                         f"{who}: now {format_value(ch.value)}, code default {format_value(ch.default)}. Right-click to reset")
+                w.setToolTip((base + "\n\n" if base else "") + note)
+            elif w.toolTip() != base:
+                w.setToolTip(base)
+            if not w.property("adit_menu"):
+                w.setProperty("adit_menu", True)
+                w.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+                w.customContextMenuRequested.connect(lambda pos, w=w: self.field_context_menu(w, pos))
+        n = len(self._changes)
+        self.filter_changed.setText(L(f"変えた欄だけ ({n})", f"Changed only ({n})") if n else L("変えた欄だけ", "Changed only"))
+        if self.filter_changed.isChecked():
+            self._apply_row_filter(True)
+
+    def field_context_menu(self, w, pos):
+        from PySide6.QtWidgets import QMenu
+
+        from adit.defaults import format_value
+
+        key = w.property("adit_key")
+        ch = self._changes.get(key)
+        menu = QMenu(self)
+        if ch is not None:
+            a = menu.addAction(L(f"既定に戻す (コードの既定: {format_value(ch.default)})", f"Reset to default (code default: {format_value(ch.default)})"))
+            a.triggered.connect(lambda _c=False, key=key: self.reset_field(key))
+        else:
+            a = menu.addAction(L("既定のままです", "At the code default")); a.setEnabled(False)
+        self.field_menu = menu
+        menu.popup(w.mapToGlobal(pos))
+        return menu
+
+    def reset_field(self, key: str) -> bool:
+        from adit.defaults import with_default
+
+        ch = self._changes.get(key)
+        if ch is None:
+            return False
+        for path in ch.paths:
+            parts = path.split(".")
+            if parts[0] == "task":
+                self.task.set_task(with_default(self.task.task(), parts[1:]))
+            elif parts[0] == "kpoints":
+                self.kpoints.set_kpoints(with_default(self.kpoints.kpoints(), parts[1:]))
+            elif parts[0] == "method":
+                self.method.set_method(with_default(self.method.method(), parts[1:]))
+        self._timer.stop(); self.refresh_preview()
+        self.statusBar().showMessage(L(f"{tr(key)} を既定に戻しました", f"{tr(key)} reset to the code default"))
+        return True
+
+    def _resync_rows(self) -> None:
+        # Re-run the panels' own row logic without their change signals (the values did not change)
+        panels = [(self.task, self.task._on_type), (self.kpoints, self.kpoints._on_mode), (self.runtime, self.runtime._on_profile),
+                  (self.method.xtb, self.method.xtb._refill), (self.method.orca, self.method.orca._on_ts), (self.method.orca, self.method.orca._refill)]
+        for panel, fn in panels:
+            panel.blockSignals(True)
+            try:
+                fn()
+            finally:
+                panel.blockSignals(False)
+
+    def _apply_row_filter(self, on: bool) -> None:
+        from PySide6.QtWidgets import QFormLayout
+
+        for form, row in self._hidden_by_filter:
+            form.setRowVisible(row, True)
+        self._hidden_by_filter = []
+        self._resync_rows()
+        if not on:
+            return
+        keep = set(self._changes) | {"計算コード"}
+        anchors = {line: lab for lab, line in self._inline_errors.items()}
+        for form in self._left.findChildren(QFormLayout):
+            for row in range(form.rowCount()):
+                if not form.isRowVisible(row):
+                    continue
+                item = form.itemAt(row, QFormLayout.ItemRole.LabelRole) or form.itemAt(row, QFormLayout.ItemRole.SpanningRole)
+                w = item.widget() if item is not None else None
+                key = w.property("adit_key") if w is not None else None
+                field = form.itemAt(row, QFormLayout.ItemRole.FieldRole)
+                line = field.widget() if field is not None else None
+                if key in keep or (line in anchors and anchors[line].property("adit_key") in keep):
+                    continue
+                form.setRowVisible(row, False)
+                self._hidden_by_filter.append((form, row))
 
     def clear_origin(self) -> None:
         self.origin = PrepOrigin()

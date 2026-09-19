@@ -304,3 +304,56 @@ def test_status_bar_shows_the_keys_for_the_current_mode(app, quiet, sk_root, tmp
     assert "Ctrl+G 生成" in win.key_hints.text()
     assert win.statusBar().isAncestorOf(win.key_hints) and win.statusBar().isAncestorOf(win.run_hint)
     win.close()
+
+
+def test_changed_fields_get_a_bar_a_reset_and_a_filter(app, quiet, sk_root, tmp_path):
+    from PySide6.QtCore import QPoint
+    from PySide6.QtWidgets import QLabel
+
+    win = make_window(sk_root, tmp_path)
+    win.method.sk_set.setCurrentText("fake-1-0"); win.refresh_preview()
+    assert win._changes == {} and win.filter_changed.text() == "変えた欄だけ" and win.task.band_npoints.value() == 60
+    label = next(w for w in win._left.findChildren(QLabel) if w.property("adit_key") == "最大ステップ数 (MaxSteps)")
+    assert label.changed_kind == "" and label.contentsMargins().left() == 0
+    win.task.type.setCurrentIndex(1); win.task.max_steps.setValue(500); win.refresh_preview()
+    assert set(win._changes) == {"種類", "最大ステップ数 (MaxSteps)"} and label.changed_kind == "user"
+    assert label.contentsMargins().left() > 0 and "500" in label.toolTip() and "200" in label.toolTip()
+    assert win.filter_changed.text() == "変えた欄だけ (2)"
+    win.method.dftb.third.setChecked(True); win.refresh_preview()
+    assert win.method.dftb.third.property("adit_changed") == "user" and len(win._changes) == 3
+    # the filter leaves only the changed rows (and the code) on screen; rows hidden by the panels stay hidden
+    win.set_mode(win.MODE_SETTINGS)
+    assert not win.filter_changed.isHidden()
+    win.filter_changed.setChecked(True)
+    form = win.task._form
+
+    def shown(w) -> bool:
+        return form.isRowVisible(form.getWidgetPosition(w)[0])
+
+    def shown_key(key: str) -> bool:
+        from PySide6.QtWidgets import QCheckBox
+        lab = next(w for w in [*win._left.findChildren(QLabel), *win._left.findChildren(QCheckBox)] if w.property("adit_key") == key)
+        f, row = win._form_row(lab)
+        return f.isRowVisible(row)
+
+    assert shown(win.task.max_steps) and shown(win.task.type) and not shown(win.task.optimizer) and not shown(win.task.force_tol)
+    assert shown_key("計算コード") and shown_key("DFTB3 (ThirdOrderFull)") and not shown_key("SCC の収束判定 (SccTolerance)")
+    win.filter_changed.setChecked(False)
+    assert shown(win.task.optimizer) and shown(win.task.force_tol) and not shown(win.task.md_steps) and shown_key("SCC の収束判定 (SccTolerance)")
+    # right-click: reset to the code default
+    menu = win.field_context_menu(label, QPoint(1, 1))
+    assert menu.actions()[0].text() == "既定に戻す (コードの既定: 200)"
+    menu.actions()[0].trigger(); menu.close()
+    assert win.task.max_steps.value() == 200 and label.changed_kind == "" and "最大ステップ数 (MaxSteps)" not in win._changes
+    assert win.task.type.currentData() == "geometry_optimization"      # only that one field went back
+    menu = win.field_context_menu(label, QPoint(1, 1))
+    assert not menu.actions()[0].isEnabled(); menu.close()
+    assert win.reset_field("DFTB3 (ThirdOrderFull)") and not win.method.dftb.third.isChecked()
+    # a value that came from a group template gets the gray bar
+    spec = win.current_spec()
+    spec = spec.model_copy(update={"meta": spec.meta.model_copy(update={"template": {"name": "t1", "values": {"task.max_steps": 300}}}),
+                                   "task": spec.task.model_copy(update={"max_steps": 300})})
+    win.apply_spec(spec)
+    assert label.changed_kind == "template" and "雛形 t1" in label.toolTip()
+    win.reset_field("最大ステップ数 (MaxSteps)")
+    assert win.task.max_steps.value() == 200 and label.changed_kind == ""
