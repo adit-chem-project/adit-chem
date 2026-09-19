@@ -76,8 +76,8 @@ class AbinitGenerator(InputGenerator):
                     "力の収束基準 (tolmxf) は 0 より大きい値にしてください", "the force tolerance (tolmxf) must be greater than 0")))
             if m.tolerance == "toldfe":
                 errs.append(ValidationError("method.tolerance", L(
-                    "ABINIT は構造最適化 (ionmov) で toldfe を受け付けません。toldff・tolrff・tolvrs から選んでください",
-                    "ABINIT does not accept toldfe with a structural optimization (ionmov); choose toldff, tolrff or tolvrs")))
+                    "ABINIT は構造最適化 (ionmov) で toldfe を受け付けません。toldff・tolrff・tolvrs (または tolwfr) から選んでください",
+                    "ABINIT does not accept toldfe with a structural optimization (ionmov); choose toldff, tolrff or tolvrs (or tolwfr)")))
         if not m.tolerance:
             errs.append(ValidationError("method.tolerance", L(
                 "SCF の収束の種類 (toldfe / toldff / tolrff / tolvrs / tolwfr) を 1 つ選んでください。ABINIT は 1 つだけ受け取ります",
