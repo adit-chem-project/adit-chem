@@ -58,6 +58,8 @@ def test_compare_energies_balance_and_conditions(tmp_path):
     assert Path(res.figures["compare_energy"]).is_file()
     js = json.loads((tmp_path / "compare_summary.json").read_text(encoding="utf-8"))
     assert js["reactions"][2]["imbalance"] == "H:+2 O:+1"
+    assert js["files"]["runs"] == "compare_runs.csv" and js["figures"]["compare_energy"] == "compare_energy.png"
+    assert all(not Path(r["path"]).is_absolute() for r in js["runs"])
     head = (tmp_path / "compare_runs.csv").read_text(encoding="utf-8").splitlines()[0]
     assert "method.code" in head and "task.type" in head
     from adit.project import load_project

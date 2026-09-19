@@ -289,15 +289,30 @@ def analyze_compare(base: Path | str, reactions: list[Reaction] | None = None) -
                         differing=differing_all, partial=partial_all, notes=notes)
     _write(base, res)
     _plot(base, res)
+    # the directory is copied to other machines: paths in the file are relative to it
+    rel = lambda v: _relative_to(v, base)
     (base / "compare_summary.json").write_text(json.dumps({
-        "runs": res.runs, "reactions": res.reactions, "differing": res.differing, "partial": res.partial,
-        "n_differing": len(res.differing), "n_partial": len(res.partial), "files": res.files, "figures": res.figures, "notes": res.notes,
+        "runs": rel(res.runs), "reactions": res.reactions, "differing": res.differing, "partial": res.partial,
+        "n_differing": len(res.differing), "n_partial": len(res.partial), "files": rel(res.files), "figures": rel(res.figures), "notes": res.notes,
         "units": {"energy": "eV", "kj_mol_per_ev": EV_KJ_MOL, "kcal_mol_per_ev": EV_KCAL_MOL},
         "rule": L("違う = その項目を持つ計算のあいだで値が 2 種類以上。一部だけ = その項目を持たない計算がある",
                   "differing = two or more distinct values among runs that have the setting; partial = some runs do not have the setting"),
     }, ensure_ascii=False, indent=2, default=str) + "\n", encoding="utf-8")
     res.files["summary"] = str(base / "compare_summary.json")
     return res
+
+
+def _relative_to(obj, base: Path):
+    if isinstance(obj, dict):
+        return {k: _relative_to(v, base) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_relative_to(v, base) for v in obj]
+    if isinstance(obj, str) and obj and Path(obj).is_absolute():
+        try:
+            return Path(obj).resolve().relative_to(Path(base).resolve()).as_posix()
+        except ValueError:
+            return obj
+    return obj
 
 
 def _cell(v) -> str:
