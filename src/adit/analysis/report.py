@@ -698,7 +698,7 @@ def run_analysis(run_dir: Path | str, opts: AnalysisOptions | None = None) -> An
                 "note": L("原子 1 個ごとに、時間原点を全部使った MSD を直線に当てはめた D です。"
                           "速い・遅いの判定はしていません (1 原子の統計は全体より悪く、ばらつきます)。",
                           "D per atom, from a straight-line fit to its own multiple-time-origin MSD. "
-                          "No fast/slow judgement is made; single-atom statistics are much noisier than the average.")}
+                          "No fast/slow judgment is made; single-atom statistics are much noisier than the average.")}
             if each["d_cm2_s"]:
                 good = [v for v in each["d_cm2_s"] if v is not None]
                 if good:
@@ -1606,7 +1606,7 @@ def _add_geometry_series(res: AnalysisResult, data: RunData, frames, opts: Analy
         res.notes.append(L(f"RMSD (基準は {ref + 1} 番目のフレーム、Kabsch で重ね合わせ): 最後の値 {values[-1]:.3f} Å、"
                            f"最大 {values.max():.3f} Å (落ち着いたかどうかは判定していません)",
                            f"RMSD (reference: frame {ref + 1}, after a Kabsch superposition): last {values[-1]:.3f} Å, "
-                           f"largest {values.max():.3f} Å. No judgement about equilibration is made"))
+                           f"largest {values.max():.3f} Å. No judgment about equilibration is made"))
     if opts.rmsf:
         got = G.rmsf(frames, idx)
         res.tables["rmsf"] = got

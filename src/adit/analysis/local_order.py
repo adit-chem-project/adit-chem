@@ -47,7 +47,7 @@ def coordination(atoms: Atoms, cutoff: float, indices=None) -> dict:
             "note": L("カットオフ以内にある原子の数です。カットオフは利用者が指定した値で、"
                       "ADIT は既定値を持ちません (第一配位圏の切り方は化学的な判断です)。",
                       "the number of atoms within the cutoff; the cutoff is the value you gave. "
-                      "ADIT has no default (where to cut the first coordination shell is a chemical judgement).")}
+                      "ADIT has no default (where to cut the first coordination shell is a chemical judgment).")}
 
 
 def centrosymmetry(atoms: Atoms, n_neighbors: int = 12, indices=None) -> dict:

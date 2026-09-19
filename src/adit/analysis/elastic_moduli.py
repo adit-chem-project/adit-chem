@@ -51,7 +51,7 @@ class Moduli:
                           "材料の良し悪しの判定ではありません。",
                           "Voigt (uniform strain) and Reuss (uniform stress) bound the result and Hill is their average "
                           "(Hill 1952). Young's modulus and Poisson's ratio come from the Hill values. "
-                          "born_stability only states whether all eigenvalues of C are positive; it is not a judgement "
+                          "born_stability only states whether all eigenvalues of C are positive; it is not a judgment "
                           "about the material.")}
 
 
@@ -89,7 +89,7 @@ def summary_lines(m: Moduli) -> list[str]:
           L(f"ヤング率 E = {m.young:.1f} GPa、ポアソン比 ν = {m.poisson:.3f}、K/G = {m.k_hill / m.g_hill:.2f} "
             "(Hill の値から。良し悪しは判定していません)",
             f"Young's modulus E = {m.young:.1f} GPa, Poisson's ratio nu = {m.poisson:.3f}, K/G = {m.k_hill / m.g_hill:.2f} "
-            "(from the Hill values; no judgement is made)")]
+            "(from the Hill values; no judgment is made)")]
     if m.stable is False:
         out.append(L("弾性定数の行列に 0 以下の固有値があります (Born の安定条件を満たしません)。"
                      "計算の設定か構造を確かめてください",

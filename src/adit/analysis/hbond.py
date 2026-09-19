@@ -94,4 +94,4 @@ def count_series(frames, donor_acceptor_A: float, angle_deg: float, donors=DEFAU
                       "条件は利用者が入れた値で、ADIT は既定値を持ちません。"
                       "本数が多い・少ないの判定もしていません。",
                       "the number of D-H...A pairs that satisfy the distance and angle you gave; "
-                      "ADIT has no default criteria and makes no judgement about the count.")}
+                      "ADIT has no default criteria and makes no judgment about the count.")}

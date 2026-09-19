@@ -1,4 +1,4 @@
-"""Atom selection language: the part of the MDAnalysis syntax that contains no judgement."""
+"""Atom selection language: the part of the MDAnalysis syntax that contains no judgment."""
 
 from __future__ import annotations
 

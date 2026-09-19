@@ -408,7 +408,7 @@ HELP: dict[str, Help] = {
     "密度分布を取る軸": Help(O, "密度分布を取る軸です。界面が a 面や b 面に平行な系では c 以外を選びます。",
          "The axis along which the density profile is taken. Choose something other than c when the interface is normal to a or b."),
     "配位数のカットオフ [Å]": Help(O, "この距離より近い相手を数えて、原子ごとの配位数にします。どこで切るかは化学的な判断なので、ADIT は既定値を持ちません。",
-         "Counts neighbors closer than this distance for each atom. Where to cut is a chemical judgement, so ADIT has no default."),
+         "Counts neighbors closer than this distance for each atom. Where to cut is a chemical judgment, so ADIT has no default."),
     "中心対称性の相手の数": Help(O, "中心対称性パラメータを出します。完全な結晶で 0 になります。どの値が欠陥かは判定しません。",
          "Computes the centrosymmetry parameter, which is zero for a perfect crystal. ADIT does not judge which value means a defect."),
     "Steinhardt q4・q6 のカットオフ [Å]": Help(O, "Steinhardt の秩序変数 q4 と q6 を出します。どの値がどの構造かは言いません (FCC は 0.19 と 0.57 が文献値です)。",

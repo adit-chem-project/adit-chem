@@ -108,7 +108,7 @@ def main(argv: list[str] | None = None) -> int:
         "coordination number per atom within the cutoff in Å (ADIT has no default)"))
     ap.add_argument("--centrosymmetry", nargs="?", const=12, type=int, default=0, metavar="N", help=L(
         "中心対称性パラメータを出します (相手の数。FCC なら 12、BCC なら 8)。欠陥かどうかは判定しません",
-        "centrosymmetry parameter with N neighbors (12 for FCC, 8 for BCC); no defect judgement is made"))
+        "centrosymmetry parameter with N neighbors (12 for FCC, 8 for BCC); no defect judgment is made"))
     ap.add_argument("--steinhardt", type=float, default=0.0, metavar="Å", help=L(
         "Steinhardt の q4・q6 を出します (カットオフ [Å])。どの値がどの構造かは言いません",
         "Steinhardt q4 and q6 within the cutoff in Å; ADIT does not say which structure a value means"))
@@ -207,7 +207,7 @@ def main(argv: list[str] | None = None) -> int:
         "原子ごとの揺らぎ RMSF を出します", "per-atom fluctuation (RMSF)"))
     ap.add_argument("--msd-per-atom", action="store_true", help=L(
         "原子 1 個ごとの拡散係数も出します (イオン伝導体で「どの原子が動くか」を見るとき)。速い・遅いの判定はしません",
-        "also report a diffusion coefficient for each atom (useful for ion conductors); no fast/slow judgement is made"))
+        "also report a diffusion coefficient for each atom (useful for ion conductors); no fast/slow judgment is made"))
     ap.add_argument("--vacf", action="store_true", help=L(
         "速度自己相関 (VACF) と振動スペクトルを出します (軌跡に速度が無ければ座標の差分で作ります)",
         "compute the velocity autocorrelation (VACF) and the vibrational spectrum (velocities are made by finite differences if absent)"))
