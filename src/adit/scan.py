@@ -172,6 +172,9 @@ def write_scan(spec: CalculationSpec, cfg, out_dir: Path | str, scan: Scan | lis
         for sc, v in zip(scans, combo):
             one = apply_value(one, sc.path, v)
         specs.append((combo, one))
+    from adit.batch import check_output
+
+    check_output(out, overwrite)
     out.mkdir(parents=True, exist_ok=True)
     names = ["__".join(sc.dir_name(v) for sc, v in zip(scans, combo)) for combo, _ in specs]
     for name, (_, s) in zip(names, specs):

@@ -13,9 +13,25 @@ from adit.spec import CalculationSpec
 from adit.lang import L
 from adit.validate_types import ValidationError
 
-__all__ = ["ValidationError", "validate", "MIN_DISTANCE"]
+__all__ = ["ValidationError", "validate", "output_dir_errors", "MIN_DISTANCE"]
 
 MIN_DISTANCE = 0.5
+
+
+def output_dir_errors(output_dir: Path | str) -> list[ValidationError]:
+    target = Path(output_dir).expanduser()
+    parent = target.resolve().parent
+    if target.exists() and not target.is_dir():
+        return [ValidationError("output_dir", L(
+            f"出力先がディレクトリではありません (同じ名前のファイルがあります): {target}",
+            f"the output path is not a directory (a file with that name exists): {target}"))]
+    if not parent.is_dir():
+        return [ValidationError("output_dir", L(
+            f"親ディレクトリがありません: {parent} (打ち間違いを防ぐため、ADIT は途中のディレクトリを勝手に作りません。"
+            f"`mkdir -p {parent}` で作ってから、もう一度実行してください)",
+            f"the parent directory does not exist: {parent} (ADIT does not create intermediate directories, to catch typos; "
+            f"create it with `mkdir -p {parent}` and run again)"))]
+    return []
 _WALLTIME = re.compile(r"^\d{1,3}:\d{2}:\d{2}$")
 _PLACEHOLDER = re.compile(r"<[^<>\n]*[^\x00-\x7f][^<>\n]*>|<[A-Za-z][A-Za-z0-9_-]*(?: [A-Za-z0-9_-]+)+>|/path/to\b")
 
@@ -33,18 +49,7 @@ def validate(spec: CalculationSpec, cfg: Config, *, output_dir: Path | str | Non
         from adit.codes.plumed import validate_plumed
         errs += validate_plumed(spec)
     if output_dir is not None:
-        target = Path(output_dir).expanduser()
-        parent = target.resolve().parent
-        if target.exists() and not target.is_dir():
-            errs.append(ValidationError("output_dir", L(
-                f"出力先がディレクトリではありません (同じ名前のファイルがあります): {target}",
-                f"the output path is not a directory (a file with that name exists): {target}")))
-        elif not parent.is_dir():
-            errs.append(ValidationError("output_dir", L(
-                f"親ディレクトリがありません: {parent} (打ち間違いを防ぐため、ADIT は途中のディレクトリを勝手に作りません。"
-                f"`mkdir -p {parent}` で作ってから、もう一度実行してください)",
-                f"the parent directory does not exist: {parent} (ADIT does not create intermediate directories, to catch typos; "
-                f"create it with `mkdir -p {parent}` and run again)")))
+        errs += output_dir_errors(output_dir)
     if spec.runtime.profile.strip() and spec.runtime.profile not in cfg.profiles:
         errs.append(ValidationError("runtime.profile", L(f"プロファイル {spec.runtime.profile!r} が設定ファイルにありません", f"profile {spec.runtime.profile!r} is not in the settings file")))
     elif spec.runtime.profile in cfg.profiles:
@@ -268,7 +273,7 @@ def _check_periodic(spec: CalculationSpec) -> list[ValidationError]:
         cell = np.asarray(st.atoms.cell, dtype=float)
         if abs(np.linalg.det(cell)) < 1e-6:
             errs.append(ValidationError("structure.atoms", L("周期系なのに格子ベクトルが退化しています (体積 0)", "periodic system but the cell is degenerate (zero volume)")))
-        elif kp is not None and (kp.mode != "density" or kp.density > 0) and all(k >= 1 for k in kp.mesh):
+        elif kp is not None and (kp.mode != "density" or kp.density > 0) and (kp.mode != "mesh" or all(k >= 1 for k in kp.mesh)):
             mesh = kp.resolved_mesh(cell)
             total = int(np.prod([float(k) for k in mesh]))
             if total > MAX_KPOINTS:

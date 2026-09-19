@@ -122,3 +122,33 @@ def test_collect_scan_reads_final_energies(tmp_path):
     assert rows[0]["energy_ev"] and rows[0]["energy_ev"] == rows[1]["energy_ev"] and rows[2]["energy_ev"] == "" and rows[2]["note"]
     assert rows[0]["diff_from_last_mev"] == "0.000"
     assert list(csv.DictReader(open(out / "scan_energies.csv", encoding="utf-8")))[2]["dir"] == "x_3"
+
+
+def test_write_scan_checks_the_output_directory_before_creating_anything(sk_root, tmp_path):
+    from adit.project import OutputNotEmpty, ProjectError
+    spec = water_spec(method=DftbMethod(sk_set="fake-1-0"))
+    scan = parse_scan("method.max_scc_iterations=50,100")
+    with pytest.raises(ProjectError) as ex:
+        write_scan(spec, cfg_for(sk_root), tmp_path / "no" / "such" / "scan", scan)
+    assert [e.location for e in ex.value.errors] == ["output_dir"] and not (tmp_path / "no").exists()
+    out = tmp_path / "scan"
+    write_scan(spec, cfg_for(sk_root), out, scan)
+    before = (out / "scan.json").read_text(encoding="utf-8")
+    with pytest.raises(OutputNotEmpty):
+        write_scan(spec, cfg_for(sk_root), out, parse_scan("method.max_scc_iterations=70,80"))
+    assert (out / "scan.json").read_text(encoding="utf-8") == before
+    write_scan(spec, cfg_for(sk_root), out, parse_scan("method.max_scc_iterations=70,80"), overwrite=True)
+    assert json.loads((out / "scan.json").read_text(encoding="utf-8"))["values"] == ["70", "80"]
+
+
+def test_batch_check_output_reports_a_missing_parent_and_a_file(tmp_path):
+    from adit.batch import check_output
+    from adit.project import ProjectError
+    with pytest.raises(ProjectError) as ex:
+        check_output(tmp_path / "no" / "such" / "dir", False)
+    assert [e.location for e in ex.value.errors] == ["output_dir"]
+    (tmp_path / "file").write_text("x", encoding="utf-8")
+    with pytest.raises(ProjectError):
+        check_output(tmp_path / "file", True)
+    check_output(tmp_path / "new", False)
+    assert not (tmp_path / "new").exists()
