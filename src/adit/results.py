@@ -100,9 +100,11 @@ def not_run_yet(run_dir: Path | str) -> bool:
     for key in ("inputs", "files", "generated_files"):
         known |= {item.get("name", "") for item in (prov.get(key) or [])}
     if not prov:
+        # Without provenance only an ADIT-made directory (spec.json present) can be judged; other
+        # directories are left to the readers so that foreign output names are not reported as "not run".
         outputs = [p for p in d.iterdir() if p.is_file() and p.name in
                    ("output.log", "log.lammps", "adit.log", "results.json", "detailed.out", "input.abo")]
-        return False if outputs else False
+        return (d / "spec.json").is_file() and not outputs
     rest = [p for p in d.rglob("*") if p.is_file()
             and p.relative_to(d).as_posix() not in known
             and not p.relative_to(d).as_posix().startswith("analysis/")]
