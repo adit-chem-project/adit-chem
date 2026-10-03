@@ -1,4 +1,4 @@
-"""Block diffusion estimates retain frames and the main absolute lag window."""
+"""Block diffusion estimates: every frame is used; the default fits each block over a fraction of its own lag, an explicit --msd-fit window is applied as the same absolute range."""
 
 import numpy as np
 import pytest
@@ -28,14 +28,27 @@ def test_blocks_use_every_frame_and_same_absolute_fit_window():
     assert result["estimate_for"] == "mean_of_block_D"
 
 
-@pytest.mark.parametrize("fit_fs", [None, (10.0, 50.0)])
-def test_short_blocks_do_not_rescale_or_fallback_from_main_window(fit_fs):
+def test_default_blocks_use_the_fraction_of_their_own_lag():
     pos = (np.arange(21, dtype=float) ** 2)[:, None, None] * np.ones((1, 1, 3))
-    result = compute.msd_analysis(pos, None, None, symbols=["H"], dt_fs=5,
-                                  remove_drift=False, fit_fs=fit_fs)
+    result = compute.msd_analysis(pos, None, None, symbols=["H"], dt_fs=5, remove_drift=False)
     assert result["D_cm2_s"] is not None
     assert result["fit_range_fs"] == [10.0, 50.0]
     error = result["error"]
+    assert error["fit_mode"] == "fraction_of_each_block" and error["fit_fraction"] == [0.1, 0.5]
+    assert error["fit_range_fs"] is None and error["reason_code"] is None
+    assert error["d_err_cm2_s"] is not None and len(error["d_blocks_cm2_s"]) == 5
+    # 5-frame block: 10-50 % of 20 fs; 4-frame blocks fall back to lag 1..max because the window holds one point
+    assert [b["fit_range_fs"] for b in error["blocks"]] == [[2.0, 10.0], [5.0, 15.0], [5.0, 15.0], [5.0, 15.0], [5.0, 15.0]]
+
+
+def test_explicit_window_is_not_rescaled_or_narrowed_for_short_blocks():
+    pos = (np.arange(21, dtype=float) ** 2)[:, None, None] * np.ones((1, 1, 3))
+    result = compute.msd_analysis(pos, None, None, symbols=["H"], dt_fs=5,
+                                  remove_drift=False, fit_fs=(10.0, 50.0))
+    assert result["D_cm2_s"] is not None
+    assert result["fit_range_fs"] == [10.0, 50.0]
+    error = result["error"]
+    assert error["fit_mode"] == "same_absolute_range"
     assert error["d_err_cm2_s"] is None
     assert error["d_blocks_cm2_s"] == []
     assert error["reason_code"] == "fit_range_not_available_in_all_blocks"

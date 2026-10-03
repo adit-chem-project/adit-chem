@@ -102,11 +102,13 @@ def read_log_degeneracy(path: Path | str) -> dict[int, int]:
     out: dict[int, int] = {}
     for raw in lines[heads[-1] + 1:]:
         w = raw.split()
-        if not w:
-            break
-        try:
-            nums = [float(x) for x in w]
-        except ValueError:
+        nums: list[float] = []
+        for x in w:
+            try:
+                nums.append(float(x))
+            except ValueError:
+                break
+        if not nums:
             break
         # rows that start a conformer group carry: idx Erel Etot weight group_weight set degen [origin]
         if len(nums) >= 7:

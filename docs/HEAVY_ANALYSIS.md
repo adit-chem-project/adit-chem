@@ -37,7 +37,13 @@ adit-analyze run/ --msd --vanhove              # 見積もって、重ければ 
 bash run/msd_run.sh                             # 人が実行する (クラスタならジョブとして投入)
 adit-analyze run/ --msd --vanhove              # 2 回目。msd_vanhove.json を読んで図にする
 adit-analyze run/ --msd --vanhove --vanhove-here   # 小さい系なら、その場で計算してもよい
+adit-analyze run/ --write-msd-job              # 見積もらずにファイルだけ置く (既定の置き場所は run/)
 ```
+
+`msd_run.sh` の中身は出力から埋めます: 軌跡のファイル名 (geo_end.xyz、xtb.trj、XDATCAR など)、1 フレームの時間
+(`--dt`、読めなければ穴のまま残してその旨をコメントに書く)、そして軌跡のファイルにセルが書かれていない周期系
+(DFTB+ の geo_end.xyz など) では最後のフレームのセルを `msd_cell.txt` (TV の行 3 本) に書いて `--cell` で渡します。
+セルが無いと `msd_worker.py` は境界越えを巻き戻せないので、JSON の `warnings` にその旨を書きます。
 
 `msd_worker.py` は **numpy と scipy だけで動きます** (ADIT を import しません。`handoff.py` と同じ決まりで、
 試験 `tests/test_heavy_setup.py` が見張っています)。クラスタに ADIT が入っていなくても走ります。
@@ -62,6 +68,8 @@ python msd_worker.py trajectory.extxyz --dt 10 --species Na
 | `vanhove.d_direct_A2_fs` | 同じ変位から ⟨r²⟩/(6τ) で出した D(τ)。ガウスなら上と一致します |
 | `vanhove.alpha2` | 非ガウス因子 α₂ = 3⟨r⁴⟩/(5⟨r²⟩²) − 1 (Rahman 1964)。0 ならガウス |
 | `vanhove.truncated_from_fs` | 最小像の上限で変位が頭打ちになり始めた遅れ時間 (なければ null) |
+| `cell_A` | 巻き戻しに使ったセル [Å] (3 × 3。無ければ null) |
+| `warnings` | 注意の文。セルが無く巻き戻していないとき (周期系なら `--cell` でセルを渡す) |
 
 **最小像の頭打ちに注意。**`--vanhove-displacement mic` (既定) は折り返した座標の最小像を使うので、
 **セルの最小の幅の半分**より大きい変位を測れません。変位の 1 % がその 9 割を超えたら、その遅れ時間を

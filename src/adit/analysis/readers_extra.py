@@ -271,7 +271,7 @@ def read_cp2k(d: Path) -> RunData:
             pbc = [c in per for c in "XYZ"]
     log = d / "output.log"
     energies = []
-    lines = list(_lines(log)) if log.stat().st_size < 64 * 2**20 else None if log.is_file() else []
+    lines = [] if not log.is_file() else (list(_lines(log)) if log.stat().st_size < 64 * 2**20 else None)
     if lines is None:
         energies = [float(l.split()[-1]) * HARTREE_EV for l in _lines(log) if "ENERGY| Total FORCE_EVAL" in l]
         lines = []

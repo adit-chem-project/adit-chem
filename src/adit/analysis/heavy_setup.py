@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
-import shutil
 from pathlib import Path
+
+import numpy as np
 
 from adit.lang import L
 
 WORKER_FILE = "msd_worker.py"
 JOB_FILE = "msd_run.sh"
 RESULT_FILE = "msd_vanhove.json"
+CELL_FILE = "msd_cell.txt"
 
 SECONDS_PER_DISPLACEMENT = 1.0e-7
 SECONDS_PER_TAU_FIT = 5.0e-3
@@ -32,16 +34,32 @@ def is_heavy(frames: int, atoms: int, taus: int = 100, limit_seconds: float = 60
     return estimate(frames, atoms, taus)["seconds"] > limit_seconds
 
 
-def write_job(run_dir: Path | str, *, dt_fs: float, species: str | None = None, taus: int = 100,
+def worker_source() -> str:
+    # A frozen executable keeps modules in an archive, so read the worker as package data first.
+    try:
+        from importlib.resources import files
+
+        return files("adit.analysis").joinpath(WORKER_FILE).read_text(encoding="utf-8")
+    except Exception:
+        return (Path(__file__).resolve().parent / WORKER_FILE).read_text(encoding="utf-8")
+
+
+def write_job(run_dir: Path | str, *, dt_fs: float | None, species: str | None = None, taus: int = 100,
               displacement: str = "mic", natoms: int = 0, trajectory: str = "", cell_file: str = "",
-              profile=None, spec=None) -> list[Path]:
+              cell=None, profile=None, spec=None) -> list[Path]:
     """Write the files for a heavy analysis into a run directory and return the written paths. With profile and spec the job script is for a cluster; otherwise it runs locally. Nothing is submitted."""
     out = Path(run_dir).expanduser()
     out.mkdir(parents=True, exist_ok=True)
-    worker_src = Path(__file__).resolve().parent / WORKER_FILE
-    shutil.copy2(worker_src, out / WORKER_FILE)
-    args = [WORKER_FILE, trajectory or "<軌跡のファイル>", f"--dt {dt_fs:g}", f"--taus {taus}",
-            f"--displacement {displacement}"]
+    (out / WORKER_FILE).write_text(worker_source(), encoding="utf-8", newline="\n")
+    written = [out / WORKER_FILE]
+    if cell is not None and not cell_file:
+        rows = np.asarray(cell, dtype=float).reshape(3, 3)
+        (out / CELL_FILE).write_text("".join(f"TV {v[0]:.10f} {v[1]:.10f} {v[2]:.10f}\n" for v in rows), encoding="utf-8", newline="\n")
+        cell_file = CELL_FILE
+        written.append(out / CELL_FILE)
+    dt_known = dt_fs is not None and dt_fs > 0
+    args = [WORKER_FILE, trajectory or "<軌跡のファイル>", f"--dt {dt_fs:g}" if dt_known else "--dt <1フレームの時間 fs>",
+            f"--taus {taus}", f"--displacement {displacement}"]
     if natoms:
         args.append(f"--natoms {natoms}")
     if cell_file:
@@ -57,10 +75,17 @@ def write_job(run_dir: Path | str, *, dt_fs: float, species: str | None = None, 
           f"# It writes {RESULT_FILE}; plot it with adit-analyze <this directory>."),
         L("# 要るもの: numpy と scipy だけ (ADIT は要りません)。",
           "# Requirements: numpy and scipy only (ADIT is not needed)."),
-        'cd "$(dirname "$0")"',
-        command,
-        "",
     ]
+    if not trajectory:
+        body.append(L("# <軌跡のファイル> を、この場所にある軌跡の名前に置き換えてください。",
+                      "# Replace <軌跡のファイル> with the name of the trajectory file in this directory."))
+    if not dt_known:
+        body.append(L("# 1 フレームの時間 [fs] が出力から読めなかったので --dt は穴です。値を入れてから実行してください。",
+                      "# The time per frame in fs could not be read from the output; fill in --dt before running."))
+    if cell_file == CELL_FILE:
+        body.append(L(f"# {CELL_FILE} は ADIT が最後のフレームのセルを書いたもの (TV の行が 3 本)。軌跡にセルが無くても境界越えを巻き戻せます。",
+                      f"# {CELL_FILE} holds the cell of the last frame (three TV rows), so boundary crossings are unwrapped even when the trajectory has no cell."))
+    body += ['cd "$(dirname "$0")"', command, ""]
     text = "\n".join(body)
     if profile is not None and spec is not None:
         from adit.scripts.render import render_submit
@@ -75,7 +100,7 @@ def write_job(run_dir: Path | str, *, dt_fs: float, species: str | None = None, 
         path.chmod(0o755)
     except OSError:
         pass
-    return [out / WORKER_FILE, path]
+    return written + [path]
 
 
 def readme_lines(estimate_info: dict) -> list[str]:

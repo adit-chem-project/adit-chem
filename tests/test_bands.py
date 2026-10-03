@@ -72,8 +72,8 @@ def test_read_vasp_eigenval(tmp_path):
     from adit.analysis.bands import _vasp_eigenval
     p = tmp_path / "EIGENVAL"
     p.write_text("h\nh\nh\nh\nh\n  8  2  3\n\n 0.0 0.0 0.0 0.5\n 1 -5.0 1.0\n 2 6.0 0.0\n 3 8.0 0.0\n\n 0.5 0.0 0.5 0.5\n 1 -4.0 1.0\n 2 5.0 0.0\n 3 7.0 0.0\n", encoding="utf-8")
-    e = _vasp_eigenval(p)
-    assert np.allclose(e, [[-5, 6, 8], [-4, 5, 7]])
+    up, down = _vasp_eigenval(p)
+    assert np.allclose(up, [[-5, 6, 8], [-4, 5, 7]]) and down is None
 
 
 @pytest.mark.skipif(not (DFTB and (REAL_SK_ROOT / "mio-ext" / "README").is_file()), reason="dftb+ か mio-ext が無い")

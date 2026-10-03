@@ -35,8 +35,10 @@ class HydrogenBondError(AditValueError):
 
 def criteria_note() -> str:
     parts = [f"{v['source']}" for v in KNOWN_CRITERIA.values()]
-    return L("よく使われる値: " + " / ".join(parts) + "。ADIT は既定値を持ちません (どれを採るかは利用者が決めます)",
-             "commonly used criteria: " + " / ".join(parts) + ". ADIT has no default; the choice is yours")
+    return L("よく使われる値: " + " / ".join(parts) + "。GROMACS の角度は H–D–A (ADIT の D–H···A とは定義が違う) なので、"
+             "同じ数値を入れても同じ本数にはなりません。ADIT は既定値を持ちません (どれを採るかは利用者が決めます)",
+             "commonly used criteria: " + " / ".join(parts) + ". GROMACS defines the angle as H-D-A (not D-H...A as ADIT does), "
+             "so the same numbers do not give the same count. ADIT has no default; the choice is yours")
 
 
 def _check_criteria(donor_acceptor_A: float, angle_deg: float) -> None:

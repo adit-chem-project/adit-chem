@@ -61,8 +61,12 @@ def _energies(freqs_cm1) -> list[complex]:
     return [complex(f * units.invcm) if f >= 0 else complex(0, -f * units.invcm) for f in freqs_cm1]
 
 
+LOW_MODE_CM1 = 50.0
+
+
 def _order(e: list[complex]) -> list[int]:
-    return sorted(range(len(e)), key=lambda i: (e[i] ** 2).real)
+    # by |omega|, so an imaginary mode of large magnitude stays among the modes used
+    return sorted(range(len(e)), key=lambda i: abs(e[i]))
 
 
 def _to_cm1(e: complex) -> float:
@@ -97,19 +101,29 @@ def compute_thermo(freqs_cm1: list[float], atoms: Atoms | None, energy_ev: float
                                 f"not enough modes ({max(nv, 0)} needed for {o.geometry} with {n} atoms, {len(e)} read)")]
             return out
         use = idx[len(idx) - nv:] if nv else []
-        rule = L(f"振動数の 2 乗の大きい順に {nv} 本 ({o.geometry}、{n} 原子)", f"the {nv} modes with the largest squared frequency ({o.geometry}, {n} atoms)")
+        rule = L(f"振動数の絶対値の大きい順に {nv} 本 (虚振動も絶対値で数える。{o.geometry}、{n} 原子)",
+                 f"the {nv} modes with the largest |frequency| (imaginary modes count by magnitude; {o.geometry}, {n} atoms)")
     else:
         if o.exclude_lowest > len(e):
             out["reasons"] = [L(f"除く本数 {o.exclude_lowest} が振動の本数 {len(e)} より多い", f"exclude_lowest {o.exclude_lowest} exceeds the number of modes {len(e)}")]
             return out
         use = idx[o.exclude_lowest:]
-        rule = L(f"振動数の 2 乗の小さい方から {o.exclude_lowest} 本を除いた {len(use)} 本", f"{len(use)} modes after excluding the {o.exclude_lowest} with the smallest squared frequency")
+        rule = L(f"振動数の絶対値の小さい方から {o.exclude_lowest} 本を除いた {len(use)} 本",
+                 f"{len(use)} modes after excluding the {o.exclude_lowest} with the smallest |frequency|")
     sel = [e[i] for i in sorted(use)]
     imag = [x for x in sel if x.imag != 0]
     zero = [x for x in sel if x.imag == 0 and abs(x.real) < 1e-12]
+    low = [x for x in sel if x.imag == 0 and 1e-12 <= x.real < LOW_MODE_CM1 * units.invcm]
     out.update(mode_rule=rule, n_modes_used=len(sel), modes_used_cm1=[_to_cm1(x) for x in sel],
                n_imaginary_used=len(imag), imaginary_cm1_used=[_to_cm1(x) for x in imag],
-               excluded_cm1=[_to_cm1(e[i]) for i in idx if i not in set(use)])
+               excluded_cm1=[_to_cm1(e[i]) for i in idx if i not in set(use)], warnings=[])
+    if low:
+        out["warnings"].append(L(
+            f"使うモードに {LOW_MODE_CM1:g} cm⁻¹ 未満の振動が {len(low)} 本あります ({', '.join(f'{_to_cm1(x):.1f}' for x in low)} cm⁻¹)。"
+            "並進・回転の残りか、とても柔らかい振動です (エントロピーに大きく効きます)",
+            f"{len(low)} mode(s) below {LOW_MODE_CM1:g} cm^-1 among the modes used ({', '.join(f'{_to_cm1(x):.1f}' for x in low)} cm^-1); "
+            "a leftover translation/rotation or a very soft mode (it dominates the entropy)"))
+        out["reasons"] = list(out["warnings"])
     if imag and o.imaginary is None:
         out["reasons"] = [L(f"使うモードに虚振動が {len(imag)} 本あります ({', '.join(f'{_to_cm1(x):.1f}' for x in imag)} cm⁻¹)。"
                             "除いて計算するか (ignore)、計算しないか (stop) を選んでください",
@@ -124,6 +138,12 @@ def compute_thermo(freqs_cm1: list[float], atoms: Atoms | None, energy_ev: float
                             f"{len(zero)} mode(s) at 0 cm^-1 among the modes used (the entropy diverges; revisit the number of excluded modes)")]
         return out
     ign = bool(imag) and o.imaginary == "ignore"
+    needed = {"quasi_harmonic": "QuasiHarmonicThermo", "msrrho": "MSRRHOThermo"}.get(o.model)
+    if needed and getattr(tc, needed, None) is None:
+        # both classes first appeared in ASE 3.28
+        out["reasons"] = [L(f"この ASE ({__import__('ase').__version__}) には {needed} がありません (ASE 3.28 以降で使えます)",
+                            f"this ASE ({__import__('ase').__version__}) has no {needed} (available from ASE 3.28)")]
+        return out
     mol = None
     if atoms is not None:
         mol = atoms.copy()
@@ -198,6 +218,7 @@ def summary_lines(t: dict) -> list[str]:
             v = f"ZPE {r['zpe_ev']:.4f} eV, U-E {r['u_corr_ev']:.4f} eV, S {r['s_j_mol_k']:.2f} J/(mol K), F-E {r['f_corr_ev']:.4f} eV"
             tot = f", F {r['f_total_ev']:.6f} eV" if "f_total_ev" in r else ""
             lines.append(f"  T = {r['T_K']:g} K: {v}{tot}")
+    lines += [L("  注意: ", "  caution: ") + w for w in t.get("warnings", [])]
     return lines
 
 

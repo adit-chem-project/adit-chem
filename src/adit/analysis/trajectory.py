@@ -40,10 +40,11 @@ def _symbol(label: str) -> str:
 
 class Trajectory(Sequence):
     def __init__(self, path: Path | str, kind: str, *, cell=None, pbc=None, fmt: str | None = None,
-                 comment_regex: re.Pattern | None = None, _sel: tuple = (), _shared: dict | None = None):
+                 comment_regex: re.Pattern | None = None, cells=None, _sel: tuple = (), _shared: dict | None = None):
         self.path = Path(path)
         self.kind = kind
         self.cell = cell
+        self.cells = cells  # per-frame cells (xyz files without lattice, variable-cell MD)
         self.pbc = pbc
         self.fmt = fmt
         self.comment_regex = comment_regex
@@ -75,8 +76,13 @@ class Trajectory(Sequence):
             if i.step is not None and i.step <= 0:
                 raise ValueError("Trajectory: step must be positive")
             return Trajectory(self.path, self.kind, cell=self.cell, pbc=self.pbc, fmt=self.fmt, comment_regex=self.comment_regex,
-                              _sel=self._sel + (i,), _shared=self._shared)
+                              cells=self.cells, _sel=self._sel + (i,), _shared=self._shared)
         return self._read_at(self._range()[i])
+
+    def _cell_at(self, k: int):
+        if self.cells is not None and k < len(self.cells):
+            return self.cells[k]
+        return self.cell
 
     def __iter__(self) -> Iterator[Atoms]:
         r = self._range()
@@ -202,7 +208,7 @@ class Trajectory(Sequence):
             offsets = self._shared["offsets"]
             with self._open() as f:
                 f.seek(offsets[idx])
-                a = _parse_xyz_block(f, self.path, self.cell, self.pbc)
+                a = _parse_xyz_block(f, self.path, self._cell_at(idx), self.pbc)
             if a is None:
                 raise IndexError(idx)
             return a
@@ -292,7 +298,7 @@ class Trajectory(Sequence):
                 k += 1
                 if want(k):
                     f.seek(f.tell() - len(head))
-                    a = _parse_xyz_block(f, self.path, self.cell, self.pbc)
+                    a = _parse_xyz_block(f, self.path, self._cell_at(k), self.pbc)
                     if a is None:
                         return
                     yield k, a

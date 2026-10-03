@@ -31,6 +31,8 @@ class RunData:
     times_fs: list[float] | None = None
     eigenvalues_ev: np.ndarray | None = None
     eigen_weights: np.ndarray | None = None
+    dos_is_grid: bool = False  # eigenvalues_ev/eigen_weights already form a DOS on an energy grid (DOSCAR)
+    temperature_times_fs: list[float] | None = None  # time axis of temperatures_k when it differs from times_fs
     fermi_ev: float | None = None
     fermi_is_homo: bool = False
     force_max_ev_ang: float | None = None
@@ -206,8 +208,16 @@ def _read_dftb(d: Path) -> RunData:
     if md.is_file() and md.stat().st_size > 0:
         e_rx = re.compile(r"Total MD Energy:\s+-?\d+\.\d+ H\s+(-?\d+\.\d+) eV")
         t_rx = re.compile(r"MD Temperature:\s+[-\d.]+ au\s+(-?\d+\.\d+) K")
-        energies, temps = [], []
-        for line in _lines(md):
+        energies, temps, cells = [], [], []
+        lines = _lines(md)
+        for line in lines:
+            if line.startswith("Lattice vectors"):
+                # written per step with a barostat (mainio.F90: "Lattice vectors (A)", three rows in Å)
+                try:
+                    cells.append(np.array([[float(x) for x in next(lines).split()[:3]] for _ in range(3)]))
+                except (StopIteration, ValueError):
+                    pass
+                continue
             m = e_rx.search(line)
             if m:
                 energies.append(float(m.group(1))); continue
@@ -215,6 +225,12 @@ def _read_dftb(d: Path) -> RunData:
             if m:
                 temps.append(float(m.group(1)))
         r.energies_ev, r.temperatures_k = energies, temps
+        per_frame_cells = None
+        if cells and len(cells) == len(energies) and all(c.shape == (3, 3) for c in cells):
+            per_frame_cells = cells
+            pbc = [True, True, True] if pbc is None else pbc
+            r.notes.append(L("Barostat の MD なので、各フレームのセルは md.out の Lattice vectors (A) を使いました",
+                             "barostat MD: the cell of each frame comes from the Lattice vectors (A) blocks of md.out"))
         hsd = _text(d / "dftb_pin.hsd")
         m = re.search(r"TimeStep\s*(\[(\w+)\])?\s*=\s*([-\d.E+e]+)", hsd)
         fs = None
@@ -227,7 +243,7 @@ def _read_dftb(d: Path) -> RunData:
             r.times_fs = [i * every * fs for i in range(len(r.energies_ev))]
             r.frame_dt_fs = every * fs
         if (d / "geo_end.xyz").is_file():
-            r.frames = Trajectory(d / "geo_end.xyz", "xyz", cell=cell, pbc=pbc)
+            r.frames = Trajectory(d / "geo_end.xyz", "xyz", cell=cell, pbc=pbc, cells=per_frame_cells)
             r.frame_source = "geo_end.xyz"
     else:
         r.energies_ev = [float(x) for x in _grep(d / "output.log", r"Total Energy:\s+-?\d+\.\d+ H\s+(-?\d+\.\d+) eV")]
@@ -404,15 +420,23 @@ def _read_xtb(d: Path) -> RunData:
         t = Trajectory(trj, "xyz", comment_regex=re.compile(r"energy:\s*(-?\d+\.\d+)"))
         r.frames, r.frame_source = t, "xtb.trj"
         r.energies_ev = [v * HARTREE_EV for v in t.comment_values]
-        rx = re.compile(r"^\s+(\d+\.\d+)\s+(-?\d+\.\d+)\s+(-?\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(-?\d+\.\d+)\s*$")
-        rows = [m.groups() for m in (rx.match(l) for l in _lines(log)) if m]
-        if rows:
-            r.times_fs = [float(a[0]) * 1000 for a in rows]
-            r.temperatures_k = [float(a[4]) for a in rows]
-            r.notes.append(L("温度は output.log の MD の表 (time, <Epot>, Ekin, <T>, T, Etot) の T", "temperature is the T column of the MD table in output.log (time, <Epot>, Ekin, <T>, T, Etot)"))
         m = re.search(r"^\s*dump\s*=\s*([\d.Ee+-]+)", _text(d / "xtb.inp"), re.M)
         if m:
             r.frame_dt_fs = float(m.group(1))
+            r.times_fs = [i * r.frame_dt_fs for i in range(len(r.energies_ev))]
+        # screen table of xtb dynamic.f90, format (i7,f8.2,F13.5,F9.4,2F6.0,F12.5,E14.6):
+        # step, time (ps), <Epot>, Ekin, <T>, T, Etot [, energy error]; printed every screendump steps,
+        # independently of the trajectory dump interval
+        rx = re.compile(r"^\s*(\d+)\s+(\d+\.\d+)\s+(-?\d+\.\d+)\s+(-?\d+\.\d+)\s+(\d+\.?\d*)\s+(\d+\.?\d*)\s+(-?\d+\.\d+)"
+                        r"(?:\s+-?\d\.\d+[EeDd][+-]?\d+)?\s*$")
+        rows = [m.groups() for m in (rx.match(l) for l in _lines(log)) if m]
+        if rows:
+            r.temperatures_k = [float(a[5]) for a in rows]
+            r.temperature_times_fs = [float(a[1]) * 1000 for a in rows]
+            r.notes.append(L("温度は output.log の MD の表 (step, time, <Epot>, Ekin, <T>, T, Etot) の T。この表は画面出力の間隔 "
+                             "(既定 200 ステップ) で書かれ、軌跡 xtb.trj の dump 間隔とは別です",
+                             "temperature is the T column of the MD table in output.log (step, time, <Epot>, Ekin, <T>, T, Etot); "
+                             "that table is written at the screen interval (default 200 steps), independently of the xtb.trj dump interval"))
     else:
         cycles = _grep(log, r"^\s*\*\s*total energy\s*:\s*(-?\d+\.\d+)\s*Eh")
         found = cycles or _grep(log, r"TOTAL ENERGY\s+(-?\d+\.\d+) Eh")
@@ -495,10 +519,13 @@ def _read_vasp(d: Path) -> RunData:
     if len(dos) > 6:
         try:
             emax, emin, nedos, efermi = [float(x) for x in dos[5].split()[:4]]
-            rows = [l.split() for l in dos[6: 6 + int(nedos)]]
-            e = np.array([float(x[0]) for x in rows]); t = np.array([float(x[1]) for x in rows])
-            r.eigenvalues_ev, r.eigen_weights, r.fermi_ev = e, t, efermi
-            r.notes.append(L("DOS は DOSCAR の全 DOS をそのまま使う (重みは DOS の値)", "DOS is the total DOS of DOSCAR as is (weights are the DOS values)"))
+            rows = [[float(x) for x in l.split()] for l in dos[6: 6 + int(nedos)]]
+            # ISPIN = 2 writes E, DOS(up), DOS(down), integrated DOS(up), integrated DOS(down)
+            two_spins = bool(rows) and all(len(row) >= 5 for row in rows)
+            e = np.array([row[0] for row in rows]); t = np.array([row[1] + row[2] if two_spins else row[1] for row in rows])
+            r.eigenvalues_ev, r.eigen_weights, r.fermi_ev, r.dos_is_grid = e, t, efermi, True
+            r.notes.append(L("DOS は DOSCAR の全 DOS をそのまま使う (重みは DOS の値" + ("。ISPIN = 2 なので上向きと下向きのスピンの和" if two_spins else "") + ")",
+                             "DOS is the total DOS of DOSCAR as is (weights are the DOS values" + ("; ISPIN = 2, so both spins are summed" if two_spins else "") + ")"))
         except (ValueError, IndexError):
             pass
     rx = re.compile(r"^\s*\d+\s+(f|f/i)\s*=\s*[\d.]+ THz\s+[\d.]+ 2PiTHz\s+([\d.]+) cm-1")

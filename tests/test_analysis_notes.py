@@ -75,10 +75,12 @@ def test_selected_msd_species_labels_other_elements_as_reference(tmp_path):
     assert "重心の移動: 除去しました" in txt
     assert set(res.tables["msd"]["by_element"]) == {"H", "O"}
     error = res.tables["msd"]["D_error"]
-    assert error["reason_code"] == "fit_range_not_available_in_all_blocks"
-    assert "--msd-fit" in error["reason"]
-    assert res.tables["msd"]["D_err_cm2_s"] is None
-    assert "ブロック誤差: 出せません" in txt
+    # default: every block is fitted over the same fraction of its own maximum lag, so a short run still gets an error
+    assert error["fit_mode"] == "fraction_of_each_block" and error["reason_code"] is None
+    assert error["d_err_cm2_s"] is not None and res.tables["msd"]["D_err_cm2_s"] == error["d_err_cm2_s"]
+    assert all(b["fit_points"] >= 2 for b in error["blocks"])
+    assert "自分の最大遅れ時間の 10%〜50%" in txt
+    assert "参考・ブロック D 平均の標準誤差" in txt
 
 
 def test_small_msd_is_not_rounded_to_zero_in_summary(tmp_path):
@@ -99,7 +101,9 @@ def test_temperature_within_range_has_no_note(tmp_path):
 def test_qe_fermi_note_only_when_used(tmp_path):
     d = _copy("qe_md_si_generated", tmp_path)
     assert "最高被占準位" not in run_analysis(d, AnalysisOptions()).summary_text()
-    assert "最高被占準位" in run_analysis(d, AnalysisOptions(dos=True)).summary_text() or True
+    # pw.x eigenvalues are not read, so --dos produces no DOS here and the level is still unused
+    res = run_analysis(d, AnalysisOptions(dos=True))
+    assert "dos" not in res.figures and "最高被占準位" not in res.summary_text()
     b = _copy("qe_si_bands_generated", tmp_path)
     assert "最高被占準位" in run_analysis(b, AnalysisOptions()).summary_text()
 

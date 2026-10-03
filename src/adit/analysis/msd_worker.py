@@ -204,8 +204,13 @@ def run(pos: np.ndarray, symbols, cell, dt_fs: float, *, species: str | None = N
                        taus if taus is not None else default_taus(pos.shape[0]), dt_fs,
                        displacement=displacement, chunk_bytes=chunk_bytes)
     good = [v for v in per_atom if v is not None]
+    warnings = []
+    if cell is None:
+        warnings.append("セルが無いので座標を巻き戻していません (折り返された周期系の軌跡なら --cell でセルを渡してください。"
+                        "変位の分布も巻き戻していない座標から求めています)")
     return {
         "frames": int(pos.shape[0]), "atoms": len(idx), "species": species, "dt_fs": dt_fs,
+        "cell_A": None if cell is None else np.asarray(cell, dtype=float).tolist(), "warnings": warnings,
         "symbols": [symbols[i] for i in idx], "atom_index": idx,
         "fit_range_fs": [lo, hi], "fit_fraction": list(fit_fraction),
         "msd": {"lag_fs": times.tolist(), "mean_A2": mean_msd.tolist(),
@@ -225,7 +230,7 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="重い MSD と変位の分布を計算して JSON に書く (ADIT を import しない単体のファイル)")
     ap.add_argument("trajectory", type=Path)
     ap.add_argument("--natoms", type=int, default=0, help="表として読むときの 1 フレームの原子数 (省くと ASE で読む)")
-    ap.add_argument("--cell", type=Path, default=None, help="TV の行があるファイル (表として読むときに指定)")
+    ap.add_argument("--cell", type=Path, default=None, help="TV の行があるファイル (表として読むとき、または軌跡にセルが無いときに指定)")
     ap.add_argument("--dt", type=float, required=True, help="フレームの間隔 [fs]")
     ap.add_argument("--species", default=None, help="元素を 1 つに絞る (例 Na)")
     ap.add_argument("--taus", type=int, default=100, help="変位の分布を見る遅れ時間の点数 (既定 100)")
@@ -239,10 +244,14 @@ def main(argv=None) -> int:
         cell = read_cell(a.cell) if a.cell else None
     else:
         pos, symbols, cell = read_with_ase(a.trajectory)
+        if a.cell:
+            cell = read_cell(a.cell)
     result = run(pos, symbols, cell, a.dt, species=a.species, taus=default_taus(pos.shape[0], a.taus),
                  displacement=a.displacement)
     a.out.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"{result['frames']} フレーム × {result['atoms']} 原子 を {result['seconds']['total']:.1f} 秒で処理しました")
+    for w in result["warnings"]:
+        print(f"  注意: {w}")
     print(f"  D (原子ごとの平均): {result['d_mean_cm2_s']:.4g} cm²/s" if result["d_mean_cm2_s"] else "  D: 求められません")
     print(f"  書き出し: {a.out}  (図にするのは adit-analyze か画面の「解析」です)")
     return 0

@@ -152,6 +152,9 @@ class UnwrapAccumulator:
         self.rows: list[np.ndarray] = []
         self.k = 0
         self.prev = None
+        self.prev_cell = None
+        self.images = None
+        self.variable_cell = False
         self.cur = None
         self.symbols: list[str] = []
         self.max_step_fraction = 0.0
@@ -159,16 +162,29 @@ class UnwrapAccumulator:
 
     def add(self, fr: Atoms) -> None:
         p = fr.get_positions()
+        cell = np.asarray(fr.cell, dtype=float) if bool(any(fr.pbc)) and fr.cell.rank == 3 else None
         if self.prev is None:
             self.cur = p.copy()
+            self.images = np.zeros_like(p)
             self.symbols = fr.get_chemical_symbols()
             if self.n_frames:
                 self.buf = np.empty((self.n_frames, len(p), 3))
         else:
             step = p - self.prev
-            if any(fr.pbc):
-                step = _mic_step(step, np.asarray(fr.cell, dtype=float))
-                cell = np.asarray(fr.cell, dtype=float)
+            if cell is not None:
+                if self.prev_cell is not None and not np.allclose(cell, self.prev_cell, rtol=0.0, atol=1e-8):
+                    self.variable_cell = True
+                if self.variable_cell and self.prev_cell is not None:
+                    # Variable cell (NPT): count boundary crossings in fractional coordinates and
+                    # rebuild the unwrapped positions with the current cell (as LAMMPS xu does).
+                    frac = np.linalg.solve(cell.T, p.T).T
+                    self.images -= np.round(frac - np.linalg.solve(self.prev_cell.T, self.prev.T).T)
+                    new = (frac + self.images) @ cell
+                    step, self.cur = new - self.cur, new
+                else:
+                    step = _mic_step(step, cell)
+                    self.images += np.round(np.linalg.solve(cell.T, (step - (p - self.prev)).T).T)
+                    self.cur = self.cur + step
                 vol = abs(float(np.linalg.det(cell)))
                 widths = [vol / np.linalg.norm(np.cross(cell[(i + 1) % 3], cell[(i + 2) % 3])) for i in range(3)]
                 shortest = min(widths)
@@ -177,13 +193,15 @@ class UnwrapAccumulator:
                     self.max_step_fraction = max(self.max_step_fraction, ratio)
                     if ratio >= 0.4:
                         self.large_step_count += 1
-            self.cur = self.cur + step
+            else:
+                self.cur = self.cur + step
         if self.buf is not None and self.k < len(self.buf):
             self.buf[self.k] = self.cur
         else:
             self.rows.append(self.cur)
         self.k += 1
         self.prev = p
+        self.prev_cell = cell
 
     def result(self) -> tuple[np.ndarray, list[str]]:
         if self.k == 0:
@@ -298,10 +316,15 @@ def diffusion_blocks(pos: np.ndarray, dt_fs: float, dim: int, frac: tuple[float,
     from ..lang import L
 
     T = pos.shape[0]
-    rng = fit_range_fs(np.arange(T, dtype=float) * dt_fs, fit_fs, frac)
+    # Default: each block is fitted over the same fraction of its own maximum lag. An explicit
+    # fit_fs (the user's --msd-fit) is applied as the same absolute range to every block.
+    same_range = fit_fs is not None
+    rng = fit_range_fs(np.arange(T, dtype=float) * dt_fs, fit_fs, frac) if same_range else None
     k = int(min(n_blocks, T // min_block))
     out = {"d_err_cm2_s": None, "n_blocks": max(0, k), "d_blocks_cm2_s": [], "block_frames": 0,
-           "block_frame_counts": [], "blocks": [], "fit_range_fs": list(rng), "n_frames_used": 0,
+           "block_frame_counts": [], "blocks": [], "fit_range_fs": list(rng) if rng else None,
+           "fit_mode": "same_absolute_range" if same_range else "fraction_of_each_block",
+           "fit_fraction": None if same_range else [float(frac[0]), float(frac[1])], "n_frames_used": 0,
            "d_blocks_mean_cm2_s": None, "reason": None, "reason_code": None,
            "estimator": "standard_error_of_block_mean", "estimate_for": "mean_of_block_D"}
     if k < 2:
@@ -310,52 +333,58 @@ def diffusion_blocks(pos: np.ndarray, dt_fs: float, dim: int, frac: tuple[float,
             f"Cannot form at least two blocks of {min_block} or more frames ({T} frames available)"))
         return out
     requested = k
-    while k >= 2:
-        length_k, extra_k = divmod(T, k)
-        shortest = length_k
-        if rng[1] <= (shortest - 1) * dt_fs + 1e-9 and rng[0] >= -1e-9:
-            break
-        k -= 1
-    if k < 2:
-        length_k = T // 2
-        span = (length_k - 1) * dt_fs
-        hint = ""
-        if span > rng[0] + 1e-9 and length_k >= min_block:
-            hint = L(f" ブロックを 2 つ取るなら {rng[0]:g}〜{span:g} fs までが入ります (--msd-fit {rng[0]:g},{span:g})。"
-                     "ただし上の D とは当てはめ範囲が変わります",
-                     f" With two blocks, {rng[0]:g}-{span:g} fs would fit (--msd-fit {rng[0]:g},{span:g}), "
-                     "but that is a different fit range from the D above")
-        out.update(n_blocks=0, reason_code="fit_range_not_available_in_all_blocks", reason=L(
-            f"主当てはめ範囲 {rng[0]:g}〜{rng[1]:g} fs を含むブロックを 2 つ取れません (使ったフレーム {T})。",
-            f"cannot form two blocks that both cover the main fit range {rng[0]:g}-{rng[1]:g} fs ({T} frames). ") + hint)
-        return out
+    if same_range:
+        while k >= 2:
+            length_k, extra_k = divmod(T, k)
+            shortest = length_k
+            if rng[1] <= (shortest - 1) * dt_fs + 1e-9 and rng[0] >= -1e-9:
+                break
+            k -= 1
+        if k < 2:
+            length_k = T // 2
+            span = (length_k - 1) * dt_fs
+            hint = ""
+            if span > rng[0] + 1e-9 and length_k >= min_block:
+                hint = L(f" ブロックを 2 つ取るなら {rng[0]:g}〜{span:g} fs までが入ります (--msd-fit {rng[0]:g},{span:g})。"
+                         "ただし上の D とは当てはめ範囲が変わります",
+                         f" With two blocks, {rng[0]:g}-{span:g} fs would fit (--msd-fit {rng[0]:g},{span:g}), "
+                         "but that is a different fit range from the D above")
+            out.update(n_blocks=0, reason_code="fit_range_not_available_in_all_blocks", reason=L(
+                f"主当てはめ範囲 {rng[0]:g}〜{rng[1]:g} fs を含むブロックを 2 つ取れません (使ったフレーム {T})。",
+                f"cannot form two blocks that both cover the main fit range {rng[0]:g}-{rng[1]:g} fs ({T} frames). ") + hint)
+            return out
+        if k != requested:
+            out["n_blocks_requested"] = requested
+            out["adjusted"] = L(
+                f"ブロックの数を {requested} から {k} に減らしました (当てはめ範囲 {rng[0]:g}〜{rng[1]:g} fs が全ブロックに収まる最大の数)",
+                f"the number of blocks was reduced from {requested} to {k} (the largest number for which every block covers "
+                f"the fit range {rng[0]:g}-{rng[1]:g} fs)")
     out["n_blocks"] = k
-    if k != requested:
-        out["n_blocks_requested"] = requested
-        out["adjusted"] = L(
-            f"ブロックの数を {requested} から {k} に減らしました (当てはめ範囲 {rng[0]:g}〜{rng[1]:g} fs が全ブロックに収まる最大の数)",
-            f"the number of blocks was reduced from {requested} to {k} (the largest number for which every block covers "
-            f"the fit range {rng[0]:g}-{rng[1]:g} fs)")
     length, extra = divmod(T, k)
     start = 0
     for b in range(k):
         size = length + int(b < extra)
         tb = np.arange(size, dtype=float) * dt_fs
-        sel = (tb >= rng[0] - 1e-9) & (tb <= rng[1] + 1e-9)
+        rb = rng if same_range else fit_range_fs(tb, None, frac)
+        sel = (tb >= rb[0] - 1e-9) & (tb <= rb[1] + 1e-9)
         out["blocks"].append({"frame_start": start, "frame_stop": start + size, "n_frames": size,
-                              "duration_fs": float(tb[-1]), "fit_range_fs": list(rng),
+                              "duration_fs": float(tb[-1]), "fit_range_fs": [float(rb[0]), float(rb[1])],
                               "fit_points": int(sel.sum()), "D_cm2_s": None})
         start += size
     out.update(block_frame_counts=[b["n_frames"] for b in out["blocks"]], n_frames_used=T,
                block_frames=length if extra == 0 else None)
-    if any(rng[0] < -1e-9 or rng[1] > b["duration_fs"] + 1e-9 or b["fit_points"] < 2 for b in out["blocks"]):
-        out.update(reason_code="fit_range_not_available_in_all_blocks", reason=L(
+    if any(b["fit_range_fs"][0] < -1e-9 or b["fit_range_fs"][1] > b["duration_fs"] + 1e-9 or b["fit_points"] < 2
+           for b in out["blocks"]):
+        out.update(reason_code="fit_range_not_available_in_all_blocks", reason=(L(
             f"全ブロックで主当てはめ範囲 {rng[0]:g}〜{rng[1]:g} fs を含む2点以上を取れません。範囲は変更していません",
-            f"Not every block covers the main fit range {rng[0]:g}-{rng[1]:g} fs with at least two points; the range was not changed"))
+            f"Not every block covers the main fit range {rng[0]:g}-{rng[1]:g} fs with at least two points; the range was not changed")
+            if same_range else L(
+            f"各ブロックの最大遅れ時間の {frac[0]:.0%}〜{frac[1]:.0%} に 2 点以上取れないブロックがあります",
+            f"some block has fewer than two points in {frac[0]:.0%}-{frac[1]:.0%} of its own maximum lag")))
         return out
     for b in out["blocks"]:
         tb = np.arange(b["n_frames"], dtype=float) * dt_fs
-        b["D_cm2_s"] = diffusion_fit(tb, msd_fft(pos[b["frame_start"]:b["frame_stop"]]), rng, dim)
+        b["D_cm2_s"] = diffusion_fit(tb, msd_fft(pos[b["frame_start"]:b["frame_stop"]]), tuple(b["fit_range_fs"]), dim)
     a = np.array([b["D_cm2_s"] for b in out["blocks"]], dtype=float)
     out.update(d_err_cm2_s=float(a.std(ddof=1) / np.sqrt(k)), d_blocks_cm2_s=a.tolist(),
                d_blocks_mean_cm2_s=float(a.mean()))
@@ -383,16 +412,20 @@ def msd_analysis(frames, species: str | None, times_fs: list[float] | None, *, s
         pos, syms = unwrapped_positions(frames)
     base = {"species": species, "axes": "".join("xyz"[c] for c in comps), "dimension": dim, "formula": msd_formula(dim),
             "drift": {"removed": False, "displacement_A": None, "max_displacement_A": None, "requested": bool(remove_drift)}}
+    idx = np.where(np.array(syms) == species)[0] if species else np.arange(pos.shape[1])
+    empty = {**base, "lag": np.array([0.0]), "msd_A2": np.array([0.0]), "D_cm2_s": None, "fit_range_fs": None,
+             "fit_range_user": fit_fs is not None, "fit_fraction": None if fit_fs else list(DEFAULT_FIT_FRACTION),
+             "loglog_slope": None, "error": None, "dt_fs": dt_fs, "n_atoms": int(idx.size)}
     if pos.shape[0] < 2:
-        return {**base, "lag": np.array([0.0]), "msd_A2": np.array([0.0]), "D_cm2_s": None, "fit_range_fs": None,
-                "fit_range_user": fit_fs is not None, "fit_fraction": None if fit_fs else list(DEFAULT_FIT_FRACTION),
-                "loglog_slope": None, "error": None, "dt_fs": dt_fs,
-                "reason": L("軌跡のフレームが 1 つしかないので MSD を計算できません",
-                            "the trajectory has only one frame, so no MSD can be computed")}
+        return {**empty, "reason": L("軌跡のフレームが 1 つしかないので MSD を計算できません",
+                                     "the trajectory has only one frame, so no MSD can be computed")}
+    if idx.size == 0:
+        present = ", ".join(sorted(set(syms))) or "?"
+        return {**empty, "reason": L(f"元素 {species} は軌跡にありません (ある元素: {present})",
+                                     f"element {species} is not in the trajectory (present: {present})")}
     if remove_drift:
         pos, info = remove_com_drift(pos, syms)
         base["drift"] = {**info, "requested": True}
-    idx = np.where(np.array(syms) == species)[0] if species else np.arange(pos.shape[1])
     sub = pos[:, idx, :][:, :, comps]
     m = msd_fft(sub)
     dt = dt_fs if dt_fs else (times_fs[1] - times_fs[0] if times_fs and len(times_fs) >= 2 else None)
@@ -403,10 +436,10 @@ def msd_analysis(frames, species: str | None, times_fs: list[float] | None, *, s
         D = diffusion_fit(t, m, rng, dim)
         slope = loglog_slope(t, m, rng)
         if error:
-            err = diffusion_blocks(sub, dt, dim, n_blocks=n_blocks, fit_fs=rng)
+            err = diffusion_blocks(sub, dt, dim, n_blocks=n_blocks, fit_fs=fit_fs)
     return {**base, "lag": t, "msd_A2": m, "D_cm2_s": D, "fit_range_fs": list(rng) if rng else None,
             "fit_range_user": fit_fs is not None, "fit_fraction": None if fit_fs else list(DEFAULT_FIT_FRACTION),
-            "loglog_slope": slope, "error": err, "dt_fs": dt}
+            "loglog_slope": slope, "error": err, "dt_fs": dt, "n_atoms": int(idx.size)}
 
 
 def msd_per_atom(pos: np.ndarray, dt_fs: float, dim: int, fit_fs: tuple[float, float] | None = None,
@@ -589,8 +622,12 @@ class MoleculeUnwrapper:
         return out
 
 
-def dos(eigs_ev: np.ndarray, weights: np.ndarray, sigma: float = 0.1, npts: int = 800, emin: float | None = None, emax: float | None = None):
-    if len(eigs_ev) > 200 and np.all(np.diff(eigs_ev) > 0):
+def dos(eigs_ev: np.ndarray, weights: np.ndarray | None, sigma: float = 0.1, npts: int = 800, emin: float | None = None,
+        emax: float | None = None, is_grid: bool = False):
+    eigs_ev = np.asarray(eigs_ev, dtype=float)
+    weights = np.ones_like(eigs_ev) if weights is None else np.asarray(weights, dtype=float)
+    if is_grid:
+        # Already a DOS on an energy grid (VASP DOSCAR): pass it through untouched.
         return eigs_ev, weights
     lo = emin if emin is not None else float(eigs_ev.min()) - 2
     hi = emax if emax is not None else float(eigs_ev.max()) + 2

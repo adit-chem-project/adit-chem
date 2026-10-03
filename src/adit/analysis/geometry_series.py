@@ -47,8 +47,8 @@ def dihedral_series(frames, i: int, j: int, k: int, l: int, cell=None) -> np.nda
         c = np.asarray(fr.cell, dtype=float) if any(fr.pbc) else cell
         b1, b2, b3 = _relative(pos[i], pos[j], c), _relative(pos[j], pos[k], c), _relative(pos[k], pos[l], c)
         n1, n2 = np.cross(b1, b2), np.cross(b2, b3)
-        m = np.cross(n1, b2 / np.linalg.norm(b2))
-        out.append(float(np.degrees(np.arctan2(np.dot(m, n2), np.dot(n1, n2)))))
+        # IUPAC sign convention (same as ase.Atoms.get_dihedral, VMD, MDAnalysis)
+        out.append(float(np.degrees(np.arctan2(np.dot(np.cross(n1, n2), b2 / np.linalg.norm(b2)), np.dot(n1, n2)))))
     return np.array(out)
 
 

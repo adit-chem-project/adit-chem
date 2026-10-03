@@ -54,6 +54,7 @@ def figure_title(name: str) -> str:
         "hbond": L("水素結合の本数の推移", "Hydrogen-bond count"),
         "hbond_lifetime": L("水素結合の存在の自己相関", "Hydrogen-bond autocorrelation"),
         "hbond_map": L("水素結合の距離と角度の分布", "Hydrogen-bond distance-angle distribution"),
+        "sq": L("構造因子 S(q)", "Structure factor S(q)"),
     }.get(name, name)
 
 
@@ -250,14 +251,22 @@ class AnalysisResult:
                                    f"  g(r) normalization: a sphere of rmax = {nz['rmax_A']:.2f} Å, V = {v} Å³ (non-periodic); the absolute value of g(r) "
                                    "changes with rmax, so it cannot be compared with another rmax or another run. The rmax-independent quantities are "
                                    "density [Å⁻³] and n(r) in rdf.json"))
-        if "msd" in t:
+        if "msd" in t and "last_A2" not in t["msd"]:
+            lines.append(L(f"MSD (平均二乗変位): 出せません。{t['msd'].get('reason', '')}",
+                           f"MSD (mean squared displacement): not available. {t['msd'].get('reason', '')}"))
+        if "msd" in t and "last_A2" in t["msd"]:
             m = t["msd"]
             last_msd = f"{m['last_A2']:.3g}"
             diff = ""
             if m.get("D_cm2_s") is not None:
                 diff = L(f"、拡散係数 {m['D_cm2_s']:.3e} cm²/s", f", diffusion coefficient {m['D_cm2_s']:.3e} cm^2/s")
+            used = ""
+            if m.get("n_atoms_used") is not None:
+                used = L(f"、使った原子 {m['n_atoms_used']} 個", f", {m['n_atoms_used']} atoms used")
+                if m.get("selection"):
+                    used += L(f" (選び方 {m['selection']!r})", f" (selection {m['selection']!r})")
             lines.append(L(f"MSD (平均二乗変位。{m['species'] or '全原子'}、{m['n_frames']} フレーム): 最終 {last_msd} Å²",
-                           f"MSD (mean squared displacement; {m['species'] or 'all atoms'}, {m['n_frames']} frames): last {last_msd} Å²") + diff)
+                           f"MSD (mean squared displacement; {m['species'] or 'all atoms'}, {m['n_frames']} frames): last {last_msd} Å²") + diff + used)
             per = [f"{el} {v['D_cm2_s']:.3e}"
                    for el, v in m.get("by_element", {}).items() if v.get("D_cm2_s") is not None]
             if len(m.get("by_element", {})) > 1 and per:
@@ -286,12 +295,20 @@ class AnalysisResult:
             if e.get("d_err_cm2_s") is not None:
                 counts = e.get("block_frame_counts") or [e["block_frames"]] * e["n_blocks"]
                 sizes = ", ".join(str(x) for x in counts)
-                a, b = e.get("fit_range_fs") or m["fit_range_fs"]
+                if e.get("fit_mode") == "fraction_of_each_block":
+                    fr = e.get("fit_fraction") or list(compute.DEFAULT_FIT_FRACTION)
+                    ranges = ", ".join(f"{b['fit_range_fs'][0]:g}〜{b['fit_range_fs'][1]:g}" for b in e.get("blocks", []))
+                    ranges_en = ranges.replace("〜", "-")
+                    how = L(f"各ブロックを自分の最大遅れ時間の {fr[0]:.0%}〜{fr[1]:.0%} (ブロックごとに {ranges} fs) で当てはめ",
+                            f"each block was fitted over {fr[0]:.0%}-{fr[1]:.0%} of its own maximum lag ({ranges_en} fs)")
+                else:
+                    a, b = e.get("fit_range_fs") or m["fit_range_fs"]
+                    how = L(f"各ブロックの {a:g}〜{b:g} fs を当てはめ", f"each block was fitted over {a:g}-{b:g} fs")
                 lines.append(L(f"  参考・ブロック D 平均の標準誤差: {e['d_err_cm2_s']:.2e} cm²/s。"
-                               f"全 {sum(counts)} フレームを {e['n_blocks']} ブロック ({sizes} フレーム) に分け、各ブロックの {a:g}〜{b:g} fs を当てはめ、"
+                               f"全 {sum(counts)} フレームを {e['n_blocks']} ブロック ({sizes} フレーム) に分け、{how}、"
                                f"ブロックごとの D の標本標準偏差 ÷ √{e['n_blocks']} としました。全軌跡から出した D 自体の厳密な誤差ではありません",
                                f"  for reference, standard error of the mean block D: {e['d_err_cm2_s']:.2e} cm^2/s. "
-                               f"All {sum(counts)} frames were split into {e['n_blocks']} blocks ({sizes} frames); each block was fitted over {a:g}-{b:g} fs. "
+                               f"All {sum(counts)} frames were split into {e['n_blocks']} blocks ({sizes} frames); {how}. "
                                f"This is the sample standard deviation of block D values / sqrt({e['n_blocks']}), not a rigorous error on D from the full trajectory."))
             elif e.get("reason"):
                 lines.append(L(f"  ブロック誤差: 出せません。{e['reason']}", f"  block-based error: not available. {e['reason']}"))
@@ -321,7 +338,10 @@ class AnalysisResult:
                          + (L(f"。虚振動 {len(neg)} 本", f". {len(neg)} imaginary") if neg else ""))
         if "bands" in t:
             b = t["bands"]
-            if b.get("gap_ev") is not None:
+            if b.get("metal"):
+                gap = L("、フェルミ準位を横切るバンドがあります (金属。ギャップ 0 eV、VBM・CBM は定義しません)",
+                        ", a band crosses the Fermi level (metal; gap 0 eV, no VBM or CBM)")
+            elif b.get("gap_ev") is not None:
                 gap = (L(f"、最高被占準位を基準にした最小の間隔 {b['gap_ev']:.3f} eV",
                          f", smallest gap relative to the highest occupied level: {b['gap_ev']:.3f} eV")
                        if b.get("reference_level") == "highest_occupied" else
@@ -329,11 +349,19 @@ class AnalysisResult:
                          f", smallest gap across the Fermi level {b['gap_ev']:.3f} eV"))
             else:
                 gap = ""
-            lines.append(L(f"バンド: {b['n_kpoints']} k 点 × {b['n_bands']} 本 (経路 {' '.join(b['labels'])})",
-                           f"bands: {b['n_kpoints']} k-points × {b['n_bands']} bands (path {' '.join(b['labels'])})") + gap)
+            spins = L(" × スピン 2 (上向き・下向きを別に描画。ギャップは両方で判定)",
+                      " × 2 spins (drawn separately; the gap is evaluated over both)") if b.get("n_spins") == 2 else ""
+            lines.append(L(f"バンド: {b['n_kpoints']} k 点 × {b['n_bands']} 本{spins} (経路 {' '.join(b['labels'])})",
+                           f"bands: {b['n_kpoints']} k-points × {b['n_bands']} bands{spins} (path {' '.join(b['labels'])})") + gap)
         if "dos" in t:
             ef = L(f"、フェルミ準位 {t['dos']['fermi_ev']:.3f} eV", f", Fermi level {t['dos']['fermi_ev']:.3f} eV") if t['dos'].get('fermi_ev') is not None else ""
-            lines.append(L(f"DOS (状態密度): {t['dos']['n_eigen']} 個の固有値", f"DOS (density of states): {t['dos']['n_eigen']} eigenvalues") + ef)
+            if t["dos"].get("broadened") is False:
+                lines.append(L(f"DOS (状態密度): DOSCAR の格子 {t['dos']['n_eigen']} 点をそのまま (広げていません)",
+                               f"DOS (density of states): the {t['dos']['n_eigen']}-point DOSCAR grid as is (not broadened)") + ef)
+            else:
+                sig = L(f"をガウス関数 (σ = {t['dos']['sigma_ev']:g} eV) で広げた", f" broadened with a Gaussian (sigma = {t['dos']['sigma_ev']:g} eV)") \
+                    if t["dos"].get("sigma_ev") is not None else ""
+                lines.append(L(f"DOS (状態密度): {t['dos']['n_eigen']} 個の固有値{sig}", f"DOS (density of states): {t['dos']['n_eigen']} eigenvalues{sig}") + ef)
         from adit.analysis import neb as _neb, pdos as _pdos, phonons as _ph, symmetry as _sym, thermo as _th, uvvis as _uv
         from adit.analysis import collections as _coll
         from adit.analysis import crest as _crest
@@ -527,15 +555,19 @@ def run_analysis(run_dir: Path | str, opts: AnalysisOptions | None = None) -> An
             ax.ticklabel_format(axis="y", useOffset=False, style="plain")
             save(fig, "energy")
         res.tables["energy"] = {"n": int(len(e)), "last_ev": float(e[-1]), "min_ev": float(e.min()), "max_ev": float(e.max())}
+    temperature_axis = data.temperature_times_fs or data.times_fs
     if opts.temperature and data.temperatures_k:
         T = np.array(data.temperatures_k)
         if len(T) >= 2:
-            x = np.array(data.times_fs[: len(T)]) if data.times_fs and len(data.times_fs) >= len(T) else np.arange(len(T))
+            timed = bool(temperature_axis) and len(temperature_axis) >= len(T)
+            x = np.array(temperature_axis[: len(T)]) if timed else np.arange(len(T))
             fig, ax = plt.subplots(figsize=(6, 3.2))
-            ax.plot(x, T, lw=1.0); ax.set_xlabel("time [fs]" if data.times_fs else "step"); ax.set_ylabel("T [K]"); plotstyle.grid(ax)
+            ax.plot(x, T, lw=1.0); ax.set_xlabel("time [fs]" if timed else "step"); ax.set_ylabel("T [K]"); plotstyle.grid(ax)
             save(fig, "temperature")
-        Ts = T[opts.skip_frames:] if len(T) > opts.skip_frames else T
-        res.tables["temperature"] = {"n": int(len(Ts)), "mean_k": float(Ts.mean()), "std_k": float(Ts.std()), "skipped": int(len(T) - len(Ts))}
+        Ts, skipped = _skip_series(T, temperature_axis, opts.skip_frames, data.frame_dt_fs)
+        if not len(Ts):
+            Ts, skipped = T, 0
+        res.tables["temperature"] = {"n": int(len(Ts)), "mean_k": float(Ts.mean()), "std_k": float(Ts.std()), "skipped": int(skipped)}
         target = _target_temperature(spec)
         if target and abs(Ts.mean() - target) > TEMP_DEVIATION * target:
             res.tables["temperature"]["target_k"] = target
@@ -547,9 +579,11 @@ def run_analysis(run_dir: Path | str, opts: AnalysisOptions | None = None) -> An
             fig, ax = plt.subplots(figsize=(6, 3.2))
             ax.plot(x, P, lw=1.0); ax.set_xlabel("time [fs]" if data.times_fs else "step"); ax.set_ylabel("P [bar]"); plotstyle.grid(ax)
             save(fig, "pressure")
-        Ps = P[opts.skip_frames:] if len(P) > opts.skip_frames else P
+        Ps, skipped = _skip_series(P, data.times_fs, opts.skip_frames, data.frame_dt_fs)
+        if not len(Ps):
+            Ps, skipped = P, 0
         res.tables["pressure"] = {"n": int(len(Ps)), "mean_bar": float(np.nanmean(Ps)), "std_bar": float(np.nanstd(Ps)),
-                                  "skipped": int(len(P) - len(Ps)), "source": data.series["pressure"]["source"]}
+                                  "skipped": int(skipped), "source": data.series["pressure"]["source"]}
     if opts.bonds and data.final is not None:
         res.tables["bonds"] = compute.bonds(data.final)
     _add_properties(res, data, out)
@@ -667,6 +701,11 @@ def run_analysis(run_dir: Path | str, opts: AnalysisOptions | None = None) -> An
             res.notes.append(L(f"RDF の図は縦軸を {clipped:.1f} で切っています。結合距離 (共有結合半径の和の 1.2 倍) より内側の山は最大 {g_all:.0f} です",
                                f"the RDF plot is cut at {clipped:.1f} on the y axis; the peaks inside the bonded distance (1.2 x the sum of covalent radii) reach {g_all:.0f}"))
         (out / "rdf.json").write_text(json.dumps(table), encoding="utf-8")
+        if opts.structure_factor:
+            _add_structure_factor(res, rdf_acc, first, out, save)
+    elif opts.structure_factor:
+        res.notes.append(L("構造因子 S(q) は RDF から求めるので --rdf (動径分布関数) が要ります",
+                           "the structure factor S(q) is computed from the RDF, so it needs --rdf"))
     if unwrap is not None and len(frames) < 2:
         res.notes.append(L(
             f"MSD を出せません: 使えるフレームが {len(frames)} 個しかありません"
@@ -677,111 +716,7 @@ def run_analysis(run_dir: Path | str, opts: AnalysisOptions | None = None) -> An
             + ". GROMACS .xtc / .trr are not read; convert them with gmx trjconv first."))
         unwrap = None
     if unwrap is not None:
-        pos, syms = unwrap.result()
-        drift = {"removed": False, "displacement_A": None, "max_displacement_A": None, "requested": bool(opts.msd_remove_drift)}
-        if opts.msd_remove_drift:
-            pos, info = compute.remove_com_drift(pos, syms)
-            drift = {**info, "requested": True}
-        nb = max(0, int(opts.msd_error_blocks))
-        kw = dict(symbols=syms, dt_fs=dt_used, fit_fs=opts.msd_fit_fs, axes=opts.msd_axes, remove_drift=False, n_blocks=nb or 5)
-        a = compute.msd_analysis(pos, opts.msd_species, None, error=bool(nb), **kw)
-        t, m, D, rng = a["lag"], a["msd_A2"], a["D_cm2_s"], a["fit_range_fs"]
-        by = {}
-        fig, ax = plt.subplots(figsize=(6, 3.2))
-        ax.plot(t, m, lw=1.4, color="k", label=opts.msd_species or "all atoms")
-        elems = sorted(set(syms))
-        if len(elems) > 1:
-            for el in elems:
-                ae = compute.msd_analysis(pos, el, None, error=bool(nb), **kw)
-                by[el] = {"D_cm2_s": ae["D_cm2_s"], "last_A2": float(ae["msd_A2"][-1]), "n_atoms": int(syms.count(el)),
-                          "msd_A2": ae["msd_A2"].tolist(), "loglog_slope": ae["loglog_slope"],
-                          "D_err_cm2_s": (ae["error"] or {}).get("d_err_cm2_s"), "n_blocks": (ae["error"] or {}).get("n_blocks")}
-                if opts.msd_species is None:
-                    ax.plot(ae["lag"], ae["msd_A2"], lw=1.0, ls="--", label=el)
-        if rng is not None:
-            how = "user" if a["fit_range_user"] else f"{compute.DEFAULT_FIT_FRACTION[0]:.0%}-{compute.DEFAULT_FIT_FRACTION[1]:.0%} of max lag"
-            ax.axvspan(rng[0], rng[1], color="tab:orange", alpha=0.15, label=f"fit range {rng[0]:g}-{rng[1]:g} fs ({how})")
-        sub = f"{a['formula']}, axes {a['axes']}, " + (
-            f"COM drift removed ({drift['displacement_A']:.3f} Å)" if drift.get("displacement_A") is not None else "COM drift NOT removed")
-        ax.set_title(sub, fontsize=8, color="0.3")
-        ax.set_xlabel("lag time [fs]" if dt_used else "lag [frames]"); ax.set_ylabel("MSD [Å²]"); plotstyle.grid(ax); ax.legend(fontsize=8)
-        save(fig, "msd")
-        if opts.msd_per_atom:
-            idx = [i for i, sym in enumerate(syms) if sym == opts.msd_species] if opts.msd_species else list(range(len(syms)))
-            comps = compute.parse_axes(opts.msd_axes)
-            each = compute.msd_per_atom(pos[:, idx, :][:, :, comps], dt_used or 1.0, len(comps), opts.msd_fit_fs)
-            res.tables["msd_per_atom"] = {
-                "species": opts.msd_species, "atom_index": idx, "symbol": [syms[i] for i in idx],
-                "D_cm2_s": each["d_cm2_s"], "fit_range_fs": each["fit_range_fs"], "spread": each["spread"],
-                "note": L("原子 1 個ごとに、時間原点を全部使った MSD を直線に当てはめた D です。"
-                          "速い・遅いの判定はしていません (1 原子の統計は全体より悪く、ばらつきます)。",
-                          "D per atom, from a straight-line fit to its own multiple-time-origin MSD. "
-                          "No fast/slow judgment is made; single-atom statistics are much noisier than the average.")}
-            if each["d_cm2_s"]:
-                good = [v for v in each["d_cm2_s"] if v is not None]
-                if good:
-                    res.notes.append(L(f"原子ごとの D: {len(good)} 原子、{min(good):.3g}〜{max(good):.3g} cm²/s "
-                                       f"(平均 {sum(good) / len(good):.3g})。表は analysis/summary.json の msd_per_atom",
-                                       f"D per atom: {len(good)} atoms, {min(good):.3g} to {max(good):.3g} cm^2/s "
-                                       f"(mean {sum(good) / len(good):.3g}); the table is in msd_per_atom of analysis/summary.json"))
-        if opts.vacf:
-            _add_vacf(res, pos, syms, frames, opts, dt_used, save)
-        if opts.conductivity_charge:
-            _add_conductivity(res, spec, data, syms, frames, opts, D)
-        if opts.vanhove:
-            _add_vanhove(res, pos, syms, frames, opts, dt_used, save, run_dir)
-        n_atoms = len(frames[0]) if frames else 0
-        span_fs = (len(frames) - 1) * dt_used if dt_used else None
-        periodic = bool(np.any(frames[0].pbc)) if frames else False
-        scale = {"n_atoms": n_atoms, "n_frames": len(frames), "span_fs": span_fs, "periodic": periodic}
-        res.tables["msd_scale"] = scale
-        res.notes.append(L(
-            "この拡散係数を出した計算の規模: 原子 {} 個、フレーム {} 枚{}、周期境界 {}。"
-            "値の良し悪しは判定しません".format(
-                n_atoms, len(frames),
-                f"、全体で {span_fs:g} fs" if span_fs else "",
-                "あり" if periodic else "なし (拡散は普通 周期境界のある系で測ります)"),
-            "the size of the run behind this diffusion coefficient: {} atoms, {} frames{}, periodic boundaries {}. "
-            "ADIT does not judge whether the value is good".format(
-                n_atoms, len(frames),
-                f", {span_fs:g} fs in total" if span_fs else "",
-                "on" if periodic else "off (diffusion is normally measured with periodic boundaries)")))
-        res.tables["msd"] = {"species": opts.msd_species, "last_A2": float(m[-1]), "D_cm2_s": D, "n_frames": len(frames),
-                             "method": "fft_multiple_time_origins", "dt_fs": dt_used, "fit_range_fs": list(rng) if rng else None,
-                             "fit_range_user": opts.msd_fit_fs is not None, "lag_fs": t.tolist(), "msd_A2": m.tolist(), "by_element": by,
-                             "axes": a["axes"], "dimension": a["dimension"], "formula": a["formula"], "drift": drift,
-                             "fit_fraction": a["fit_fraction"], "loglog_slope": a["loglog_slope"],
-                             "unwrap_check": {"max_step_fraction_of_shortest_cell_width": unwrap.max_step_fraction,
-                                              "steps_at_or_above_0_4": unwrap.large_step_count},
-                             "D_err_cm2_s": (a["error"] or {}).get("d_err_cm2_s"), "D_error": a["error"],
-                             "definition": L(
-                                 "D は当てはめ範囲で MSD を直線に当てはめた傾きから。D_error は各ブロックから出した D の平均の標準誤差で、"
-                                 "全軌跡の D 自体の厳密な誤差ではありません。当てはめ範囲が 1 ブロックに収まらないときは、収まる範囲まで上限を下げて"
-                                 "求めます。loglog_slope は当てはめ範囲での log MSD 対 log t の傾き (拡散なら 1 に近い)",
-                                 "D comes from a straight-line fit of the MSD over the fit range. D_error is the standard error of the mean "
-                                 "block D, not a rigorous error on D from the full trajectory. loglog_slope is the slope of log MSD vs log t "
-                                 "over the fit range (close to 1 for diffusion)")}
-        if unwrap.large_step_count:
-            res.notes.append(L(
-                f"MSD の境界越え補正: {unwrap.large_step_count} 個のフレーム間で、最小像の移動が最短セル幅の 40 % 以上でした "
-                f"(最大 {unwrap.max_step_fraction:.1%})。1 フレームの間に半セル以上動くと移動方向を一意に復元できないため、間引く前の軌跡でも確認してください",
-                f"MSD boundary unwrapping: the minimum-image displacement was at least 40% of the shortest cell width between "
-                f"{unwrap.large_step_count} pairs of frames (maximum {unwrap.max_step_fraction:.1%}). If an atom moves by half a cell or more "
-                "between frames, its direction cannot be reconstructed uniquely; also inspect the trajectory before subsampling"))
-        if drift.get("displacement_A") is not None and dt_used:
-            res.notes.append(L(f"MSD の前に系全体の質量重心を各フレームから引きました (重心は最初と最後で {drift['displacement_A']:.3f} Å、"
-                               f"最初のフレームからの最大 {drift['max_displacement_A']:.3f} Å 動いています)",
-                               f"the center-of-mass of the whole system was subtracted from every frame before the MSD (it moved "
-                               f"{drift['displacement_A']:.3f} Å between the first and last frame, at most {drift['max_displacement_A']:.3f} Å)"))
-        elif not opts.msd_remove_drift:
-            res.notes.append(L("MSD から重心の流れを落としていません (--msd-keep-drift)。重心が流れていると MSD に並進の分が残ります",
-                               "the center-of-mass drift was NOT removed from the MSD (--msd-keep-drift); any drift of the center of mass stays in the MSD"))
-        if D is not None and D < 0:
-            res.notes.append(L("拡散係数が負の値です。軌跡が短く統計が足りない可能性があります (拡散係数は MSD が時間に比例して増える範囲で読みます)",
-                               "the diffusion coefficient is negative; the trajectory may be too short for the statistics (read D where the MSD grows linearly in time)"))
-        if dt_used is None and len(frames) > 1:
-            res.notes.append(L("軌跡の 1 フレームあたりの時間が出力から読めないので、MSD の横軸はフレームの番号で、拡散係数は出しません",
-                               "the time per trajectory frame cannot be read from the output, so the MSD is plotted against frame lag and no diffusion coefficient is given"))
+        _add_msd(res, data, spec, frames, opts, unwrap, dt_used, save, run_dir)
     if (opts.rdf or opts.msd) and 1 < len(frames) < FEW_FRAMES:
         res.notes.append(L(f"軌跡は {len(frames)} フレームです (RDF と MSD は、フレームが少ないと 1 フレームの揺らぎで形が変わります)",
                            f"the trajectory has {len(frames)} frames (with few frames, RDF and MSD change shape with single-frame fluctuations)"))
@@ -806,17 +741,22 @@ def run_analysis(run_dir: Path | str, opts: AnalysisOptions | None = None) -> An
                                "the cell vector c is not perpendicular to the a-b plane, so the density profile is along the normal of the a-b plane (third fractional coordinate x interplanar spacing)"))
     if opts.stats and is_md:
         series = {}
-        if data.temperatures_k and len(data.temperatures_k) - opts.skip_frames >= MIN_STATS_POINTS:
-            series["temperature"] = (data.temperatures_k[opts.skip_frames:], "K", _spacing(data.times_fs))
-        if data.energies_ev and len(data.energies_ev) - opts.skip_frames >= MIN_STATS_POINTS:
-            series["energy"] = (data.energies_ev[opts.skip_frames:], "eV", _spacing(data.times_fs))
+        if data.temperatures_k:
+            Ts, _ = _skip_series(data.temperatures_k, temperature_axis, opts.skip_frames, data.frame_dt_fs)
+            if len(Ts) >= MIN_STATS_POINTS:
+                series["temperature"] = (Ts, "K", _spacing(temperature_axis))
+        if data.energies_ev:
+            Es, _ = _skip_series(data.energies_ev, data.times_fs, opts.skip_frames, data.frame_dt_fs)
+            if len(Es) >= MIN_STATS_POINTS:
+                series["energy"] = (Es, "eV", _spacing(data.times_fs))
         dens = [x for x in densities if x is not None]
         if len(dens) >= MIN_STATS_POINTS and np.ptp(dens) > 1e-9 * max(dens):
             series["density"] = (dens, "g/cm^3", dt_used)
         for key, s in data.series.items():
             if not isinstance(s["values"], (list, tuple)):
                 continue
-            v = [x for x in s["values"][opts.skip_frames:] if np.isfinite(x)]
+            kept, _ = _skip_series(s["values"], data.times_fs, opts.skip_frames, data.frame_dt_fs)
+            v = [x for x in kept if np.isfinite(x)]
             if len(v) >= MIN_STATS_POINTS and np.ptp(v) > 0:
                 series[key] = (v, s["unit"], _spacing(data.times_fs))
         if series:
@@ -853,14 +793,15 @@ def run_analysis(run_dir: Path | str, opts: AnalysisOptions | None = None) -> An
                               select=opts.select)
         res.tables["export"] = info
     if opts.dos and data.eigenvalues_ev is not None:
-        x, y = compute.dos(data.eigenvalues_ev, data.eigen_weights, sigma=opts.dos_sigma)
+        x, y = compute.dos(data.eigenvalues_ev, data.eigen_weights, sigma=opts.dos_sigma, is_grid=data.dos_is_grid)
         fig, ax = plt.subplots(figsize=(6, 3.2))
         ax.plot(x, y, lw=1.2)
         if data.fermi_ev is not None:
             ax.axvline(data.fermi_ev, color="gray", ls="--", lw=0.8); fermi_used = True
         ax.set_xlabel("E [eV]"); ax.set_ylabel("DOS"); plotstyle.grid(ax)
         save(fig, "dos")
-        res.tables["dos"] = {"n_eigen": int(len(data.eigenvalues_ev)), "fermi_ev": data.fermi_ev}
+        res.tables["dos"] = {"n_eigen": int(len(data.eigenvalues_ev)), "fermi_ev": data.fermi_ev, "broadened": not data.dos_is_grid,
+                             "sigma_ev": None if data.dos_is_grid else float(opts.dos_sigma)}
     if opts.vibrations and data.frequencies_cm1:
         if opts.freq_scale:
             data.frequencies_cm1 = [f * opts.freq_scale for f in data.frequencies_cm1]
@@ -938,19 +879,23 @@ def run_analysis(run_dir: Path | str, opts: AnalysisOptions | None = None) -> An
             plot_bands(bd, out / "bands.png", opts.bands_window_ev)
             res.figures["bands"] = str(out / "bands.png")
             e = bd.energies_ev
-            gap = None
-            if bd.fermi_ev is not None:
-                occ = e[e <= bd.fermi_ev]; emp = e[e > bd.fermi_ev]
-                if occ.size and emp.size:
-                    gap = float(emp.min() - occ.max())
             from adit.analysis.bands import gap_details
 
-            details = gap_details(e, bd.fermi_ev, bd.kpts_frac, dict(bd.labels))
-            res.tables["bands"] = {"n_kpoints": int(e.shape[0]), "n_bands": int(e.shape[1]), "labels": [l for _, l in bd.labels],
-                                   "gap_ev": gap, "fermi_ev": bd.fermi_ev,
+            details = gap_details(e, bd.fermi_ev, bd.kpts_frac, dict(bd.labels), bd.energies_down_ev)
+            metal = bool(details and details.get("metal"))
+            res.tables["bands"] = {"n_kpoints": int(e.shape[0]), "n_bands": int(e.shape[1]), "n_spins": bd.n_spins,
+                                   "labels": [l for _, l in bd.labels],
+                                   "gap_ev": float(details["gap_ev"]) if details is not None else None, "metal": metal,
+                                   "fermi_ev": bd.fermi_ev,
                                    "reference_level": "highest_occupied" if data.fermi_is_homo else "fermi",
                                    "gap_details": details}
-            if details is not None:
+            if metal:
+                res.notes.append(L(
+                    f"フェルミ準位を横切るバンドが {details['n_bands_crossing']} 本あります (金属)。ギャップは 0 eV で、VBM・CBM は定義しません"
+                    + ("。スピン 2 つのうちどちらかで横切れば金属としています" if bd.n_spins == 2 else ""),
+                    f"{details['n_bands_crossing']} band(s) cross the Fermi level (metal): the gap is 0 eV and no VBM or CBM is defined"
+                    + (" (crossing in either spin channel counts)" if bd.n_spins == 2 else "")))
+            elif details is not None:
                 where = lambda key: (f"{details[key + '_label']} " if details.get(key + "_label") else "") + f"(k 点 {details[key + '_kpoint_index'] + 1})"
                 res.notes.append(L(
                     f"バンドギャップ {details['gap_ev']:.3f} eV: 価電子帯の頂上は {where('vbm')}、伝導帯の底は {where('cbm')}。"
@@ -963,7 +908,7 @@ def run_analysis(run_dir: Path | str, opts: AnalysisOptions | None = None) -> An
                        f" (different k-points: indirect); the smallest gap at a single k-point is {details['direct_gap_ev']:.3f} eV")
                     + ". This is within the path you gave; nothing is known about k-points outside it"))
             fermi_used = fermi_used or bd.fermi_ev is not None
-            if opts.effective_mass:
+            if opts.effective_mass and not metal:
                 _add_effective_mass(res, bd, opts)
     _add_electronic_extras(res, run_dir, opts)
     if (opts.coordination_cutoff or opts.centrosymmetry_neighbors or opts.steinhardt_cutoff or opts.cluster_cutoff
@@ -1083,34 +1028,252 @@ def _add_viscosity(res: AnalysisResult, data: RunData, out: Path, save) -> None:
                        f"(temperature {result.temperature_k:.1f} K, volume {result.volume_ang3:.1f} A^3, {result.points} points). {result.note}"))
 
 
-def _selected_atoms(res: AnalysisResult, frames, syms, opts: AnalysisOptions) -> list[int]:
-    if opts.select:
-        from adit.analysis.select import SelectionError, describe, select
+def _skip_series(values, times_fs, skip: int, frame_dt_fs) -> tuple[np.ndarray, int]:
+    # --skip counts trajectory frames; a series with its own time axis is cut at the same time,
+    # so series written more often than the trajectory lose the same span, not the same count
+    v = np.asarray(values, dtype=float)
+    n = len(v)
+    if skip <= 0 or n == 0:
+        return v, 0
+    if times_fs is not None and len(times_fs) >= n and frame_dt_fs:
+        t = np.asarray(times_fs[:n], dtype=float)
+        keep = t >= t[0] + skip * float(frame_dt_fs) - 1e-9
+        return v[keep], int(n - keep.sum())
+    return (v[skip:], skip) if n > skip else (v[:0], n)
 
-        try:
-            idx = select(frames[0], opts.select).tolist()
-        except SelectionError as ex:
-            res.notes.append(str(ex))
-            return []
-        res.notes.append(L(f"選び方 {opts.select!r}: ", f"selection {opts.select!r}: ") + describe(frames[0], opts.select))
-        return idx
+
+def _selection(res: AnalysisResult, frames, opts: AnalysisOptions) -> list[int] | None:
+    # indices chosen by --select: None without a selection, [] when it fails or matches nothing
+    if not opts.select:
+        return None
+    from adit.analysis.select import SelectionError, describe, select
+
+    try:
+        idx = select(frames[0], opts.select).tolist()
+    except SelectionError as ex:
+        res.notes.append(str(ex))
+        return []
+    res.notes.append(L(f"選び方 {opts.select!r}: ", f"selection {opts.select!r}: ") + describe(frames[0], opts.select))
+    return idx
+
+
+def _selected_atoms(res: AnalysisResult, frames, syms, opts: AnalysisOptions, selected: bool = False) -> list[int]:
+    # selected=True: pos/syms were already cut down to the --select atoms, so only the element filter remains
+    if opts.select and not selected:
+        return _selection(res, frames, opts) or []
     if opts.msd_species:
         return [i for i, sym in enumerate(syms) if sym == opts.msd_species]
     return list(range(len(syms)))
+
+
+def _add_msd(res: AnalysisResult, data: RunData, spec, frames, opts: AnalysisOptions, unwrap, dt_used, save, run_dir: Path) -> None:
+    import matplotlib.pyplot as plt
+
+    pos, syms = unwrap.result()
+    drift = {"removed": False, "displacement_A": None, "max_displacement_A": None, "requested": bool(opts.msd_remove_drift)}
+    if opts.msd_remove_drift:
+        pos, info = compute.remove_com_drift(pos, syms)
+        drift = {**info, "requested": True}
+    selection = _selection(res, frames, opts)
+    if selection is not None:
+        if not selection:
+            res.notes.append(L("--select で選ばれた原子が無いので、MSD は出しません", "no atom was selected by --select, so there is no MSD"))
+            return
+        pos, syms = pos[:, selection, :], [syms[i] for i in selection]
+    nb = max(0, int(opts.msd_error_blocks))
+    kw = dict(symbols=syms, dt_fs=dt_used, fit_fs=opts.msd_fit_fs, axes=opts.msd_axes, remove_drift=False, n_blocks=nb or 5)
+    a = compute.msd_analysis(pos, opts.msd_species, None, error=bool(nb), **kw)
+    if a.get("reason") and not a.get("n_atoms"):
+        reason = a["reason"]
+        if selection is not None and opts.msd_species:
+            present = ", ".join(sorted(set(syms)))
+            reason = L(f"--select で選んだ原子の中に元素 {opts.msd_species} はありません (選んだ原子の元素: {present})",
+                       f"element {opts.msd_species} is not among the atoms chosen by --select (elements selected: {present})")
+        res.notes.append(L("MSD を出せません: ", "no MSD: ") + reason)
+        res.tables["msd"] = {"species": opts.msd_species, "D_cm2_s": None, "n_frames": len(frames), "n_atoms_used": 0,
+                             "selection": opts.select or None, "reason": reason}
+        return
+    t, m, D, rng = a["lag"], a["msd_A2"], a["D_cm2_s"], a["fit_range_fs"]
+    by = {}
+    fig, ax = plt.subplots(figsize=(6, 3.2))
+    label = opts.msd_species or (f"selected atoms ({len(syms)})" if selection is not None else "all atoms")
+    ax.plot(t, m, lw=1.4, color="k", label=label)
+    elems = sorted(set(syms))
+    if len(elems) > 1:
+        for el in elems:
+            ae = compute.msd_analysis(pos, el, None, error=bool(nb), **kw)
+            by[el] = {"D_cm2_s": ae["D_cm2_s"], "last_A2": float(ae["msd_A2"][-1]), "n_atoms": int(syms.count(el)),
+                      "msd_A2": ae["msd_A2"].tolist(), "loglog_slope": ae["loglog_slope"],
+                      "D_err_cm2_s": (ae["error"] or {}).get("d_err_cm2_s"), "n_blocks": (ae["error"] or {}).get("n_blocks")}
+            if opts.msd_species is None:
+                ax.plot(ae["lag"], ae["msd_A2"], lw=1.0, ls="--", label=el)
+    if rng is not None:
+        how = "user" if a["fit_range_user"] else f"{compute.DEFAULT_FIT_FRACTION[0]:.0%}-{compute.DEFAULT_FIT_FRACTION[1]:.0%} of max lag"
+        ax.axvspan(rng[0], rng[1], color="tab:orange", alpha=0.15, label=f"fit range {rng[0]:g}-{rng[1]:g} fs ({how})")
+    sub = f"{a['formula']}, axes {a['axes']}, " + (
+        f"COM drift removed ({drift['displacement_A']:.3f} Å)" if drift.get("displacement_A") is not None else "COM drift NOT removed")
+    ax.set_title(sub, fontsize=8, color="0.3")
+    ax.set_xlabel("lag time [fs]" if dt_used else "lag [frames]"); ax.set_ylabel("MSD [Å²]"); plotstyle.grid(ax); ax.legend(fontsize=8)
+    save(fig, "msd")
+    if opts.msd_per_atom and dt_used is None:
+        res.notes.append(L("原子ごとの D は出しません: 1 フレームの時間が出力から読めないので、cm²/s に直せません",
+                           "no per-atom D: the time per frame cannot be read from the output, so no value in cm^2/s can be given"))
+    elif opts.msd_per_atom:
+        idx = [i for i, sym in enumerate(syms) if sym == opts.msd_species] if opts.msd_species else list(range(len(syms)))
+        comps = compute.parse_axes(opts.msd_axes)
+        each = compute.msd_per_atom(pos[:, idx, :][:, :, comps], dt_used, len(comps), opts.msd_fit_fs)
+        res.tables["msd_per_atom"] = {
+            "species": opts.msd_species, "atom_index": idx, "symbol": [syms[i] for i in idx],
+            "D_cm2_s": each["d_cm2_s"], "fit_range_fs": each["fit_range_fs"], "spread": each["spread"],
+            "note": L("原子 1 個ごとに、時間原点を全部使った MSD を直線に当てはめた D です。"
+                      "速い・遅いの判定はしていません (1 原子の統計は全体より悪く、ばらつきます)。",
+                      "D per atom, from a straight-line fit to its own multiple-time-origin MSD. "
+                      "No fast/slow judgment is made; single-atom statistics are much noisier than the average.")}
+        if each["d_cm2_s"]:
+            good = [v for v in each["d_cm2_s"] if v is not None]
+            if good:
+                res.notes.append(L(f"原子ごとの D: {len(good)} 原子、{min(good):.3g}〜{max(good):.3g} cm²/s "
+                                   f"(平均 {sum(good) / len(good):.3g})。表は analysis/summary.json の msd_per_atom",
+                                   f"D per atom: {len(good)} atoms, {min(good):.3g} to {max(good):.3g} cm^2/s "
+                                   f"(mean {sum(good) / len(good):.3g}); the table is in msd_per_atom of analysis/summary.json"))
+    if opts.vacf:
+        _add_vacf(res, pos, syms, frames, opts, dt_used, save, selected=selection is not None)
+    if opts.conductivity_charge:
+        _add_conductivity(res, spec, data, syms, frames, opts, D)
+    if opts.vanhove:
+        _add_vanhove(res, data, pos, syms, frames, opts, dt_used, save, run_dir, selected=selection is not None)
+    n_atoms = len(frames[0]) if frames else 0
+    span_fs = (len(frames) - 1) * dt_used if dt_used else None
+    periodic = bool(np.any(frames[0].pbc)) if frames else False
+    scale = {"n_atoms": n_atoms, "n_atoms_used": int(a["n_atoms"]), "n_frames": len(frames), "span_fs": span_fs, "periodic": periodic}
+    res.tables["msd_scale"] = scale
+    used = ""
+    if a["n_atoms"] != n_atoms:
+        used = L(f" (MSD に使ったのは {a['n_atoms']} 個)", f" ({a['n_atoms']} of them used for the MSD)")
+    res.notes.append(L(
+        "この拡散係数を出した計算の規模: 原子 {} 個{}、フレーム {} 枚{}、周期境界 {}。"
+        "値の良し悪しは判定しません".format(
+            n_atoms, used, len(frames),
+            f"、全体で {span_fs:g} fs" if span_fs else "",
+            "あり" if periodic else "なし (拡散は普通 周期境界のある系で測ります)"),
+        "the size of the run behind this diffusion coefficient: {} atoms{}, {} frames{}, periodic boundaries {}. "
+        "ADIT does not judge whether the value is good".format(
+            n_atoms, used, len(frames),
+            f", {span_fs:g} fs in total" if span_fs else "",
+            "on" if periodic else "off (diffusion is normally measured with periodic boundaries)")))
+    res.tables["msd"] = {"species": opts.msd_species, "last_A2": float(m[-1]), "D_cm2_s": D, "n_frames": len(frames),
+                         "n_atoms_used": int(a["n_atoms"]), "selection": opts.select or None,
+                         "method": "fft_multiple_time_origins", "dt_fs": dt_used, "fit_range_fs": list(rng) if rng else None,
+                         "fit_range_user": opts.msd_fit_fs is not None, "lag_fs": t.tolist(), "msd_A2": m.tolist(), "by_element": by,
+                         "axes": a["axes"], "dimension": a["dimension"], "formula": a["formula"], "drift": drift,
+                         "fit_fraction": a["fit_fraction"], "loglog_slope": a["loglog_slope"],
+                         "unwrap_check": {"max_step_fraction_of_shortest_cell_width": unwrap.max_step_fraction,
+                                          "steps_at_or_above_0_4": unwrap.large_step_count,
+                                          "variable_cell": bool(unwrap.variable_cell)},
+                         "D_err_cm2_s": (a["error"] or {}).get("d_err_cm2_s"), "D_error": a["error"],
+                         "definition": L(
+                             "D は当てはめ範囲で MSD を直線に当てはめた傾きから。D_error は各ブロックから出した D の平均の標準誤差で、"
+                             "全軌跡の D 自体の厳密な誤差ではありません。既定では各ブロックを自分の最大遅れ時間の 10〜50 % で当てはめ、"
+                             "--msd-fit を指定したときだけ同じ絶対範囲を全ブロックに当てます (入らないブロックがあれば出しません)。"
+                             "loglog_slope は当てはめ範囲での log MSD 対 log t の傾き (拡散なら 1 に近い)",
+                             "D comes from a straight-line fit of the MSD over the fit range. D_error is the standard error of the mean "
+                             "block D, not a rigorous error on D from the full trajectory; by default each block is fitted over 10-50% of "
+                             "its own maximum lag, and only with --msd-fit is the same absolute range applied to every block (no value when a "
+                             "block cannot cover it). loglog_slope is the slope of log MSD vs log t over the fit range (close to 1 for diffusion)")}
+    if unwrap.large_step_count:
+        res.notes.append(L(
+            f"MSD の境界越え補正: {unwrap.large_step_count} 個のフレーム間で、最小像の移動が最短セル幅の 40 % 以上でした "
+            f"(最大 {unwrap.max_step_fraction:.1%})。1 フレームの間に半セル以上動くと移動方向を一意に復元できないため、間引く前の軌跡でも確認してください",
+            f"MSD boundary unwrapping: the minimum-image displacement was at least 40% of the shortest cell width between "
+            f"{unwrap.large_step_count} pairs of frames (maximum {unwrap.max_step_fraction:.1%}). If an atom moves by half a cell or more "
+            "between frames, its direction cannot be reconstructed uniquely; also inspect the trajectory before subsampling"))
+    if unwrap.variable_cell:
+        res.notes.append(L(
+            "セルが変わる軌跡 (NPT など) なので、境界越えは分率座標で数え、各フレームのセルで直交座標に戻しました。"
+            "箱の伸び縮みに乗った移動も MSD に入ります (LAMMPS の xu と同じ扱い)",
+            "the cell changes along the trajectory (NPT): boundary crossings were counted in fractional coordinates and converted "
+            "back with the cell of each frame, so motion carried by the breathing box is part of the MSD (as LAMMPS xu does)"))
+    if drift.get("displacement_A") is not None and dt_used:
+        res.notes.append(L(f"MSD の前に系全体の質量重心を各フレームから引きました (重心は最初と最後で {drift['displacement_A']:.3f} Å、"
+                           f"最初のフレームからの最大 {drift['max_displacement_A']:.3f} Å 動いています)",
+                           f"the center-of-mass of the whole system was subtracted from every frame before the MSD (it moved "
+                           f"{drift['displacement_A']:.3f} Å between the first and last frame, at most {drift['max_displacement_A']:.3f} Å)"))
+    elif not opts.msd_remove_drift:
+        res.notes.append(L("MSD から重心の流れを落としていません (--msd-keep-drift)。重心が流れていると MSD に並進の分が残ります",
+                           "the center-of-mass drift was NOT removed from the MSD (--msd-keep-drift); any drift of the center of mass stays in the MSD"))
+    if D is not None and D < 0:
+        res.notes.append(L("拡散係数が負の値です。軌跡が短く統計が足りない可能性があります (拡散係数は MSD が時間に比例して増える範囲で読みます)",
+                           "the diffusion coefficient is negative; the trajectory may be too short for the statistics (read D where the MSD grows linearly in time)"))
+    if dt_used is None and len(frames) > 1:
+        res.notes.append(L("軌跡の 1 フレームあたりの時間が出力から読めないので、MSD の横軸はフレームの番号で、拡散係数は出しません",
+                           "the time per trajectory frame cannot be read from the output, so the MSD is plotted against frame lag and no diffusion coefficient is given"))
+
+
+def _add_structure_factor(res: AnalysisResult, rdf_acc, first, out: Path, save) -> None:
+    import matplotlib.pyplot as plt
+
+    from adit.analysis import local_order as LO
+
+    norm = rdf_acc.normalization()
+    if norm["kind"] != "cell_volume" or not norm.get("mean_volume_A3"):
+        res.notes.append(L("構造因子 S(q) は、g(r) をセルの体積で規格化できる周期系だけで出します (非周期系では g(r) が遠方で 1 に収束しません)",
+                           "the structure factor S(q) is only computed for periodic systems, where g(r) is normalized by the cell volume "
+                           "(for a non-periodic system g(r) does not tend to 1)"))
+        return
+    rho = len(first) / float(norm["mean_volume_A3"])  # all atoms: Faber-Ziman partials
+    table = {}
+    fig, ax = plt.subplots(figsize=(6, 3.4))
+    for a, b in rdf_acc.pairs:
+        rr = rdf_acc.result((a, b))
+        if not rr["n_frames"]:
+            continue
+        try:
+            got = LO.structure_factor(rr["r"], rr["g"], rho)
+        except LO.LocalOrderError as ex:
+            res.notes.append(str(ex))
+            continue
+        table[f"{a}-{b}"] = got
+        ax.plot(got["q_1_A"], got["s_q"], lw=1.2, label=f"{a}-{b}")
+    if not table:
+        plt.close(fig)
+        return
+    qmin = 2 * np.pi / rdf_acc.rmax
+    ax.axvspan(0.0, qmin, color="0.85", alpha=0.7)
+    ax.set_xlabel("q [Å$^{-1}$]"); ax.set_ylabel("S(q)"); ax.legend(fontsize=8); plotstyle.grid(ax)
+    ax.set_title(f"from g(r) up to {rdf_acc.rmax:.2f} Å; shaded q < 2π/rmax = {qmin:.2f} Å⁻¹ is unreliable", fontsize=8, color="0.3")
+    save(fig, "sq")
+    provenance = {"source": "rdf.json", "rmax_A": float(rdf_acc.rmax), "n_frames": int(rdf_acc.n_frames),
+                  "number_density_A3": float(rho), "n_atoms": int(len(first)),
+                  "convention": "Faber-Ziman: S_ab(q) = 1 + 4 pi rho0 int r^2 (g_ab(r) - 1) sin(qr)/(qr) dr, rho0 = N/V of all atoms",
+                  "window": "Lorch", "reliable_above_q_1_A": float(qmin)}
+    (out / "sq.json").write_text(json.dumps(_jsonable({**table, "_provenance": provenance})), encoding="utf-8")
+    res.tables["structure_factor"] = {"pairs": list(table), "file": str(out / "sq.json"), **provenance,
+                                      "note": L("S(q) は RDF (同じフレーム、同じ rmax) から数値積分した値で、回折の測定と直接比べる前に重みを掛ける必要があります。"
+                                                "山の位置の目安は 2π/d (d は実空間の間隔)。測定との一致は判定していません",
+                                                "S(q) is the numerical transform of the RDF (same frames, same rmax); it needs scattering weights before "
+                                                "a direct comparison with diffraction. Peaks sit near 2 pi / d for a real-space spacing d. "
+                                                "Agreement with experiment is not judged")}
+    res.notes.append(L(
+        f"構造因子 S(q) ({', '.join(table)}): g(r) を {rdf_acc.rmax:.2f} Å まで積みました (Faber–Ziman、全原子の数密度 {rho:.4f} Å⁻³、Lorch 窓)。"
+        f"q < 2π/rmax = {qmin:.2f} Å⁻¹ は積む範囲が有限なことの影響を受けるので読まないでください (sq.json / sq.png)",
+        f"structure factor S(q) ({', '.join(table)}): from g(r) integrated to {rdf_acc.rmax:.2f} Å (Faber-Ziman, total number density "
+        f"{rho:.4f} A^-3, Lorch window). Do not read q < 2 pi / rmax = {qmin:.2f} A^-1, where the finite integration range matters (sq.json / sq.png)"))
 
 
 def _add_effective_mass(res: AnalysisResult, bd, opts: AnalysisOptions) -> None:
     from adit.analysis.effective_mass import at_band_edges
 
     try:
-        masses = at_band_edges(bd.x_axis(), bd.energies_ev, bd.fermi_ev, opts.effective_mass_points)
+        masses = at_band_edges(bd.x_axis(), bd.all_energies(), bd.fermi_ev, opts.effective_mass_points)
     except ValueError as ex:
         res.notes.append(L(f"有効質量を出せません: {ex}", f"cannot compute the effective mass: {ex}"))
         return
     if not masses:
         return
+    nb = int(bd.energies_ev.shape[1])
     res.tables["effective_mass"] = [
-        {"kind": m.kind, "m_over_me": m.m_over_me, "band_index": m.band_index,
+        {"kind": m.kind, "m_over_me": m.m_over_me, "band_index": m.band_index % nb if bd.n_spins == 2 else m.band_index,
+         "spin": (("down" if m.band_index >= nb else "up") if bd.n_spins == 2 else None),
          "kpoint_index": m.kpoint_index, "n_points": m.n_points, "r_squared": m.r_squared,
          "k_window_inv_ang": m.k_window_inv_ang} for m in masses]
     for m in masses:
@@ -1731,7 +1894,7 @@ def _add_geometry_series(res: AnalysisResult, data: RunData, frames, opts: Analy
                            f"the geometry time series was written to {path.name} ({len(table)} columns)"))
 
 
-def _add_vacf(res: AnalysisResult, pos, syms, frames, opts: AnalysisOptions, dt_fs, save) -> None:
+def _add_vacf(res: AnalysisResult, pos, syms, frames, opts: AnalysisOptions, dt_fs, save, selected: bool = False) -> None:
     import matplotlib.pyplot as plt
 
     from adit.analysis import vacf as V
@@ -1740,7 +1903,7 @@ def _add_vacf(res: AnalysisResult, pos, syms, frames, opts: AnalysisOptions, dt_
         res.notes.append(L("フレームの間隔が分からないので、速度自己相関は求められません",
                            "the time between frames is unknown, so no velocity autocorrelation can be computed"))
         return
-    idx = _selected_atoms(res, frames, syms, opts)
+    idx = _selected_atoms(res, frames, syms, opts, selected)
     if not idx:
         return
     stored = []
@@ -1851,12 +2014,12 @@ def _plot_vanhove_file(res: AnalysisResult, path: Path, save) -> None:
                            f"90 % of {vh.get('half_width_A', float('nan')):.2f} Å, the minimum-image limit (D is biased low)"))
 
 
-def _add_vanhove(res: AnalysisResult, pos, syms, frames, opts: AnalysisOptions, dt_fs, save, run_dir: Path) -> None:
+def _add_vanhove(res: AnalysisResult, data: RunData, pos, syms, frames, opts: AnalysisOptions, dt_fs, save, run_dir: Path,
+                 selected: bool = False) -> None:
     import matplotlib.pyplot as plt
 
-    from adit.analysis import vanhove as vh
-
     from adit.analysis import heavy_setup
+    from adit.analysis import vanhove as vh
 
     done = run_dir / heavy_setup.RESULT_FILE
     if done.is_file():
@@ -1871,17 +2034,16 @@ def _add_vanhove(res: AnalysisResult, pos, syms, frames, opts: AnalysisOptions, 
     if cell is None and opts.vanhove_displacement == "mic":
         res.notes.append(L("非周期の系なので、変位の分布は巻き戻した座標で求めます",
                            "the system is not periodic, so the displacement distribution uses unwrapped coordinates"))
-    idx = _selected_atoms(res, frames, syms, opts)
+    idx = _selected_atoms(res, frames, syms, opts, selected)
     if not idx:
         return
     taus = vh.default_taus(pos.shape[0], count=int(opts.vanhove))
     kind = opts.vanhove_displacement if cell is not None else "unwrapped"
-    from adit.analysis import heavy_setup
-
     guess = heavy_setup.estimate(pos.shape[0], len(idx), len(taus), kind)
     if not opts.vanhove_here and guess["seconds"] > opts.heavy_limit_seconds:
+        source = data.frame_source if data.frame_source and (run_dir / data.frame_source).is_file() else ""
         written = heavy_setup.write_job(run_dir, dt_fs=dt_fs, species=opts.msd_species, taus=len(taus),
-                                        displacement=kind)
+                                        displacement=kind, trajectory=source, cell=cell)
         res.notes.append(L(
             f"変位の分布は、この場では計算しませんでした (見積もり {guess['seconds']:.0f} 秒。上限 {opts.heavy_limit_seconds:.0f} 秒)。"
             f"実行用のファイルを置きました: {', '.join(p.name for p in written)}。"

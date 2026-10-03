@@ -13,24 +13,17 @@ class LocalOrderError(AditValueError):
 
 
 def _neighbors(atoms: Atoms, cutoff: float, indices=None):
-    from adit.analysis.compute import pairs_within
+    from ase.neighborlist import neighbor_list
 
     if cutoff <= 0:
         raise LocalOrderError(L("カットオフ [Å] は正の値です", "the cutoff (Å) must be positive"))
-    i, j, _ = pairs_within(atoms, cutoff)
-    pos = atoms.get_positions()
-    cell = np.asarray(atoms.cell, dtype=float)
-    periodic = bool(np.any(atoms.pbc)) and abs(np.linalg.det(cell)) > 0
-    from adit.analysis.compute import _mic_step
-
     out: dict[int, list] = {k: [] for k in range(len(atoms))}
-    if len(i):
-        diff = pos[j] - pos[i]
-        if periodic:
-            diff = _mic_step(diff, cell)
-        for a, b, d in zip(i.tolist(), j.tolist(), diff):
-            out[a].append((b, d))
-            out[b].append((a, -d))
+    if len(atoms):
+        # Every periodic image counts, including images of the atom itself, so a cutoff
+        # larger than half the cell still gives the right neighbour count.
+        i, j, d = neighbor_list("ijD", atoms, float(cutoff), self_interaction=False)
+        for a, b, vec in zip(i.tolist(), j.tolist(), d):
+            out[a].append((b, vec))
     if indices is not None:
         keep = set(int(x) for x in indices)
         out = {k: v for k, v in out.items() if k in keep}
@@ -98,9 +91,21 @@ def centrosymmetry(atoms: Atoms, n_neighbors: int = 12, indices=None) -> dict:
                       "lattice. No threshold for calling an atom a defect or a surface is applied.")}
 
 
-def steinhardt(atoms: Atoms, cutoff: float, ls=(4, 6), indices=None) -> dict:
-    from scipy.special import sph_harm_y
+def _spherical_harmonic():
+    try:
+        from scipy.special import sph_harm_y
+    except ImportError:
+        try:
+            from scipy.special import sph_harm  # SciPy < 1.15: (m, l, azimuth, polar)
+        except ImportError as ex:
+            raise LocalOrderError(L("Steinhardt の q_l には scipy の球面調和関数 (sph_harm_y、SciPy 1.15 以降) が要ります",
+                                    "Steinhardt q_l needs scipy's spherical harmonics (sph_harm_y, SciPy 1.15 or later)")) from ex
+        return lambda l, m, theta, phi: sph_harm(m, l, phi, theta)
+    return sph_harm_y
 
+
+def steinhardt(atoms: Atoms, cutoff: float, ls=(4, 6), indices=None) -> dict:
+    sph_harm_y = _spherical_harmonic()
     nb = _neighbors(atoms, cutoff, indices)
     keys = sorted(nb)
     syms = atoms.get_chemical_symbols()

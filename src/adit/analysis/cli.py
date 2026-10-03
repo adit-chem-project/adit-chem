@@ -189,8 +189,11 @@ def main(argv: list[str] | None = None) -> int:
         "密度分布を取る軸 (既定 c)。界面が a 面や b 面に平行な系で使います",
         "axis for the density profile (default c); use it when the interface is normal to a or b"))
     ap.add_argument("--select", default="", metavar="式", help=L(
-        "原子の選び方 (例: \"element O\"、\"index 1-10\"、\"z < 10\"、\"within 5 of index 3\"、and / or / not)。MSD・変位の分布・VACF に効きます",
-        "how to select atoms (e.g. \"element O\", \"index 1-10\", \"z < 10\", \"within 5 of index 3\", and/or/not); applies to MSD, the displacement distribution and the VACF"))
+        "原子の選び方 (例: \"element O\"、\"index 1-10\"、\"z < 10\"、\"within 5 of index 3\"、and / or / not)。"
+        "MSD (元素ごと・原子ごとの D も選んだ原子の中で数えます。--msd の元素とは積集合)・変位の分布・VACF・RMSD・RMSF に効きます",
+        "how to select atoms (e.g. \"element O\", \"index 1-10\", \"z < 10\", \"within 5 of index 3\", and/or/not); applies to the MSD "
+        "(the per-element and per-atom D are taken within the selection; combined with the element of --msd as an intersection), "
+        "the displacement distribution, the VACF, RMSD and RMSF"))
     ap.add_argument("--distance", action="append", default=[], metavar="i,j", help=L(
         "2 原子の距離の時系列を出します (1 始まりの番号。複数回書けます)", "time series of the distance between two atoms (1-based indices; repeatable)"))
     ap.add_argument("--angle", action="append", default=[], metavar="i,j,k", help=L(
@@ -218,8 +221,10 @@ def main(argv: list[str] | None = None) -> int:
         "変位の分布 (van Hove の自己相関) から D(τ) と非ガウス因子を出します。N は見る遅れ時間の点数です (既定 100)",
         "obtain D(tau) and the non-Gaussian parameter from the displacement distribution (van Hove self-part); N is the number of lag times (default 100)"))
     ap.add_argument("--write-msd-job", nargs="?", const=".", default=None, metavar="DIR", help=L(
-        "重い解析を実行するためのファイル一式 (msd_worker.py と msd_run.sh) を書き出して終わります (既定はこのディレクトリ)",
-        "write the files to run the heavy analysis (msd_worker.py and msd_run.sh) and stop (default: this directory)"))
+        "重い解析を実行するためのファイル一式 (msd_worker.py と msd_run.sh、軌跡にセルが無ければ msd_cell.txt) を書き出して終わります "
+        "(省くと計算のディレクトリに書きます。1 フレームの時間と軌跡の名前は出力から埋めます)",
+        "write the files to run the heavy analysis (msd_worker.py and msd_run.sh, plus msd_cell.txt when the trajectory has no cell) and stop "
+        "(default: the run directory; the time per frame and the trajectory name are filled in from the output)"))
     ap.add_argument("--vanhove-here", action="store_true", help=L(
         "重くてもこの場で計算します (既定では、見積もりが 60 秒を超えたら実行用のファイルを置くだけです)",
         "compute it here even when heavy (by default, files to run it are written when the estimate exceeds 60 s)"))
@@ -386,14 +391,39 @@ def main(argv: list[str] | None = None) -> int:
             print(L(f"図 ({name}): {path}", f"figure ({name}): {path}"))
         return 0
     if a.write_msd_job is not None:
-        from adit.analysis import heavy_setup
+        import os
+        from pathlib import Path
 
-        written = heavy_setup.write_job(a.write_msd_job, dt_fs=a.dt if getattr(a, "dt", None) else 1.0,
-                                        species=(a.msd or None), taus=int(a.vanhove or 100),
-                                        displacement=a.vanhove_displacement)
+        import numpy as np
+
+        from adit.analysis import heavy_setup
+        from adit.analysis.readers import load_run
+
+        run_dir = Path(a.run_dir)
+        out_dir = run_dir if a.write_msd_job == "." else Path(a.write_msd_job)
+        dt = cell = None
+        trajectory = ""
+        try:
+            data = load_run(run_dir, a.code or None)
+        except ValueError as ex:
+            print(L(f"計算の出力を読めないので、軌跡の名前と 1 フレームの時間は穴のままです: {ex}",
+                    f"the output could not be read, so the trajectory name and the time per frame are left blank: {ex}"), file=sys.stderr)
+        else:
+            dt = data.frame_dt_fs
+            if data.frame_source and (run_dir / data.frame_source).is_file():
+                same = out_dir.resolve() == run_dir.resolve()
+                trajectory = data.frame_source if same else os.path.relpath(run_dir / data.frame_source, out_dir)
+            last = data.final
+            if last is not None and any(last.pbc) and last.cell.rank == 3:
+                cell = np.asarray(last.cell, dtype=float)
+        written = heavy_setup.write_job(out_dir, dt_fs=dt, species=(a.msd or None), taus=int(a.vanhove or 100),
+                                        displacement=a.vanhove_displacement, trajectory=trajectory, cell=cell)
         print(L("重い解析を実行用のファイルを書きました:", "wrote the files to run the heavy analysis:"))
         for path in written:
             print(f"  {path}")
+        if dt is None:
+            print(L(f"  1 フレームの時間 [fs] が出力から読めませんでした。{heavy_setup.JOB_FILE} の --dt に値を入れてください",
+                    f"  the time per frame in fs could not be read from the output; fill in --dt in {heavy_setup.JOB_FILE}"))
         print(L(f"  実行すると {heavy_setup.RESULT_FILE} ができます。そのあと adit-analyze <ディレクトリ> で図になります",
                 f"  running them writes {heavy_setup.RESULT_FILE}; then adit-analyze <directory> turns it into figures"))
         return 0

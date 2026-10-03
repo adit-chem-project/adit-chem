@@ -140,6 +140,7 @@ def read_gamess(path: Path) -> QcOutput:
     skip = 0
     charges: list[float] = []
     mulliken = False
+    tr_modes: tuple[int, int] | None = None
     for line in _lines(path):
         if "FINAL" in line and "ENERGY IS" in line:
             m = re.search(r"IS\s+(-?\d+\.\d+)", line)
@@ -148,6 +149,12 @@ def read_gamess(path: Path) -> QcOutput:
             continue
         if line.lstrip().startswith("FREQUENCY:"):
             freqs += _gamess_frequencies(line.split(":", 1)[1])
+            continue
+        if "ARE TAKEN AS ROTATIONS AND TRANSLATIONS" in line:
+            # GAMESS names the projected modes itself: 6, or 5 for a linear molecule
+            m = re.search(r"MODES\s+(\d+)\s+TO\s+(\d+)\s+ARE TAKEN AS", line)
+            if m:
+                tr_modes = (int(m.group(1)), int(m.group(2)))
             continue
         if line.lstrip().startswith("IR INTENSITY:"):
             irs += _floats(line.split(":", 1)[1])
@@ -185,10 +192,14 @@ def read_gamess(path: Path) -> QcOutput:
             elif charges and not line.strip():
                 mulliken = False
             continue
-    n_zero = 6 if len(freqs) > 6 else 0
-    out.frequencies_cm1 = freqs[n_zero:]
-    out.ir_intensities = [v * GAMESS_IR_TO_KM_PER_MOL for v in irs[n_zero:]]
-    out.raman_activities = ramans[n_zero:] if ramans else []
+    if tr_modes is not None and tr_modes[1] <= len(freqs):
+        drop = set(range(tr_modes[0] - 1, tr_modes[1]))
+    else:
+        drop = set(range(6)) if len(freqs) > 6 else set()
+    keep = [k for k in range(len(freqs)) if k not in drop]
+    out.frequencies_cm1 = [freqs[k] for k in keep]
+    out.ir_intensities = [irs[k] * GAMESS_IR_TO_KM_PER_MOL for k in keep if k < len(irs)]
+    out.raman_activities = [ramans[k] for k in keep if k < len(ramans)] if ramans else []
     if charges:
         _add_charges(out, charges, "Mulliken", "GAMESS の TOTAL MULLIKEN AND LOWDIN ATOMIC POPULATIONS")
     return _keep_last_per_definition(out)
