@@ -359,6 +359,7 @@ def template_marks(spec) -> dict[str, str]:
 # Spec fields the web form has no widget for. PrepOrigin keeps them from the loaded
 # spec.json so that load -> preview -> generate does not silently reset them.
 HIDDEN_METHOD_FIELDS = {
+    "dftbplus": ("seed",),
     "xtb": ("md_hmass", "md_shake", "md_sccacc"),
     "espresso": ("dipole_correction", "dipole_direction", "dipole_maxpos", "dipole_decrease", "dipole_amplitude"),
     "lammps": ("thermo_pressure_tensor",),

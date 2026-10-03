@@ -6,7 +6,9 @@ import email
 import email.policy
 import hmac
 import html
+import ipaddress
 import json
+import math
 import os
 import re
 import secrets
@@ -18,7 +20,6 @@ import threading
 import webbrowser
 from datetime import datetime
 from http import HTTPStatus
-from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, quote, urlencode, urlparse
@@ -32,8 +33,8 @@ from adit.config import (Config, ConfigError, config_path, ensure_config, env_va
                           set_top_level_value)
 from adit.gui.help import help_for
 from adit.lang import L
-from adit.project import OutputNotEmpty, ProjectError, ProjectFiles, build_project, has_files, load_project, tree_files, write_project
-from adit.spec import CalculationSpec
+from adit.project import OutputNotEmpty, ProjectError, ProjectFiles, build_project, has_files, load_project, write_project
+from adit.spec import CalculationSpec, unknown_keys
 from adit.structure import CRYSTAL_STRUCTURES, FETCH_DATABASES, SURFACE_FUNCTIONS, has_rdkit, preset_names, preset_search_text
 from adit.web import forms
 from adit.web.forms import FormError, default_form, form_from_spec, spec_from_form
@@ -270,6 +271,8 @@ class WebApp:
                                           "To overwrite the files inside, tick \"Allow overwrite\" and press \"Generate\" again.")
         except ProjectError as ex:
             return "", str(ex)
+        except OSError as ex:
+            return "", str(ex)
         self.written = Path(out).expanduser().resolve()
         profile = self.cfg.profile(self.spec.runtime.profile)
         self.written_kind = profile.kind
@@ -286,7 +289,7 @@ class WebApp:
         return self.form.get("source") in ("bulk", "surface", "mixture", "2d") or forms._b(self.form.get("box"))
 
     def scan_default_dir(self) -> str:
-        base = (self.form.get("output_dir") or "").strip().rstrip("/")
+        base = (self.form.get("output_dir") or "").strip().rstrip("/\\")
         return base + "_scan" if base else ""
 
     def scan_dir_value(self) -> str:
@@ -329,8 +332,9 @@ class WebApp:
             if out.exists() and not out.is_dir():
                 return "", L(f"{out} は保存先にできません (同じ名前のファイルがあります)。", f"{out} cannot be used as the output directory (a file with that name exists).")
             if has_files(out) and not overwrite:
-                return "", L(f"{out} には {len(tree_files(out))} ファイルがあります。同じ名前のファイルを上書きしてよければ、一括生成の欄の「上書きを許可」に印を付けてから、もう一度「生成」を押してください。",
-                             f"{out} holds {len(tree_files(out))} files. To overwrite those with the same names, tick \"Allow overwrite\" in the parameter scan box and press \"Generate\" again.")
+                n = _file_count_phrase(out)
+                return "", L(f"{out} には {n}があります。同じ名前のファイルを上書きしてよければ、一括生成の欄の「上書きを許可」に印を付けてから、もう一度「生成」を押してください。",
+                             f"{out} holds {n}. To overwrite those with the same names, tick \"Allow overwrite\" in the parameter scan box and press \"Generate\" again.")
             dirs = write_scan(self.spec, self.cfg, out, scan, overwrite=overwrite)
         except (ScanError, ProjectError, ConfigError, ValueError, OSError) as ex:
             if isinstance(ex, PydanticError):
@@ -368,7 +372,8 @@ class WebApp:
         from adit.web.codefields import continuation_summary
         from adit.web.recipe_form import write_steps
 
-        self.form = {**default_form(self.cfg.default_profile, self.form.get("output_dir", "")), **form}
+        posted = {**default_form(self.cfg.default_profile, self.form.get("output_dir", "")), **form}
+        self.form = posted
         d = (self.form.get("cont_dir") or "").strip()
         if not d:
             return "", L("前の計算のディレクトリを指定してください。", "Choose the previous run directory."), ""
@@ -382,21 +387,30 @@ class WebApp:
             spec = continue_from(d, cond, velocities=forms._b(self.form.get("cont_vel")))
         except (ValueError, OSError) as ex:
             return "", forms._pydantic_text(ex) if isinstance(ex, ValueError) else str(ex), ""
+        except Exception as ex:
+            return "", _unexpected(ex), ""
         keep = {k: self.form.get(k, "") for k in ("cont_dir", "cont_vel", "cont_keep")}
-        self.adopt_origin(spec)
-        self.form = {**forms.drop_prep_fields(self.form), **form_from_spec(spec), **keep}
-        write_steps(self.form, [])
-        prev = Path(spec.meta.continued_from["dir"])
-        out = (self.form.get("output_dir") or "").strip()
-        if out and Path(out).expanduser().resolve() == prev.resolve():
-            self.form["output_dir"] = str(prev) + "_cont"
+        origin_before = (self.origin, self.origin_structure)
+        try:
+            self.adopt_origin(spec)
+            self.form = {**forms.drop_prep_fields(self.form), **form_from_spec(spec), **keep}
+            write_steps(self.form, [])
+            prev = Path(spec.meta.continued_from["dir"])
+            out = (self.form.get("output_dir") or "").strip()
+            if out and Path(out).expanduser().resolve() == prev.resolve():
+                self.form["output_dir"] = str(prev) + "_cont"
+        except Exception as ex:
+            # A hand-edited spec.json can fail here; keep the typed fields and the previous records instead of a half-applied form.
+            self.form = posted
+            self.origin, self.origin_structure = origin_before
+            return "", _unexpected(ex), ""
         status, err = self.preview(dict(self.form))
         return status, err, continuation_summary(spec) + "\n\n" + L(
             "出力ディレクトリは、前の計算とは別の場所にしてください (同じ場所に書くと前の出力を上書きします)。",
             "Use an output directory other than the previous run's (writing there would overwrite its output).")
 
     def batch_default_dir(self) -> str:
-        base = (self.form.get("output_dir") or "").strip().rstrip("/")
+        base = (self.form.get("output_dir") or "").strip().rstrip("/\\")
         suffix = {"compare": "_set", "conformers": "_conf", "neb": "_neb", "phonons": "_phonon", "elastic": "_elastic",
                   "ts": "_ts"}.get(self.form.get("batch_kind") or "compare", "_batch")
         return base + suffix if base else ""
@@ -427,8 +441,9 @@ class WebApp:
             if out.exists() and not out.is_dir():
                 return "", L(f"{out} は保存先にできません (同じ名前のファイルがあります)。", f"{out} cannot be used as the output directory (a file with that name exists).")
             if has_files(out) and not overwrite:
-                return "", L(f"{out} には {len(tree_files(out))} ファイルがあります。同じ名前のファイルを上書きしてよければ、「まとめて作る」の欄の「上書きを許可」に印を付けてから、もう一度「生成」を押してください。",
-                             f"{out} holds {len(tree_files(out))} files. To overwrite those with the same names, tick \"Allow overwrite\" in the batch generation box and press \"Generate\" again.")
+                n = _file_count_phrase(out)
+                return "", L(f"{out} には {n}があります。同じ名前のファイルを上書きしてよければ、「まとめて作る」の欄の「上書きを許可」に印を付けてから、もう一度「生成」を押してください。",
+                             f"{out} holds {n}. To overwrite those with the same names, tick \"Allow overwrite\" in the batch generation box and press \"Generate\" again.")
             res = P.run_batch(kind, self.spec, self.cfg, out, self.form, overwrite=overwrite)
         except ImportError as ex:
             return "", L(f"必要なパッケージがありません: {ex}", f"a required package is missing: {ex}")
@@ -446,17 +461,17 @@ class WebApp:
         field, value = field.strip(), value.strip()
         fields = {f for _g, f, _u in DOC_FIELDS.values() if f}
         try:
-            float(value)
+            x = float(value)
         except ValueError:
             return ""
-        if field not in fields:
+        if not math.isfinite(x) or field not in fields:
             return ""
         self.form[field] = value
         return L(f"{field} に {value} を入れました (文書に書かれていた値です)。",
                  f"Put {value} in {field} (the value written in the documentation).")
 
     def stages_default_dir(self) -> str:
-        base = (self.form.get("output_dir") or "").strip().rstrip("/")
+        base = (self.form.get("output_dir") or "").strip().rstrip("/\\")
         return base + "_stages" if base else ""
 
     def stages_dir_value(self) -> str:
@@ -496,8 +511,9 @@ class WebApp:
             if out.exists() and not out.is_dir():
                 return "", L(f"{out} は保存先にできません (同じ名前のファイルがあります)。", f"{out} cannot be used as the output directory (a file with that name exists).")
             if has_files(out) and not overwrite:
-                return "", L(f"{out} には {len(tree_files(out))} ファイルがあります。同じ名前のファイルを上書きしてよければ、段階の欄の「上書きを許可」に印を付けてから、もう一度「段階に分けて生成」を押してください。",
-                             f"{out} holds {len(tree_files(out))} files. To overwrite those with the same names, tick \"Allow overwrite\" in the staged calculation box and press \"Generate stages\" again.")
+                n = _file_count_phrase(out)
+                return "", L(f"{out} には {n}があります。同じ名前のファイルを上書きしてよければ、段階の欄の「上書きを許可」に印を付けてから、もう一度「段階に分けて生成」を押してください。",
+                             f"{out} holds {n}. To overwrite those with the same names, tick \"Allow overwrite\" in the staged calculation box and press \"Generate stages\" again.")
             dirs = write_stages(self.spec, self.cfg, out, parsed, overwrite=overwrite)
         except (StageError, ProjectError, ConfigError, ValueError, OSError) as ex:
             return "", forms._pydantic_text(ex) if isinstance(ex, ValueError) else str(ex)
@@ -589,7 +605,7 @@ class WebApp:
         self._fill_step_fields(f)
         self.recipe_status, self.recipe_note = None, None
         verb, _, arg = action.partition(":")
-        k = int(arg) if arg.isdecimal() else 0
+        k = int(arg) if arg.isdecimal() and len(arg) <= 9 else 0
         try:
             steps = R.steps_from_form(f)
         except StructureError as ex:
@@ -913,7 +929,12 @@ def _executable_of(run_command: str) -> str:
 
 
 # ---- HTTP ----
-MAX_BODY_BYTES = 256 * 1024 * 1024
+MAX_UPLOAD_BODY_BYTES = 256 * 1024 * 1024   # routes that take a structure file or a spec.json
+MAX_FORM_BODY_BYTES = 4 * 1024 * 1024       # every other route carries form fields and small JSON only
+MAX_BODY_BYTES = MAX_UPLOAD_BODY_BYTES
+UPLOAD_PATHS = ("/preview", "/generate", "/scan", "/recipe", "/continue", "/stages", "/batch", "/docvalue", "/template_load",
+                "/template_save", "/load")
+FILE_COUNT_LIMIT = 1000
 
 
 class BadRequest(Exception):
@@ -923,7 +944,7 @@ class BadRequest(Exception):
         self.status = status
 
 
-def _body_length(handler: BaseHTTPRequestHandler) -> int:
+def _body_length(handler: BaseHTTPRequestHandler, limit: int = MAX_BODY_BYTES) -> int:
     raw = (handler.headers.get("Content-Length") or "0").strip()
     try:
         length = int(raw)
@@ -931,41 +952,175 @@ def _body_length(handler: BaseHTTPRequestHandler) -> int:
         length = -1
     if length < 0:
         raise BadRequest(HTTPStatus.BAD_REQUEST, L(f"Content-Length が数値ではありません: {raw!r}", f"Content-Length is not a number: {raw!r}"))
-    if length > MAX_BODY_BYTES:
-        raise BadRequest(HTTPStatus(413), L(f"送られた本文が大きすぎます ({length} バイト、上限 {MAX_BODY_BYTES})",
-                                            f"request body too large ({length} bytes, limit {MAX_BODY_BYTES})"))
+    if length > limit:
+        raise BadRequest(HTTPStatus(413), L(f"送られた本文が大きすぎます ({length} バイト、上限 {limit})",
+                                            f"request body too large ({length} bytes, limit {limit})"))
     return length
 
 
-def _parse_body(handler: BaseHTTPRequestHandler) -> tuple[dict[str, str], dict[str, tuple[str, bytes]]]:
-    length = _body_length(handler)
+def _boundary_of(ctype: str) -> str | None:
+    msg = email.message_from_bytes(b"Content-Type: " + ctype.encode("latin-1", "replace") + b"\r\n\r\n", policy=email.policy.HTTP)
+    return msg.get_boundary()
+
+
+def _multipart_items(body: bytes, boundary: str):
+    """(header bytes, payload view) per part; the payload is a view into body, so a large upload is not copied again."""
+    delim = b"--" + boundary.encode("latin-1", "replace")
+    view = memoryview(body)
+    pos = body.find(delim)
+    while pos >= 0:
+        pos += len(delim)
+        if body[pos:pos + 2] == b"--":
+            return
+        eol = body.find(b"\n", pos)
+        if eol < 0:
+            return
+        head_start = eol + 1
+        head_end = body.find(b"\r\n\r\n", head_start)
+        if head_end >= 0:
+            data_start = head_end + 4
+        else:
+            head_end = body.find(b"\n\n", head_start)
+            if head_end < 0:
+                return
+            data_start = head_end + 2
+        nxt = body.find(delim, data_start)
+        if nxt < 0:
+            return
+        data_end = nxt
+        if body[data_end - 2:data_end] == b"\r\n":
+            data_end -= 2
+        elif body[data_end - 1:data_end] == b"\n":
+            data_end -= 1
+        yield body[head_start:head_end], view[data_start:max(data_start, data_end)]
+        pos = nxt
+
+
+def _parse_body(handler: BaseHTTPRequestHandler, limit: int = MAX_BODY_BYTES) -> tuple[dict[str, str], dict[str, tuple[str, bytes]]]:
+    length = _body_length(handler, limit)
     body = handler.rfile.read(length) if length else b""
     ctype = handler.headers.get("Content-Type", "")
     fields: dict[str, str] = {}
     files: dict[str, tuple[str, bytes]] = {}
     if ctype.startswith("multipart/form-data"):
-        msg = email.message_from_bytes(b"Content-Type: " + ctype.encode() + b"\r\nMIME-Version: 1.0\r\n\r\n" + body, policy=email.policy.HTTP)
-        for part in msg.iter_parts():
+        boundary = _boundary_of(ctype)
+        for head, payload in (_multipart_items(body, boundary) if boundary else ()):
+            part = email.message_from_bytes(head, policy=email.policy.HTTP)
             name = part.get_param("name", header="content-disposition")
             if not name:
                 continue
-            data = part.get_payload(decode=True) or b""
             filename = part.get_filename()
             if filename:
-                files[name] = (filename, data)
+                files[name] = (filename, bytes(payload))
             else:
-                fields[name] = data.decode("utf-8", errors="replace")
+                fields[name] = bytes(payload).decode("utf-8", errors="replace")
     else:
         for k, v in parse_qs(body.decode("utf-8", errors="replace"), keep_blank_values=True).items():
             fields[k] = v[-1]
     return fields, files
 
 
+def _file_count_phrase(out: Path, limit: int = FILE_COUNT_LIMIT) -> str:
+    """'123 files' for the overwrite question, counted with a cutoff so a huge tree is not walked under the lock."""
+    from adit.project import BACKUP_DIR
+
+    top = Path(out).expanduser()
+    n, stack = 0, [top]
+    while stack and n <= limit:
+        d = stack.pop()
+        try:
+            with os.scandir(d) as it:
+                for e in it:
+                    if d == top and e.name == BACKUP_DIR:
+                        continue
+                    if e.is_dir(follow_symlinks=False):
+                        stack.append(Path(e.path))
+                    elif e.is_file():
+                        n += 1
+                        if n > limit:
+                            break
+        except OSError:
+            continue
+    if n > limit:
+        return L(f"{limit} 以上のファイル", f"more than {limit} files")
+    return L(f"{n} ファイル", f"{n} files")
+
+
 LOCAL_HOSTS = ("127.0.0.1", "localhost", "::1")
 READ_ONLY_PATHS = ("/file", "/spec.json")
-ANALYSIS_PATHS = ("/analysis", "/compare", "/report", "/audit_runs")
+ANALYSIS_PATHS = ("/analysis", "/compare", "/report", "/audit_runs", "/frames.json", "/isosurface.json")
 WILDCARD_HOSTS = ("", "0.0.0.0", "::")
 TOKEN_CHARS = re.compile(r"[A-Za-z0-9_-]+")
+_OWN_NAMES: set[str] | None = None
+
+
+def own_host_names() -> set[str]:
+    """This machine's host names, looked up once (getfqdn may ask the DNS)."""
+    global _OWN_NAMES
+    if _OWN_NAMES is None:
+        names = set()
+        for fn in (socket.gethostname, socket.getfqdn):
+            try:
+                names.add(fn().lower().rstrip("."))
+            except OSError:
+                pass
+        _OWN_NAMES = {n for n in names if n}
+    return _OWN_NAMES
+
+
+def split_authority(value: str) -> tuple[str, int | None] | None:
+    """(lower-case host, port) of a Host header; None when it cannot be parsed."""
+    value = (value or "").strip()
+    if not value:
+        return None
+    try:
+        u = urlparse("//" + value)
+        host, port = u.hostname, u.port
+    except ValueError:
+        return None
+    return (host.rstrip("."), port) if host else None
+
+
+def _ip(text: str):
+    try:
+        return ipaddress.ip_address(text.split("%", 1)[0])
+    except ValueError:
+        return None
+
+
+def host_allowed(host: str, port: int | None, *, server_port: int, bound_host: str = "", local_ip: str = "",
+                 peer_loopback: bool = False) -> bool:
+    """Is host:port one of this server's own addresses? Host, Origin and Referer must be (DNS rebinding, CSRF)."""
+    host = (host or "").lower().rstrip(".")
+    if not host:
+        return False
+    if (80 if port is None else port) != server_port:
+        # ssh -L 9000:127.0.0.1:8765 arrives from loopback with Host localhost:9000; a loopback name is still ours
+        ip = _ip(host)
+        return peer_loopback and (host in LOCAL_HOSTS or (ip is not None and ip.is_loopback))
+    if host in LOCAL_HOSTS or (bound_host and host == bound_host.lower()):
+        return True
+    ip = _ip(host)
+    if ip is not None:
+        if ip.is_loopback:
+            return True
+        local = _ip(local_ip) if local_ip else None
+        if local is not None and (ip == local or ip == getattr(local, "ipv4_mapped", None)):
+            return True   # the address the client actually connected to (IPv4 also through a dual-stack socket)
+        return False
+    return host in own_host_names()
+
+
+def cookie_value(header: str, name: str) -> str | None:
+    """Value of one cookie; other apps' cookies on the same host must not break the parse (http.cookies gives up on them)."""
+    for part in (header or "").split(";"):
+        k, _, v = part.strip().partition("=")
+        if k.strip() == name:
+            v = v.strip()
+            if len(v) >= 2 and v[0] == v[-1] == '"':
+                v = v[1:-1]
+            return v
+    return None
 
 
 def cookie_name(port: int) -> str:
@@ -981,9 +1136,10 @@ def redact_token(text: str) -> str:
     return re.sub(r"token=[^&\s]*", "token=***", text)
 
 
-def make_handler(app: WebApp, token: str | None = None):
+def make_handler(app: WebApp, token: str | None = None, bound_host: str = ""):
     class Handler(BaseHTTPRequestHandler):
         server_version = f"adit-web/{__version__}"
+        timeout = 60   # seconds without socket progress; a stalled upload must not hold a thread (and the lock) forever
         _pending_cookie: str | None = None
 
         def log_message(self, fmt, *args):
@@ -1084,10 +1240,49 @@ def make_handler(app: WebApp, token: str | None = None):
                                   verification=verification, verification_ok=verification_ok))
 
         def do_GET(self) -> None:
-            self._guarded(self._do_GET)
+            self._guarded(self._do_GET, post=False)
 
         def do_POST(self) -> None:
-            self._guarded(self._do_POST)
+            self._guarded(self._do_POST, post=True)
+
+        def _refuse(self, text: str) -> None:
+            self._send(text, HTTPStatus.FORBIDDEN, "text/plain; charset=utf-8")
+
+        def _origin_ok(self) -> bool:
+            port = self.server.server_port
+            try:
+                local_ip = str(self.connection.getsockname()[0])
+            except OSError:
+                local_ip = ""
+            peer = _ip(str(self.client_address[0])) if self.client_address else None
+            kw = dict(server_port=port, bound_host=bound_host, local_ip=local_ip,
+                      peer_loopback=peer is not None and (peer.is_loopback or getattr(peer, "ipv4_mapped", None) is not None
+                                                          and peer.ipv4_mapped.is_loopback))
+            hp = split_authority(self.headers.get("Host", ""))
+            if hp is None or not host_allowed(hp[0], hp[1], **kw):
+                shown = (self.headers.get("Host") or "")[:100]
+                self._refuse(L(f"この要求は adit-web のアドレス宛ではありません (Host: {shown!r})。端末に表示された URL (http://127.0.0.1:{port}/ など) か、"
+                               "この PC のホスト名か IP アドレスで開いてください。",
+                               f"This request is not addressed to adit-web (Host: {shown!r}). Open the URL printed in the terminal "
+                               f"(e.g. http://127.0.0.1:{port}/) or this PC's host name or IP address."))
+                return False
+            source = self.headers.get("Origin")
+            if source is None and self.command == "POST":
+                # Origin is what browsers send on cross-site form posts; Referer covers older ones. Links from other pages (GET) stay usable.
+                source = self.headers.get("Referer")
+            if source is None:
+                return True
+            source = source.strip()
+            try:
+                u = urlparse(source)
+                ok = u.scheme == "http" and bool(u.hostname) and host_allowed(u.hostname, u.port, **kw)
+            except ValueError:
+                ok = False
+            if not ok:
+                self._refuse(L(f"別のサイト ({source[:100]!r}) からの要求は受け付けません (CSRF 対策)。adit-web の画面から操作してください。",
+                               f"Requests from another site ({source[:100]!r}) are refused (CSRF protection). Use the adit-web page itself."))
+                return False
+            return True
 
         def _authorized(self) -> bool:
             if not token:
@@ -1107,26 +1302,38 @@ def make_handler(app: WebApp, token: str | None = None):
                 self.send_header("Set-Cookie", cookie)
                 self.send_header("Location", u.path + ("?" + rest if rest else "")); self.send_header("Content-Length", "0"); self.end_headers()
                 return False
-            cookie = SimpleCookie(self.headers.get("Cookie", ""))
-            if name in cookie and hmac.compare_digest(cookie[name].value.encode("utf-8"), want):
+            given = cookie_value(self.headers.get("Cookie", ""), name)
+            if given is not None and hmac.compare_digest(given.encode("utf-8"), want):
                 return True
-            self._send(L("この画面を開くには、adit-web を起動した端末に表示された URL (token=… 付き) を開いてください。",
-                         "Open the URL (with token=...) printed in the terminal where adit-web was started."),
-                       HTTPStatus.FORBIDDEN, "text/plain; charset=utf-8")
+            self._refuse(L("この画面を開くには、adit-web を起動した端末に表示された URL (token=… 付き) を開いてください。",
+                           "Open the URL (with token=...) printed in the terminal where adit-web was started."))
             return False
 
-        def _guarded(self, fn) -> None:
+        def _guarded(self, fn, post: bool) -> None:
             try:
-                if not self._authorized():
+                if not self._origin_ok() or not self._authorized():
                     return
                 path = urlparse(self.path).path
+                args: tuple = ()
+                if post:
+                    # Read and parse the body before taking the lock, so a slow or stalled upload does not stop the other pages.
+                    try:
+                        args = (_parse_body(self, MAX_UPLOAD_BODY_BYTES if path in UPLOAD_PATHS else MAX_FORM_BODY_BYTES),)
+                    except BadRequest as ex:
+                        self._send(str(ex), ex.status, "text/plain; charset=utf-8"); return
+                    except TimeoutError:
+                        self._send(L("本文の受信が途中で止まりました (タイムアウト)。もう一度送ってください。",
+                                     "The request body stopped arriving (timeout). Please send it again."),
+                                   HTTPStatus.REQUEST_TIMEOUT, "text/plain; charset=utf-8"); return
                 if path in READ_ONLY_PATHS:
-                    fn()
+                    fn(*args)
                 else:
                     with (app.analysis_lock if path in ANALYSIS_PATHS else app.lock):
-                        fn()
+                        fn(*args)
             except (BrokenPipeError, ConnectionResetError):
                 raise
+            except TimeoutError:
+                return   # the client stopped reading; there is nobody to answer
             except Exception as ex:
                 import traceback
                 traceback.print_exc(file=sys.stderr)
@@ -1144,9 +1351,11 @@ def make_handler(app: WebApp, token: str | None = None):
             elif u.path == "/convert":
                 self._convert_page()
             elif u.path == "/spec.json":
-                if app.spec is None:
+                with app.lock:   # preview() clears app.spec while it rebuilds
+                    spec = app.spec
+                if spec is None:
                     self._send(L("先にプレビューしてください", "Preview first"), HTTPStatus.NOT_FOUND, "text/plain; charset=utf-8"); return
-                self._send_bytes(app.spec.model_dump_json(indent=2).encode(), "application/json", "spec.json")
+                self._send_bytes(spec.model_dump_json(indent=2).encode(), "application/json", "spec.json")
             elif u.path == "/analysis":
                 # GET only fills the form; the analysis (which writes figures) runs on POST.
                 d = q.get("dir") or str(app.written or "")
@@ -1158,12 +1367,12 @@ def make_handler(app: WebApp, token: str | None = None):
                 from adit.web.structure3d import scene_from_atoms
 
                 if app.spec is None:
-                    self._send(L("先にプレビューしてください", "Preview first"), HTTPStatus.NOT_FOUND, "text/plain")
+                    self._send(L("先にプレビューしてください", "Preview first"), HTTPStatus.NOT_FOUND, "text/plain; charset=utf-8")
                     return
                 try:
                     svg = scene_to_svg(scene_from_atoms(app.spec.structure.atoms.to_ase()))
                 except Exception as ex:
-                    self._send(str(ex), HTTPStatus.BAD_REQUEST, "text/plain")
+                    self._send(str(ex), HTTPStatus.BAD_REQUEST, "text/plain; charset=utf-8")
                     return
                 self._send_download(svg.encode("utf-8"), "image/svg+xml", "structure.svg")
             elif u.path == "/draw":
@@ -1178,25 +1387,33 @@ def make_handler(app: WebApp, token: str | None = None):
 
                 d = q.get("dir", "")
                 if not d or not app.analysis_dir or str(Path(d).expanduser()) != app.analysis_dir:
-                    self._send("not found", HTTPStatus.NOT_FOUND, "text/plain"); return
+                    self._send("not found", HTTPStatus.NOT_FOUND, "text/plain; charset=utf-8"); return
                 o = app.analysis_opts
                 try:
                     body = frames_json(app.analysis_dir, stride=o.stride if o else 1, skip=o.skip_frames if o else 0,
                                        memory_mb=o.memory_budget_mb if o else None)
                 except Exception as ex:
-                    self._send(str(ex), HTTPStatus.BAD_REQUEST, "text/plain"); return
+                    self._send(str(ex), HTTPStatus.BAD_REQUEST, "text/plain; charset=utf-8"); return
                 self._send_bytes(body.encode("utf-8"), "application/json")
             elif u.path == "/isosurface.json":
                 from adit.web.isosurface import isosurface_json
 
                 d = q.get("dir", "")
                 if not d or not app.analysis_dir or str(Path(d).expanduser()) != app.analysis_dir:
-                    self._send("not found", HTTPStatus.NOT_FOUND, "text/plain"); return
+                    self._send("not found", HTTPStatus.NOT_FOUND, "text/plain; charset=utf-8"); return
+                raw_stride = (q.get("stride") or "1").strip()
                 try:
-                    body = isosurface_json(app.analysis_dir, q.get("file", ""), level=q.get("level", ""),
-                                           stride=int(q.get("stride", "1") or 1))
+                    stride = int(raw_stride)
+                    if not 1 <= stride <= 10000:
+                        raise ValueError(raw_stride)
+                except ValueError:
+                    self._send(L(f"間引き (stride) は 1 以上の整数で指定してください: {raw_stride!r}",
+                                 f"the stride must be a whole number of 1 or more: {raw_stride!r}"),
+                               HTTPStatus.BAD_REQUEST, "text/plain; charset=utf-8"); return
+                try:
+                    body = isosurface_json(app.analysis_dir, q.get("file", ""), level=q.get("level", ""), stride=stride)
                 except Exception as ex:
-                    self._send(str(ex), HTTPStatus.BAD_REQUEST, "text/plain"); return
+                    self._send(str(ex), HTTPStatus.BAD_REQUEST, "text/plain; charset=utf-8"); return
                 self._send_bytes(body.encode("utf-8"), "application/json")
             elif u.path == "/file":
                 p = q.get("path", "")
@@ -1204,7 +1421,7 @@ def make_handler(app: WebApp, token: str | None = None):
                 for shown in list(allowed):
                     allowed |= {str(Path(shown).with_suffix("." + x)) for x in ("svg", "pdf", "eps")}
                 if p not in allowed or not Path(p).is_file():
-                    self._send("not found", HTTPStatus.NOT_FOUND, "text/plain"); return
+                    self._send("not found", HTTPStatus.NOT_FOUND, "text/plain; charset=utf-8"); return
                 kinds = {".png": "image/png", ".svg": "image/svg+xml", ".pdf": "application/pdf",
                          ".eps": "application/postscript"}
                 kind = kinds.get(Path(p).suffix.lower(), "application/octet-stream")
@@ -1213,16 +1430,13 @@ def make_handler(app: WebApp, token: str | None = None):
                 else:
                     self._send_bytes(Path(p).read_bytes(), kind)
             else:
-                self._send("not found", HTTPStatus.NOT_FOUND, "text/plain")
+                self._send("not found", HTTPStatus.NOT_FOUND, "text/plain; charset=utf-8")
 
         # -- POST
-        def _do_POST(self) -> None:
+        def _do_POST(self, parsed) -> None:
             app.refresh_config()
             u = urlparse(self.path)
-            try:
-                fields, files = _parse_body(self)
-            except BadRequest as ex:
-                self._send(str(ex), ex.status, "text/plain; charset=utf-8"); return
+            fields, files = parsed
             if u.path == "/preview":
                 self._save_upload(fields, files)
                 status_text, err = app.preview(fields)
@@ -1371,10 +1585,16 @@ def make_handler(app: WebApp, token: str | None = None):
                 if not name_data:
                     self._page(error=L("spec.json が選ばれていません", "no spec.json chosen"), prefix=""); return
                 try:
-                    spec = CalculationSpec.from_json(name_data[1].decode("utf-8-sig"))
+                    text = name_data[1].decode("utf-8-sig")
+                    spec = CalculationSpec.from_json(text)
                 except Exception as ex:
                     why = forms._pydantic_text(ex) if isinstance(ex, ValueError) else f"{type(ex).__name__}: {ex}"
                     self._page(error=L(f"spec.json を読めません: {why}", f"cannot read the spec: {why}"), prefix=""); return
+                try:
+                    data = json.loads(text)
+                    extra = unknown_keys(data) if isinstance(data, dict) else []
+                except Exception:
+                    extra = []
                 if spec.method.code not in forms.CODES:
                     self._page(error=L(
                         f"{spec.method.code} の設定はウェブ版では編集できません。spec.json と adit-gen を使ってください。",
@@ -1387,7 +1607,11 @@ def make_handler(app: WebApp, token: str | None = None):
                 app.adopt_loaded(spec)
                 app.adopt_origin(spec)
                 status_text, err = app.preview(app.form)
-                self._page(status_text=status_text, error=err, message=L("spec.json を読み込みました", "loaded spec.json"))
+                note = L("spec.json を読み込みました", "loaded spec.json")
+                if extra:
+                    note += "\n" + L(f"注意: どの欄にも当てはまらないキーがあり、無視しました: {', '.join(extra)}",
+                                     f"Warning: these keys match no setting and were ignored: {', '.join(extra)}")
+                self._page(status_text=status_text, error=err, message=note)
             elif u.path == "/analysis":
                 self._analysis_post(fields)
             elif u.path == "/audit_runs":
@@ -1423,7 +1647,7 @@ def make_handler(app: WebApp, token: str | None = None):
                 app.set_language("en" if lang.LANGUAGE != "en" else "ja")
                 self._redirect("/")
             else:
-                self._send("not found", HTTPStatus.NOT_FOUND, "text/plain")
+                self._send("not found", HTTPStatus.NOT_FOUND, "text/plain; charset=utf-8")
 
         def _save_upload(self, fields: dict[str, str], files: dict[str, tuple[str, bytes]]) -> None:
             up = files.get("structure_file")
@@ -1498,7 +1722,7 @@ def make_handler(app: WebApp, token: str | None = None):
                 return
             try:
                 sk = sketch_from_dict(_json.loads(raw))
-            except (ValueError, TypeError) as ex:
+            except (ValueError, TypeError, AttributeError, KeyError) as ex:
                 self._draw_page("{}", error=str(ex))
                 return
             if not sk.atoms:
@@ -1654,7 +1878,7 @@ class _ThreadingHTTPServer6(ThreadingHTTPServer):
 def serve(app: WebApp, host: str = "127.0.0.1", port: int = 8765, open_browser: bool = False,
           token: str | None = None) -> ThreadingHTTPServer:
     cls = _ThreadingHTTPServer6 if ":" in host else ThreadingHTTPServer
-    httpd = cls((host, port), make_handler(app, token))
+    httpd = cls((host, port), make_handler(app, token, bound_host=host))
     if open_browser:
         threading.Timer(0.5, lambda: webbrowser.open(server_url(browse_host(host), httpd.server_port, token))).start()
     return httpd

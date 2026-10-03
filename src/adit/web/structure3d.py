@@ -25,6 +25,7 @@ class Scene:
     bonds: list[list[int]] = field(default_factory=list)
     cell_lines: list[list[list[float]]] = field(default_factory=list)
     cell: list[list[float]] | None = None                          # rows = lattice vectors, for minimum-image measuring
+    pbc: list[bool] | None = None                                  # per axis; the minimum image is taken along the periodic axes only
     n_atoms: int = 0
     truncated_bonds: bool = False
     scale: float = 1.0
@@ -56,6 +57,7 @@ def scene_from_atoms(atoms: Atoms) -> Scene:
         scene.cell_lines = [[[round(float(x), 4) for x in corners[a]],
                              [round(float(x), 4) for x in corners[b]]] for a, b in CELL_EDGES]
         scene.cell = [[round(float(x), 6) for x in row] for row in cell]
+        scene.pbc = [bool(x) for x in atoms.pbc]
     if len(atoms) <= MAX_BOND_ATOMS:
         scene.bonds = _bonds(pos, numbers)
     else:

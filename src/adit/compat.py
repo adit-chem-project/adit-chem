@@ -18,7 +18,7 @@ def readme_shell_path(path: str, *, windows: bool | None = None) -> str:
 
 
 def upload_basename(name: str) -> str:
-    base = PureWindowsPath(name.replace("/", "\\")).name
+    base = PureWindowsPath(name.replace("\x00", "").replace("/", "\\")).name
     return base if base not in ("", ".", "..") else "upload"
 
 

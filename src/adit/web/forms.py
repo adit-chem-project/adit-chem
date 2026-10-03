@@ -13,7 +13,7 @@ from adit.spec import (AtomsData, BandSettings, CalculationSpec, Cp2kMethod, Dft
                         MDSettings, MlipMethod, OrcaMethod, Runtime, Structure, Task, VaspMethod, XtbMethod)
 from adit.web import codefields as CF
 from adit.structure import StructureError, build_structure
-from adit.textparse import parse_constraints, parse_element_map, parse_extra_incar, parse_extra_namelist
+from adit.textparse import parse_constraints, parse_element_map, parse_extra_incar, parse_extra_namelist, short_number
 
 CODES = {"dftbplus": "DFTB+", "vasp": "VASP", "xtb": "xtb (GFN-xTB)", "espresso": "Quantum ESPRESSO (pw.x)", "orca": "ORCA",
          "cp2k": "CP2K", "lammps": "LAMMPS", "gromacs": "GROMACS", "mlip": "MACE / CHGNet"}
@@ -61,6 +61,8 @@ def _i(v: str | None, default: int) -> int:
         raise FormError(L(f"整数として読めません: {v!r}", f"not an integer: {v!r}")) from ex
     if not math.isfinite(x):
         raise FormError(L(f"有限の整数を入れてください: {v!r}", f"enter a finite integer: {v!r}"))
+    if x != int(x):
+        raise FormError(L(f"整数を入れてください: {v!r}", f"enter an integer: {v!r}"))
     return int(x)
 
 
@@ -109,13 +111,13 @@ def source_ref(f: dict[str, str], source: str) -> str:
             parts.append(_s(f.get("bulk_struct")))
         a = _f(f.get("bulk_a"), 0.0)
         if a > 0:
-            parts.append(f"{a:g}")
+            parts.append(short_number(a))
         if _b(f.get("bulk_cubic")):
             parts.append("cubic")
         ref = " ".join(parts)
     elif source == "surface":
         n = "x".join(str(_i(f.get(k), 2 if k != "surf_nz" else 3)) for k in ("surf_nx", "surf_ny", "surf_nz"))
-        ref = f"{_s(f.get('surf_facet'), 'fcc111')} {_s(f.get('surf_el'), 'Al')} {n} vacuum={_f(f.get('surf_vac'), 10.0):g}"
+        ref = f"{_s(f.get('surf_facet'), 'fcc111')} {_s(f.get('surf_el'), 'Al')} {n} vacuum={short_number(_f(f.get('surf_vac'), 10.0))}"
     elif source == "mixture":
         from adit.mixture import MixtureError, MixtureSpec, parse_mixture_text
 
@@ -265,22 +267,22 @@ def _prep_fields_from_spec(m) -> dict[str, str]:
     if isinstance(m, DftbMethod):
         f["dftb_solv_file"] = m.solvation_param_file
     elif isinstance(m, VaspMethod):
-        f.update({f"vasp_mag__{e}": f"{v:g}" for e, v in m.magmom_by_element.items()}, ldau_type=str(m.ldau_type))
+        f.update({f"vasp_mag__{e}": short_number(v) for e, v in m.magmom_by_element.items()}, ldau_type=str(m.ldau_type))
         hub("vasp_hub", m.hubbard)
     elif isinstance(m, XtbMethod):
         f["xtb_solvation"] = m.solvation
         if m.solvation != "none":
             f[f"xtb_solvent__{m.solvation}_{m.gfn}"] = m.solvent
     elif isinstance(m, EspressoMethod):
-        f.update({f"qe_mag__{e}": f"{v:g}" for e, v in m.starting_magnetization.items()}, hubbard_projector=m.hubbard_projector)
+        f.update({f"qe_mag__{e}": short_number(v) for e, v in m.starting_magnetization.items()}, hubbard_projector=m.hubbard_projector)
         hub("qe_hub", m.hubbard)
     elif isinstance(m, OrcaMethod):
         f["orca_solvation"] = m.solvation
         if m.solvation != "none":
             f[f"orca_solvent__{m.solvation}"] = m.solvent
     elif isinstance(m, Cp2kMethod):
-        f.update({f"cp_mag__{e}": f"{v:g}" for e, v in m.magnetization_by_element.items()}, cp_plus_u=m.plus_u_method,
-                 cp_sccs=f"{m.sccs_relative_permittivity:g}")
+        f.update({f"cp_mag__{e}": short_number(v) for e, v in m.magnetization_by_element.items()}, cp_plus_u=m.plus_u_method,
+                 cp_sccs=short_number(m.sccs_relative_permittivity))
         hub("cp_hub", m.hubbard)
     return f
 
@@ -394,7 +396,18 @@ def runtime_from_form(f: dict[str, str]) -> Runtime:
                    omp_threads=_i(f.get("omp"), 8), walltime=_s(f.get("walltime"), "01:00:00"), job_name=_s(f.get("job_name"), "adit"))
 
 
+_FORM_DEFAULTS: dict[str, str] | None = None
+
+
+def _form_defaults() -> dict[str, str]:
+    global _FORM_DEFAULTS
+    if _FORM_DEFAULTS is None:
+        _FORM_DEFAULTS = default_form()
+    return _FORM_DEFAULTS
+
+
 def spec_from_form(f: dict[str, str], state=None) -> CalculationSpec:
+    f = {**_form_defaults(), **f}   # a field that was not sent means the page default, not a second set of fallbacks
     st = structure_from_form(f, state)
     try:
         uses_k = _s(f.get("code"), "dftbplus") not in NO_KPOINTS
@@ -441,7 +454,7 @@ def form_from_spec(spec: CalculationSpec) -> dict[str, str]:
         rest = [x for x in toks[1:] if x != "cubic"]
         for x in rest:
             try:
-                f["bulk_a"] = f"{float(x):g}"
+                f["bulk_a"] = short_number(float(x))
             except ValueError:
                 f["bulk_struct"] = x
     elif src == "surface":
@@ -459,12 +472,12 @@ def form_from_spec(spec: CalculationSpec) -> dict[str, str]:
 
         try:
             mx = MixtureSpec.from_ref(sref)
-            f.update(mixture=mixture_text(mx.components), mix_box_mode="edge" if mx.box_a > 0 else "density", mix_edge=f"{mx.box_a:g}",
-                     mix_density=f"{mx.density_g_cm3:g}", mix_min_dist=f"{mx.min_distance:g}", mix_seed=str(mx.seed))
+            f.update(mixture=mixture_text(mx.components), mix_box_mode="edge" if mx.box_a > 0 else "density", mix_edge=short_number(mx.box_a),
+                     mix_density=short_number(mx.density_g_cm3), mix_min_dist=short_number(mx.min_distance), mix_seed=str(mx.seed))
         except MixtureError:
             pass
     if st.source in ("preset", "smiles", "file") and st.periodic:
-        f["box"], f["box_size"] = "on", f"{float(st.atoms.to_ase().cell.lengths()[0]):.15g}"
+        f["box"], f["box_size"] = "on", short_number(float(st.atoms.to_ase().cell.lengths()[0]))
     else:
         f["box"] = ""
     parts =[str(i + 1) for i in st.fixed_atoms]
@@ -474,13 +487,13 @@ def form_from_spec(spec: CalculationSpec) -> dict[str, str]:
         f["fixed"] = ""
     f["code"] = m.code
     if isinstance(m, DftbMethod):
-        f.update(sk_set=m.sk_set, scc="on" if m.scc else "", scc_tol=f"{m.scc_tolerance:g}", max_scc=str(m.max_scc_iterations),
-                 third="on" if m.third_order else "", dispersion=m.dispersion, etemp=f"{m.filling_temperature:g}")
+        f.update(sk_set=m.sk_set, scc="on" if m.scc else "", scc_tol=short_number(m.scc_tolerance), max_scc=str(m.max_scc_iterations),
+                 third="on" if m.third_order else "", dispersion=m.dispersion, etemp=short_number(m.filling_temperature))
         for k, v in (m.d3_params or {}).items():
-            f[f"d3_{k}"] = f"{v:g}"
+            f[f"d3_{k}"] = short_number(v)
     elif isinstance(m, VaspMethod):
-        f.update(potcar_set=m.potcar_set, binary=m.binary, encut=f"{m.encut:g}", ediff=f"{m.ediff:g}", nelm=str(m.nelm), ismear=str(m.ismear),
-                 sigma=f"{m.sigma:g}", ispin=str(m.ispin), magmom=" ".join(f"{x:g}" for x in m.magmom) if m.magmom else "",
+        f.update(potcar_set=m.potcar_set, binary=m.binary, encut=short_number(m.encut), ediff=short_number(m.ediff), nelm=str(m.nelm), ismear=str(m.ismear),
+                 sigma=short_number(m.sigma), ispin=str(m.ispin), magmom=" ".join(short_number(x) for x in m.magmom) if m.magmom else "",
                  ivdw="none" if m.ivdw is None else str(m.ivdw), ibrion=str(m.ibrion), algo=m.algo, prec=m.prec, lreal=str(m.lreal),
                  nelmin=str(m.nelmin), lasph="on" if m.lasph else "", lmaxmix=str(m.lmaxmix), nbands=str(m.nbands),
                  isym="" if m.isym is None else str(m.isym), idipol=str(m.idipol), ldipol="on" if m.ldipol else "", dipol=m.dipol,
@@ -488,10 +501,10 @@ def form_from_spec(spec: CalculationSpec) -> dict[str, str]:
                  extra_incar="\n".join(f"{k} = {'.TRUE.' if v is True else '.FALSE.' if v is False else v}" for k, v in m.extra_incar.items()),
                  potcar_map="\n".join(f"{e} = {n}" for e, n in m.potcar.items()))
     elif isinstance(m, XtbMethod):
-        f.update(gfn=m.gfn, accuracy=f"{m.accuracy:g}", xtb_etemp=f"{m.etemp:g}", xtb_max_iter=str(m.max_iterations), opt_level=m.opt_level)
+        f.update(gfn=m.gfn, accuracy=short_number(m.accuracy), xtb_etemp=short_number(m.etemp), xtb_max_iter=str(m.max_iterations), opt_level=m.opt_level)
     elif isinstance(m, EspressoMethod):
-        f.update(pseudo_set=m.pseudo_set, ecutwfc=f"{m.ecutwfc:g}", ecutrho=f"{m.ecutrho:g}", conv_thr=f"{m.conv_thr:g}", qe_maxstep=str(m.electron_maxstep),
-                 mixing_beta=f"{m.mixing_beta:g}", occupations=m.occupations, smearing=m.smearing, degauss=f"{m.degauss:g}", nspin=str(m.nspin),
+        f.update(pseudo_set=m.pseudo_set, ecutwfc=short_number(m.ecutwfc), ecutrho=short_number(m.ecutrho), conv_thr=short_number(m.conv_thr), qe_maxstep=str(m.electron_maxstep),
+                 mixing_beta=short_number(m.mixing_beta), occupations=m.occupations, smearing=m.smearing, degauss=short_number(m.degauss), nspin=str(m.nspin),
                  input_dft=m.input_dft, pseudo_map="\n".join(f"{e} = {n}" for e, n in m.pseudo.items()),
                  assume_isolated=m.assume_isolated,
                  qe_extra="\n".join(f"{ns}.{k} = {v}" for ns, d in m.extra.items() for k, v in d.items()))
@@ -507,9 +520,9 @@ def form_from_spec(spec: CalculationSpec) -> dict[str, str]:
                  mlip_d3="on" if m.dispersion else "", mlip_seed=str(m.seed))
     elif isinstance(m, Cp2kMethod):
         f.update(cp_xc=m.xc, cp_basis_file=m.basis_file, cp_potential_file=m.potential_file, cp_basis_map="\n".join(f"{e} = {n}" for e, n in m.basis.items()),
-                 cp_potential_map="\n".join(f"{e} = {n}" for e, n in m.potential.items()), cp_dispersion=m.dispersion, cp_cutoff=f"{m.cutoff_ry:g}",
-                 cp_rel_cutoff=f"{m.rel_cutoff_ry:g}", cp_eps_scf=f"{m.eps_scf:g}", cp_max_scf=str(m.max_scf), cp_uks="on" if m.uks else "",
-                 cp_poisson=m.poisson_solver, cp_box=f"{m.isolated_box_ang:g}", cp_extra=CF.sections_text(m.extra_sections))
+                 cp_potential_map="\n".join(f"{e} = {n}" for e, n in m.potential.items()), cp_dispersion=m.dispersion, cp_cutoff=short_number(m.cutoff_ry),
+                 cp_rel_cutoff=short_number(m.rel_cutoff_ry), cp_eps_scf=short_number(m.eps_scf), cp_max_scf=str(m.max_scf), cp_uks="on" if m.uks else "",
+                 cp_poisson=m.poisson_solver, cp_box=short_number(m.isolated_box_ang), cp_extra=CF.sections_text(m.extra_sections))
         f.update(cp_ot="on" if m.ot else "", cp_ot_min=m.ot_minimizer, cp_ot_pre=m.ot_preconditioner, cp_ot_extra=m.ot_extra,
                  cp_surf_dip="on" if m.surface_dipole_correction else "", cp_surf_dir=m.surf_dip_dir)
     elif isinstance(m, LammpsMethod):
@@ -517,17 +530,17 @@ def form_from_spec(spec: CalculationSpec) -> dict[str, str]:
                  lmp_pair_style=m.pair_style, lmp_pair_coeff=m.pair_coeff, lmp_files="\n".join(m.potential_files), lmp_style_cmds=m.style_commands,
                  lmp_extra_cmds=m.extra_commands, lmp_seed=str(m.seed))
     elif isinstance(m, GromacsMethod):
-        f.update(gmx_top=m.topology_file, gmx_conf=m.structure_file, gmx_coulomb=m.coulombtype, gmx_rcoulomb=f"{m.rcoulomb_nm:g}", gmx_rvdw=f"{m.rvdw_nm:g}",
-                 gmx_constraints=m.constraints, gmx_pcoupl=m.pcoupl, gmx_compress=f"{m.compressibility_per_bar:g}", gmx_define=m.define,
+        f.update(gmx_top=m.topology_file, gmx_conf=m.structure_file, gmx_coulomb=m.coulombtype, gmx_rcoulomb=short_number(m.rcoulomb_nm), gmx_rvdw=short_number(m.rvdw_nm),
+                 gmx_constraints=m.constraints, gmx_pcoupl=m.pcoupl, gmx_compress=short_number(m.compressibility_per_bar), gmx_define=m.define,
                  gmx_cpt=m.checkpoint_file, gmx_gen_seed=str(m.gen_seed), gmx_extra=CF.mdp_text(m.extra_mdp),
                  gmx_use_conf="on" if st.source == "file" and st.source_ref == m.structure_file and m.structure_file else "")
     f.update(_prep_fields_from_spec(m))
-    f.update(task_type=t.type, optimizer=t.optimizer, max_steps=str(t.max_steps), force_tol=f"{t.force_tolerance_ev_per_ang:g}", relax_cell=t.relax_cell,
-             ensemble=t.md.ensemble, thermostat=t.md.thermostat, temperature=f"{t.md.temperature_k:g}", timestep=f"{t.md.timestep_fs:g}",
-             md_steps=str(t.md.steps), dump=str(t.md.dump_interval), coupling=f"{t.md.coupling_time_fs:g}", pressure=f"{t.md.pressure_bar:g}",
-             barostat_time=f"{t.md.barostat_time_fs:g}", band_path=t.bands.path, band_npoints=str(t.bands.npoints), band_empty=str(t.bands.empty_bands))
+    f.update(task_type=t.type, optimizer=t.optimizer, max_steps=str(t.max_steps), force_tol=short_number(t.force_tolerance_ev_per_ang), relax_cell=t.relax_cell,
+             ensemble=t.md.ensemble, thermostat=t.md.thermostat, temperature=short_number(t.md.temperature_k), timestep=short_number(t.md.timestep_fs),
+             md_steps=str(t.md.steps), dump=str(t.md.dump_interval), coupling=short_number(t.md.coupling_time_fs), pressure=short_number(t.md.pressure_bar),
+             barostat_time=short_number(t.md.barostat_time_fs), band_path=t.bands.path, band_npoints=str(t.bands.npoints), band_empty=str(t.bands.empty_bands))
     kp = spec.kpoints or KPoints()
-    f.update(kp_mode=kp.mode, k1=str(kp.mesh[0]), k2=str(kp.mesh[1]), k3=str(kp.mesh[2]), kp_shift=f"{kp.shift[0]:g}", kp_density=f"{kp.density:g}")
+    f.update(kp_mode=kp.mode, k1=str(kp.mesh[0]), k2=str(kp.mesh[1]), k3=str(kp.mesh[2]), kp_shift=short_number(kp.shift[0]), kp_density=short_number(kp.density))
     f.update(profile=r.profile, nodes=str(r.nodes), ncpus=str(r.ncpus), mpiprocs=str(r.mpiprocs), omp=str(r.omp_threads), walltime=r.walltime, job_name=r.job_name)
     return f
 
@@ -557,7 +570,7 @@ def default_form(cfg_profile: str = "local", output_dir: str | Path = "") -> dic
          "gmx_coulomb": "Cut-off", "gmx_rcoulomb": "1", "gmx_rvdw": "1", "gmx_constraints": "none", "gmx_compress": "0", "gmx_gen_seed": "12345",
          "xtb_solvation": "none", "orca_solvation": "none", "ldau_type": "2", "hubbard_projector": "atomic", "cp_plus_u": "MULLIKEN", "cp_sccs": "0",
          "dftb_solv_file": "", "cont_dir": "", "cont_vel": "on", "stg_rows": "3",
-         "task_type": "single_point", "optimizer": "Rational", "max_steps": "200", "force_tol": f"{Task().force_tolerance_ev_per_ang:g}", "relax_cell": "no",
+         "task_type": "single_point", "optimizer": "Rational", "max_steps": "200", "force_tol": short_number(Task().force_tolerance_ev_per_ang), "relax_cell": "no",
          "ensemble": "NVT", "thermostat": "berendsen", "temperature": "300", "timestep": "1", "md_steps": "1000", "dump": "10", "coupling": "100",
          "pressure": "1", "barostat_time": "1000", "band_npoints": "60", "band_empty": "4",
          "kp_mode": "gamma", "k1": "1", "k2": "1", "k3": "1", "kp_shift": "0", "kp_density": "0",

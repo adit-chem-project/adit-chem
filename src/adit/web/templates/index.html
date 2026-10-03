@@ -5,6 +5,8 @@
 {% macro sel(name, options, current) -%}
 <select name="{{ name }}" id="{{ name }}">
 {%- for k, v in options %}<option value="{{ k }}"{% if k|string == current|string %} selected{% endif %}>{{ v }}</option>{% endfor -%}
+{#- a loaded value outside the list is kept as an extra option, so the next submit does not silently change it (same as solvsel) -#}
+{%- if current|string and current|string not in options|map("first")|map("string")|list %}<option value="{{ current }}" selected>{{ current }}</option>{% endif -%}
 </select>
 {%- endmacro %}
 {% macro txt(name, cls="", ph="", aria="") -%}<input type="text" name="{{ name }}" id="{{ name }}" class="{{ cls }}" value="{{ form.get(name, '') }}"{% if ph %} placeholder="{{ ph }}"{% endif %}{% if aria %} aria-label="{{ aria }}"{% endif %}>{%- endmacro %}
@@ -445,6 +447,7 @@ button.link:hover { background:none; }
 <fieldset><legend>{{ T("実行環境とリソース", "Execution target and resources") }}</legend>
   {% call row("プロファイル", "Profile", "profile") %}<select name="profile" id="profile">
     {%- for k, p in choices.profiles.items() %}<option value="{{ k }}" data-kind="{{ p.kind }}"{% if k == form.get("profile","local") %} selected{% endif %}>{{ k }} ({{ T("この PC で実行", "run on this PC") if p.kind == "direct" else p.kind|upper }})</option>{% endfor -%}
+    {%- set cur_profile = form.get("profile","local") %}{% if cur_profile and cur_profile not in choices.profiles %}<option value="{{ cur_profile }}" selected>{{ cur_profile }} ({{ T("設定にありません", "not in the settings") }})</option>{% endif -%}
     </select>{% endcall %}
   {% call row("ノード数", "Nodes", "nodes", "cluster-only") %}{{ txt("nodes", "tiny") }}{% endcall %}
   {% call row("ノードあたりのコア数", "Cores per node", "ncpus") %}{{ txt("ncpus", "tiny") }}{% endcall %}

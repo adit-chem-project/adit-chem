@@ -23,35 +23,40 @@
   function norm(a) { return Math.sqrt(dot(a, a)); }
   function scale(a, s) { return [a[0] * s, a[1] * s, a[2] * s]; }
 
-  /* vector a -> b; the shortest periodic image when a cell (rows = lattice vectors) is given */
-  function mic(a, b, cell, inv) {
+  /* vector a -> b; the shortest periodic image when a cell (rows = lattice vectors) is given.
+     pbc = [bool, bool, bool] limits the image search to the periodic axes (a slab is not wrapped across its vacuum);
+     without pbc all three axes count as periodic. */
+  function mic(a, b, cell, inv, pbc) {
     var d = sub(b, a);
     if (!cell || !inv) { return d; }
+    var per = [!pbc || pbc[0] !== false, !pbc || pbc[1] !== false, !pbc || pbc[2] !== false];
+    if (!per[0] && !per[1] && !per[2]) { return d; }
     var f = mulRow(d, inv);
-    f = [f[0] - Math.round(f[0]), f[1] - Math.round(f[1]), f[2] - Math.round(f[2])];
+    f = [per[0] ? f[0] - Math.round(f[0]) : f[0], per[1] ? f[1] - Math.round(f[1]) : f[1], per[2] ? f[2] - Math.round(f[2]) : f[2]];
+    var shifts = [per[0] ? [-1, 0, 1] : [0], per[1] ? [-1, 0, 1] : [0], per[2] ? [-1, 0, 1] : [0]];
     var best = null, bestLen = Infinity;
-    for (var i = -1; i <= 1; i++) { for (var j = -1; j <= 1; j++) { for (var k = -1; k <= 1; k++) {
-      var v = mulRow([f[0] + i, f[1] + j, f[2] + k], cell);
+    for (var i = 0; i < shifts[0].length; i++) { for (var j = 0; j < shifts[1].length; j++) { for (var k = 0; k < shifts[2].length; k++) {
+      var v = mulRow([f[0] + shifts[0][i], f[1] + shifts[1][j], f[2] + shifts[2][k]], cell);
       var n = dot(v, v);
       if (n < bestLen) { bestLen = n; best = v; }
     } } }
     return best;
   }
-  function distance(p, i, j, cell, inv) { return norm(mic(p[i], p[j], cell, inv)); }
-  function angle(p, i, j, k, cell, inv) {
-    var u = mic(p[j], p[i], cell, inv), v = mic(p[j], p[k], cell, inv);
+  function distance(p, i, j, cell, inv, pbc) { return norm(mic(p[i], p[j], cell, inv, pbc)); }
+  function angle(p, i, j, k, cell, inv, pbc) {
+    var u = mic(p[j], p[i], cell, inv, pbc), v = mic(p[j], p[k], cell, inv, pbc);
     var c = dot(u, v) / (norm(u) * norm(v));
     return Math.acos(Math.min(1, Math.max(-1, c))) * 180 / Math.PI;
   }
-  function dihedral(p, i, j, k, l, cell, inv) {
-    var b1 = mic(p[i], p[j], cell, inv), b2 = mic(p[j], p[k], cell, inv), b3 = mic(p[k], p[l], cell, inv);
+  function dihedral(p, i, j, k, l, cell, inv, pbc) {
+    var b1 = mic(p[i], p[j], cell, inv, pbc), b2 = mic(p[j], p[k], cell, inv, pbc), b3 = mic(p[k], p[l], cell, inv, pbc);
     var n1 = cross(b1, b2), n2 = cross(b2, b3), m = cross(n1, scale(b2, 1 / norm(b2)));
     return Math.atan2(dot(m, n2), dot(n1, n2)) * 180 / Math.PI;
   }
-  function measure(p, sel, cell, inv) {
-    if (sel.length === 2) { return { kind: T("距離", "distance"), value: distance(p, sel[0], sel[1], cell, inv), unit: "Å", digits: 3 }; }
-    if (sel.length === 3) { return { kind: T("角度", "angle"), value: angle(p, sel[0], sel[1], sel[2], cell, inv), unit: "°", digits: 1 }; }
-    if (sel.length === 4) { return { kind: T("二面角", "dihedral"), value: dihedral(p, sel[0], sel[1], sel[2], sel[3], cell, inv), unit: "°", digits: 1 }; }
+  function measure(p, sel, cell, inv, pbc) {
+    if (sel.length === 2) { return { kind: T("距離", "distance"), value: distance(p, sel[0], sel[1], cell, inv, pbc), unit: "Å", digits: 3 }; }
+    if (sel.length === 3) { return { kind: T("角度", "angle"), value: angle(p, sel[0], sel[1], sel[2], cell, inv, pbc), unit: "°", digits: 1 }; }
+    if (sel.length === 4) { return { kind: T("二面角", "dihedral"), value: dihedral(p, sel[0], sel[1], sel[2], sel[3], cell, inv, pbc), unit: "°", digits: 1 }; }
     return null;
   }
   function bondsOf(pos, radii) {
@@ -70,7 +75,7 @@
     var ctx = canvas.getContext("2d");
     var state = { rx: -1.05, ry: 0.52, zoom: 1, panx: 0, pany: 0 };
     var selected = [];
-    var cell = scene.cell || null, inv = cell ? inv3(cell) : null;
+    var cell = scene.cell || null, inv = cell ? inv3(cell) : null, pbc = scene.pbc || null;
     var projected = [];
     var surfaces = [];   /* {tri: flat xyz (9 per triangle, scene coordinates), normal: flat (3 per triangle), rgb: [r,g,b], opacity} */
     var LIGHT = [0.3, 0.5, 0.81];
@@ -88,7 +93,7 @@
       return [w / 2 + r[0] * s + state.panx, h / 2 - r[1] * s + state.pany, r[2], s];
     }
     function measureText() {
-      var m = measure(scene.positions, selected, cell, inv);
+      var m = measure(scene.positions, selected, cell, inv, pbc);
       if (!m) { return ""; }
       var names = selected.map(function (i) { return scene.symbols[i] + (i + 1); });
       return m.kind + " " + names.join("-") + ": " + m.value.toFixed(m.digits) + " " + m.unit;
@@ -304,7 +309,7 @@
       setSelection: setSelection,
       clearSelection: function () { setSelection([]); },
       measureText: measureText,
-      measure: function () { return measure(scene.positions, selected, cell, inv); },
+      measure: function () { return measure(scene.positions, selected, cell, inv, pbc); },
       pick: pick,
       setSurfaces: function (list) { surfaces = list || []; draw(); },
       clearSurfaces: function () { surfaces = []; draw(); },
