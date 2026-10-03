@@ -12,7 +12,7 @@ GUI の「解析」タブ、ウェブ版の「解析」ページ、`adit-analyze
 |---|---|---|
 | エネルギー・温度の推移 | DFTB+ md.out / output.log、xtb output.log と xtb.trj、VASP vasprun.xml と OSZICAR、pw.x output.log、ORCA output.log | 折れ線グラフ |
 | 動径分布関数 (RDF) | 軌跡 (geo_end.xyz、xtb.trj、vasprun.xml / XDATCAR、pw.x output.log、ORCA trajectory.xyz) | 元素の組ごとの g(r) |
-| 平均二乗変位 (MSD) と拡散係数 | 同上 (周期系は境界をまたぐ移動を補正) | MSD の図と、既定では最大ずれ時間の 10〜50 % を直線フィットして求めた D [cm²/s] |
+| 平均二乗変位 (MSD) と拡散係数 | 同上 (周期系は境界をまたぐ移動を補正) | MSD の図と、既定では最大の遅れ時間の 10〜50 % を直線フィットして求めた D [cm²/s] |
 | 状態密度 (DOS) | DFTB+ band.out と detailed.out のフェルミ準位、VASP DOSCAR | ガウス関数で広げた DOS |
 | 振動数とスペクトル | DFTB+ hessian.out (質量重み付きヘシアンの対角化)、xtb vibspectrum、VASP OUTCAR、ORCA output.log | 振動数の一覧とスペクトル (IR 強度があれば重み付き) |
 | 結合長 | 最終構造 | 共有結合半径の和の 1.2 倍以内にある原子対 |

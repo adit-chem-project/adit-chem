@@ -276,7 +276,7 @@ def test_fields_roundtrip():
 
 
 @pytest.mark.parametrize("language,range_text,formula_text", [
-    ("ja", "既定: 最大ずれ時間の 10〜50 %", "MSD = 4 D t + c"),
+    ("ja", "既定: 最大の遅れ時間の 10〜50 %", "MSD = 4 D t + c"),
     ("en", "default: 10–50% of the maximum lag time", "MSD = 4 D t + c"),
 ])
 def test_msd_screen_text_matches_fit_default_and_dimension(tmp_path, monkeypatch, language, range_text, formula_text):

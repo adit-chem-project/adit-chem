@@ -291,7 +291,7 @@ HELP: dict[str, Help] = {
     "平衡化として捨てるフレーム数": Help(O, "MD の軌跡の先頭を平衡化とみなして捨てるフレーム数。RDF、MSD、温度の平均に効きます。", "Leading MD frames discarded as equilibration; affects RDF, MSD and the mean temperature."),
     "間引き (N フレームおき)": Help(O, "軌跡を N フレームおきに使います。RDF・MSD・z 方向の密度分布・書き出しに効き、1 フレームの時間は N 倍になります。1 なら全フレーム。",
                                "Uses every N-th trajectory frame; affects RDF, MSD, the z density and the export, and multiplies the time per frame by N. 1 = all frames."),
-    "MSD の当てはめ範囲 [fs]": Help(O, "拡散係数を MSD の直線の傾きから求める時間の範囲 (始めと終わり)。3 次元なら D = 傾き / 6。空欄なら最大ずれ時間の 10〜50 %。",
+    "MSD の当てはめ範囲 [fs]": Help(O, "拡散係数を MSD の直線の傾きから求める時間の範囲 (始めと終わり)。3 次元なら D = 傾き / 6。空欄なら最大の遅れ時間の 10〜50 %。",
                                 "Time range (start and end) for obtaining the diffusion coefficient from the MSD slope. In 3D, D = slope / 6. Empty = 10–50% of the maximum lag time."),
     "MSD のメモリの上限 [MB]": Help(O, "MSD は全フレームの座標を持ちます。読む前に「フレーム数 × 原子数 × 24 バイト」を見積もり、この値を超えたら止めます。",
                                 "The MSD keeps the coordinates of all frames. Frames × atoms × 24 bytes is estimated before reading, and the run stops above this limit."),

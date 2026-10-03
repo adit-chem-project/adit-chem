@@ -47,7 +47,7 @@ print(methods_markdown([load_run_report("out/run1")], "ja"))   # 論文の「方
 | 原子を選ぶ | `adit.analysis.select.select(atoms, "element O and z < 10")` | `numpy` の添字 (0 始まり) |
 | 距離・角・二面角・RMSD・Rg の時系列 | `adit.analysis.geometry_series.*` | `numpy` の配列 |
 | 配位数・中心対称性・Steinhardt・かたまり・S(q) | `adit.analysis.local_order.*` | `numpy` の配列 / `dict` |
-| 水素結合を数える | `adit.analysis.hbond.count_series(frames, distance, angle)` | 1 フレームごとの本数 (しきい値は必須) |
+| 水素結合を数える | `adit.analysis.hbond.count_series(frames, distance, angle)` | `dict` (フレームごとの本数の配列と、使ったしきい値。しきい値は必須) |
 | 水素結合の寿命・距離×角度の分布 | `adit.analysis.hbond.lifetime(frames, distance, angle, dt_fs=None, tau_max=None, budget_mb=1024)` / `distance_angle_map(frames, rmax_A)` | 自己相関と寿命の `dict` / ヒストグラムの `dict` (`"distribution"` は `Distribution2D`) |
 | 組にして比べる (ΔE と、thermo.csv があれば ΔH・ΔS・ΔG) | `adit.analysis.compare.analyze_compare(base, reactions=None)` / `parse_compare(text)` | `CompareResult` (`.reactions[i]["thermo"]` に温度ごとの ΔH・ΔS・ΔG) / `list[Reaction]` |
 | CREST の配座を読む・重みを付ける | `adit.analysis.crest.analyze_crest(crest_dir, out_dir, temperature_k=None)` / `read_ensemble` / `read_energies` / `boltzmann_weights(relative_ev, degeneracy, temperature_k)` | 配座の表 (`dict`) / `list[(E [Eh], Atoms)]` / `dict` / 重みの配列 (温度を渡したときだけ) |
@@ -56,7 +56,7 @@ print(methods_markdown([load_run_report("out/run1")], "ja"))   # 論文の「方
 | 射影バンド (QE の projwfc.x) | `adit.analysis.projected_bands.read_filproj(path)` | `ProjectedBands` |
 | 光学 (QE の epsilon.x) | `adit.analysis.optical.read_epsilon(run_dir)` | `Optical` (n, k, 吸収係数, 反射率, EELS) |
 | Bader 電荷 (外部の bader の ACF.dat) | `adit.analysis.bader.read_acf(path)` | `BaderCharges` (分割は計算しない) |
-| 重い解析を計算機へ出す | `adit.analysis.heavy_setup.write_job(run_dir, ...)` | 実行するスクリプトのパス |
+| 重い解析を計算機へ出す | `adit.analysis.heavy_setup.write_job(run_dir, *, dt_fs, ...)` (`dt_fs` は必須) | 書いたファイルの `list[Path]` (msd_worker.py と msd_run.sh) |
 | VASP の PROCAR | `adit.analysis.procar.read_procar(path)` | `Procar` (射影・固有値・k 点) |
 | Gaussian・GAMESS・Q-Chem の出力 | `adit.analysis.readers_qc.read_gaussian / read_gamess / read_qchem` | `QcOutput` (エネルギー・構造・振動数・赤外・ラマン・電荷) |
 | OpenMX の出力 | `adit.analysis.readers_openmx.read_openmx(path)` | `OpenmxOutput` |

@@ -14,7 +14,9 @@ ADIT を入れて、最初の計算を実行するまでの手順です。
 署名を付けていないため、初回だけ警告が出ます。Windows は「詳細情報」→「実行」、
 macOS は Finder で右クリック →「開く」を選んでください。
 
-コマンドライン (`adit-gen` など) を使いたいときは、同じフォルダの `adit-cli.exe` (macOS は `adit-cli`) を呼びます。
+コマンドライン (`adit-gen` など) を使いたいときは、Windows は同じフォルダの `adit-cli.exe` を呼びます。
+macOS の zip には `ADIT.app` だけが入っているので、ターミナルで `ADIT.app/Contents/MacOS/adit-cli` を呼びます
+(例: `./ADIT.app/Contents/MacOS/adit-cli gen --list-samples`)。
 
 同じ PC で計算まで実行したい場合は、次の節へ進んでください。
 
@@ -324,6 +326,8 @@ adit-convert structure data.lammps POSCAR
 adit-convert structure POSCAR structure.data
 adit-convert structure POSCAR structure.xyz
 adit-convert structure trajectory.extxyz final.cif --frame -1
+adit-convert crystal "225 Na:0,0,0 Cl:0.5,0,0 cell=5.64" nacl.cif        # 空間群と原子の分率座標から結晶を作る
+adit-convert surface "fcc111 Al 2x2x3 vacuum=10" slab.xyz                # 面・元素・大きさから表面スラブを作る
 adit-convert combine molecule_a.xyz molecule_b.xyz combined.xyz
 adit-convert openbabel source.sdf target.mol2 --input-format sdf --output-format mol2
 adit-convert dock6 prepared/dock.in ready/

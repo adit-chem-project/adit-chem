@@ -19,9 +19,7 @@
 | `examples/lammps_cu/Cu_u3.eam` と、その写し `examples/lammps_cu_nvt_generated/Cu_u3.eam`、`examples/plumed_lammps_cu_generated/Cu_u3.eam` | LAMMPS の `potentials/` | GPL-2.0 | `licenses/GPL-2.0.txt` |
 | `examples/cp2k_h2o_generated/BASIS_adit`、`POTENTIAL_adit` ほか CP2K の例 | CP2K の `data/` (BASIS_MOLOPT、GTH_POTENTIALS の一部) | GPL-2.0-or-later | `licenses/GPL-2.0.txt` |
 | `examples/gromacs_spce/conf.gro` と、その写し `examples/gromacs_spce_em_generated/`、`examples/gromacs_spce_nvt_generated/`、`examples/openmm_spce_nvt_generated/` の `conf.gro` | GROMACS の `share/gromacs/top/spc216.gro` | LGPL-2.1 | `licenses/LGPL-2.1.txt` |
-| `examples/prep_stage1_dftb_continue_nve/skf/`、`examples/prep_stage1_dftb_stages/*/skf/`、`examples/prep_stage2_dftb_adsorption/*/skf/`、`examples/prep_stage3_dftb_elastic/*/skf/`、`examples/prep_stage3_dftb_neb_images/*/skf/`、`examples/prep_stage3_dftb_phonons_ase/*/skf/`、`examples/prep_stage3_dftb_phonons_phonopy/*/skf/` の `.skf`、`LICENSE`、`README` (合計 76 個の `.skf`) | dftb.org の Slater-Koster セット mio-1-1 (https://dftb.org/parameters/download.html) | CC BY-SA 4.0 | `licenses/CC-BY-SA-4.0.txt` (各 `skf/LICENSE` にも同じ全文) |
-| `examples/xtb_water_generated` の一部 | xtb の配布物 | LGPL-3.0 | (xtb の配布物を参照) |
-| `examples/qe_si_generated` の一部 | Quantum ESPRESSO の配布物 | GPL-2.0 | `licenses/GPL-2.0.txt` |
+| `examples/water_generated/skf/`、`examples/dftb_md_water_generated/skf/`、`examples/dftb_tio2_generated/skf/`、`examples/dftb_tio2_bands_generated/skf/`、`examples/prep_stage1_dftb_continue_nve/skf/`、`examples/prep_stage1_dftb_stages/*/skf/`、`examples/prep_stage2_dftb_adsorption/*/skf/`、`examples/prep_stage3_dftb_elastic/*/skf/`、`examples/prep_stage3_dftb_neb_images/*/skf/`、`examples/prep_stage3_dftb_phonons_ase/*/skf/`、`examples/prep_stage3_dftb_phonons_phonopy/*/skf/` の `.skf`、`LICENSE`、`README` (合計 92 個の `.skf`) | dftb.org の Slater-Koster セット mio-1-1。`dftb_tio2*` の Ti を含む組 (`Ti-Ti`、`Ti-O`、`O-Ti`) は同じ dftb.org の tiorg-0-1 (https://dftb.org/parameters/download.html) | CC BY-SA 4.0 | `licenses/CC-BY-SA-4.0.txt` (各 `skf/LICENSE` にも同じ全文) |
 
 同じディレクトリの `topol.top` (`examples/gromacs_spce/` とその写し) は、GROMACS 同梱の力場を `#include` するだけの短いファイルで、ADIT 側で書いたものです。
 
@@ -40,6 +38,9 @@
 |---|---|---|
 | `tests/data/gaussian_dvb_raman.out.gz`、`gamess_dvb_ir.out.gz`、`qchem_dvb_raman.out.gz`、`orca_dvb_raman.out.gz` | [cclib](https://github.com/cclib/cclib) の `data/` | BSD-3-Clause |
 | `tests/data/PROCAR.simple`、`PROCAR.new_format_5.4.4.gz`、`WAVEDER.gz` | [pymatgen](https://github.com/materialsproject/pymatgen) の `test-files/` | MIT |
+| `tests/data/fetch/pubchem_*` | PubChem PUG REST の実際の応答 | NCBI の方針 (米国政府の著作物はパブリックドメイン) |
+| `tests/data/fetch/cod_1000041*` | Crystallography Open Database の実際の応答 | CC0 1.0 |
+| `tests/data/fetch/providers.json`、`idx_oqmd_links.json`、`oqmd_*.json` | OPTIMADE の実際の応答 (providers.json は OPTIMADE 連合、残りは OQMD) | providers.json は MIT、OQMD の項目は OQMD の規約 |
 
 **これらは「読み取りが本当に合っているか」を、実物の書式で確かめるために置いています。**
 出典と確かめた内容は `tests/data/SOURCES.md` にあります。
@@ -63,7 +64,7 @@ PubChem の利用方針は「1 秒に 5 回まで」の要求で、ADIT は 1 �
 ## 同梱していないもの (配れないもの)
 
 - **VASP の POTCAR**: ライセンス保持者以外に配布できません。ADIT は**書きも写しもしません**
-- **Slater-Koster パラメータ (slakos/)**: 利用者が dftb.org から入れます。セットごとの置き場所 `slakos/` はリポジトリには入れていません (`.gitignore`)。上の表にある `examples/prep_stage*/**/skf/` の mio-1-1 の写しだけが例外です
+- **Slater-Koster パラメータ (slakos/)**: 利用者が dftb.org から入れます。セットごとの置き場所 `slakos/` はリポジトリには入れていません (`.gitignore`)。上の表にある `examples/**/skf/` の mio-1-1 / tiorg-0-1 の写しだけが例外です
 - **擬ポテンシャル (UPF、psp8 など)**: 同上
 - **計算コード本体** (DFTB+、VASP、Gaussian、ORCA ほか): 入れていません
 
@@ -78,7 +79,7 @@ PyInstaller で作る配布物には、**日本語のフォント (Noto Sans CJK
 
 | 入るもの | ライセンス | 全文 |
 |---|---|---|
-| Noto Sans CJK JP (フォント) | SIL Open Font License 1.1 | `fonts/OFL-1.1-NotoSansCJK.txt` |
+| Noto Sans CJK JP (フォント) | SIL Open Font License 1.1 | `licenses/OFL-1.1-NotoSansCJK.txt` (実行ファイルの中では `fonts/` にも同じ全文) |
 | Python、ASE、pydantic、Jinja2、matplotlib、SciPy、NumPy | それぞれの配布物のライセンス (PSF / LGPL-2.1+ / MIT / BSD-3 ほか) | 各パッケージの配布物に含まれます |
 | tomli-w | MIT | 同上 |
 | PySide6 (画面のとき) | **LGPL-3.0** | Qt / PySide6 の配布物を参照 |

@@ -128,7 +128,7 @@ SPINE_CHOICES = [("", "(既定)", "(default)"), ("all", "四方", "All four"), (
                  ("none", "枠なし", "None")]
 
 PLACEHOLDERS: dict[str, tuple[str, str]] = {
-    "msd_fit": ("空欄なら最大ずれ時間の 10〜50 %", "Empty = 10–50% of the maximum lag time"),
+    "msd_fit": ("空欄なら最大の遅れ時間の 10〜50 %", "Empty = 10–50% of the maximum lag time"),
     "msd_blocks": ("既定 5。0 なら誤差を出しません", "Default 5; 0 disables the error"),
     "vanhove_taus": ("既定 100。重ければ実行用のファイルを置きます", "Default 100; if it is heavy, files to run it are written"),
     "memory_mb": ("空欄なら 1024", "Empty = 1024"),
@@ -256,7 +256,7 @@ def options_from_fields(f: dict):
     stride = _num(f, "stride", int, positive=True)
     lo, hi = _num(f, "msd_fit_from", label_key="msd_fit", nonneg=True), _num(f, "msd_fit_to", label_key="msd_fit", positive=True)
     if (lo is None) != (hi is None):
-        raise FieldError(L(f"{lab('msd_fit')}: 始めと終わりの両方を入れてください (両方空欄なら最大ずれ時間の 10〜50 %)",
+        raise FieldError(L(f"{lab('msd_fit')}: 始めと終わりの両方を入れてください (両方空欄なら最大の遅れ時間の 10〜50 %)",
                            f"{lab('msd_fit')}: give both the start and the end (leave both empty for 10–50% of the maximum lag time)"))
     if lo is not None and not lo < hi:
         raise FieldError(L(f"{lab('msd_fit')}: 始め ({lo:g}) を終わり ({hi:g}) より小さくしてください",
@@ -599,7 +599,7 @@ def result_sections(res) -> list[Section]:
             a, b = m["fit_range_fs"]
             formula = m.get("formula") or f"MSD = {2 * m.get('dimension', 3)} D t + c"
             setting = (L("利用者の指定", "set by the user") if m.get("fit_range_user") else
-                       L("既定: 最大ずれ時間の 10〜50 %", "default: 10–50% of the maximum lag time"))
+                       L("既定: 最大の遅れ時間の 10〜50 %", "default: 10–50% of the maximum lag time"))
             notes.append(L(f"当てはめ範囲 {a:g}〜{b:g} fs ({setting})。使った式: {formula}。複数の時間原点で平均した MSD",
                            f"fit range {a:g}-{b:g} fs ({setting}); formula used: {formula}; MSD averaged over time origins"))
         else:
