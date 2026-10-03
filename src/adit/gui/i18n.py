@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from adit.config import env_var
-import os
 
 from PySide6.QtWidgets import (QAbstractButton, QComboBox, QGroupBox, QLabel, QLineEdit, QMenu, QMenuBar, QPlainTextEdit, QTabBar, QTabWidget, QToolBar,
                                QToolButton, QWidget)

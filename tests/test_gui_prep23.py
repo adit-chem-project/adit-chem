@@ -1,13 +1,12 @@
 
 import os
-from pathlib import Path
 
 import pytest
 
 pytest.importorskip("PySide6")
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-from ase.build import bulk, molecule  # noqa: E402
+from ase.build import molecule  # noqa: E402
 from ase.io import write  # noqa: E402
 from PySide6.QtWidgets import QApplication, QFileDialog, QLabel, QMessageBox  # noqa: E402
 

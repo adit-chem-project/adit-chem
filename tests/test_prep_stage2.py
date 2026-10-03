@@ -7,7 +7,7 @@ from ase.io import write
 
 from tests.conftest import cfg_for, make_fake_skset, water_spec
 from adit.compare_sets import CompareSetError, write_compare_set
-from adit.spec import (AtomsData, CalculationSpec, Cp2kMethod, DftbMethod, EspressoMethod, KPoints, Runtime, Structure, Task, VaspMethod,
+from adit.spec import (AtomsData, CalculationSpec, Cp2kMethod, DftbMethod, EspressoMethod, KPoints, Structure, Task, VaspMethod,
                         XtbMethod)
 
 

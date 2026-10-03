@@ -16,7 +16,7 @@ from adit import lang
 from adit.project import ProjectError, build_project, write_project
 from adit.spec import (AmberMethod, AtomsData, CalculationSpec, GamessMethod,
                         GaussianMethod, GrrmMethod, KPoints, NamdMethod,
-                        OpenmxMethod, OrcaMethod, QchemMethod, Runtime, Structure, Task, MDSettings)
+                        OpenmxMethod, OrcaMethod, QchemMethod, Runtime, Task, MDSettings)
 
 
 def molecular(method, task="single_point"):

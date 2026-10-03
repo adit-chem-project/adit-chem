@@ -17,7 +17,7 @@ from ase.build import bulk
 from adit import handoff as hf
 from adit.continuation import ContinuationError, continue_from
 from adit.project import ProjectError, build_project, version_trap, write_project
-from adit.spec import (AtomsData, CalculationSpec, Cp2kMethod, DftbMethod, EspressoMethod, Handoff, HubbardU, KPoints,
+from adit.spec import (AtomsData, CalculationSpec, DftbMethod, EspressoMethod, Handoff, HubbardU, KPoints,
                         LammpsMethod, MDSettings, OrcaMethod, Runtime, Structure, Task, VaspMethod, XtbMethod)
 from adit.stages import Stage, StageError, parse_stages, plan_stages, write_stages
 from adit.templates import TemplateError, list_templates, load_template, save_template, template_origin

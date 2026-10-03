@@ -7,10 +7,8 @@ import pytest
 
 from adit.codes.potcar import PotcarLibrary
 from adit.codes.vasp import VaspGenerator, potcar_name
-from adit.config import Profile
 from adit.project import ProjectError, build_project, write_project
 from adit.spec import AtomsData, CalculationSpec, KPoints, MDSettings, Runtime, Structure, Task, VaspMethod
-from adit.structure import from_file
 from tests.conftest import cfg_for
 
 REPO = Path(__file__).resolve().parent.parent

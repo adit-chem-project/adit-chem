@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import numpy as np
 import pytest
 
 from adit.analysis.bader import RUN_NOTE, read_acf, summary_lines

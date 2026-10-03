@@ -16,7 +16,6 @@ from adit.codes.upf import UpfError, UpfLibrary
 from adit.config import Config, Profile
 from adit.spec import CalculationSpec, EspressoMethod
 from adit.validate import electron_parity_error
-from adit import lang
 from adit.lang import L
 from adit.validate_types import ValidationError
 
@@ -251,7 +250,6 @@ class EspressoGenerator(InputGenerator):
     def readme_notes(self, spec: CalculationSpec, lib: UpfLibrary, copies) -> ReadmeNotes:
         t = spec.task.type
         names = ", ".join(sorted(n.split("/", 1)[1] for n in copies))
-        docs = [n for n in ("LICENSE", "LICENSE.txt", "README", "README.md") if f"{PSEUDO_SUBDIR}/{n}" in copies]
         files = [
             L("  pw.in         pw.x の入力 (&CONTROL &SYSTEM などの設定と、元素・座標・k 点 = 周期系で電子の状態を計算する波数空間の点)",
               "  pw.in         pw.x input (&CONTROL, &SYSTEM etc., and the species, positions and k-points = points in reciprocal space where the electronic states are computed)"),

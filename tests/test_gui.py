@@ -8,7 +8,6 @@ import pytest
 pytest.importorskip("PySide6")
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-from PySide6.QtCore import QEventLoop, QTimer  # noqa: E402
 from PySide6.QtWidgets import QApplication, QMessageBox  # noqa: E402
 
 from adit.config import default_config  # noqa: E402
@@ -599,7 +598,7 @@ def test_generate_hint_jumps_to_the_field_and_marks_it_red(app, quiet, sk_root, 
 
 
 def test_generating_points_at_the_terminal(app, quiet, sk_root, tmp_path, monkeypatch):
-    """実行ボタンは無い。生成したら、ターミナルで何を打つかを案内する (2026-09-15)。"""
+    # There is no run button: after generating, the window says what to type in the terminal.
     monkeypatch.setattr(QMessageBox, "information", staticmethod(lambda *a, **k: None))
     win = make_window(sk_root, tmp_path)
     assert not hasattr(win, "btn_run") and not hasattr(win, "act_run")
@@ -613,7 +612,7 @@ def test_generating_points_at_the_terminal(app, quiet, sk_root, tmp_path, monkey
 
 
 def test_generate_waits_for_the_pending_preview(app, quiet, sk_root, tmp_path, monkeypatch):
-    """出力ディレクトリを空にした直後 (250 ms の待ち中) に Ctrl+G を押しても、カレントディレクトリに書かない。"""
+    # Ctrl+G during the 250 ms preview delay after clearing the output directory must not write into the current directory.
     win = make_window(sk_root, tmp_path)
     win.method.sk_set.setCurrentText("fake-1-0"); win.refresh_preview()
     cwd = tmp_path / "cwd"; cwd.mkdir(); monkeypatch.chdir(cwd)
@@ -674,7 +673,7 @@ def test_every_problem_is_listed_and_shown_under_its_field(app, quiet, sk_root, 
     win.task.md_steps.setValue(0); win.method.reload_sets(""); win.refresh_preview()
     assert win.error_badge.text() == "2 件の不足" and len(win._errors) == 2 and win._error_locations == ["task.md.steps", "method.sk_set"]
     # each field has its own red line, in the row below it, showing only the reason
-    lines = {lab.property("adit_key"): line for lab, line in win._inline_errors.items() if not win._form_row(line)[0] is None
+    lines = {lab.property("adit_key"): line for lab, line in win._inline_errors.items() if win._form_row(line)[0] is not None
              and win._form_row(line)[0].isRowVisible(win._form_row(line)[1])}
     assert set(lines) == {"MD ステップ数", "Slater-Koster パラメータ"}
     for key, line in lines.items():

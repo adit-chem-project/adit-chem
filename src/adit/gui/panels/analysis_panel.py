@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QComboBox, QDialog,
                                QHeaderView, QLabel, QLineEdit, QPlainTextEdit, QPushButton, QScrollArea, QSizePolicy, QSpinBox,
                                QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget)
 
-from adit.analysis import AnalysisOptions, AnalysisResult, run_analysis
+from adit.analysis import AnalysisOptions, run_analysis
 from adit.analysis.report import figure_title
 from adit.gui import analysis_fields as AF
 from adit.gui.analysis_views import Collapsible, SectionView, hint_label, open_folder
@@ -488,7 +488,6 @@ class AnalysisPanel(QWidget):
         t.show()
 
     def _show_figures(self, figures: dict) -> None:
-        from adit.gui.copy_save import copy_button, save_button
 
         _clear(self.figs_lay)
         for name, path in figures.items():

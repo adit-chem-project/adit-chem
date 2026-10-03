@@ -75,7 +75,7 @@ class XtbMethodPanel(QWidget):
     def _refill(self, *_, keep: str | None = None) -> None:
         model = self.solvation.currentData()
         cur = keep if keep is not None else (self.solvent.currentData() or "")
-        fill_solvents(self.solvent, solvent_names(model, self.gfn.currentData()) if model != "none" else [], cur if model != "none" else cur)
+        fill_solvents(self.solvent, solvent_names(model, self.gfn.currentData()) if model != "none" else [], cur)
         self._form.setRowVisible(self.solvent, model != "none" or bool(cur))
         self._emit()
 

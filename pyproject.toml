@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]   # 77 is the first release that understands the license expression below
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -15,6 +15,7 @@ keywords = ["computational chemistry", "DFT", "molecular dynamics", "input gener
 requires-python = ">=3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
     "Operating System :: OS Independent",
     "Topic :: Scientific/Engineering :: Chemistry",
     "Topic :: Scientific/Engineering :: Physics",
@@ -43,8 +44,7 @@ smiles = ["rdkit"]
 analysis = ["spglib>=2"]  # space groups; analysis works without it, that field is then absent
 xrd = ["pymatgen>=2024"]  # powder X-ray diffraction
 phonons = ["phonopy>=4.5"]  # finite-displacement phonons; ASE Phonons is used when absent
-dev = ["pytest", "PySide6>=6.6", "pyqtdarktheme-fork>=2.3",
-       "pyte>=0.8", "ptyprocess>=0.7; sys_platform != 'win32'", "pywinpty>=2; sys_platform == 'win32'"]
+dev = ["pytest", "ruff", "adit-chem[gui]"]
 
 [project.urls]
 Homepage = "https://github.com/adit-chem-project/adit-chem"
@@ -70,3 +70,10 @@ adit = ["CITATION.cff", "scripts/templates/*.j2", "web/templates/*.html", "web/s
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py311"
+
+[tool.ruff.lint]
+# Defects only: undefined names and unused imports (F), syntax errors (E9), Pylint errors (PLE).
+select = ["F", "E9", "PLE"]

@@ -11,7 +11,7 @@ from ase.build import bulk, molecule
 from ase.io import write
 
 from tests.conftest import cfg_for, water_spec
-from adit.spec import (AtomsData, CalculationSpec, Cp2kMethod, DftbMethod, EspressoMethod, KPoints, MlipMethod, OrcaMethod, Structure, Task,
+from adit.spec import (AtomsData, CalculationSpec, Cp2kMethod, KPoints, MlipMethod, OrcaMethod, Structure, Task,
                         VaspMethod, XtbMethod)
 
 from adit.spec import HARTREE_PER_BOHR3_IN_GPA as HA_BOHR3_GPA, HARTREE_PER_BOHR_IN_EV_PER_ANG as HA_BOHR

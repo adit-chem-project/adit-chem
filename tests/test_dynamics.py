@@ -9,7 +9,7 @@ import pytest
 from adit.codes.sk_sets import SKSet
 from adit.codes.dftbplus import DftbPlusGenerator
 from adit.project import ProjectError, build_project, write_project
-from adit.spec import DftbMethod, EspressoMethod, KPoints, MDSettings, OrcaMethod, Task, VaspMethod, XtbMethod
+from adit.spec import DftbMethod, MDSettings, OrcaMethod, Task, VaspMethod, XtbMethod
 from tests.conftest import REAL_SK_ROOT, cfg_for, water_spec
 
 DFTB = os.environ.get("ADIT_DFTB_EXE") or shutil.which("dftb+") or ""

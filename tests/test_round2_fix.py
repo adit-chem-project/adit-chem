@@ -1,7 +1,6 @@
 
 from __future__ import annotations
 
-import os
 import re
 import threading
 import time
@@ -11,7 +10,7 @@ import urllib.request
 import pytest
 
 from adit import lang
-from adit.config import Profile, default_config, load_config, save_config, set_top_level_value
+from adit.config import default_config, load_config, save_config, set_top_level_value
 from adit.project import _local_time, build_project
 from adit.spec import OrcaMethod, VaspMethod, XtbMethod
 from adit.validate import validate

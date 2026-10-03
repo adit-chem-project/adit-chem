@@ -4,7 +4,6 @@ from __future__ import annotations
 import copy
 import math
 import re
-from dataclasses import dataclass, field
 
 from PySide6.QtCore import QPointF, QRectF, Qt, Signal
 from PySide6.QtGui import QColor, QFont, QKeyEvent, QKeySequence, QMouseEvent, QPainter, QPen, QShortcut
@@ -108,25 +107,6 @@ class SketchCanvas(QWidget):
                 if d <= 6:
                     return b
         return None
-
-    def _free_direction(self, i: int) -> float:
-        a = self.sketch.atoms[i]
-        angles = []
-        for b in self.sketch.bonds:
-            if i in (b.a, b.b):
-                o = self.sketch.atoms[b.b if b.a == i else b.a]
-                angles.append(math.atan2(o.y - a.y, o.x - a.x))
-        if not angles:
-            return 0.0
-        if len(angles) == 1:
-            return angles[0] + math.radians(120)
-        best, best_gap = 0.0, -1.0
-        for k in range(12):
-            cand = math.radians(30 * k)
-            gap = min(abs((cand - t + math.pi) % (2 * math.pi) - math.pi) for t in angles)
-            if gap > best_gap:
-                best, best_gap = cand, gap
-        return best
 
     def add_template(self, name: str, x: float, y: float) -> None:
         n, aromatic = TEMPLATES[name]

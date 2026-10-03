@@ -5,6 +5,7 @@
 ```bash
 python -m pip install -e ".[dev,gui,smiles,analysis]"
 pytest -q                     # 全件 (GUI は画面なしで走ります)
+ruff check src tests packaging   # 未定義の名前・使っていない import (CI でも走ります)
 ```
 
 計算ソフト (DFTB+、xtb、Quantum ESPRESSO、CP2K、LAMMPS、GROMACS…) が PATH にあると、

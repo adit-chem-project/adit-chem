@@ -1,5 +1,4 @@
 import json
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -164,7 +163,7 @@ def test_the_figure_style_can_be_changed(tmp_path):
     for bad in ({"colors": "not-a-color"}, {"tick_direction": "sideways"},
                 {"grid": "diagonal"}, {"spines": "round"}, {"line_width": "太め"}):
         with pytest.raises(PlotStyleError):
-            from_text(**bad).apply() if "colors" in bad or "tick" in str(bad) else from_text(**bad).apply()
+            from_text(**bad).apply()
     from matplotlib import rcdefaults
     rcdefaults()
 

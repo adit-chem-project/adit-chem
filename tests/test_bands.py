@@ -10,7 +10,7 @@ from ase.build import bulk
 
 from adit.bandpath import band_path, dftb_klines, qe_crystal_b, vasp_line_mode
 from adit.project import ProjectError, build_project, write_project
-from adit.spec import BandSettings, EspressoMethod, KPoints, OrcaMethod, Task, XtbMethod
+from adit.spec import BandSettings, KPoints, OrcaMethod, Task, XtbMethod
 from tests.conftest import REAL_SK_ROOT, cfg_for, water_spec
 
 DFTB = os.environ.get("ADIT_DFTB_EXE") or shutil.which("dftb+") or ""

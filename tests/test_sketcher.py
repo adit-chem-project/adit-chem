@@ -220,7 +220,7 @@ def test_overvalent_bond_is_reported_not_blocked(dlg):
 
 
 def test_dark_theme_colors_follow_tokens():
-    app = QApplication.instance() or QApplication([])
+    QApplication.instance() or QApplication([])
     from adit.gui import style
     from adit.gui.sketcher import SketchDialog, _palette
 

@@ -14,7 +14,6 @@ from adit.codes.potcar_names import MP_POTCAR_NAMES
 from adit.config import Config, Profile
 from adit.spec import CalculationSpec, VaspMethod
 from adit.validate import electron_parity_error
-from adit import lang
 from adit.lang import L
 from adit.validate_types import ValidationError
 from adit.vasp_constraints import VaspConstraintError, cartesian_to_direct_mask

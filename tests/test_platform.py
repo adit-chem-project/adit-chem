@@ -92,7 +92,6 @@ def test_config_path_per_os(monkeypatch, tmp_path):
 
 def test_analysis_writes_are_utf8_even_if_locale_is_cp932(monkeypatch, tmp_path):
     from adit.analysis import report
-    from adit.analysis.readers import load_run
 
     src = Path(__file__).resolve().parents[1] / "examples" / "water_generated"
     if not (src / "detailed.out").is_file():

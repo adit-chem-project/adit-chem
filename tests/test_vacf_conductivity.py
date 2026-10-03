@@ -2,7 +2,7 @@
 import numpy as np
 import pytest
 
-from adit.analysis.conductivity import Conductivity, ConductivityError, nernst_einstein, summary_line
+from adit.analysis.conductivity import ConductivityError, nernst_einstein, summary_line
 from adit.analysis.vacf import CM1_PER_FS1, VacfError, notes, vacf, velocities_from_positions
 
 

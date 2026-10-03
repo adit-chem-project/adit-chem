@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 from ase.io import read
 
-from adit.analysis.modes import Modes, modes_from_hessian, read_g98_modes, read_modes, read_orca_modes
+from adit.analysis.modes import modes_from_hessian, read_g98_modes, read_modes, read_orca_modes
 from adit.analysis.readers import frequencies_from_hessian
 from adit.analysis.trajectory import Trajectory
 

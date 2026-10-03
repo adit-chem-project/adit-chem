@@ -6,7 +6,7 @@ from pathlib import Path
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QPushButton, QVBoxLayout
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QFormLayout, QGridLayout, QGroupBox, QLabel, QLineEdit, QSpinBox,
-                               QVBoxLayout, QWidget)
+                               QWidget)
 
 from adit.lang import L
 from adit.codes.sk_sets import SKSet, discover_sets

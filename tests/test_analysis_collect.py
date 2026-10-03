@@ -10,7 +10,6 @@ from ase.calculators.singlepoint import SinglePointCalculator
 from ase.io import write
 
 from adit.analysis import AnalysisOptions, run_analysis
-from adit.analysis import collections as coll
 from adit.analysis import neb
 from adit.analysis.readers import detect_code, load_run
 from adit.results import summarize_run

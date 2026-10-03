@@ -134,7 +134,7 @@ class Cp2kMethodPanel(QWidget):
         self.basis_widgets, self.potential_widgets = {}, {}
         root, cands = cp2k_candidates(self.cfg.cp2k_data, self.basis_file.currentText().strip(), self.potential_file.currentText().strip(), self.elements)
         if root:
-            shown = root.replace("/", "/​")
+            shown = root.replace("/", "/\u200b")
             self.data_info.setText(L(f"data ディレクトリ: {shown}", f"data directory: {shown}"))
         else:
             self.data_info.setText(L("この PC に CP2K の data ディレクトリが見つかりません。元素ごとの名前を入れてください (名前は確かめずに書きます)。"

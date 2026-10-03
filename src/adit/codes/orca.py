@@ -1,7 +1,6 @@
 
 from __future__ import annotations
 
-import io
 import math
 from pathlib import Path
 
@@ -10,7 +9,6 @@ from adit.codes.base import GenerationError, InputGenerator, ReadmeNotes, regist
 from adit.config import Config, Profile
 from adit.spec import CalculationSpec, OrcaMethod, HARTREE_PER_BOHR_IN_EV_PER_ANG
 from adit.validate import electron_parity_error
-from adit import lang
 from adit.lang import L
 from adit.validate_types import ValidationError
 
@@ -72,7 +70,7 @@ def _check_solvent(m: OrcaMethod) -> list[ValidationError]:
         return []
     model = m.solvation.upper()
     if not name:
-        return [ValidationError("method.solvent", L(f"溶媒の名前を入れてください (ORCA 6.1 マニュアルの溶媒の表の名前。例 water)", "enter the solvent name (from the solvent table of the ORCA 6.1 manual, e.g. water)"))]
+        return [ValidationError("method.solvent", L("溶媒の名前を入れてください (ORCA 6.1 マニュアルの溶媒の表の名前。例 water)", "enter the solvent name (from the solvent table of the ORCA 6.1 manual, e.g. water)"))]
     row = next((r for r in SOLVENTS if name.lower() in r[0]), None)
     if row is None:
         return [ValidationError("method.solvent", L(f"溶媒 {name!r} は ORCA 6.1 マニュアルの溶媒の表にありません", f"the solvent {name!r} is not in the solvent table of the ORCA 6.1 manual"))]

@@ -1,7 +1,6 @@
 
 import pytest
 
-from adit.config import Profile
 from adit.project import ProjectError, build_project
 from adit.spec import KPoints, OrcaMethod, Runtime, Structure, Task
 from tests.conftest import cfg_for, water_spec

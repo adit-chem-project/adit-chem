@@ -16,7 +16,7 @@ from PySide6.QtCore import QEventLoop, QTimer  # noqa: E402
 from PySide6.QtWidgets import QApplication, QMessageBox  # noqa: E402
 
 from tests.conftest import water_spec  # noqa: E402
-from adit.builder import Recipe, file_base, recipe_structure  # noqa: E402
+from adit.builder import Recipe, file_base  # noqa: E402
 from adit.builder.model import (Adsorb, Fix, Remove, Selection, Slab, SolventLayer, Solvate, Substitute, Supercell,  # noqa: E402
                                Vacuum)
 from adit.config import default_config  # noqa: E402

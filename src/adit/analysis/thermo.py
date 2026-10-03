@@ -4,7 +4,6 @@ from __future__ import annotations
 import warnings
 from dataclasses import asdict, dataclass
 
-import numpy as np
 from ase import Atoms, units
 
 from adit.lang import L

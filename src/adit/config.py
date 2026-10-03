@@ -280,7 +280,6 @@ def first_run_message(path: Path) -> str:
 
 
 def set_top_level_value(path: Path, key: str, value) -> None:
-    import re
 
     text = read_config_text(path)
     try:

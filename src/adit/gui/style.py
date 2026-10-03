@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from adit.config import env_var
-import os
 from dataclasses import dataclass
 
 from PySide6.QtGui import QFont, QFontDatabase

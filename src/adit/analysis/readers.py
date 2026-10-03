@@ -187,10 +187,6 @@ def _read_nwchem(d: Path) -> RunData:
     return result
 
 
-def _read_xyz_frames(path: Path, cell=None, pbc=None) -> list[Atoms]:
-    return list(Trajectory(path, "xyz", cell=cell, pbc=pbc)) if Path(path).is_file() else []
-
-
 def _last_xyz_frame(path: Path) -> list[Atoms]:
     if not path.is_file():
         return []

@@ -1,7 +1,6 @@
 """Round trips, restore paths and swallowed errors in the desktop GUI (2026-09-19)."""
 
 import os
-from pathlib import Path
 
 import numpy as np
 import pytest
@@ -13,7 +12,7 @@ from PySide6.QtWidgets import QApplication, QMessageBox  # noqa: E402
 
 from adit.gui.main_window import MainWindow  # noqa: E402
 from adit.gui.panels.method_panel import CODES  # noqa: E402
-from adit.spec import AtomsData, HubbardU, KPoints, Structure  # noqa: E402
+from adit.spec import HubbardU, KPoints  # noqa: E402
 from adit.textparse import short_number  # noqa: E402
 from tests.test_gui import make_window  # noqa: E402
 

@@ -4,10 +4,14 @@ from __future__ import annotations
 import itertools
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 
 from adit.spec import HARTREE_PER_BOHR_IN_EV_PER_ANG, AtomsData, CalculationSpec, DftbMethod, Runtime, Structure, Task
+
+if TYPE_CHECKING:
+    from adit.config import Config
 
 REPO = Path(__file__).resolve().parent.parent
 REAL_SK_ROOT = REPO / "slakos"

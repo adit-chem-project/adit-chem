@@ -7,11 +7,10 @@ from pathlib import Path
 from ase.io import write
 
 from adit.citations import Citation
-from adit.codes.base import GenerationError, InputGenerator, ReadmeNotes, register
+from adit.codes.base import InputGenerator, ReadmeNotes, register
 from adit.config import Config, Profile
 from adit.spec import CalculationSpec, XtbMethod
 from adit.validate import electron_parity_error
-from adit import lang
 from adit.lang import L
 from adit.validate_types import ValidationError
 

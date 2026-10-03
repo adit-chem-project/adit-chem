@@ -4,7 +4,6 @@ from __future__ import annotations
 from adit.progress import report
 
 from adit.errors import AditError
-import json
 import math
 from typing import Literal
 
@@ -90,14 +89,6 @@ def _random_rotation(rng: np.random.Generator) -> np.ndarray:
     return np.array([[a * a + b * b - c * c - d * d, 2 * (b * c - a * d), 2 * (b * d + a * c)],
                      [2 * (b * c + a * d), a * a - b * b + c * c - d * d, 2 * (c * d - a * b)],
                      [2 * (b * d - a * c), 2 * (c * d + a * b), a * a - b * b - c * c + d * d]])
-
-
-def _min_image_dist(p: np.ndarray, others: np.ndarray, box: float) -> float:
-    if len(others) == 0:
-        return np.inf
-    d = p[:, None, :] - others[None, :, :]
-    d -= box * np.round(d / box)
-    return float(np.sqrt((d ** 2).sum(axis=-1)).min())
 
 
 def _candidate_pairs(pos: np.ndarray, mol_id: np.ndarray, box: float, cutoff: float):

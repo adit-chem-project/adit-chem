@@ -6,7 +6,6 @@ import re
 import threading
 import urllib.parse
 import urllib.request
-from pathlib import Path
 
 import pytest
 from ase.build import molecule

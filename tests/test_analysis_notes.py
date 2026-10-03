@@ -62,7 +62,7 @@ def test_md_notes_temperature_and_frames(tmp_path):
     res = run_analysis(d, AnalysisOptions(rdf=True, msd=True, skip_frames=5))
     txt = res.summary_text()
     assert "目標 300 K、平均" in txt
-    assert f"軌跡は 16 フレーム" in txt and "16 フレーム" in txt  # 21 - 5 = 16 < FEW_FRAMES
+    assert "軌跡は 16 フレーム" in txt and "16 フレーム" in txt  # 21 - 5 = 16 < FEW_FRAMES
     assert "RDF (動径分布関数):" in txt and "MSD (平均二乗変位。全原子、16 フレーム)" in txt
 
 

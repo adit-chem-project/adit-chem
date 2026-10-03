@@ -1,14 +1,11 @@
 
-from pathlib import Path
 
-import numpy as np
 import pytest
 from ase.build import molecule
 from ase.io import write
 
-import adit.project
 from adit.analysis.readers import _INPUTS, detect_code, load_run
-from adit.analysis.readers_generic import find_readable, read_generic
+from adit.analysis.readers_generic import find_readable
 from adit.codes import GENERATORS
 
 GENERIC = ("gaussian", "gamess", "qchem", "openmx", "amber", "namd", "grrm", "dcdftbmd")

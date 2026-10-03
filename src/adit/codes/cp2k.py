@@ -242,8 +242,8 @@ class Cp2kGenerator(InputGenerator):
                    "  cp2k.inp      CP2K input (&GLOBAL, &FORCE_EVAL (electronic structure and structure), &MOTION (optimization / MD))")]
         if copied:
             kinds = ", ".join(f"{e}: {_pick(m, data, e, potential=False)} / {_pick(m, data, e, potential=True)}" for e in spec.elements)
-            files += [L(f"  BASIS_adit / POTENTIAL_adit   基底関数と擬ポテンシャル (内殻電子の効果をまとめたもの) のうち、この計算で使う項目だけを",
-                        f"  BASIS_adit / POTENTIAL_adit   the basis-set and pseudopotential (stands in for the core electrons) entries used here, copied from"),
+            files += [L("  BASIS_adit / POTENTIAL_adit   基底関数と擬ポテンシャル (内殻電子の効果をまとめたもの) のうち、この計算で使う項目だけを",
+                        "  BASIS_adit / POTENTIAL_adit   the basis-set and pseudopotential (stands in for the core electrons) entries used here, copied from"),
                       L(f"                {m.basis_file} と {m.potential_file} から写したもの ({kinds})",
                         f"                {m.basis_file} and {m.potential_file} ({kinds})")]
         prep = []
@@ -372,7 +372,7 @@ class Cp2kGenerator(InputGenerator):
         return out + ["&END EXT_RESTART"]
 
     def _motion(self, spec: CalculationSpec, run_type: str, more) -> list[str]:
-        st, t = spec.structure, spec.task
+        t = spec.task
         if run_type in ("ENERGY_FORCE", "VIBRATIONAL_ANALYSIS"):
             return []
         out = ["&MOTION"]

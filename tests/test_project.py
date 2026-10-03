@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from adit.config import Config, ConfigError, Profile, config_path, default_config, load_config, save_config
+from adit.config import Config, ConfigError, config_path, default_config, load_config, save_config
 from adit.project import (BACKUP_DIR, Backup, ProjectError, build_project, has_files, load_project, overwrite_plan, restore_backup,
                           write_project)
 from adit.spec import DftbMethod, Runtime

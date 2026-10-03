@@ -7,7 +7,7 @@ from typing import Callable
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QComboBox, QDialog, QFileDialog, QFormLayout, QHBoxLayout, QHeaderView,
-                               QLabel, QLineEdit, QListWidget, QListWidgetItem, QMessageBox, QPlainTextEdit, QPushButton,
+                               QLabel, QLineEdit, QListWidget, QListWidgetItem, QMessageBox, QPushButton,
                                QTableWidget, QVBoxLayout, QWidget)
 
 from adit.gui.style import GROUP_SPACING, PANEL_MARGIN, ROW_SPACING

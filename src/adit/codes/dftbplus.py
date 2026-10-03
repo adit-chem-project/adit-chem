@@ -13,7 +13,6 @@ from adit.codes.sk_sets import SKSet, SKSetError, discover_sets
 from adit.config import Config, Profile
 from adit.spec import CalculationSpec, DftbMethod
 from adit.validate import electron_parity_error
-from adit import lang
 from adit.lang import L
 from adit.validate_types import ValidationError
 

@@ -1,25 +1,22 @@
 
 from __future__ import annotations
 
-import os
-import shutil
 import shlex
 from pathlib import Path
 
 from PySide6.QtCore import QEvent, QProcess, Qt, QTimer
 from PySide6.QtGui import QAction, QActionGroup, QIcon
-from PySide6.QtWidgets import (QBoxLayout, QFileDialog, QHBoxLayout, QMainWindow, QMessageBox, QPushButton, QScrollArea,
+from PySide6.QtWidgets import (QBoxLayout, QFileDialog, QMainWindow, QMessageBox, QPushButton, QScrollArea,
                                QLabel, QMenuBar, QSizePolicy, QSplitter, QStackedWidget, QTabWidget, QToolBar,
                                QVBoxLayout,
                                QWidget)
 
 from adit.config import Config, ConfigError, load_config
-from adit.project import (Backup, ProjectError, ProjectFiles, build_project, has_files, load_project, new_backup_dir, overwrite_plan,
+from adit.project import (ProjectError, ProjectFiles, build_project, has_files, load_project, new_backup_dir, overwrite_plan,
                           restore_backup, write_project)
 from adit.gui import icons
 from adit.gui.i18n import tr
 from adit.lang import L
-from adit.results import summarize_run
 from adit.spec import CalculationSpec
 from adit.gui.panels.analysis_panel import AnalysisPanel
 from adit.gui.panels.kpoints_panel import KPointsPanel
@@ -196,7 +193,7 @@ class MainWindow(QMainWindow):
         limit_combo_popups(self)
 
     def _find_field(self, location: str):
-        from PySide6.QtWidgets import QFormLayout, QLabel
+        from PySide6.QtWidgets import QLabel
 
         from adit.validate_types import place_key
 
@@ -614,7 +611,6 @@ class MainWindow(QMainWindow):
                     continue
                 form.setRowVisible(row, False)
                 self._hidden_by_filter.append((form, row))
-        from PySide6.QtWidgets import QGroupBox
         for box in (self.task, self.kpoints, self.runtime, self.method):
             if not box.isHidden() and not any(form.isRowVisible(row) for form in box.findChildren(QFormLayout) for row in range(form.rowCount())):
                 box.hide(); self._hidden_groups.append(box)

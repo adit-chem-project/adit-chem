@@ -22,7 +22,6 @@ def set_theme(theme: str) -> None:
 
 
 def _tokens() -> Tokens:
-    global _TOKENS
     if _TOKENS is None:
         set_theme(resolve_theme())
     return _TOKENS  # type: ignore[return-value]

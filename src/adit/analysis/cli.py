@@ -13,7 +13,6 @@ COMMON_OPTIONS = (
     "--thermo", "--temperature", "--code", "--msd-fit", "--freq-scale", "--spectrum-measured", "--lang",
     "--plot-colors", "--plot-ticks", "--plot-grid", "--plot-spines", "--figure-format",
 )
-_HIDDEN: list = []
 
 
 def _hide_detailed_options(parser, argv) -> None:
@@ -27,15 +26,7 @@ def _hide_detailed_options(parser, argv) -> None:
         names = set(action.option_strings)
         if not names or names & set(COMMON_OPTIONS) or "--help" in names:
             continue
-        _HIDDEN.append((action, action.help))
         action.help = argparse.SUPPRESS
-
-
-def _show_all_options(parser) -> None:
-    for action, text in _HIDDEN:
-        action.help = text
-    _HIDDEN.clear()
-    parser.print_help()
 
 
 def _msd_fit_range(values, parser):
