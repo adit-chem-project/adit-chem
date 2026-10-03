@@ -127,7 +127,7 @@ def test_the_cli_refuses_with_the_same_words_as_the_screens(tmp_path, sk_root):
 
 
 def test_only_the_command_line_runs_the_generated_input():
-    """画面からは実行しない (2026-09-15)。実行はターミナルで人が行い、コマンドの --run だけが残る。"""
+    # The desktop window does not run calculations: people run them in the terminal, only the CLI keeps --run.
     root = REPO / "src" / "adit"
     assert "from adit.runner import" in (root / "cli.py").read_text(encoding="utf-8")
     for path in ("gui/main_window.py", "web/server.py"):

@@ -251,7 +251,7 @@ def main(argv=None) -> int:
     a.out.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"{result['frames']} フレーム × {result['atoms']} 原子 を {result['seconds']['total']:.1f} 秒で処理しました")
     for w in result["warnings"]:
-        print(f"  注意: {w}")
+        print(f"  注意 / note: {w}")
     print(f"  D (原子ごとの平均): {result['d_mean_cm2_s']:.4g} cm²/s" if result["d_mean_cm2_s"] else "  D: 求められません")
     print(f"  書き出し: {a.out}  (図にするのは adit-analyze か画面の「解析」です)")
     return 0
