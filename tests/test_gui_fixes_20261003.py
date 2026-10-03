@@ -208,10 +208,12 @@ def test_cd_is_not_typed_into_a_busy_or_dead_terminal(app, tmp_path):
 def test_cd_is_quoted_for_the_windows_shells(monkeypatch):
     from adit.gui.panels.workspace_panel import WorkspacePanel
 
+    from pathlib import PurePosixPath, PureWindowsPath   # Path("/tmp/x") would turn into \\tmp\\x on Windows
+
     monkeypatch.setattr(os, "name", "nt")
-    assert WorkspacePanel._quoted(Path("C:\\My Runs\\x")) == '"C:\\My Runs\\x"'
+    assert WorkspacePanel._quoted(PureWindowsPath("C:\\My Runs\\x")) == '"C:\\My Runs\\x"'
     monkeypatch.setattr(os, "name", "posix")
-    assert WorkspacePanel._quoted(Path("/tmp/my runs/x")) == "'/tmp/my runs/x'"
+    assert WorkspacePanel._quoted(PurePosixPath("/tmp/my runs/x")) == "'/tmp/my runs/x'"
 
 
 # ---- M4: the editor notices changes on disk ------------------------------------

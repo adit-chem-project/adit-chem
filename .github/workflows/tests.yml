@@ -55,7 +55,18 @@ jobs:
         run: pip install ".[dev,smiles,analysis,xrd,phonons]"
       - if: runner.os != 'Linux'
         run: pip install ".[dev,smiles,analysis]"
-      - run: pytest -q -rs
+      - run: pytest -q -rs --junitxml=junit.xml
+      - name: Name the failed tests in the run summary (readable without opening the log)
+        if: failure()
+        shell: python
+        run: |
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          if Path("junit.xml").is_file():
+              for case in ET.parse("junit.xml").iter("testcase"):
+                  for bad in list(case.iter("failure")) + list(case.iter("error")):
+                      msg = (bad.get("message") or "").replace("%", "%25").replace("\r", "").replace("\n", "%0A")[:900]
+                      print(f"::error title={case.get('classname')}.{case.get('name')}::{msg}")
 
   dftbplus-run:
     # Install the simulation codes and run the tests that execute the generated inputs (Linux only)
