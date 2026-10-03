@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+import shlex
 from pathlib import Path
 
 from PySide6.QtCore import QDir, QModelIndex, QRect, Qt, Signal
@@ -44,6 +46,7 @@ class Editor(QPlainTextEdit):
         self.path: Path | None = None
         self._dirty = False
         self._newline = "\n"
+        self._mtime_ns: int | None = None      # st_mtime_ns when opened or saved: detects changes made on disk since
         self.textChanged.connect(self._on_changed)
 
     def _on_changed(self) -> None:
@@ -54,6 +57,20 @@ class Editor(QPlainTextEdit):
     @property
     def dirty(self) -> bool:
         return self._dirty
+
+    def _stamp(self) -> None:
+        try:
+            self._mtime_ns = self.path.stat().st_mtime_ns if self.path is not None else None
+        except OSError:
+            self._mtime_ns = None
+
+    def changed_on_disk(self) -> bool:
+        if self.path is None or self._mtime_ns is None:
+            return False
+        try:
+            return self.path.stat().st_mtime_ns != self._mtime_ns
+        except OSError:
+            return True
 
     def open_file(self, path: Path) -> str:
         """Show the file. Returns an empty string, or the reason it cannot be shown."""
@@ -75,6 +92,7 @@ class Editor(QPlainTextEdit):
         except UnicodeDecodeError:
             # Show it, but never write it back: saving would replace the unknown bytes.
             self.path = None
+            self._mtime_ns = None
             self.setPlainText(raw.decode("utf-8", errors="replace"))
             self.setReadOnly(True)
             self._dirty = False
@@ -85,11 +103,13 @@ class Editor(QPlainTextEdit):
         self.setReadOnly(False)
         self.setPlainText(text.replace("\r\n", "\n"))
         self.path, self._dirty = path, False
+        self._stamp()
         self.dirty_changed.emit(False)
         return ""
 
     def discard(self) -> None:
         self.path = None
+        self._mtime_ns = None
         self.clear()
         self._dirty = False
         self.dirty_changed.emit(False)
@@ -102,6 +122,7 @@ class Editor(QPlainTextEdit):
                 f.write(self.toPlainText().replace("\n", self._newline))
         except OSError as ex:
             return str(ex)
+        self._stamp()
         self._dirty = False
         self.dirty_changed.emit(False)
         return ""
@@ -165,6 +186,8 @@ class FileIcons(QFileSystemModel):
 class WorkspacePanel(QWidget):
     """File tree on the left, editor above the terminal on the right."""
 
+    status = Signal(str)        # one line for the window's status bar
+
     def __init__(self, root: Path | str | None = None, dark: bool = False, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.root = Path(root).expanduser() if root else Path.home()
@@ -225,7 +248,7 @@ class WorkspacePanel(QWidget):
 
         self.terminal = TerminalTabs(cwd=self.root, dark=dark)
         self.btn_here = QPushButton(L("ここへ移動 (cd)", "cd here"))
-        self.btn_here.clicked.connect(lambda: self.terminal.send(f"cd {self._quoted(self.root)}\r"))
+        self.btn_here.clicked.connect(lambda: self.cd_to(self.root))
         self.btn_restart = QPushButton(L("シェルを起動し直す", "Restart the shell"))
         self.btn_restart.setVisible(False)
         self.btn_restart.clicked.connect(self._restart_terminal)
@@ -312,9 +335,19 @@ class WorkspacePanel(QWidget):
     # ---- helpers ----
     @staticmethod
     def _quoted(path: Path) -> str:
-        import shlex
-
+        if os.name == "nt":
+            return f'"{path}"'      # cmd.exe keeps single quotes literally; PowerShell and cmd.exe both take double quotes
         return shlex.quote(str(path))
+
+    def cd_to(self, path: Path | str) -> bool:
+        # Typed into the shell's prompt only: while a foreground program owns the terminal (vim, a running job)
+        # the text would reach that program instead.
+        why = self.terminal.why_blocked()
+        if why:
+            self.status.emit(L(f"cd を送りませんでした: {why}", f"cd was not sent: {why}"))
+            return False
+        self.terminal.send(f"cd {self._quoted(Path(path))}\r")
+        return True
 
     def _selected(self) -> Path | None:
         index = self.tree.currentIndex()
@@ -400,10 +433,51 @@ class WorkspacePanel(QWidget):
             self.file_label.setText(("* " if dirty else "") + str(self.editor.path))
 
     def save(self) -> str:
+        if self.editor.changed_on_disk() and not self._ask_overwrite_changed():
+            return L("保存しませんでした (ディスク上のファイルが変わっています)", "not saved (the file changed on disk)")
         why = self.editor.save()
         if why:
             QMessageBox.warning(self, L("保存できません", "Cannot save"), why)
         return why
+
+    def _ask_overwrite_changed(self) -> bool:
+        name = self.editor.path.name if self.editor.path is not None else ""
+        answer = QMessageBox.question(
+            self, L("ファイルが変わっています", "File changed on disk"),
+            L(f"{name} は、開いたあとに別のプログラム (生成や計算) が書き換えました。いまの編集内容で上書きしますか?\n"
+              "「No」なら保存せず、ディスク上の内容が残ります。",
+              f"{name} was changed on disk by another program (a generation or a run) after it was opened. "
+              "Overwrite it with your edits?\nAnswer No to keep the version on disk."))
+        return answer == QMessageBox.StandardButton.Yes
+
+    def files_written(self, paths) -> str:
+        # After a generation: when the open file is among the written ones the buffer is stale.
+        # Returns "" (not affected), "reloaded" or "kept" (dirty, and the user chose to keep the edits).
+        open_path = self.editor.path
+        if open_path is None:
+            return ""
+        try:
+            mine = open_path.resolve()
+            written = {Path(p).resolve() for p in paths}
+        except OSError:
+            return ""
+        if mine not in written:
+            return ""
+        if self.editor.dirty:
+            answer = QMessageBox.question(
+                self, L("開いているファイルが生成し直されました", "The open file was regenerated"),
+                L(f"{open_path.name} を生成し直しました。編集中の内容を捨てて、新しい内容を読み込みますか?\n"
+                  "「No」なら編集を残します (保存すると、生成した内容を上書きします)。",
+                  f"{open_path.name} was regenerated. Discard your edits and load the new content?\n"
+                  "Answer No to keep the edits (saving will then overwrite the generated file)."))
+            if answer != QMessageBox.StandardButton.Yes:
+                self.status.emit(L(f"{open_path.name} は編集中の内容のままです (ディスク上は生成し直した内容)",
+                                   f"{open_path.name} keeps your edits (the file on disk is the regenerated one)"))
+                return "kept"
+        self.editor.open_file(open_path)
+        self.file_label.setText(str(open_path))
+        self.status.emit(L(f"{open_path.name} を読み込み直しました (生成し直したため)", f"{open_path.name} was reloaded (it was regenerated)"))
+        return "reloaded"
 
     # ---- file operations ----
     def _menu(self, point) -> None:
@@ -419,7 +493,7 @@ class WorkspacePanel(QWidget):
         if chosen is act_open:
             self._open_index(self.tree.currentIndex())
         elif chosen is act_term:
-            self.terminal.send(f"cd {self._quoted(path if path.is_dir() else path.parent)}\r")
+            self.cd_to(path if path.is_dir() else path.parent)
         elif chosen is act_rename:
             name, ok = QInputDialog.getText(self, L("名前を変える", "Rename"), L("新しい名前", "New name"),
                                             QLineEdit.EchoMode.Normal, path.name)

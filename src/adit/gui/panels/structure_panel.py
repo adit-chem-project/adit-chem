@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import subprocess
-import sys
 import tempfile
 import threading
 from pathlib import Path
@@ -21,6 +20,7 @@ from adit.gui.style import LABEL_WIDTH  # noqa: F401
 from adit.gui import icons
 from adit.gui.i18n import tr
 from adit.gui.panels.mixture_editor import MixtureEditor
+from adit.gui.panels.structure_view_panel import ASE_GUI_MISSING, ase_gui_command
 from adit.gui.panels.recipe_editor import Num, RecipeEditor, hint, hrow, spin
 from adit.gui.widgets import SciDoubleSpinBox, add_row, label, limit_combo, narrow, unit_row
 from adit.spec import AtomsData, Structure
@@ -78,6 +78,8 @@ class StructurePanel(QGroupBox):
         self._fetch_token = 0
         self.fetch_dir: Path | None = None           # None: adit.fetch.default_fetch_dir()
         self.fetch_in_thread = True
+        self._tmp: tempfile.TemporaryDirectory | None = None      # for "Open in ASE GUI"; removed by cleanup()
+        self._ase_cmd = ase_gui_command()
 
         self.source = QComboBox()
         self.source.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
@@ -121,6 +123,8 @@ class StructurePanel(QGroupBox):
         self.multiplicity = narrow(QSpinBox()); self.multiplicity.setRange(1, 20)
         self.info = QLabel("")
         self.asegui = QPushButton("ASE GUI で開く"); self.asegui.setVisible(False)
+        if self._ase_cmd is None:
+            self.asegui.setEnabled(False); self.asegui.setToolTip(L(*ASE_GUI_MISSING))
 
         if not has_rdkit():
             for w in (self.smiles, self.smiles_go):
@@ -849,7 +853,7 @@ class StructurePanel(QGroupBox):
             elems = ' '.join(sorted(set(a.get_chemical_symbols())))
             self.info.setText(L(f"{pretty_formula(a.get_chemical_formula())}、{len(a)} 原子、元素: {elems}、{per}{fixed}",
                                 f"{pretty_formula(a.get_chemical_formula())}, {len(a)} atoms, elements: {elems}, {per}{fixed}"))
-            self.asegui.setEnabled(True)
+            self.asegui.setEnabled(self._ase_cmd is not None)
 
     def _filter_presets(self, text: str) -> None:
         from PySide6.QtCore import QSignalBlocker
@@ -940,9 +944,18 @@ class StructurePanel(QGroupBox):
         self.set_source("fetch")
         self._rebuild()
 
+    def temp_dir(self) -> Path:
+        if self._tmp is None:
+            self._tmp = tempfile.TemporaryDirectory(prefix="adit_")
+        return Path(self._tmp.name)
+
+    def cleanup(self) -> None:
+        if self._tmp is not None:
+            self._tmp.cleanup(); self._tmp = None
+
     def _open_ase_gui(self) -> None:
-        if self._structure is None:
+        if self._structure is None or self._ase_cmd is None:
             return
-        tmp = Path(tempfile.mkdtemp(prefix="adit_")) / "structure.xyz"
+        tmp = self.temp_dir() / "structure.xyz"
         write(tmp, self._structure.atoms.to_ase())
-        subprocess.Popen([sys.executable, "-m", "ase", "gui", str(tmp)])
+        subprocess.Popen([*self._ase_cmd, str(tmp)])

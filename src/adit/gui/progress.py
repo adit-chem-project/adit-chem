@@ -46,7 +46,11 @@ class Job(QObject):
             self._running = False
 
     def _work(self, token: int, fn: Callable, args, kwargs) -> None:
-        reports.set_reporter(lambda d, t, w="": self._emit(self._report, token, d, t, w))
+        def report(done: int, total: int, what: str = "") -> None:
+            if token == self._token:          # a cancelled or superseded run stays silent
+                self._emit(self._report, token, done, total, what)
+
+        reports.set_reporter(report)
         try:
             result, error = fn(*args, **kwargs), None
         except Exception as ex:  # reported to the caller as the error

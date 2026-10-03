@@ -1,7 +1,6 @@
 
 from __future__ import annotations
 
-import shlex
 from pathlib import Path
 
 from PySide6.QtCore import QEvent, QProcess, Qt, QTimer
@@ -12,6 +11,7 @@ from PySide6.QtWidgets import (QBoxLayout, QFileDialog, QMainWindow, QMessageBox
                                QWidget)
 
 from adit.config import Config, ConfigError, load_config
+from adit.errors import AditError
 from adit.project import (ProjectError, ProjectFiles, build_project, has_files, load_project, new_backup_dir, overwrite_plan,
                           restore_backup, write_project)
 from adit.gui import icons
@@ -30,6 +30,29 @@ from adit.gui.style import GROUP_SPACING, PANEL_MARGIN
 from adit.gui.ribbon import ModeBar
 from adit.gui.widgets import limit_combo_popups
 from adit.web.codefields import PrepOrigin, template_marks
+
+
+def project_url() -> str:
+    # The home page recorded in the installed package's metadata (pyproject [project.urls]); "" when unknown.
+    from importlib.metadata import PackageNotFoundError, metadata
+
+    try:
+        meta = metadata("adit-chem")
+    except PackageNotFoundError:
+        return ""
+    for entry in meta.get_all("Project-URL") or []:
+        name, _sep, url = entry.partition(",")
+        if name.strip().lower() in ("homepage", "repository", "documentation") and url.strip():
+            return url.strip()
+    return (meta.get("Home-page") or "").strip()
+
+
+def readme_location() -> str:
+    # A local README.md (editable checkout or the working directory), else the project page; "" when neither exists.
+    for cand in (Path(__file__).resolve().parents[3] / "README.md", Path.cwd() / "README.md"):
+        if cand.is_file():
+            return str(cand)
+    return project_url()
 
 
 class MainWindow(QMainWindow):
@@ -143,6 +166,7 @@ class MainWindow(QMainWindow):
 
         start = Path(self.runtime.output_dir() or "~").expanduser().parent
         self.workspace = WorkspacePanel(root=start if start.is_dir() else Path.home(), dark=self._dark)
+        self.workspace.status.connect(self.statusBar().showMessage)
         self.main_stack = QStackedWidget()
         for w in (structure_scroll, scroll, analysis_scroll, self.workspace):
             self.main_stack.addWidget(w)
@@ -585,11 +609,34 @@ class MainWindow(QMainWindow):
             finally:
                 panel.blockSignals(False)
 
+    @staticmethod
+    def _row_anchor(form, row: int):
+        # A widget of the row: rows inserted above it later (inline errors) move it, a stored row number would not follow.
+        from PySide6.QtWidgets import QFormLayout
+
+        for role in (QFormLayout.ItemRole.LabelRole, QFormLayout.ItemRole.SpanningRole, QFormLayout.ItemRole.FieldRole):
+            item = form.itemAt(row, role)
+            if item is not None and item.widget() is not None:
+                return item.widget()
+        return row
+
+    @staticmethod
+    def _row_of(form, anchor) -> int:
+        if isinstance(anchor, int):
+            return anchor if anchor < form.rowCount() else -1
+        try:
+            row, _role = form.getWidgetPosition(anchor)
+        except RuntimeError:        # the widget was deleted
+            return -1
+        return row
+
     def _apply_row_filter(self, on: bool) -> None:
         from PySide6.QtWidgets import QFormLayout
 
-        for form, row in self._hidden_by_filter:
-            form.setRowVisible(row, True)
+        for form, anchor in self._hidden_by_filter:
+            row = self._row_of(form, anchor)
+            if row >= 0:
+                form.setRowVisible(row, True)
         for box in self._hidden_groups:
             box.show()
         self._hidden_by_filter = []; self._hidden_groups = []
@@ -610,7 +657,7 @@ class MainWindow(QMainWindow):
                 if key in keep or (line in anchors and anchors[line].property("adit_key") in keep):
                     continue
                 form.setRowVisible(row, False)
-                self._hidden_by_filter.append((form, row))
+                self._hidden_by_filter.append((form, self._row_anchor(form, row)))
         for box in (self.task, self.kpoints, self.runtime, self.method):
             if not box.isHidden() and not any(form.isRowVisible(row) for form in box.findChildren(QFormLayout) for row in range(form.rowCount())):
                 box.hide(); self._hidden_groups.append(box)
@@ -630,7 +677,7 @@ class MainWindow(QMainWindow):
             self.error_badge_action.setVisible(False)
             self._errors = []; self._error_locations = []; self._error_index = -1
             self.clear_error_marks()
-        except (ProjectError, ConfigError, ValueError, TypeError) as ex:
+        except (ProjectError, ConfigError, AditError, ValueError, TypeError, OSError) as ex:
             from pydantic import ValidationError as PydanticError
             if isinstance(ex, PydanticError):
                 from adit.validate_types import friendly_pydantic
@@ -741,8 +788,9 @@ class MainWindow(QMainWindow):
         self.offer_undo(backup)
         self.last_written = out
         self.analysis.set_run_dir(out, spec.elements)
+        self.workspace.files_written(written)   # the editor may show one of the files just rewritten
         self.workspace.set_root(out)          # point the tree and the terminal at the directory just written
-        self.workspace.terminal.send(f"cd {shlex.quote(str(out))}\r")
+        self.workspace.cd_to(out)
         self.last_written_kind = self.cfg.profiles[spec.runtime.profile].kind
         from adit.codes import GENERATORS
         self.last_written_exe = self._executable_of(GENERATORS[spec.method.code].run_command(spec, self.cfg.profiles[spec.runtime.profile]))
@@ -801,10 +849,13 @@ class MainWindow(QMainWindow):
         self.analysis.set_run_dir(out)
         self.say(L(f"値ごとの入力を {out} に作りました", f"wrote the scan inputs to {out}"))
 
-    def _flush(self) -> bool:
-        # The preview may still be pending (250 ms debounce): settle it before acting on the button state.
+    def _settle_preview(self) -> None:
+        # The preview may still be pending (250 ms debounce): an edit inside it is not in the history yet.
         if self._timer.isActive():
             self._timer.stop(); self.refresh_preview()
+
+    def _flush(self) -> bool:
+        self._settle_preview()
         return self.btn_generate.isEnabled()
 
     def continue_dialog(self):
@@ -1118,6 +1169,7 @@ class MainWindow(QMainWindow):
         from adit.gui.palette import CommandPalette
 
         dlg = CommandPalette(self.palette_items(), self)
+        dlg.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         translate_widgets(dlg)
         dlg.place_over(self)
         dlg.show(); dlg.search.setFocus(Qt.FocusReason.OtherFocusReason)
@@ -1177,10 +1229,10 @@ class MainWindow(QMainWindow):
     def _open_readme(self) -> None:
         from PySide6.QtCore import QUrl
         from PySide6.QtGui import QDesktopServices
-        for cand in (Path(__file__).resolve().parents[3] / "README.md", Path.cwd() / "README.md"):
-            if cand.is_file():
-                QDesktopServices.openUrl(QUrl.fromLocalFile(str(cand))); return
-        QDesktopServices.openUrl(QUrl("https://github.com/"))
+        target = readme_location()
+        if not target:
+            self.statusBar().showMessage(L("README が見つかりません", "README not found")); return
+        QDesktopServices.openUrl(QUrl.fromLocalFile(target) if Path(target).is_file() else QUrl(target))
 
     def _about(self) -> None:
         from adit import __version__
@@ -1203,6 +1255,21 @@ class MainWindow(QMainWindow):
             return
         self.apply_spec(spec)
         self.runtime.outdir.setText(str(Path(path).parent))
+        self.warn_unknown_keys(path)
+
+    def warn_unknown_keys(self, path: str) -> list[str]:
+        # Keys that match no setting are dropped silently by the loader; say so, because a typo looks like a default.
+        from adit.spec import unknown_keys_in_file
+
+        try:
+            unknown = unknown_keys_in_file(path)
+        except (OSError, ValueError):
+            return []
+        if unknown:
+            QMessageBox.warning(self, L("知らない項目があります", "Unknown settings"),
+                                L("次の項目は、どの欄にも当たらないので使われませんでした (綴りを確認してください):\n\n",
+                                  "These keys match no setting and were ignored (check the spelling):\n\n") + "\n".join(unknown))
+        return unknown
 
     def apply_spec(self, spec: CalculationSpec, *, origin: bool = True) -> None:
         if origin:
@@ -1258,9 +1325,11 @@ class MainWindow(QMainWindow):
         self._update_history_buttons()
 
     def go_back(self) -> None:
+        self._settle_preview()
         self._goto_history(self._hist_pos - 1)
 
     def go_forward(self) -> None:
+        self._settle_preview()
         self._goto_history(self._hist_pos + 1)
 
     def open_settings(self) -> None:
@@ -1287,6 +1356,7 @@ class MainWindow(QMainWindow):
             return
         self.workspace.editor.discard()          # do not ask again when Qt closes the window a second time
         self.workspace.close_session()
+        self.structure_view.cleanup(); self.structure.cleanup()
         super().closeEvent(event)
 
     def _sync_menu_checks(self) -> None:

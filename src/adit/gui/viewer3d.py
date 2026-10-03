@@ -171,7 +171,7 @@ class Viewer3D(QWidget):
         if self._atoms is None or len(self.selected) < 2:
             return None
         cell = np.asarray(self._atoms.cell, dtype=float) if any(self._atoms.pbc) else None
-        return measure(self._atoms.get_positions(), self.selected, cell)
+        return measure(self._atoms.get_positions(), self.selected, cell, pbc=self._atoms.pbc)
 
     def measurement_text(self) -> str:
         return measure_text(self.measurement(), self._sym)

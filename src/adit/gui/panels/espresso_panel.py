@@ -145,7 +145,7 @@ class EspressoMethodPanel(QWidget):
             combo.addItems(names)
             if old.get(e):
                 combo.setCurrentText(old[e])
-            info = "ライブラリに無い" if self.lib and not names else ""
+            info = L("ライブラリに無い", "not in the library") if self.lib and not names else ""
             if self.lib and combo.currentText():
                 try:
                     h = self.lib.header(combo.currentText())

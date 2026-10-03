@@ -245,7 +245,7 @@ def test_documented_values_are_shown_and_can_be_used(app, sk_root, tmp_path):
     win.method._use_doc_value("ecutwfc", "35")
     assert win.method.espresso.ecutwfc.value() == 35.0
     use_code(win, "dftbplus"); win.refresh_preview()
-    assert not win.method.doc_boxes["ecutwfc"].isVisibleTo(win.method.espresso) or True
+    assert not win.method.doc_boxes["ecutwfc"].isVisibleTo(win.method.espresso)
 
 
 def test_ribbon_has_batch_buttons(app, sk_root, tmp_path):

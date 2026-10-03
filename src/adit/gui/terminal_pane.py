@@ -102,6 +102,8 @@ class TerminalTabs(QWidget):
                     return
             view.close_session()
         self.tabs.removeTab(index)
+        if view is not None:
+            view.deleteLater()      # removeTab only detaches it; the screen history would stay in memory
         if self.tabs.count() == 0:
             self.add_tab()
 
@@ -111,9 +113,23 @@ class TerminalTabs(QWidget):
         return view.terminal if isinstance(view, TerminalView) else None
 
     # ---- what the workspace uses ----
-    def send(self, text: str) -> None:
-        if self.current is not None:
-            self.current.send(text)
+    def why_blocked(self) -> str:
+        # "" when a command may be typed into the current terminal's prompt; otherwise the reason, for the user.
+        term = self.current
+        session = term.session if term is not None else None
+        if session is None or not session.alive:
+            return L("シェルが動いていません (「シェルを起動し直す」を押してください)",
+                     "the shell is not running (press \"Restart the shell\")")
+        if session.busy():
+            return L("ターミナルでプログラムが動いています (終わるのを待つか、Ctrl+C で止めてください)",
+                     "a program is running in the terminal (wait for it, or stop it with Ctrl+C)")
+        return ""
+
+    def send(self, text: str) -> bool:
+        if self.why_blocked():
+            return False
+        self.current.send(text)
+        return True
 
     def set_dark(self, dark: bool) -> None:
         self.dark = dark

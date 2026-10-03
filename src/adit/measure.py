@@ -7,20 +7,34 @@ import numpy as np
 from adit.lang import L
 
 
-def mic_vector(a, b, cell=None) -> np.ndarray:
-    """Vector from a to b; the shortest periodic image when a cell is given."""
+def _periodic_axes(pbc) -> tuple[bool, bool, bool]:
+    if pbc is None:
+        return (True, True, True)
+    flags = np.asarray(pbc, dtype=bool).reshape(-1)
+    if flags.size == 1:
+        return (bool(flags[0]),) * 3
+    return tuple(bool(x) for x in flags[:3])
+
+
+def mic_vector(a, b, cell=None, pbc=None) -> np.ndarray:
+    """Vector from a to b; the shortest image along the periodic directions when a cell is given."""
     d = np.asarray(b, dtype=float) - np.asarray(a, dtype=float)
     if cell is None:
+        return d
+    axes = _periodic_axes(pbc)
+    if not any(axes):
         return d
     c = np.asarray(cell, dtype=float)
     if abs(np.linalg.det(c)) < 1e-12:
         return d
     frac = np.linalg.solve(c.T, d)
-    frac -= np.round(frac)
+    frac -= np.round(frac) * np.asarray(axes, dtype=float)
+    # Only the periodic directions may be shifted by a lattice vector (a slab keeps its vacuum).
+    shifts = [(-1, 0, 1) if on else (0,) for on in axes]
     best, best_len = None, None
-    for i in (-1, 0, 1):
-        for j in (-1, 0, 1):
-            for k in (-1, 0, 1):
+    for i in shifts[0]:
+        for j in shifts[1]:
+            for k in shifts[2]:
                 v = (frac + (i, j, k)) @ c
                 n = float(v @ v)
                 if best_len is None or n < best_len:
@@ -28,13 +42,13 @@ def mic_vector(a, b, cell=None) -> np.ndarray:
     return best
 
 
-def distance(pos, i: int, j: int, cell=None) -> float:
-    return float(np.linalg.norm(mic_vector(pos[i], pos[j], cell)))
+def distance(pos, i: int, j: int, cell=None, pbc=None) -> float:
+    return float(np.linalg.norm(mic_vector(pos[i], pos[j], cell, pbc)))
 
 
-def angle(pos, i: int, j: int, k: int, cell=None) -> float:
+def angle(pos, i: int, j: int, k: int, cell=None, pbc=None) -> float:
     """Angle i-j-k in degrees, at atom j."""
-    u, v = mic_vector(pos[j], pos[i], cell), mic_vector(pos[j], pos[k], cell)
+    u, v = mic_vector(pos[j], pos[i], cell, pbc), mic_vector(pos[j], pos[k], cell, pbc)
     nu, nv = np.linalg.norm(u), np.linalg.norm(v)
     if nu < 1e-12 or nv < 1e-12:
         return float("nan")
@@ -42,9 +56,10 @@ def angle(pos, i: int, j: int, k: int, cell=None) -> float:
     return float(np.degrees(np.arccos(np.clip(cos, -1.0, 1.0))))
 
 
-def dihedral(pos, i: int, j: int, k: int, l: int, cell=None) -> float:
+def dihedral(pos, i: int, j: int, k: int, l: int, cell=None, pbc=None) -> float:
     """Dihedral i-j-k-l in degrees, in (-180, 180]."""
-    b1, b2, b3 = mic_vector(pos[i], pos[j], cell), mic_vector(pos[j], pos[k], cell), mic_vector(pos[k], pos[l], cell)
+    b1, b2, b3 = (mic_vector(pos[i], pos[j], cell, pbc), mic_vector(pos[j], pos[k], cell, pbc),
+                  mic_vector(pos[k], pos[l], cell, pbc))
     n1, n2 = np.cross(b1, b2), np.cross(b2, b3)
     nb2 = np.linalg.norm(b2)
     if nb2 < 1e-12 or np.linalg.norm(n1) < 1e-12 or np.linalg.norm(n2) < 1e-12:
@@ -53,15 +68,15 @@ def dihedral(pos, i: int, j: int, k: int, l: int, cell=None) -> float:
     return float(np.degrees(np.arctan2(np.dot(m, n2), np.dot(n1, n2))))
 
 
-def measure(pos, indices, cell=None) -> dict | None:
+def measure(pos, indices, cell=None, pbc=None) -> dict | None:
     """Measure 2 (distance), 3 (angle) or 4 (dihedral) atoms; None for other counts."""
     idx = [int(i) for i in indices]
     if len(idx) == 2:
-        return {"kind": "distance", "value": distance(pos, *idx, cell=cell), "unit": "Å", "indices": idx}
+        return {"kind": "distance", "value": distance(pos, *idx, cell=cell, pbc=pbc), "unit": "Å", "indices": idx}
     if len(idx) == 3:
-        return {"kind": "angle", "value": angle(pos, *idx, cell=cell), "unit": "°", "indices": idx}
+        return {"kind": "angle", "value": angle(pos, *idx, cell=cell, pbc=pbc), "unit": "°", "indices": idx}
     if len(idx) == 4:
-        return {"kind": "dihedral", "value": dihedral(pos, *idx, cell=cell), "unit": "°", "indices": idx}
+        return {"kind": "dihedral", "value": dihedral(pos, *idx, cell=cell, pbc=pbc), "unit": "°", "indices": idx}
     return None
 
 

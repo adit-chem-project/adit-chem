@@ -111,8 +111,8 @@ def _clear(lay) -> None:
 def _combo(items) -> QComboBox:
     c = QComboBox()
     c.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon); c.setMinimumContentsLength(16)
-    for v, ja, _en in items:
-        c.addItem(ja, v)
+    for v, ja, en in items:
+        c.addItem(L(ja, en), v)
     return c
 
 
@@ -144,7 +144,7 @@ class AnalysisPanel(QWidget):
         self.btn_compare = QPushButton(AF.LABELS["compare"][0])
         from adit.gui import report_fields as RF
 
-        self.btn_report = QPushButton(RF.LABELS["report"][0] + "…")
+        self.btn_report = QPushButton(L(*RF.LABELS["report"]) + "…")
         self.btn_export = QPushButton(AF.LABELS["export"][0])
         self.cb_unwrap = _check("export_unwrap")
         self.summary = SummaryLabel()
@@ -640,14 +640,20 @@ class AnalysisPanel(QWidget):
 
     def run_async(self, export: bool = False) -> bool:
         # The button path: the same computation on a worker thread, with the progress strip and Cancel.
+        if self.job.is_running():
+            return False                     # one analysis at a time: a second thread would double the memory and CPU
         prepared = self._prepare(export)
         if prepared is None:
             return False
         self._pending = prepared
-        self.btn_run.setEnabled(False); self.btn_export.setEnabled(False)
+        self._set_running(True)
         self.progress.begin(L("解析しています…", "Analyzing…"))
         self.job.start(self._compute, *prepared)
         return True
+
+    def _set_running(self, running: bool) -> None:
+        for b in (self.btn_run, self.btn_export, self.empty.button):
+            b.setEnabled(not running)
 
     def cancel(self) -> None:
         if self.job.is_running():
@@ -658,7 +664,7 @@ class AnalysisPanel(QWidget):
 
     def _job_ended(self) -> None:
         self.progress.end()
-        self.btn_run.setEnabled(True); self.btn_export.setEnabled(True)
+        self._set_running(False)
 
     def _on_job_done(self, res, error) -> None:
         self._job_ended()

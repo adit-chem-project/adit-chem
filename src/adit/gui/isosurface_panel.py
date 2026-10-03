@@ -60,6 +60,7 @@ class IsosurfacePanel(QWidget):
         self.btn_clear.clicked.connect(self.clear_surface)
         self.btn_use_stride.clicked.connect(self._use_suggested_stride)
         self._suggested: int | None = None
+        self._level_note = ""
         self._meshes: list = []
         from adit.analysis.isosurface import MAX_TRIANGLES
         from adit.gui.help import help_for
@@ -160,14 +161,26 @@ class IsosurfacePanel(QWidget):
     def parse_level(self) -> float:
         from adit.analysis.isosurface import IsosurfaceError
 
-        text = self.level.text().strip().replace("，", ",").replace(",", "")
+        raw = self.level.text().strip()
+        text = raw.replace("，", ",")
+        self._level_note = ""
         if not text:
             raise IsosurfaceError(L("等値を入れてください (上の範囲を見て決めます。既定値はありません)",
                                     "enter a level (choose it from the range above; there is no default)"))
+        if "," in text:
+            # "0,05" is a decimal comma; anything else with a comma ("1,000.5", "0.1,0.2") is ambiguous and refused.
+            if text.count(",") != 1 or "." in text:
+                raise IsosurfaceError(L(f"等値にカンマは使えません (小数点はピリオド、値は 1 つ): {raw!r}",
+                                        f"commas are not allowed in the level (use a period as the decimal point, one value): {raw!r}"))
+            text = text.replace(",", ".")
         try:
-            return float(text)
+            level = float(text)
         except ValueError as ex:
-            raise IsosurfaceError(L(f"等値を数で入れてください: {text!r}", f"the level must be a number: {text!r}")) from ex
+            raise IsosurfaceError(L(f"等値を数で入れてください: {raw!r}", f"the level must be a number: {raw!r}")) from ex
+        if text != raw:
+            self._level_note = L(f"「{raw}」は {level:g} として読みました (カンマを小数点と解釈)",
+                                 f"\"{raw}\" was read as {level:g} (the comma was taken as the decimal point)")
+        return level
 
     def show_surface(self) -> bool:
         from adit.analysis.isosurface import IsosurfaceError, IsosurfaceTooLarge, isosurface, isosurfaces
@@ -193,7 +206,7 @@ class IsosurfacePanel(QWidget):
         self._meshes = meshes
         self._recolour()
         parts = [L(f"{m.level:+.4g}: {m.n_triangles:,} 枚", f"{m.level:+.4g}: {m.n_triangles:,} triangles") for m in meshes]
-        notes = []
+        notes = [self._level_note] if self._level_note else []
         for m in meshes:
             for n in m.notes:
                 if n not in notes:

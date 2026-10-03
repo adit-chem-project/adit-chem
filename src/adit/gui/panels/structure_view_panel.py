@@ -1,6 +1,9 @@
 
 from __future__ import annotations
 
+import shutil
+import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -16,6 +19,17 @@ from adit.structure import pretty_formula
 
 ROTATIONS = {"-60x,30y,0z": "x+y+z 方向から", "0x,0y,0z": "z 軸から", "-90x,0y,0z": "y 軸から", "0x,90y,0z": "x 軸から"}
 
+ASE_GUI_MISSING = ("ASE GUI が見つかりません (配布版では、別に ASE を入れて ase コマンドを PATH に通してください)",
+                   "ASE GUI was not found (with the packaged build, install ASE separately and put the ase command on PATH)")
+
+
+def ase_gui_command() -> list[str] | None:
+    # In the frozen build sys.executable is ADIT itself, so "-m ase gui" would open a second ADIT: use an installed ase.
+    if getattr(sys, "frozen", False):
+        exe = shutil.which("ase")
+        return [exe, "gui"] if exe else None
+    return [sys.executable, "-m", "ase", "gui"]
+
 
 class StructureViewPanel(QWidget):
     send_selection = Signal(str, list)   # destination field key, 1-based indices of the base cell
@@ -23,13 +37,16 @@ class StructureViewPanel(QWidget):
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         self._structure: Structure | None = None
-        self._tmp = Path(tempfile.mkdtemp(prefix="adit_view_"))
+        self._tmp: tempfile.TemporaryDirectory | None = None      # one per panel, removed by cleanup()
+        self._ase_cmd = ase_gui_command()
         self.info = QLabel(""); self.info.setObjectName("hint"); self.info.setWordWrap(True)
         self.rotation = QComboBox()
         for k, v in ROTATIONS.items():
             self.rotation.addItem(v, k)
         self.repeat = QComboBox(); self.repeat.addItems(["1×1×1", "2×2×1", "2×2×2", "3×3×1"])
         self.asegui = QPushButton("ASE GUI で開く"); self.asegui.setObjectName("link")
+        if self._ase_cmd is None:
+            self.asegui.setEnabled(False); self.asegui.setToolTip(L(*ASE_GUI_MISSING))
         from adit.gui.copy_save import copy_button, save_button
 
         self.btn_copy = copy_button(self)
@@ -112,7 +129,7 @@ class StructureViewPanel(QWidget):
             self.viewer.set_atoms(None)
             self.info.setText(L(f"構造がありません: {error}", f"no structure: {error}")); self.asegui.setEnabled(False)
             return
-        self.asegui.setEnabled(True)
+        self.asegui.setEnabled(self._ase_cmd is not None)
         a = st.atoms.to_ase()
         per = L("周期系", "periodic") if any(a.pbc) else L("分子 (非周期)", "molecule (non-periodic)")
         cell = ""
@@ -144,15 +161,23 @@ class StructureViewPanel(QWidget):
             a = a * rep
         self.viewer.set_atoms(a)
 
+    def temp_dir(self) -> Path:
+        if self._tmp is None:
+            self._tmp = tempfile.TemporaryDirectory(prefix="adit_view_")
+        return Path(self._tmp.name)
+
+    def cleanup(self) -> None:
+        if self._tmp is not None:
+            self._tmp.cleanup(); self._tmp = None
+
     def _open_ase_gui(self) -> None:
-        if self._structure is None:
+        if self._structure is None or self._ase_cmd is None:
             return
-        import subprocess, sys
         from ase.io import write
 
-        path = self._tmp / "structure.xyz"
+        path = self.temp_dir() / "structure.xyz"
         write(str(path), self._structure.atoms.to_ase())
-        subprocess.Popen([sys.executable, "-m", "ase", "gui", str(path)])
+        subprocess.Popen([*self._ase_cmd, str(path)])
 
     def _scene_svg(self) -> str | None:
         from adit.export_image import scene_to_svg

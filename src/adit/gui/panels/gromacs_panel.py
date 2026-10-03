@@ -51,11 +51,12 @@ class GromacsMethodPanel(QWidget):
         cut = QWidget(); cut.setObjectName("rowbox"); ch = QHBoxLayout(cut); ch.setContentsMargins(0, 0, 0, 0); ch.setSpacing(8)
         ch.addWidget(QLabel("rcoulomb")); ch.addWidget(self.rcoulomb); ch.addWidget(QLabel("rvdw")); ch.addWidget(self.rvdw); ch.addStretch(1)
         conf = QWidget(); conf.setObjectName("rowbox"); cv = QVBoxLayout(conf); cv.setContentsMargins(0, 0, 0, 0); cv.setSpacing(2)
-        cv.addWidget(file_row(self.structure_file, "構造のファイル", "GROMACS (*.gro *.pdb);;すべて (*)"))
+        cv.addWidget(file_row(self.structure_file, L("構造のファイル", "Structure file"),
+                              L("GROMACS (*.gro *.pdb);;すべて (*)", "GROMACS (*.gro *.pdb);;All files (*)")))
         cv.addWidget(self.load_structure, 0, Qt.AlignmentFlag.AlignLeft)
 
         form = QFormLayout(self); form.setVerticalSpacing(ROW_SPACING)
-        add_row(form, "トポロジー (.top)", file_row(self.topology, "トポロジー", "GROMACS (*.top);;すべて (*)"))
+        add_row(form, "トポロジー (.top)", file_row(self.topology, L("トポロジー", "Topology"), L("GROMACS (*.top);;すべて (*)", "GROMACS (*.top);;All files (*)")))
         form.addRow(label(""), topology_help)
         add_row(form, "構造のファイル (.gro / .pdb)", conf)
         add_row(form, "静電相互作用 (coulombtype)", self.coulomb)
@@ -64,7 +65,8 @@ class GromacsMethodPanel(QWidget):
         add_row(form, "圧力浴 (pcoupl)", self.pcoupl)
         add_row(form, "等温圧縮率 [1/bar]", self.compressibility)
         add_row(form, "define", self.define)
-        add_row(form, "前の段階の .cpt", file_row(self.checkpoint, "前の段階の .cpt", "GROMACS (*.cpt);;すべて (*)"))
+        add_row(form, "前の段階の .cpt", file_row(self.checkpoint, L("前の段階の .cpt", "Previous stage .cpt"),
+                                                  L("GROMACS (*.cpt);;すべて (*)", "GROMACS (*.cpt);;All files (*)")))
         add_row(form, "初速の乱数の種 (gen-seed)", self.gen_seed)
         add_row(form, "追加の mdp", self.extra)
         form.addRow(label(""), note)

@@ -181,14 +181,22 @@ class TerminalWidget(QWidget):
             Qt.Key.Key_Home: "\x1b[H", Qt.Key.Key_End: "\x1b[F",
             Qt.Key.Key_PageUp: "\x1b[5~", Qt.Key.Key_PageDown: "\x1b[6~"}
 
+    # Ctrl + punctuation as xterm sends it (Ctrl+/ and Ctrl+_ are readline's undo)
+    CTRL_KEYS = {Qt.Key.Key_Slash: "\x1f", Qt.Key.Key_Underscore: "\x1f", Qt.Key.Key_BracketLeft: "\x1b",
+                 Qt.Key.Key_Backslash: "\x1c", Qt.Key.Key_BracketRight: "\x1d", Qt.Key.Key_AsciiCircum: "\x1e",
+                 Qt.Key.Key_At: "\x00", Qt.Key.Key_Space: "\x00"}
+
     @staticmethod
     def _wants_key(event: QKeyEvent) -> bool:
         key, mods = event.key(), event.modifiers()
         if key in (Qt.Key.Key_Tab, Qt.Key.Key_Backtab):
             return True
-        if not mods & Qt.KeyboardModifier.ControlModifier or not Qt.Key.Key_A <= key <= Qt.Key.Key_Z:
+        if not mods & Qt.KeyboardModifier.ControlModifier:
             return False
-        return not (mods & Qt.KeyboardModifier.ShiftModifier and key in (Qt.Key.Key_C, Qt.Key.Key_V))
+        if mods & Qt.KeyboardModifier.ShiftModifier and key in (Qt.Key.Key_C, Qt.Key.Key_V):
+            return False                       # copy / paste: handled by the widget itself, never a window shortcut
+        # Every Ctrl + character key belongs to the shell; function keys (Ctrl+F1 ...) stay with the window.
+        return key < Qt.Key.Key_Escape or key in TerminalWidget.KEYS
 
     def event(self, event) -> bool:  # noqa: N802 (Qt)
         # Ctrl+letter and Tab belong to the shell; without this the window's
@@ -225,6 +233,9 @@ class TerminalWidget(QWidget):
             return
         if mods & Qt.KeyboardModifier.ControlModifier and Qt.Key.Key_A <= key <= Qt.Key.Key_Z:
             self.send(chr(key - Qt.Key.Key_A + 1))                    # Ctrl+C sends \x03
+            return
+        if mods & Qt.KeyboardModifier.ControlModifier and key in self.CTRL_KEYS:
+            self.send(self.CTRL_KEYS[key])
             return
         if event.text():
             self.send(event.text())
@@ -280,11 +291,16 @@ class TerminalWidget(QWidget):
             return ""
         (r1, c1), (r2, c2) = sorted([self._sel_from, self._sel_to])
         lines = self.session.lines()
+        if not lines:
+            return ""
+        last = len(lines) - 1                  # the selection may date from before the terminal shrank
+        r1, r2 = min(r1, last), min(r2, last)
         out = []
         for row in range(r1, r2 + 1):
-            start = c1 if row == r1 else 0
-            end = c2 if row == r2 else len(lines[row]) - 1
-            out.append("".join(cell.text for cell in lines[row][start:end + 1]).rstrip())
+            cells = lines[row]
+            start = min(c1, len(cells)) if row == r1 else 0
+            end = min(c2, len(cells) - 1) if row == r2 else len(cells) - 1
+            out.append("".join(cell.text for cell in cells[start:end + 1]).rstrip())
         return "\n".join(out)
 
     def copy(self) -> None:

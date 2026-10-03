@@ -61,8 +61,8 @@ class DftbMethodPanel(QWidget):
         self.dispersion = QComboBox(); self.dispersion.addItems(DISPERSION)
         self.d3 = {k: narrow(SciDoubleSpinBox(-100, 100, 0.0, 0.01)) for k in ("s6", "s8", "a1", "a2")}
         self.temperature = narrow(SciDoubleSpinBox(0, 1e6, 0.0, 10))
-        self.solv_file = QLineEdit(); self.solv_file.setPlaceholderText("空欄なら溶媒なし (param_gbsa_<溶媒>.txt の形のファイル)")
-        self._solv_ph = self.solv_file.placeholderText()
+        self._solv_ph = ("空欄なら溶媒なし (param_gbsa_<溶媒>.txt の形のファイル)", "Empty = no solvent (a file like param_gbsa_<solvent>.txt)")
+        self.solv_file = QLineEdit(); self.solv_file.setPlaceholderText(self._solv_ph[0])
         self.solv_row = file_row(self.solv_file, L("溶媒のパラメータファイル (GBSA)", "Solvation parameter file (GBSA)"))
         for w in (self.scc, self.third):
             w.setProperty("adit_key", w.text())
@@ -131,7 +131,8 @@ class DftbMethodPanel(QWidget):
     def set_periodic(self, periodic: bool) -> None:
         on = not periodic or bool(self.solv_file.text().strip())
         self.solv_file.setEnabled(on); self.solv_row.browse.setEnabled(on)
-        self.solv_file.setPlaceholderText(self._solv_ph if not periodic else L("周期系では使えません (分子のときだけ)", "not available for periodic systems (molecules only)"))
+        self.solv_file.setPlaceholderText(L(*self._solv_ph) if not periodic
+                                          else L("周期系では使えません (分子のときだけ)", "not available for periodic systems (molecules only)"))
 
     def set_method(self, m: DftbMethod) -> None:
         self._seed = m.seed
@@ -152,7 +153,7 @@ class DftbMethodPanel(QWidget):
         if s is not None:
             extras = [n for n, ok in (("LICENSE/README", bool(s.doc_files()) and len(s.doc_files()) == 2),
                                       ("spinw.txt", s.spin_constants() is not None),
-                                      ("Hubbard 微分 (README)", s.hubbard_derivs() is not None)) if ok]
+                                      (L("Hubbard 微分 (README)", "Hubbard derivatives (README)"), s.hubbard_derivs() is not None)) if ok]
             self.sk_info.setText(L(f"対応元素: {' '.join(s.elements)}   付属ファイル: {', '.join(extras) or 'なし'}", f"Elements: {' '.join(s.elements)}   included files: {', '.join(extras) or 'none'}"))
         self._emit()
 
