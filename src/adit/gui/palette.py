@@ -89,7 +89,7 @@ class CommandPalette(QDialog):
         self.ran: Item | None = None
         self.search = QLineEdit(); self.search.setObjectName("palette_search")
         self.search.setPlaceholderText(L("操作・欄・プリセットを名前で検索 (例: 温度, generate, 水)",
-                                         "Search commands, fields and presets by name (e.g. temperature, 生成, water)"))
+                                         "Search commands, fields and presets by name (e.g. temperature, generate, water)"))
         self.search.setClearButtonEnabled(True)
         self.list = QListWidget(); self.list.setObjectName("palette_list")
         self.list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)

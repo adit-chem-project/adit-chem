@@ -5,8 +5,8 @@ import pytest
 
 from adit import lang
 from adit.project import build_project
-from adit.spec import (AtomsData, CalculationSpec, DftbMethod, EspressoMethod, KPoints, MDSettings, OrcaMethod,
-                        Runtime, Structure, Task, VaspMethod, XtbMethod)
+from adit.spec import (AtomsData, CalculationSpec, DftbMethod, KPoints, MDSettings, OrcaMethod,
+                        Runtime, Structure, Task, XtbMethod)
 from adit.structure import from_bulk
 from tests.conftest import cfg_for, make_fake_skset, water_spec
 from tests.test_espresso import make_fake_upf, si_spec as qe_si_spec
@@ -81,7 +81,7 @@ def test_local_readme_has_both_sections(cfg_all, tmp_path):
     assert "cd '<この計算ディレクトリのパス>'" in local
     assert str(out.resolve()) not in r
     assert "command -v dftb+" in local and "PATH (コマンドを探す場所の一覧)" in local and "bash submit.sh" in local
-    for s in ("README.md の「クラスタで実行する場合」", "[profiles.remote]", 'kind = "pbs"', "<クラスタのホスト名>", "scp -r", "rsync -av", "ssh ", "qsub submit.sh", "sbatch submit.sh",
+    for s in ("docs/SETTINGS.md (環境設定) の「クラスタで実行する場合」", "[profiles.remote]", 'kind = "pbs"', "<クラスタのホスト名>", "scp -r", "rsync -av", "ssh ", "qsub submit.sh", "sbatch submit.sh",
               "qstat -u $USER", "squeue -u $USER", "cd <クラスタでの作業ディレクトリ>/'water opt'"):
         assert s in cluster, s
     assert "scp -r '<この計算ディレクトリのパス>'" in cluster

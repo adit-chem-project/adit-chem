@@ -5,7 +5,7 @@ import tempfile
 from pathlib import Path
 
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QMenu, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QComboBox, QLabel, QMenu, QPushButton, QVBoxLayout, QWidget
 
 from adit.gui.atom_select import SERIES_FIELD, base_indices
 from adit.gui.flow_layout import FlowLayout
@@ -162,9 +162,8 @@ class StructureViewPanel(QWidget):
         if atoms is None or len(atoms) == 0:
             return None
         scene = scene_from_atoms(atoms)
-        rot = getattr(self.viewer, "_rot", None)
         try:
-            return scene_to_svg(scene)
+            return scene_to_svg(scene, rotation=getattr(self.viewer, "_rot", None))
         except ValueError:
             return None
 

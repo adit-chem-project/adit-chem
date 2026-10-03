@@ -106,7 +106,7 @@ def open_folder(path: str | Path) -> bool:
         return False
     if _is_wsl() and shutil.which("explorer.exe"):
         try:
-            win = subprocess.run(["wslpath", "-w", str(p)], capture_output=True, text=True, timeout=10).stdout.strip()
+            win = subprocess.run(["wslpath", "-w", str(p)], capture_output=True, text=True, errors="replace", timeout=10, check=False).stdout.strip()
             subprocess.Popen(["explorer.exe", win or str(p)])
             return True
         except (OSError, subprocess.SubprocessError):

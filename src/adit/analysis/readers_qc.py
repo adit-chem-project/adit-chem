@@ -41,6 +41,11 @@ def _floats(text: str) -> list[float]:
     return [float(x) for x in re.findall(r"-?\d+\.\d+", text)]
 
 
+def _gamess_frequencies(text: str) -> list[float]:
+    # GAMESS prints an imaginary frequency as its magnitude followed by "I"
+    return [-abs(float(v)) if flag else float(v) for v, flag in re.findall(r"(-?\d+\.\d+)\s*(I\b)?", text)]
+
+
 class QcOutput:
 
     def __init__(self, code: str, path: Path):
@@ -142,8 +147,7 @@ def read_gamess(path: Path) -> QcOutput:
                 out.energies_ev.append(float(m.group(1)) * HARTREE_EV)
             continue
         if line.lstrip().startswith("FREQUENCY:"):
-            freqs += [-abs(v) if "I" in line.split(":", 1)[1].upper() and False else v
-                      for v in _floats(line.split(":", 1)[1])]
+            freqs += _gamess_frequencies(line.split(":", 1)[1])
             continue
         if line.lstrip().startswith("IR INTENSITY:"):
             irs += _floats(line.split(":", 1)[1])

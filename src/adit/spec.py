@@ -570,3 +570,84 @@ class CalculationSpec(BaseModel):
             if s not in seen:
                 seen.append(s)
         return seen
+
+
+def _model_candidates(annotation) -> list[type]:
+    import types
+    from typing import Union, get_args, get_origin
+
+    origin = get_origin(annotation)
+    if origin is Annotated:
+        return _model_candidates(get_args(annotation)[0])
+    if origin in (Union, types.UnionType):
+        return [m for a in get_args(annotation) for m in _model_candidates(a)]
+    return [annotation] if isinstance(annotation, type) and issubclass(annotation, BaseModel) else []
+
+
+def _container(annotation):
+    import types
+    from typing import Union, get_args, get_origin
+
+    origin = get_origin(annotation)
+    if origin is Annotated:
+        return _container(get_args(annotation)[0])
+    if origin in (Union, types.UnionType):
+        return next((c for c in (_container(a) for a in get_args(annotation)) if c), None)
+    args = get_args(annotation)
+    if origin in (list, tuple) and args:
+        return ("list", args[0])
+    if origin is dict and len(args) == 2:
+        return ("dict", args[1])
+    return None
+
+
+def _pick_model(models: list[type], value: dict):
+    if len(models) == 1:
+        return models[0]
+    for m in models:   # the Method union is told apart by "code"
+        f = m.model_fields.get("code")
+        if f is not None and f.default == value.get("code"):
+            return m
+    return None
+
+
+def unknown_keys(data: dict, model: type[BaseModel] | None = None, prefix: str = "") -> list[str]:
+    """Dotted paths of keys that no field accepts; pydantic would silently drop them."""
+    top = model is None
+    if top:
+        model = CalculationSpec
+        data = CalculationSpec.migrate(data)
+    out: list[str] = []
+    for key, value in data.items():
+        if model is CalculationSpec and key == "provenance":   # adit-gen writes it next to the settings
+            continue
+        field = model.model_fields.get(key)
+        if field is None:
+            out.append(prefix + key)
+            continue
+        models = _model_candidates(field.annotation)
+        if models and isinstance(value, dict):
+            sub = _pick_model(models, value)
+            if sub is not None:
+                out += unknown_keys(value, sub, f"{prefix}{key}.")
+            continue
+        kind = _container(field.annotation)
+        if kind is None:
+            continue
+        inner = _model_candidates(kind[1])
+        if not inner:
+            continue
+        if kind[0] == "list" and isinstance(value, list):
+            for i, item in enumerate(value):
+                if isinstance(item, dict) and _pick_model(inner, item) is not None:
+                    out += unknown_keys(item, _pick_model(inner, item), f"{prefix}{key}[{i}].")
+        elif kind[0] == "dict" and isinstance(value, dict):
+            for name, item in value.items():
+                if isinstance(item, dict) and _pick_model(inner, item) is not None:
+                    out += unknown_keys(item, _pick_model(inner, item), f"{prefix}{key}.{name}.")
+    return sorted(out) if top else out
+
+
+def unknown_keys_in_file(path: Path | str) -> list[str]:
+    data = json.loads(Path(path).read_text(encoding="utf-8-sig"))
+    return unknown_keys(data) if isinstance(data, dict) else []

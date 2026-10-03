@@ -17,7 +17,7 @@ from pathlib import Path
 from adit import lang
 from adit.config import ConfigError, config_path, ensure_config, env_var
 from adit.lang import L
-from adit.project import OutputNotEmpty, ProjectError, write_project
+from adit.project import ProjectError, write_project
 from adit.provenance import sha256_file
 from adit.spec import CalculationSpec
 from adit.templates import TemplateError, load_template
@@ -66,7 +66,7 @@ def convert_with_openbabel(source: Path | str, output: Path | str, *,
         command += ["-o", output_format]
     command += ["-O", str(staged)]
     try:
-        result = subprocess.run(command, capture_output=True, text=True, check=False)
+        result = subprocess.run(command, capture_output=True, text=True, errors="replace", check=False)
     except OSError as ex:
         raise ConversionError(L(f"Open Babel を実行できません。元の出力は変更していません。途中ファイル: {staged}。{ex}",
                                 f"cannot run Open Babel. The previous output was not changed. Staged file: {staged}. {ex}")) from ex
@@ -339,14 +339,14 @@ def retarget_spec(source: CalculationSpec, target_conditions: CalculationSpec, *
     return out, report
 
 
-def _read_without_crlf(src: Path, frame: int, fmt: str | None):
+def _read_without_crlf(src: Path, frame: int, fmt: str | None, error: Exception):
     import tempfile
 
     from ase.io import read
 
     raw = src.read_bytes()
     if b"\r\n" not in raw:
-        raise
+        raise error
     with tempfile.TemporaryDirectory() as tmp:
         copy = Path(tmp) / src.name
         copy.write_bytes(raw.replace(b"\r\n", b"\n"))
@@ -373,8 +373,8 @@ def convert_structure(source: Path | str, output: Path | str, *, input_format: s
             fmt = _structure_format(src, input_format, reading=True)
             try:
                 atoms = read(src, index=frame, format=fmt)
-            except Exception:
-                atoms = _read_without_crlf(src, frame, fmt)
+            except Exception as first:
+                atoms = _read_without_crlf(src, frame, fmt, first)
     except Exception as ex:
         raise ConversionError(L(f"構造を {src} から読めません: {ex}", f"cannot read a structure from {src}: {ex}")) from ex
     if cell is not None:

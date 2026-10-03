@@ -92,3 +92,12 @@ def test_a_directory_without_an_output_falls_back(tmp_path):
     data = load_run(tmp_path)
     assert data.code == "qchem"
     assert not data.frequencies_cm1
+
+
+def test_gamess_marks_imaginary_frequencies_negative(tmp_path):
+    out_file = tmp_path / "gamess.out"
+    out_file.write_text("       FREQUENCY:       342.20 I     14.71       10.15\n"
+                        "    IR INTENSITY:      0.10000     0.00000     0.00000\n", encoding="utf-8")
+    out = read_gamess(out_file)
+    assert out.frequencies_cm1 == [-342.20, 14.71, 10.15]
+    assert len(out.ir_intensities) == 3

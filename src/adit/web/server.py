@@ -6,12 +6,10 @@ import email
 import email.policy
 import hmac
 import html
-import io
 import json
 import os
 import re
 import secrets
-import shutil
 import socket
 
 from adit.compat import ensure_printable_stdio, upload_basename
@@ -1692,7 +1690,7 @@ def main(argv: list[str] | None = None) -> int:
                                       "use this token (default: a new one each start, except on 127.0.0.1)"))
     ap.add_argument("--no-token", action="store_true", help=L("合言葉を使わない (信頼できるネットワークの中だけで)",
                                                               "do not require a token (trusted networks only)"))
-    ap.add_argument("--port", type=int, default=8765)
+    ap.add_argument("--port", type=int, default=8765, help=L("待ち受けるポート (既定 8765)", "port to listen on (default 8765)"))
     ap.add_argument("--config", help=L("cluster.toml のパス", "path to cluster.toml"))
     ap.add_argument("--open", action="store_true", help=L("起動後にブラウザを開きます", "open the browser after start"))
     args = ap.parse_args(argv)

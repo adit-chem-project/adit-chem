@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from tests.conftest import cfg_for, water_spec
+from adit.project import ProjectError
 from adit.scan import ScanError, apply_value, collect_scan, parse_scan, write_scan
 from adit.spec import DftbMethod
 
@@ -59,7 +60,7 @@ def test_write_scan_generates_each_value(sk_root, tmp_path):
 
 def test_write_scan_writes_nothing_if_one_value_is_bad(sk_root, tmp_path):
     spec = water_spec(method=DftbMethod(sk_set="fake-1-0"))
-    with pytest.raises(Exception):
+    with pytest.raises(ProjectError):
         write_scan(spec, cfg_for(sk_root), tmp_path / "scan", parse_scan("method.max_scc_iterations=50,0"))
     assert not (tmp_path / "scan").exists() or not any((tmp_path / "scan").iterdir())
 

@@ -27,6 +27,16 @@ class HandoffError(Exception):
     pass
 
 
+def _read_text(path: str) -> str:
+    with open(path, encoding="utf-8") as f:
+        return f.read()
+
+
+def _write_text(path: str, text: str) -> None:
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(text)
+
+
 def copy_files(code: str, previous_task: str, velocities: bool, gromacs_conf: str = "conf.gro",
                previous_dir: str = "") -> dict[str, str]:
     md = previous_task == "molecular_dynamics"
@@ -166,7 +176,7 @@ def _qe_cell(header: str, rows, alat_bohr: float | None) -> list[list[float]]:
 
 
 def read_pw_in_cell(path: str) -> list[list[float]] | None:
-    lines = open(path, encoding="utf-8").read().splitlines()
+    lines = _read_text(path).splitlines()
     for i, l in enumerate(lines):
         if l.strip().upper().startswith("CELL_PARAMETERS"):
             return _qe_cell(l.strip(), [lines[i + 1 + j].split() for j in range(3)], None)
@@ -174,7 +184,7 @@ def read_pw_in_cell(path: str) -> list[list[float]] | None:
 
 
 def read_pw_in_nat(path: str) -> int:
-    m = re.search(r"\bnat\s*=\s*(\d+)", open(path, encoding="utf-8").read())
+    m = re.search(r"\bnat\s*=\s*(\d+)", _read_text(path))
     if not m:
         raise HandoffError(f"{path}: nat がありません")
     return int(m.group(1))
@@ -257,22 +267,22 @@ def final_structure(code: str, prev: str, previous_task: str) -> dict:
     j = lambda name: os.path.join(prev, name)  # noqa: E731
     md = previous_task == "molecular_dynamics"
     if code == "dftbplus":
-        start = parse_gen(open(j("geometry.gen"), encoding="utf-8").read())
+        start = parse_gen(_read_text(j("geometry.gen")))
         if md:
             rows = last_xyz_frame(j("geo_end.xyz"))
             vel = [[x / 1000.0 for x in _floats(r[-3:])] for r in rows] if all(len(r) >= 7 for r in rows) else None  # Å/ps → Å/fs
-            cell = parse_gen(open(j("geo_end.gen"), encoding="utf-8").read())["cell"] if os.path.isfile(j("geo_end.gen")) else start["cell"]
+            cell = parse_gen(_read_text(j("geo_end.gen")))["cell"] if os.path.isfile(j("geo_end.gen")) else start["cell"]
             return {"symbols": [r[0] for r in rows], "positions": [_floats(r[1:4]) for r in rows], "cell": cell, "velocities": vel,
                     "source": "geo_end.xyz"}
         if previous_task == "geometry_optimization":
-            d = parse_gen(open(j("geom.out.gen"), encoding="utf-8").read())
+            d = parse_gen(_read_text(j("geom.out.gen")))
             d["source"] = "geom.out.gen"
             return d
         start["source"] = "geometry.gen"
         return start
     if code == "vasp":
         name = "CONTCAR" if previous_task in ("geometry_optimization", "molecular_dynamics") else "POSCAR"
-        d = parse_poscar(open(j(name), encoding="utf-8").read())
+        d = parse_poscar(_read_text(j(name)))
         if not md:
             d["velocities"] = None
         d["source"] = name
@@ -293,7 +303,7 @@ def final_structure(code: str, prev: str, previous_task: str) -> dict:
 
 
 def _orca_input_coords(path: str) -> dict:
-    lines = open(path, encoding="utf-8").read().splitlines()
+    lines = _read_text(path).splitlines()
     k = next(i for i, l in enumerate(lines) if l.strip().lower().startswith("* xyz"))
     rows = []
     for l in lines[k + 1:]:
@@ -326,15 +336,15 @@ def apply_stage(code: str, prev: str, here: str, previous_task: str, velocities:
     d = final_structure(code, prev, previous_task)
     j = lambda name: os.path.join(here, name)  # noqa: E731
     if code == "dftbplus":
-        cur = parse_gen(open(j("geometry.gen"), encoding="utf-8").read())
+        cur = parse_gen(_read_text(j("geometry.gen")))
         _check_same(cur["symbols"], d["symbols"], "geometry.gen")
         cell = d["cell"] if cur["cell"] else None
-        open(j("geometry.gen"), "w", encoding="utf-8").write(format_gen(d["symbols"], d["positions"], cell))
+        _write_text(j("geometry.gen"), format_gen(d["symbols"], d["positions"], cell))
         done = ["geometry.gen"]
         if velocities:
             if not d["velocities"]:
                 raise HandoffError(f"{prev} の {d.get('source')} に速度がありません")
-            open(j(VELOCITY_FILE), "w", encoding="utf-8").write(
+            _write_text(j(VELOCITY_FILE), 
                 "".join(f"{v[0] * 1000.0:.10f} {v[1] * 1000.0:.10f} {v[2] * 1000.0:.10f}\n" for v in d["velocities"]))  # Å/ps
             done.append(VELOCITY_FILE)
         return done
@@ -342,18 +352,18 @@ def apply_stage(code: str, prev: str, here: str, previous_task: str, velocities:
         cur = last_xyz_frame(j("struct.xyz"))
         _check_same([r[0] for r in cur], d["symbols"], "struct.xyz")
         body = "".join(f"{s} {p[0]:.10f} {p[1]:.10f} {p[2]:.10f}\n" for s, p in zip(d["symbols"], d["positions"]))
-        open(j("struct.xyz"), "w", encoding="utf-8").write(f"{len(d['symbols'])}\nfrom {prev}/{d['source']}\n{body}")
+        _write_text(j("struct.xyz"), f"{len(d['symbols'])}\nfrom {prev}/{d['source']}\n{body}")
         return ["struct.xyz"]
     if code == "orca":
-        lines = open(j("orca.inp"), encoding="utf-8").read().splitlines()
+        lines = _read_text(j("orca.inp")).splitlines()
         k = next(i for i, l in enumerate(lines) if l.strip().lower().startswith("* xyz"))
         e = next(i for i in range(k + 1, len(lines)) if lines[i].strip() == "*")
         _check_same([l.split()[0] for l in lines[k + 1:e]], d["symbols"], "orca.inp")
         lines[k + 1:e] = [f"  {s:2s} {p[0]:14.8f} {p[1]:14.8f} {p[2]:14.8f}" for s, p in zip(d["symbols"], d["positions"])]
-        open(j("orca.inp"), "w", encoding="utf-8").write("\n".join(lines) + "\n")
+        _write_text(j("orca.inp"), "\n".join(lines) + "\n")
         return ["orca.inp"]
     if code == "espresso":
-        lines = open(j("pw.in"), encoding="utf-8").read().splitlines()
+        lines = _read_text(j("pw.in")).splitlines()
         k = next(i for i, l in enumerate(lines) if l.strip().upper().startswith("ATOMIC_POSITIONS"))
         n = len(d["symbols"])
         rows = [lines[k + 1 + i].split() for i in range(n)]
@@ -367,7 +377,7 @@ def apply_stage(code: str, prev: str, here: str, previous_task: str, velocities:
                 lines[c] = "CELL_PARAMETERS angstrom"
                 for i in range(3):
                     lines[c + 1 + i] = " ".join(f"{x:.10f}" for x in d["cell"][i])
-        open(j("pw.in"), "w", encoding="utf-8").write("\n".join(lines) + "\n")
+        _write_text(j("pw.in"), "\n".join(lines) + "\n")
         return ["pw.in"]
     return []
 

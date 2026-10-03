@@ -63,15 +63,21 @@ def sketch_to_mol(sketch) -> str:
 
 
 def scene_to_svg(scene, width: int = 640, height: int = 520, rx: float = -1.05, ry: float = 0.52,
-                 background: str = "white") -> str:
+                 background: str = "white", rotation=None) -> str:
     if scene.n_atoms == 0:
         raise ValueError("構造がありません")
+    if rotation is not None:
+        # the 3x3 matrix of the desktop viewer (screen = R @ p), so the file shows the view on screen
+        R = [[float(x) for x in row] for row in rotation]
 
-    def rotate(p):
-        cy, sy = math.cos(ry), math.sin(ry)
-        x, z = p[0] * cy + p[2] * sy, -p[0] * sy + p[2] * cy
-        cx, sx = math.cos(rx), math.sin(rx)
-        return [x, p[1] * cx - z * sx, p[1] * sx + z * cx]
+        def rotate(p):
+            return [R[i][0] * p[0] + R[i][1] * p[1] + R[i][2] * p[2] for i in range(3)]
+    else:
+        def rotate(p):
+            cy, sy = math.cos(ry), math.sin(ry)
+            x, z = p[0] * cy + p[2] * sy, -p[0] * sy + p[2] * cy
+            cx, sx = math.cos(rx), math.sin(rx)
+            return [x, p[1] * cx - z * sx, p[1] * sx + z * cx]
 
     scale = min(width, height) * 0.42 / max(scene.scale, 1e-6)
 

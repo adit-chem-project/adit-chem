@@ -188,6 +188,11 @@ def test_msd_fit_range_default_and_user():
     assert compute.diffusion_fit(t, m, (20.0, 60.0)) == pytest.approx(1e-5)
 
 
+def test_msd_with_a_single_frame_explains_instead_of_failing():
+    out = compute.msd_analysis(np.zeros((1, 4, 3)), None, None, symbols=["O", "H", "H", "O"])
+    assert out["D_cm2_s"] is None and "MSD" in out["reason"]
+
+
 def test_msd_by_element_and_fit_range_in_table(tmp_path):
     d = _copy("dftb_md_water_generated", tmp_path)
     res = run_analysis(d, AnalysisOptions(msd=True, msd_fit_fs=(20.0, 60.0)))

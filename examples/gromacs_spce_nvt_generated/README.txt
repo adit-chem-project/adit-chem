@@ -48,7 +48,7 @@ ADIT 0.0.1 が生成した GROMACS の計算ディレクトリです (2026-09-12
        header_extra = ["#PBS -q <キュー名>"]        # Slurm なら ["#SBATCH --partition=<パーティション名>"]
        [profiles.remote.code_modules]
        gromacs = ["<module 名>"]                   # 計算ソフトを使えるようにする module の名前 (クラスタで module avail と打つと一覧が出ます)
-     ほかの項目 (投入コマンド、環境変数、実行コマンドなど) は ADIT の README.md の「クラスタで実行する場合」にあります。
+     ほかの項目 (投入コマンド、環境変数、実行コマンドなど) は ADIT の docs/SETTINGS.md (環境設定) の「クラスタで実行する場合」にあります。
   b. ADIT でプロファイルをそれに切り替えて生成し直します。submit.sh が qsub (PBS) / sbatch (Slurm) で預ける
      ジョブスクリプトになり、この README.txt にも、そのクラスタでの投入と確認のコマンドが入ります。
   そのあとの流れは次のとおりです (<...> は自分の値に置き換えます)。

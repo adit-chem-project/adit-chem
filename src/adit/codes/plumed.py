@@ -38,7 +38,7 @@ def engine_has_plumed(code: str) -> bool | None:
     if args is None:
         return None
     try:
-        out = subprocess.run(args, capture_output=True, text=True, timeout=60)
+        out = subprocess.run(args, capture_output=True, text=True, errors="replace", timeout=60, check=False)
     except (OSError, subprocess.SubprocessError):
         return None
     return needle in (out.stdout + out.stderr)
@@ -56,7 +56,7 @@ def check_syntax(text: str, n_atoms: int) -> str | None:
         try:
             out = subprocess.run([exe, "--no-mpi", "driver", "--plumed", str(path), "--natoms", str(n_atoms),
                                   "--parse-only", "--ixyz", "/dev/null"],
-                                 capture_output=True, text=True, timeout=120, cwd=tmp)
+                                 capture_output=True, text=True, errors="replace", timeout=120, cwd=tmp, check=False)
         except (OSError, subprocess.SubprocessError):
             return None
         if out.returncode == 0:

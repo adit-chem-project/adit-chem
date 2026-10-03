@@ -7,7 +7,7 @@ from pathlib import Path
 from PySide6.QtWidgets import QApplication, QMessageBox
 
 from adit.gui.style import apply_theme
-from adit.config import ConfigError, config_path, default_config, load_config, save_config
+from adit.config import ConfigError, config_path
 
 
 def _ensure_japanese_font(app: QApplication) -> None:
@@ -45,7 +45,7 @@ def main() -> int:
     if created:
         QMessageBox.information(None, L("環境設定ファイルを作りました", "Settings file created"), first_run_message(cfg_file))
     from adit.config import env_var
-    print("theme:", apply_theme(app, env_var("THEME") or cfg.theme), file=sys.stderr)
+    apply_theme(app, env_var("THEME") or cfg.theme)
     from adit.gui.main_window import MainWindow
 
     from adit.gui.i18n import language_from_env, set_language, translate_widgets

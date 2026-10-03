@@ -1,4 +1,5 @@
 import json
+import shutil
 import threading
 import urllib.parse
 import urllib.request
@@ -63,6 +64,27 @@ def test_the_3d_view_becomes_a_valid_svg():
     assert len(circles) == 8
     assert len(lines) >= 12
     assert svg.index("<circle") < svg.rindex("<circle")
+
+
+def _circle_x_by_color(svg: str) -> dict[str, float]:
+    import re
+
+    return {m.group(2): float(m.group(1)) for m in re.finditer(r'<circle cx="([\d.]+)" cy="[\d.]+" r="[\d.]+" fill="(#[0-9a-fA-F]+)"', svg)}
+
+
+def test_the_3d_svg_follows_the_given_rotation():
+    scene = scene_from_atoms(molecule("CO"))                 # C and O differ only along one axis
+    carbon, oxygen = scene.colors
+    axis = next(k for k in range(3) if abs(scene.positions[0][k] - scene.positions[1][k]) > 0.5)
+    identity = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
+    # a quarter turn that brings that axis to the screen x axis, and the same turn mirrored
+    to_x = [[0.0] * 3 for _ in range(3)]; to_x[0][axis] = 1.0; to_x[1][(axis + 1) % 3] = 1.0; to_x[2][(axis + 2) % 3] = 1.0
+    flipped = [[-v for v in to_x[0]], to_x[1], [-v for v in to_x[2]]]
+    plain = _circle_x_by_color(scene_to_svg(scene, rotation=to_x))
+    mirror = _circle_x_by_color(scene_to_svg(scene, rotation=flipped))
+    assert (plain[carbon] < plain[oxygen]) == (scene.positions[0][axis] < scene.positions[1][axis])
+    assert (mirror[carbon] < mirror[oxygen]) != (plain[carbon] < plain[oxygen])
+    assert scene_to_svg(scene, rotation=identity) != scene_to_svg(scene)   # the default view is a tilted one
 
 
 def test_the_molecule_svg_has_no_cell_lines():
@@ -142,7 +164,9 @@ def test_the_desktop_can_copy_and_save_each_figure(tmp_path):
 
     QApplication.instance() or QApplication([])
     panel = AnalysisPanel()
-    panel.run_dir.setText(str(REPO / "examples" / "dftb_md_water_generated"))
+    run_dir = tmp_path / "run"
+    shutil.copytree(REPO / "examples" / "dftb_md_water_generated", run_dir)   # never analyse the example in place
+    panel.run_dir.setText(str(run_dir))
     panel.figure_format.setText("svg")
     panel.options()
     out = tmp_path / "figs"
@@ -165,7 +189,9 @@ def test_the_browser_lists_a_download_link_for_every_figure(tmp_path):
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     base = f"http://127.0.0.1:{srv.server_port}"
     try:
-        form = {"run_dir": str(REPO / "examples" / "dftb_md_water_generated"), "figure_format": "svg"}
+        run_dir = tmp_path / "run"
+        shutil.copytree(REPO / "examples" / "dftb_md_water_generated", run_dir)   # never analyse the example in place
+        form = {"run_dir": str(run_dir), "figure_format": "svg"}
         req = urllib.request.Request(base + "/analysis", data=urllib.parse.urlencode(form).encode())
         with urllib.request.urlopen(req, timeout=900) as r:
             html = r.read().decode()

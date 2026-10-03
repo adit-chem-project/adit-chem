@@ -55,6 +55,10 @@ def test_bibtex_entries_are_well_formed_and_keys_unique():
     entries = _all_entries()
     keys = [c.key for c in entries]
     assert len(entries) > 40
+    assert len(set(keys)) > 40
+    by_key: dict[str, str] = {}
+    for c in entries:                       # one reference may serve several parameter sets, but one key means one entry
+        assert by_key.setdefault(c.key, c.bibtex) == c.bibtex, c.key
     for c in entries:
         assert c.bibtex.count("{") == c.bibtex.count("}"), c.key
         assert re.match(r"@\w+\{" + re.escape(c.key) + ",", c.bibtex)
