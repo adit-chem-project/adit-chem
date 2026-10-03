@@ -3,7 +3,10 @@
   "meta": {
     "created": "2026-09-11T17:13:47+00:00",
     "app_version": "0.0.1",
-    "comment": ""
+    "comment": "",
+    "continued_from": null,
+    "template": null,
+    "stage": null
   },
   "structure": {
     "source": "file",
@@ -3927,7 +3930,8 @@
     "charge": 0,
     "multiplicity": 1,
     "fixed_atoms": [],
-    "fixed_axes": {}
+    "fixed_axes": {},
+    "velocities": null
   },
   "method": {
     "code": "gromacs",
@@ -3976,5 +3980,39 @@
     "omp_threads": 1,
     "walltime": "01:00:00",
     "job_name": "gromacs_spce_nvt"
+  },
+  "handoff": null,
+  "plumed": null,
+  "provenance": {
+    "adit_version": "0.1.0a1",
+    "generated_utc": "2026-09-19T01:29:36+00:00",
+    "python": "3.14.7",
+    "ase": "3.29.0",
+    "files": [
+      {
+        "name": "conf.gro",
+        "sha256": "5f636d8165bd99daf3f3bb0dbeddb36ede461c8547f4a3ecac921c04f0166c6f",
+        "bytes": 29209,
+        "source": "examples/gromacs_spce_em_generated/adit.gro"
+      },
+      {
+        "name": "topol.top",
+        "sha256": "f86096c40f9cb9c75da0b5ce22f7920532a832884b8b77e4da58f32517ee3f77",
+        "bytes": 183,
+        "source": "examples/gromacs_spce/topol.top"
+      }
+    ],
+    "generated_files": [],
+    "inputs": [
+      {
+        "name": "grompp.mdp",
+        "sha256": "8faa8f8f6c0de20b1f6e64c5f6a1c6181a09ca3c2cff6e6f0247edcd00feba1e"
+      },
+      {
+        "name": "submit.sh",
+        "sha256": "ee268da1e4ef7cdffb65be4be7163c2d68aee80b17b81025b0b298cdf0059101"
+      }
+    ],
+    "code_version_file": "code_version.txt"
   }
 }

@@ -82,6 +82,12 @@
       }
     },
     "hubbard_projector": "atomic",
+    "assume_isolated": "",
+    "dipole_correction": false,
+    "dipole_direction": 0,
+    "dipole_maxpos": 0.0,
+    "dipole_decrease": 0.0,
+    "dipole_amplitude": 0.0,
     "extra": {}
   },
   "kpoints": {
@@ -131,9 +137,10 @@
     "job_name": "prep"
   },
   "handoff": null,
+  "plumed": null,
   "provenance": {
-    "adit_version": "0.0.1",
-    "generated_utc": "2026-09-11T17:58:49+00:00",
+    "adit_version": "0.1.0a1",
+    "generated_utc": "2026-09-19T01:29:50+00:00",
     "python": "3.14.7",
     "ase": "3.29.0",
     "files": [
@@ -145,6 +152,16 @@
       }
     ],
     "generated_files": [],
+    "inputs": [
+      {
+        "name": "pw.in",
+        "sha256": "3495422af24f6e8b0cc958044d3acd9c118dd7b707ac9bdc9f95040bcf959582"
+      },
+      {
+        "name": "submit.sh",
+        "sha256": "146cb178289e1e68548b44586275a077e579f6dafea640db237c2c173f81c2f1"
+      }
+    ],
     "code_version_file": "code_version.txt"
   }
 }

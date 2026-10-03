@@ -3,7 +3,10 @@
   "meta": {
     "created": "2026-09-11T17:13:53+00:00",
     "app_version": "0.0.1",
-    "comment": ""
+    "comment": "",
+    "continued_from": null,
+    "template": null,
+    "stage": null
   },
   "structure": {
     "source": "preset",
@@ -57,7 +60,8 @@
     "charge": 0,
     "multiplicity": 1,
     "fixed_atoms": [],
-    "fixed_axes": {}
+    "fixed_axes": {},
+    "velocities": null
   },
   "method": {
     "code": "cp2k",
@@ -80,6 +84,16 @@
     "uks": false,
     "poisson_solver": "MT",
     "isolated_box_ang": 6.0,
+    "magnetization_by_element": {},
+    "hubbard": {},
+    "plus_u_method": "MULLIKEN",
+    "sccs_relative_permittivity": 0.0,
+    "ot": false,
+    "ot_minimizer": "",
+    "ot_preconditioner": "",
+    "ot_extra": "",
+    "surface_dipole_correction": false,
+    "surf_dip_dir": "",
     "extra_sections": {}
   },
   "kpoints": null,
@@ -114,5 +128,47 @@
     "omp_threads": 1,
     "walltime": "01:00:00",
     "job_name": "cp2k_h2o_md"
+  },
+  "handoff": null,
+  "plumed": null,
+  "provenance": {
+    "adit_version": "0.1.0a1",
+    "generated_utc": "2026-09-19T01:36:09+00:00",
+    "python": "3.14.7",
+    "ase": "3.29.0",
+    "files": [],
+    "generated_files": [
+      {
+        "name": "BASIS_adit",
+        "sha256": "d100810a75661a45915336d986c539315f8ec133b73a0228857576a1a165d93f",
+        "copied_from": "miniforge3/envs/cp2k/share/cp2k/data/BASIS_MOLOPT",
+        "source_sha256": "686dd72e7601ee41d4a173e4c7c3946f1e750f03095090f44d3821c180a81a61"
+      },
+      {
+        "name": "POTENTIAL_adit",
+        "sha256": "71133c253640ad323f01941816ecd9c28d6a4cc48d4e0501cdb462a30930a0d5",
+        "copied_from": "miniforge3/envs/cp2k/share/cp2k/data/GTH_POTENTIALS",
+        "source_sha256": "5a9bfbc3b37a55917ade4fb704b80546d210d843759b94e3915e74acfc3fafb2"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "BASIS_adit",
+        "sha256": "d100810a75661a45915336d986c539315f8ec133b73a0228857576a1a165d93f"
+      },
+      {
+        "name": "POTENTIAL_adit",
+        "sha256": "71133c253640ad323f01941816ecd9c28d6a4cc48d4e0501cdb462a30930a0d5"
+      },
+      {
+        "name": "cp2k.inp",
+        "sha256": "71dd286a5b6c7ed99437edfcefb3b69b5fa0ba44b63041809b27000a9e0c235f"
+      },
+      {
+        "name": "submit.sh",
+        "sha256": "bbad6d69a17b0c7e9a719fb666d05f456722d2d9ed3b6ab49be96a9edff60cac"
+      }
+    ],
+    "code_version_file": "code_version.txt"
   }
 }

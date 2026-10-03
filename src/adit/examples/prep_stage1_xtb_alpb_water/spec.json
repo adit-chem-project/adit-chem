@@ -71,7 +71,10 @@
     "max_iterations": 250,
     "opt_level": "normal",
     "solvation": "alpb",
-    "solvent": "water"
+    "solvent": "water",
+    "md_hmass": 4.0,
+    "md_shake": 2,
+    "md_sccacc": 2.0
   },
   "kpoints": null,
   "task": {
@@ -107,13 +110,28 @@
     "job_name": "prep"
   },
   "handoff": null,
+  "plumed": null,
   "provenance": {
-    "adit_version": "0.0.1",
-    "generated_utc": "2026-09-11T17:57:21+00:00",
+    "adit_version": "0.1.0a1",
+    "generated_utc": "2026-09-19T01:29:52+00:00",
     "python": "3.14.7",
     "ase": "3.29.0",
     "files": [],
     "generated_files": [],
+    "inputs": [
+      {
+        "name": "struct.xyz",
+        "sha256": "2e82d28b802d4a4830dfd317ffa9c66dd5bda4e00644d1193fe3f1c524d6b965"
+      },
+      {
+        "name": "submit.sh",
+        "sha256": "6dd27aa48edad511b500c24b9605d998b94f6627a150ebf5b2dfeee57ae459b1"
+      },
+      {
+        "name": "xtb.inp",
+        "sha256": "980a5797cf508597fa75a5e30060b8acb1544a8fe69cf411b1510f037d7fd580"
+      }
+    ],
     "code_version_file": "code_version.txt"
   }
 }

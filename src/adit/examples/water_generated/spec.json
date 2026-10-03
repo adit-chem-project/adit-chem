@@ -3,7 +3,10 @@
   "meta": {
     "created": "2026-09-10T07:19:07+00:00",
     "app_version": "0.0.1",
-    "comment": ""
+    "comment": "",
+    "continued_from": null,
+    "template": null,
+    "stage": null
   },
   "structure": {
     "source": "preset",
@@ -56,7 +59,9 @@
     },
     "charge": 0,
     "multiplicity": 1,
-    "fixed_atoms": []
+    "fixed_atoms": [],
+    "fixed_axes": {},
+    "velocities": null
   },
   "method": {
     "code": "dftbplus",
@@ -67,12 +72,30 @@
     "third_order": false,
     "dispersion": "none",
     "d3_params": null,
-    "filling_temperature": 0.0
+    "filling_temperature": 0.0,
+    "seed": 12345,
+    "solvation_param_file": ""
   },
   "kpoints": null,
   "task": {
     "type": "geometry_optimization",
+    "bands": {
+      "path": "",
+      "npoints": 60,
+      "empty_bands": 4
+    },
     "optimizer": "Rational",
+    "md": {
+      "ensemble": "NVT",
+      "thermostat": "berendsen",
+      "temperature_k": 300.0,
+      "timestep_fs": 1.0,
+      "steps": 1000,
+      "dump_interval": 10,
+      "coupling_time_fs": 100.0,
+      "pressure_bar": 1.0,
+      "barostat_time_fs": 1000.0
+    },
     "max_steps": 100,
     "force_tolerance_ev_per_ang": 0.005142208619,
     "relax_cell": "no"
@@ -85,5 +108,67 @@
     "omp_threads": 4,
     "walltime": "01:00:00",
     "job_name": "water"
+  },
+  "handoff": null,
+  "plumed": null,
+  "provenance": {
+    "adit_version": "0.1.0a1",
+    "generated_utc": "2026-09-19T01:29:48+00:00",
+    "python": "3.14.7",
+    "ase": "3.29.0",
+    "files": [
+      {
+        "name": "skf/H-H.skf",
+        "sha256": "d43946902e4d120105025683b54c8696856cbd2b459cfd16df166164774359c8",
+        "bytes": 33182,
+        "source": "/home/<user>/adit/slakos/mio-1-1/H-H.skf"
+      },
+      {
+        "name": "skf/H-O.skf",
+        "sha256": "e357795fc4da4e6317fa29a1ffe57c13d17b96d8929fc840648cb2430acd1a6d",
+        "bytes": 53482,
+        "source": "/home/<user>/adit/slakos/mio-1-1/H-O.skf"
+      },
+      {
+        "name": "skf/LICENSE",
+        "sha256": "9348ddfd44da5a127c59141981954746a860ec8e03e0412cf3af7134af0f97e2",
+        "bytes": 20133,
+        "source": "/home/<user>/adit/slakos/mio-1-1/LICENSE"
+      },
+      {
+        "name": "skf/O-H.skf",
+        "sha256": "0bc4d6d3c013069ac5964cb58d52e50ea05eb7c5e2097fa76dd8255b535727bd",
+        "bytes": 53483,
+        "source": "/home/<user>/adit/slakos/mio-1-1/O-H.skf"
+      },
+      {
+        "name": "skf/O-O.skf",
+        "sha256": "423de839173a667cc1fd75bd111e6dfa46435b874544a5ce4441b84a31b80b43",
+        "bytes": 102082,
+        "source": "/home/<user>/adit/slakos/mio-1-1/O-O.skf"
+      },
+      {
+        "name": "skf/README",
+        "sha256": "92f2a22a702ed3e8548e376a28c47bbba9fe556df8b735d42d4cbb8f67b63e15",
+        "bytes": 3427,
+        "source": "/home/<user>/adit/slakos/mio-1-1/README"
+      }
+    ],
+    "generated_files": [],
+    "inputs": [
+      {
+        "name": "dftb_in.hsd",
+        "sha256": "b917a10fc4932c58e46049c43419e805d03a41965941752e4b79062f129a3c82"
+      },
+      {
+        "name": "geometry.gen",
+        "sha256": "81481b9f5fb8c88b6c6a35ba3d380c94f88649896ba9d25037036a924d3eceb8"
+      },
+      {
+        "name": "submit.sh",
+        "sha256": "4e441cbd18ceb049df9a231933668ab77b5dd025cf64a149a1adc8b24cb1728c"
+      }
+    ],
+    "code_version_file": "code_version.txt"
   }
 }

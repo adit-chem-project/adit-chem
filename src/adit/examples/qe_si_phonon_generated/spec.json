@@ -3,7 +3,10 @@
   "meta": {
     "created": "2026-09-10T09:19:02+00:00",
     "app_version": "0.0.1",
-    "comment": ""
+    "comment": "",
+    "continued_from": null,
+    "template": null,
+    "stage": null
   },
   "structure": {
     "source": "bulk",
@@ -51,7 +54,8 @@
     "charge": 0,
     "multiplicity": 1,
     "fixed_atoms": [],
-    "fixed_axes": {}
+    "fixed_axes": {},
+    "velocities": null
   },
   "method": {
     "code": "espresso",
@@ -67,6 +71,15 @@
     "degauss": 0.0,
     "nspin": 1,
     "input_dft": "",
+    "starting_magnetization": {},
+    "hubbard": {},
+    "hubbard_projector": "atomic",
+    "assume_isolated": "",
+    "dipole_correction": false,
+    "dipole_direction": 0,
+    "dipole_maxpos": 0.0,
+    "dipole_decrease": 0.0,
+    "dipole_amplitude": 0.0,
     "extra": {}
   },
   "kpoints": {
@@ -85,6 +98,11 @@
   },
   "task": {
     "type": "vibrations",
+    "bands": {
+      "path": "",
+      "npoints": 60,
+      "empty_bands": 4
+    },
     "optimizer": "Rational",
     "md": {
       "ensemble": "NVT",
@@ -109,5 +127,41 @@
     "omp_threads": 1,
     "walltime": "01:00:00",
     "job_name": "si"
+  },
+  "handoff": null,
+  "plumed": null,
+  "provenance": {
+    "adit_version": "0.1.0a1",
+    "generated_utc": "2026-09-19T01:29:45+00:00",
+    "python": "3.14.7",
+    "ase": "3.29.0",
+    "files": [
+      {
+        "name": "pseudo/Si.pbe-n-rrkjus_psl.1.0.0.UPF",
+        "sha256": "669fb75395a9d26973b0ea1ce8223bbcb30d3396c5d48bf5e794d1243c52375a",
+        "bytes": 1513204,
+        "source": "/home/<user>/adit/pseudo/pslibrary/Si.pbe-n-rrkjus_psl.1.0.0.UPF"
+      }
+    ],
+    "generated_files": [],
+    "inputs": [
+      {
+        "name": "dynmat.in",
+        "sha256": "6750e9c10a0f44588d9b4fd6d9744fac61780ac46d0e600cc8857318c6252eff"
+      },
+      {
+        "name": "ph.in",
+        "sha256": "6b4ec6a354c8d8df9cb8c994f71df08112cdce232fb96aaabd24420f95c47759"
+      },
+      {
+        "name": "pw.in",
+        "sha256": "854b8f6bd8ae57cfd2253392b4f2562e7211147a1c61fb3bc3d2d38160acc779"
+      },
+      {
+        "name": "submit.sh",
+        "sha256": "c0f7f1a2e3417251f629a523df494a92d5a11cd161a2e4015973bbdf0e5de924"
+      }
+    ],
+    "code_version_file": "code_version.txt"
   }
 }

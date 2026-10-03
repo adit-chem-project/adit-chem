@@ -27,6 +27,23 @@ def _isolated_config(tmp_path_factory, monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _language_is_japanese_for_every_test():
+    # The suite asserts Japanese text; a test that switches the language must not leak into the next one.
+    from adit import lang
+
+    i18n = sys.modules.get("adit.gui.i18n")
+    saved_lang, saved_i18n = lang.LANGUAGE, getattr(i18n, "LANGUAGE", None)
+    lang.set_language("ja")
+    if i18n is not None:
+        i18n.set_language("ja")
+    yield
+    i18n = sys.modules.get("adit.gui.i18n")
+    if i18n is not None:
+        i18n.set_language(saved_i18n or "ja")   # also sets adit.lang
+    lang.LANGUAGE = saved_lang
+
+
+@pytest.fixture(autouse=True)
 def _delete_windows_after_test():
     """Release test widgets before their styles and signal references accumulate.
 
