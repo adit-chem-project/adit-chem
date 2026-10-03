@@ -546,3 +546,22 @@ def test_browser_measuring_does_not_wrap_across_the_vacuum(tmp_path):
     assert got[1] == pytest.approx(8.0) and got[2] == pytest.approx(8.0)   # without pbc all axes wrap (old behaviour, still used by the players)
     assert got[3] == pytest.approx(1.0)           # the periodic axes still take the nearest image
     assert got[4] == pytest.approx(12.0)
+
+
+def test_a_slow_reverse_dns_lookup_does_not_hold_up_a_request(monkeypatch):
+    # macOS runners took longer than the client timeout in socket.getfqdn(); requests must not wait for it
+    import threading
+    import time
+
+    release = threading.Event()
+    monkeypatch.setattr(S.socket, "getfqdn", lambda: (release.wait(10), "pc.example.org")[1])
+    monkeypatch.setattr(S.socket, "gethostname", lambda: "pc")
+    monkeypatch.setattr(S, "_OWN_NAMES", None)
+    monkeypatch.setattr(S, "_FQDN_LOOKUP", None)
+    t0 = time.monotonic()
+    assert not S.host_allowed("evil.example", 8765, server_port=8765)
+    assert S.host_allowed("pc", 8765, server_port=8765)
+    assert time.monotonic() - t0 < 1.0
+    release.set()
+    S._FQDN_LOOKUP.join(5)
+    assert S.host_allowed("pc.example.org", 8765, server_port=8765)   # added once the lookup finishes

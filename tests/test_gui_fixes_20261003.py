@@ -271,6 +271,8 @@ def test_the_open_file_is_reloaded_after_it_was_regenerated(app, tmp_path, monke
 
 
 def test_generate_reloads_the_open_file_and_cds_the_terminal(app, quiet, sk_root, tmp_path):
+    from adit.gui.panels.workspace_panel import WorkspacePanel
+
     win = make_window(sk_root, tmp_path)
     win.method.sk_set.setCurrentText("fake-1-0"); win.refresh_preview()
     win.generate()
@@ -283,7 +285,7 @@ def test_generate_reloads_the_open_file_and_cds_the_terminal(app, quiet, sk_root
     win.workspace.terminal.current.session.write = sent.append
     win.generate()                                                      # overwrite confirmed by the quiet fixture
     assert win.workspace.editor.toPlainText() == text and not win.workspace.editor.dirty
-    assert sent == [f"cd {shlex.quote(str(out))}\r"]
+    assert sent == [f"cd {WorkspacePanel._quoted(out)}\r"]                 # double quotes on Windows
     win.workspace.terminal.current.session = None
     win.close()
 

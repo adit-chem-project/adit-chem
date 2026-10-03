@@ -1052,20 +1052,36 @@ ANALYSIS_PATHS = ("/analysis", "/compare", "/report", "/audit_runs", "/frames.js
 WILDCARD_HOSTS = ("", "0.0.0.0", "::")
 TOKEN_CHARS = re.compile(r"[A-Za-z0-9_-]+")
 _OWN_NAMES: set[str] | None = None
+_FQDN_LOOKUP: threading.Thread | None = None
+_OWN_NAMES_LOCK = threading.Lock()
+
+
+def _add_fqdn() -> None:
+    try:
+        name = socket.getfqdn().lower().rstrip(".")
+    except OSError:
+        return
+    if name:
+        with _OWN_NAMES_LOCK:
+            if _OWN_NAMES is not None:
+                _OWN_NAMES.add(name)
 
 
 def own_host_names() -> set[str]:
-    """This machine's host names, looked up once (getfqdn may ask the DNS)."""
-    global _OWN_NAMES
-    if _OWN_NAMES is None:
-        names = set()
-        for fn in (socket.gethostname, socket.getfqdn):
+    """This machine's host names. getfqdn may wait for a reverse DNS lookup (tens of seconds on some
+    networks), so it runs in the background and a request never waits for it."""
+    global _OWN_NAMES, _FQDN_LOOKUP
+    with _OWN_NAMES_LOCK:
+        if _OWN_NAMES is None:
             try:
-                names.add(fn().lower().rstrip("."))
+                name = socket.gethostname().lower().rstrip(".")
             except OSError:
-                pass
-        _OWN_NAMES = {n for n in names if n}
-    return _OWN_NAMES
+                name = ""
+            _OWN_NAMES = {name} if name else set()
+        if _FQDN_LOOKUP is None:
+            _FQDN_LOOKUP = threading.Thread(target=_add_fqdn, name="adit-fqdn", daemon=True)
+            _FQDN_LOOKUP.start()
+        return set(_OWN_NAMES)
 
 
 def split_authority(value: str) -> tuple[str, int | None] | None:
@@ -1879,6 +1895,7 @@ def serve(app: WebApp, host: str = "127.0.0.1", port: int = 8765, open_browser: 
           token: str | None = None) -> ThreadingHTTPServer:
     cls = _ThreadingHTTPServer6 if ":" in host else ThreadingHTTPServer
     httpd = cls((host, port), make_handler(app, token, bound_host=host))
+    own_host_names()   # start the host-name lookup now, not at the first request
     if open_browser:
         threading.Timer(0.5, lambda: webbrowser.open(server_url(browse_host(host), httpd.server_port, token))).start()
     return httpd
