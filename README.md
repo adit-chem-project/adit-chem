@@ -127,7 +127,7 @@ adit
 | [重い解析](docs/HEAVY_ANALYSIS.md) | 大きな軌跡を計算機で処理する |
 | [Python API](docs/API.md) | ライブラリとして使う |
 
-## ライセンス
+## License
 
-[MIT](LICENSE) です。`examples/` と `tests/data/` に含まれる他プロジェクト由来のファイルは、
-元のライセンスのままです ([一覧](THIRD_PARTY_NOTICES.md))。
+ADIT is released under the [MIT License](LICENSE).
+Third-party files in `examples/` and `tests/data/` keep their original licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
