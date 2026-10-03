@@ -79,8 +79,14 @@ def test_npt_units_and_minimize(sk_root, pot):
     inp = build_project(cu(pot, task=Task(type="molecular_dynamics", md=md)), cfg_for(sk_root)).texts["in.lammps"]
     assert "fix pstat all press/berendsen iso 1.01325 1.01325 1" in inp
     opt = Task(type="geometry_optimization", optimizer="FIRE", max_steps=50, force_tolerance_ev_per_ang=0.1, relax_cell="shape_and_volume")
+    with pytest.raises(ProjectError, match="min_style fire"):  # LAMMPS: fire does not support fix box/relax
+        build_project(cu(pot, m={"units": "real"}, task=opt), cfg_for(sk_root))
+    opt.relax_cell = "no"
     inp = build_project(cu(pot, m={"units": "real"}, task=opt), cfg_for(sk_root)).texts["in.lammps"]
-    assert "fix relax all box/relax aniso 0.0" in inp and "min_style fire" in inp and "minimize 0.0 2.306054783 50 500" in inp
+    assert "box/relax" not in inp and "min_style fire" in inp and "minimize 0.0 2.306054783 50 500" in inp
+    opt.relax_cell = "shape_and_volume"; opt.optimizer = "Rational"
+    inp = build_project(cu(pot, m={"units": "real"}, task=opt), cfg_for(sk_root)).texts["in.lammps"]
+    assert "fix relax all box/relax aniso 0.0" in inp and "min_style cg" in inp
     opt.relax_cell = "volume_only"; opt.optimizer = "Rational"
     inp = build_project(cu(pot, task=opt), cfg_for(sk_root)).texts["in.lammps"]
     assert "fix relax all box/relax iso 0.0" in inp and "min_style cg" in inp and "minimize 0.0 0.1 50 500" in inp

@@ -172,7 +172,14 @@ def write_sella(spec: CalculationSpec, cfg, out_dir: Path | str, *, irc: bool = 
     batch.check_output(out, overwrite)
     buf = io.StringIO()
     write(buf, spec.atoms, format="extxyz")
-    exe = profile.command_for("mlip" if spec.method.code == "mlip" else "python", "python3").format(mpiprocs=spec.runtime.mpiprocs, omp_threads=spec.runtime.omp_threads, binary="")
+    from adit.codes.base import command_values
+
+    template = profile.command_for("mlip" if spec.method.code == "mlip" else "python", "python3")
+    try:
+        exe = template.format(**command_values(spec))
+    except (KeyError, IndexError, ValueError) as ex:
+        raise TsError(L(f"実行コマンド {template!r} に埋められない {{...}} があります ({ex})。使えるのは {{mpiprocs}} {{ntasks}} {{omp_threads}} {{binary}} です",
+                        f"the run command {template!r} has a placeholder that cannot be filled ({ex}); the available ones are {{mpiprocs}} {{ntasks}} {{omp_threads}} {{binary}}")) from ex
     pkg = "tblite" if settings["calculator"]["kind"] == "tblite" else {"chgnet": "chgnet"}.get(settings["calculator"].get("model_family"), "mace-torch")
     readme = [
         L(f"ADIT {__version__} が生成した、ASE + Sella の遷移状態の探索{'と IRC' if irc else ''}のスクリプトです (ADIT は Sella に依存しません)",

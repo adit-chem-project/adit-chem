@@ -52,8 +52,8 @@ was changed or is missing, so it can gate a script.
 carried into every code. To compare only the settings that were actually written, use `adit-convert verify <directory>`.
 
 単位は欄の名前の末尾から引きます (`_ha` → Hartree、`_ev_per_ang` → eV/Å、`_fs` → fs、`_k` → K …)。
-`method.*` の値が 0 の欄は、ADIT では「指定しない (入力に書かない)」の意味なので表に出しません
-(乱数の種だけは 0 も値として出します)。
+`method.*` の欄のうち、0 が「指定しない (入力に書かない)」の意味になるもの (カットオフ、バンド数、メモリ量、双極子補正の位置など) は、
+値が 0 のとき表に出しません。0 に意味がある欄 (VASP の `ismear = 0` や `ibrion = 0`、xtb の `md_shake = 0` など) と乱数の種は、0 でも出します。
 
 ## ファイルの照合 (`--check`)
 

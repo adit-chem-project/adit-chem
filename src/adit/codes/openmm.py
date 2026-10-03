@@ -6,7 +6,7 @@ from pathlib import Path
 
 from adit.codes.amber import _prmtop_natoms, _rst7_natoms
 from adit.citations import Citation
-from adit.codes.base import GenerationError, InputGenerator, ReadmeNotes, register
+from adit.codes.base import GenerationError, InputGenerator, ReadmeNotes, command_values, register
 from adit.codes.gromacs import _gro_atom_count, gmx_top_dir, scan_includes
 from adit.codes.plumed import PLUMED_FILE, output_lines as plumed_outputs, plumed_text, readme_lines as plumed_prepare
 from adit.config import Config, Profile
@@ -348,7 +348,7 @@ class OpenmmGenerator(InputGenerator):
         return {"input_format": m.input_format,
                 "topology_file": TOP_NAME.get(m.input_format, "topology"),
                 "coordinates_file": CONF_NAME.get(m.input_format, "coordinates"),
-                "include_dir": m.include_dir.strip(), "defines": dict(m.defines),
+                "include_dir": str(Path(m.include_dir).expanduser().resolve()) if m.include_dir.strip() else "", "defines": dict(m.defines),
                 "nonbonded_method": m.nonbonded_method, "nonbonded_cutoff_nm": m.nonbonded_cutoff_nm,
                 "constraints": m.constraints, "rigid_water": m.rigid_water,
                 "periodic": bool(m.nonbonded_method in PERIODIC_METHODS),
@@ -382,8 +382,7 @@ class OpenmmGenerator(InputGenerator):
         return out
 
     def run_command(self, spec: CalculationSpec, profile: Profile) -> str:
-        exe = profile.command_for(self.code, DEFAULT_COMMAND).format(
-            mpiprocs=spec.runtime.mpiprocs, omp_threads=spec.runtime.omp_threads, binary="")
+        exe = profile.command_for(self.code, DEFAULT_COMMAND).format(**command_values(spec))
         return f"{exe} {SCRIPT_FILE} > output.log 2>&1"
 
     # ---- README ----

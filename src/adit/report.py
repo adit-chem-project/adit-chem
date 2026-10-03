@@ -8,11 +8,13 @@ import csv
 import io
 import json
 import shutil
+import sys
 import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from adit import lang
+from adit.config import ConfigError, env_var, load_config
 from adit.lang import L
 from adit.provenance import read_provenance, sha256_file, verify_inputs
 
@@ -37,6 +39,22 @@ _SKIP_METHOD_FIELDS = ("code",)
 _TASK_FIELDS = ("type", "max_steps", "force_tolerance_ev_per_ang", "relax_cell", "optimizer")
 _MD_FIELDS = ("ensemble", "thermostat", "temperature_k", "timestep_fs", "steps", "dump_interval",
               "coupling_time_fs", "pressure_bar", "barostat_time_fs")
+# Method fields whose value 0 means "not specified" (the generator then writes nothing). Other zeros are real
+# settings and stay in the table: VASP ismear = 0 (Gaussian smearing) or ibrion = 0 (MD), xtb md_shake = 0 (no SHAKE).
+_ZERO_MEANS_UNSET = frozenset({
+    "filling_temperature",                                                      # DFTB+
+    "encut", "nelmin", "lmaxmix", "nbands", "idipol",                           # VASP
+    "ecutwfc", "ecutrho", "degauss", "dipole_direction", "dipole_maxpos", "dipole_decrease", "dipole_amplitude",  # QE
+    "maxcore_mb", "ts_recalc_hess", "irc_max_iter",                             # ORCA
+    "ngauss",                                                                   # GAMESS
+    "energycutoff_ry",                                                          # OpenMX
+    "cutoff_ang", "pairlistdist_ang", "switchdist_ang",                         # Amber / NAMD
+    "memory_mb",                                                                # Psi4
+    "ecut_ha", "pawecutdg_ha", "tolerance_value", "tsmear_ha",                  # ABINIT
+    "nonbonded_cutoff_nm",                                                      # OpenMM
+    "cutoff_ry", "rel_cutoff_ry", "isolated_box_ang", "sccs_relative_permittivity",  # CP2K
+    "compressibility_per_bar",                                                  # GROMACS
+})
 
 
 class ReportError(AditValueError):
@@ -52,6 +70,7 @@ class RunReport:
     code_version: str = ""
     analysis_summary: str = ""
     notes: list[str] = field(default_factory=list)
+    input_files: list[str] | None = field(default=None, repr=False)
 
     @property
     def code(self) -> str:
@@ -144,7 +163,7 @@ def condition_rows(report: RunReport, machine: bool = False) -> list[tuple[str, 
     for name, value in method.items():
         if name in _SKIP_METHOD_FIELDS or _is_empty(value):
             continue
-        if isinstance(value, (int, float)) and not isinstance(value, bool) and value == 0 and "seed" not in name:
+        if isinstance(value, (int, float)) and not isinstance(value, bool) and value == 0 and name in _ZERO_MEANS_UNSET:
             continue
         rows.append((f"method.{name}", _value_text(value, machine), _unit_of(name, spec)))
     task = spec.task.model_dump(mode="json")
@@ -202,10 +221,12 @@ def _pw_in_pseudos(run_dir: Path) -> set[str]:
 
 
 def parameter_rows(report: RunReport) -> list[tuple[str, str, str]]:
+    from adit.project import BACKUP_DIR
+
     d = report.run_dir
     rows: list[tuple[str, str, str]] = []
     for path in sorted(d.rglob("*")):
-        if not path.is_file():
+        if not path.is_file() or path.relative_to(d).parts[0] == BACKUP_DIR:
             continue
         name = path.relative_to(d).as_posix()
         if path.suffix.upper() == ".UPF":
@@ -450,13 +471,13 @@ def methods_section(reports: list[RunReport]) -> list[str]:
         if rows:
             lines += [L("### 条件 (spec.json に記録された値)", "### Settings (as recorded in spec.json)"), ""]
             lines += _table((L("項目", "Field"), L("値", "Value"), L("単位", "Unit")), rows)
-            lines += [L("空欄の項目と、値が 0 の方法の欄 (ADIT では「指定しない」の意味) は出していません。"
+            lines += [L("空欄の項目と、0 が「指定しない (入力に書かない)」の意味になる方法の欄 (カットオフなど) は出していません。"
                         "**この表は `spec.json` の記録であって、計算コードの入力に実際に書かれたかは別です** "
                         "(共通の欄には、そのコードへ写されないものがあります)。実際に書かれた項目だけを照合するには "
                         "`adit-convert verify <ディレクトリ>` を使ってください "
                         "(読み戻して照合できるのは VASP・Quantum ESPRESSO・LAMMPS・GROMACS の入力だけです。"
                         "ほかのコードでは「未確認」となり、それは計算に問題があることを意味しません)。",
-                        "Empty fields and method fields equal to 0 (which means 'not specified' here) are omitted. "
+                        "Empty fields, and method fields whose value 0 means 'not specified' (cutoffs and the like, which are then not written), are omitted. "
                         "**This table is what `spec.json` records, not proof of what was written into the code's input** "
                         "(some shared fields are not carried into every code). To compare only the settings that were actually "
                         "written, use `adit-convert verify <directory>` (only VASP, Quantum ESPRESSO, LAMMPS and GROMACS inputs can be "
@@ -653,11 +674,17 @@ def results_csv(reports: list[RunReport]) -> str:
 
 
 def input_names(report: RunReport) -> list[str]:
+    if report.input_files is None:
+        report.input_files = _input_names(report)
+    return list(report.input_files)
+
+
+def _input_names(report: RunReport) -> list[str]:
+    # Called once per report (cached above), so the notes below are written once.
     recorded = [item["name"] for item in (report.provenance.get("inputs") or [])]
     if recorded:
         return recorded
     try:
-        from adit.config import load_config
         from adit.project import build_project
 
         names = sorted(build_project(report.spec, load_config()).texts)
@@ -668,6 +695,23 @@ def input_names(report: RunReport) -> list[str]:
     report.notes.append(L("入力の照合用のハッシュの記録が無いので、spec.json から作り直して入力ファイルの名前だけを求めました (中身は突き合わせていません)",
                           "the input fingerprints are not recorded, so the input file names were obtained by rebuilding from spec.json (the contents were not compared)"))
     return [n for n in names if (report.run_dir / n).is_file()]
+
+
+def bundle_dir_names(reports: list[RunReport]) -> list[str]:
+    # Runs that share a basename are told apart by the name of their parent directory.
+    base = [r.run_dir.name for r in reports]
+    names = list(base)
+    for i, r in enumerate(reports):
+        if base.count(r.run_dir.name) > 1:
+            parent = Path(r.run_dir).expanduser().resolve().parent.name
+            names[i] = f"{parent}__{r.run_dir.name}" if parent else r.run_dir.name
+    dup = sorted({n for n in names if names.count(n) > 1})
+    if dup:
+        raise ReportError(L(f"計算ディレクトリの名前が重なっていて、再現パッケージの中で区別できません: {', '.join(dup)} (親ディレクトリの名前も同じです)。"
+                            "片方を別の場所に置くか、1 つずつパッケージにしてください",
+                            f"run directories share a name and cannot be told apart inside the package: {', '.join(dup)} (their parent directories are named alike too); "
+                            "move one of them or package them one at a time"))
+    return names
 
 
 def bundle_files(report: RunReport) -> list[str]:
@@ -688,7 +732,7 @@ def manifest(reports: list[RunReport]) -> dict:
     from adit import __version__
 
     runs = []
-    for report in reports:
+    for report, package_dir in zip(reports, bundle_dir_names(reports)):
         checks = {item["name"]: item for item in verify_inputs(report.run_dir)}
         files = []
         for name in bundle_files(report):
@@ -697,7 +741,7 @@ def manifest(reports: list[RunReport]) -> dict:
                 entry["recorded_sha256"] = checks[name]["recorded"]
                 entry["state"] = checks[name]["state"]
             files.append(entry)
-        runs.append({"run_dir": str(report.run_dir), "code": report.code,
+        runs.append({"run_dir": str(report.run_dir), "package_dir": package_dir, "code": report.code,
                      "code_version": report.code_version, "provenance": report.provenance,
                      "files": files, "not_on_record": report.notes})
     return {"adit_version": __version__, "runs": runs,
@@ -710,6 +754,7 @@ def write_bundle(reports: list[RunReport], dest: Path | str, *, language: str = 
     if out.exists():
         raise ReportError(L(f"すでにあります: {out} (別の名前を指定してください。上書きはしません)",
                             f"already exists: {out} (choose another name; nothing is overwritten)"))
+    dir_names = bundle_dir_names(reports)
     methods = methods_markdown(reports, language)
     data = json.dumps(manifest(reports), indent=2, ensure_ascii=False) + "\n"
     bib = references_bibtex(reports)
@@ -718,16 +763,16 @@ def write_bundle(reports: list[RunReport], dest: Path | str, *, language: str = 
             zf.writestr(METHODS_FILE, methods)
             zf.writestr(MANIFEST_FILE, data)
             zf.writestr(BIB_FILE, bib)
-            for report in reports:
+            for report, dir_name in zip(reports, dir_names):
                 for name in bundle_files(report):
-                    zf.write(report.run_dir / name, f"{report.run_dir.name}/{name}")
+                    zf.write(report.run_dir / name, f"{dir_name}/{name}")
         return out
     out.mkdir(parents=True)
     (out / METHODS_FILE).write_text(methods, encoding="utf-8")
     (out / MANIFEST_FILE).write_text(data, encoding="utf-8")
     (out / BIB_FILE).write_text(bib, encoding="utf-8")
-    for report in reports:
-        target = out / report.run_dir.name
+    for report, dir_name in zip(reports, dir_names):
+        target = out / dir_name
         for name in bundle_files(report):
             (target / name).parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(report.run_dir / name, target / name)
@@ -785,7 +830,17 @@ def check_lines(report: RunReport) -> tuple[list[str], str]:
 
 
 # ---------------- CLI ----------------
+def _apply_configured_language() -> None:
+    # ADIT_LANG wins; a missing or broken settings file must not stop the command.
+    try:
+        cfg = load_config()
+    except (ConfigError, OSError):
+        return
+    lang.set_language(env_var("LANG", cfg.language))
+
+
 def main(argv: list[str] | None = None) -> int:
+    _apply_configured_language()
     p = argparse.ArgumentParser(
         prog="adit-report",
         description=L("ADIT が生成した計算ディレクトリから、方法の節・条件の表・入力の照合用のハッシュを書き出します",
@@ -810,7 +865,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         reports = [load_run_report(d) for d in args.run_dirs]
     except ReportError as ex:
-        print(str(ex))
+        print(str(ex), file=sys.stderr)
         return 2
     if args.check:
         verdicts = []
@@ -840,7 +895,7 @@ def main(argv: list[str] | None = None) -> int:
             print(L(f"文献 (BibTeX) を書きました: {args.bib}", f"wrote the references (BibTeX): {args.bib}"))
         text = methods_markdown(reports, args.lang)
     except ReportError as ex:
-        print(str(ex))
+        print(str(ex), file=sys.stderr)
         return 2
     if args.out:
         Path(args.out).expanduser().write_text(text, encoding="utf-8")

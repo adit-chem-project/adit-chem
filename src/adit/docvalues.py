@@ -243,23 +243,28 @@ class DocSetting:
     retrieved: str
     note: str = ""
     note_en: str = ""
+    source_en: str = ""
 
 
 _VASP_PHONON_SRC = ("VASP tutorial: Phonons — Part 1 (Graphene) の INCAR の例",
                     "https://www.vasp.at/tutorials/latest/phonon/part1/", "2026-09-12")
+_VASP_PHONON_SRC_EN = "the INCAR example in the VASP tutorial Phonons — Part 1 (Graphene)"
 DOCUMENTED_SETTINGS: list[DocSetting] = [
     DocSetting("vasp", ("vibrations",), "vasp_incar", "prec", "PREC", "Accurate", *_VASP_PHONON_SRC,
                "2 階微分には精度の高い力が要る、と wiki の「Phonons from finite differences」にも書かれています",
-               "the wiki page 'Phonons from finite differences' also states that accurate forces are needed for the second derivatives"),
+               "the wiki page 'Phonons from finite differences' also states that accurate forces are needed for the second derivatives",
+               source_en=_VASP_PHONON_SRC_EN),
     DocSetting("vasp", ("vibrations",), "vasp_incar", "ediff", "EDIFF", "1e-8", *_VASP_PHONON_SRC,
                "電子の収束が甘いと力が不正確になる (文書の言葉では spurious convergence を避けるため)",
-               "if the electronic convergence is too loose the forces are imprecise (the text speaks of avoiding a spurious convergence)"),
+               "if the electronic convergence is too loose the forces are imprecise (the text speaks of avoiding a spurious convergence)",
+               source_en=_VASP_PHONON_SRC_EN),
     DocSetting("vasp", ("vibrations",), "vasp_incar", "nelmin", "NELMIN", "5", *_VASP_PHONON_SRC,
                "イオンの 1 ステップあたり最低 5 回は電子の反復を回す",
-               "at least 5 electronic iterations per ionic step"),
+               "at least 5 electronic iterations per ionic step", source_en=_VASP_PHONON_SRC_EN),
     DocSetting("vasp", ("vibrations",), "vasp_incar", "lreal", "LREAL", ".FALSE.", *_VASP_PHONON_SRC,
                "非常に精度の高い計算では逆空間の投影のままにする、と文書が書いています",
-               "the text says to keep the reciprocal-space projection scheme for very accurate calculations"),
+               "the text says to keep the reciprocal-space projection scheme for very accurate calculations",
+               source_en=_VASP_PHONON_SRC_EN),
 ]
 
 
@@ -276,7 +281,8 @@ def format_settings(settings: list[DocSetting]) -> str:
                  "no documented settings are on file for this code")
     head = L("計算コードの公式の文書に、例として書かれている設定 (ADIT の推奨ではありません):",
              "settings written as examples in the official documentation of the code (not recommendations by ADIT):")
-    lines = [f"  {s.key} = {s.value}   ({s.source}、{s.retrieved} 取得)\n      {s.url}" for s in settings]
+    lines = [L(f"  {s.key} = {s.value}   ({s.source}、{s.retrieved} 取得)\n      {s.url}",
+               f"  {s.key} = {s.value}   ({s.source_en or s.source}, retrieved {s.retrieved})\n      {s.url}") for s in settings]
     return "\n".join([head, *lines])
 
 

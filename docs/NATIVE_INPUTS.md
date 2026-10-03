@@ -15,7 +15,9 @@ Use `adit-convert import INPUT_DIR NEW_REVIEW_DIR` from the CLI. If the code can
 | LAMMPS | `in.lammps` + 相対参照 data、明示した metal/real、atomic、p/f 境界、lj/cut、pair_coeff。`run 0` または下記の限定的な NVE/NVT MD。Masses の `# Si` のような元素ラベルが必須。`run 0` or the limited NVE/NVT MD subset below; masses are never used to guess elements. |
 | GROMACS | `grompp.mdp` + `conf.gro` / `.pdb` + `topol.top`。積分法・ステップ・温度・圧力・カットオフを読み、トポロジーは解釈せず依存として記録します。The topology is recorded as a dependency, not interpreted. |
 
-VASP の条件は ENCUT / EDIFF / NELM / ISMEAR / SIGMA / ISPIN / ALGO / PREC / LREAL / NELMIN / LASPH / LMAXMIX / NBANDS / ISYM です。QE は ecutwfc / ecutrho / occupations / smearing / degauss / nspin / input_dft / conv_thr / electron_maxstep / mixing_beta と ATOMIC_SPECIES の擬ポテンシャル名を読みます。
+VASP の条件は ENCUT / EDIFF / NELM / ISMEAR / SIGMA / ISPIN / ALGO / PREC / LREAL / NELMIN / LASPH / LMAXMIX / NBANDS / ISYM です。QE は ecutwfc / ecutrho / occupations / smearing / degauss / nspin / input_dft / conv_thr / electron_maxstep / mixing_beta と ATOMIC_SPECIES の擬ポテンシャル名を読みます。VASP の LREAL / ALGO / PREC に書かれた論理値 (`.FALSE.` など) は文字列のまま保ちます。QE の smearing は pw.x が受け付ける略記 (`gauss`、`mp` / `m-p`、`cold` / `mv` / `m-v`、`fd` / `f-d`) も読み、正式名に揃えます。`tetrahedra_lin` / `tetrahedra_opt` / `from_input` は共通の欄に無いので、読めない項目として記録します。GROMACS の mdp の項目名は、GROMACS と同じく `_` と `-` を区別しません。
+
+VASP logicals written to LREAL / ALGO / PREC (e.g. `.FALSE.`) are kept as text. QE smearing also accepts the pw.x short spellings (`gauss`, `mp` / `m-p`, `cold` / `mv` / `m-v`, `fd` / `f-d`) and stores the long names; `tetrahedra_lin` / `tetrahedra_opt` / `from_input` have no shared field and are reported as unsupported. GROMACS mdp option names treat `_` and `-` alike, as GROMACS does.
 
 ADIT が生成した限定範囲の一点計算も読み込めます。VASP の SYSTEM は題名として extra_incar に保持し、QE の tstress / tprnfor は出力フラグとして extra.control に保持します。QE の prefix / outdir / pseudo_dir は元の配置として `not_applied` に記録し、再生成先や擬ポテンシャルライブラリへ適用しません。これらの参照先を開くこともありません。試験で比べているのは対応付けた項目だけで、計算全体の同等性ではありません。
 

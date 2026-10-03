@@ -15,7 +15,7 @@ import warnings
 from pathlib import Path
 
 from adit import lang
-from adit.config import ConfigError, config_path, ensure_config, env_var
+from adit.config import ConfigError, config_path, ensure_config, env_var, load_config
 from adit.lang import L
 from adit.project import ProjectError, write_project
 from adit.provenance import sha256_file
@@ -462,7 +462,7 @@ def _parser() -> argparse.ArgumentParser:
     dock.add_argument("--asset", action="append", default=[], help=L("追加で複製する、dock.in と同じ作業ディレクトリ内の相対パス",
                                                                 "additional relative path inside the dock.in working directory to copy"))
     native = sub.add_parser("import", help=L("既存の計算入力を読み取り、出典付きの点検記録と下書きの計算設定 (draft_spec.json) を作ります",
-                                              "inspect existing native input and write a sourced report and draft spec"))
+                                              "inspect existing native input and write a sourced report and a draft spec (draft_spec.json)"))
     native.add_argument("source", help=L("既存の入力ディレクトリまたは主入力ファイル",
                                           "existing input directory or primary input file"))
     native.add_argument("output", help=L("新しい点検記録の出力先ディレクトリ", "new audit-report directory"))
@@ -486,12 +486,22 @@ def _parser() -> argparse.ArgumentParser:
         "omit initial velocities and record the omission in the conversion report"))
     calc.add_argument("--accept-import-defaults", action="store_true", help=L(
         "読み込んだ下書き (draft_spec.json) の既定値のうち、元の入力に無かったものを確認済みとみなして、変換を続けます",
-        "continue after reviewing defaults absent from an imported draft spec"))
+        "continue after reviewing the defaults in an imported draft spec (draft_spec.json) that were absent from the native input"))
     calc.add_argument("--overwrite", action="store_true", help=L("空でない出力ディレクトリを上書きします", "overwrite a non-empty output directory"))
     return ap
 
 
+def _apply_configured_language() -> None:
+    # ADIT_LANG wins; a missing or broken settings file must not stop the command.
+    try:
+        cfg = load_config()
+    except (ConfigError, OSError):
+        return
+    lang.set_language(env_var("LANG", cfg.language))
+
+
 def main(argv: list[str] | None = None) -> int:
+    _apply_configured_language()
     args = _parser().parse_args(argv)
     if args.command in ("crystal", "surface"):
         from ase.io import write as ase_write
@@ -568,7 +578,7 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         if result.spec is None:
             print(L(f"読み取れない条件があります。理由を {dst / 'import_report.json'} に記録しました。下書きの計算設定 (draft_spec.json) は作っていません。",
-                    f"Some settings could not be imported. Reasons are in {dst / 'import_report.json'}; no draft spec was written."), file=sys.stderr)
+                    f"Some settings could not be imported. Reasons are in {dst / 'import_report.json'}; no draft spec (draft_spec.json) was written."), file=sys.stderr)
             issues = [*result.unknown, *result.unsupported]
             for issue in issues[:3]:
                 line_ref = f"{issue.get('file', src)}:{issue.get('line', '?')}"
@@ -580,7 +590,7 @@ def main(argv: list[str] | None = None) -> int:
                         f"  See import_report.json for {len(issues) - 3} more issue(s)."), file=sys.stderr)
             return 1
         print(L(f"点検記録と下書きの計算設定 (draft_spec.json) を {dst} に作りました。既定値と外部パラメータを確認してから使ってください。",
-                f"Wrote an audit report and draft spec in {dst}. Review defaults and external parameters before using it."))
+                f"Wrote an audit report and a draft spec (draft_spec.json) in {dst}. Review defaults and external parameters before using it."))
         return 0
     if args.command == "dock6":
         from adit.dock6 import Dock6Error, package_dock6

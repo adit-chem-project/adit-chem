@@ -9,7 +9,7 @@ import numpy as np
 from ase.data import atomic_numbers
 
 from adit.citations import Citation
-from adit.codes.base import GenerationError, InputGenerator, ReadmeNotes, register
+from adit.codes.base import GenerationError, InputGenerator, ReadmeNotes, command_values, register
 from adit.codes.plumed import PLUMED_FILE, PLUMED_LOG, output_lines as plumed_outputs, plumed_text, readme_lines as plumed_prepare
 from adit.config import Config, Profile
 from adit.lang import L
@@ -21,7 +21,7 @@ DATA_FILE = "data.lammps"
 DUMP_FILE = "traj.lammpstrj"
 FORCES_FILE = "forces.lammpstrj"
 FINAL_DATA = "final.data"
-DEFAULT_COMMAND = "mpirun -np {mpiprocs} lmp"
+DEFAULT_COMMAND = "mpirun -np {ntasks} lmp"
 EV_PER_ANG_IN_KCAL_PER_MOL_ANG = 23.060547830619
 BAR_PER_ATM = 1.01325
 WRITABLE_STYLES = ("atomic", "charge")
@@ -199,7 +199,7 @@ class LammpsGenerator(InputGenerator):
         return out
 
     def run_command(self, spec: CalculationSpec, profile: Profile) -> str:
-        cmd = profile.command_for(self.code, DEFAULT_COMMAND).format(mpiprocs=spec.runtime.mpiprocs, omp_threads=spec.runtime.omp_threads, binary="")
+        cmd = profile.command_for(self.code, DEFAULT_COMMAND).format(**command_values(spec))
         return f"{cmd} -in {INPUT_FILE} -log log.lammps > output.log 2>&1"
 
     def readme_notes(self, spec: CalculationSpec, res, copies) -> ReadmeNotes:

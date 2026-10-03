@@ -166,6 +166,7 @@ def test_namd_nve_copies_user_files(sk_root, tmp_path):
     inp = files.texts["namd.conf"]
     assert "numsteps 100" in inp and "DCDfreq 10" in inp
     assert "switchdist 8" in inp and "parameters parameter_01.prm" in inp
+    assert "paraTypeCharmm on" in inp and inp.index("paraTypeCharmm on") < inp.index("parameters parameter_01.prm")
     assert files.copies["topology.psf"] == psf and files.copies["coordinates.pdb"] == pdb
     assert files.copies["parameter_01.prm"] == prm
     out = tmp_path / "namd_project"

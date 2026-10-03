@@ -66,6 +66,12 @@ class InputGenerator(ABC):
         return {}
 
 
+def command_values(spec: CalculationSpec, *, binary: str = "") -> dict[str, object]:
+    # Values for the {...} placeholders of a run command; ntasks is the MPI process count summed over all nodes.
+    r = spec.runtime
+    return {"mpiprocs": r.mpiprocs, "omp_threads": r.omp_threads, "ntasks": r.nodes * r.mpiprocs, "binary": binary}
+
+
 GENERATORS: dict[str, InputGenerator] = {}
 
 

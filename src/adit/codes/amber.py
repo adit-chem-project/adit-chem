@@ -11,7 +11,7 @@ from pathlib import Path
 
 from ase.geometry import cell_to_cellpar
 
-from adit.codes.base import InputGenerator, ReadmeNotes, register
+from adit.codes.base import InputGenerator, ReadmeNotes, command_values, register
 from adit.config import Config, Profile
 from adit.lang import L
 from adit.spec import AmberMethod, CalculationSpec
@@ -201,8 +201,7 @@ class AmberGenerator(InputGenerator):
                 "coordinates.rst7": Path(m.coordinates_file).expanduser()}
 
     def run_command(self, spec: CalculationSpec, profile: Profile) -> str:
-        exe = profile.command_for(self.code, "sander").format(
-            mpiprocs=spec.runtime.mpiprocs, omp_threads=spec.runtime.omp_threads, binary="")
+        exe = profile.command_for(self.code, "sander").format(**command_values(spec))
         return f"{exe} -O -i amber.in -o output.log -p topology.prmtop -c coordinates.rst7 -r final.rst7"
 
     def readme_notes(self, spec: CalculationSpec, res: None, copies: dict[str, Path]) -> ReadmeNotes:

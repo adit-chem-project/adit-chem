@@ -14,7 +14,7 @@ from pathlib import Path
 
 from ase.data import atomic_numbers
 
-from adit.codes.base import InputGenerator, ReadmeNotes, register
+from adit.codes.base import InputGenerator, ReadmeNotes, command_values, register
 from adit.config import Config, Profile
 from adit.lang import L
 from adit.spec import CalculationSpec, GaussianMethod, GamessMethod, QchemMethod, GrrmMethod
@@ -73,8 +73,7 @@ def _parallel_error(spec: CalculationSpec, cfg: Config, code: str) -> list[Valid
 
 
 def _format_command(spec: CalculationSpec, profile: Profile, code: str, default: str) -> str:
-    return profile.command_for(code, default).format(
-        mpiprocs=spec.runtime.mpiprocs, omp_threads=spec.runtime.omp_threads, binary="")
+    return profile.command_for(code, default).format(**command_values(spec))
 
 
 class GaussianGenerator(InputGenerator):

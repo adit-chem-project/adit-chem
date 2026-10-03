@@ -412,7 +412,8 @@ def _orthogonal_matrix(cell: np.ndarray, max_multiple: int, nmax: int = 3) -> np
 
 def op_box(atoms: Atoms, st: Box) -> Atoms:
     a = prepared(atoms)
-    if not any(a.pbc) or abs(np.linalg.det(np.asarray(a.cell))) < 1e-6 and not all(a.pbc):
+    # Only a nonperiodic structure gets a box from its extent; a slab without vacuum (zero c vector) must keep its lattice.
+    if not any(a.pbc):
         if st.padding < 0:
             raise RecipeError(L("padding は 0 以上です", "padding must be >= 0"))
         ext = np.ptp(a.positions, axis=0)
@@ -427,9 +428,13 @@ def op_box(atoms: Atoms, st: Box) -> Atoms:
                 raise RecipeError(L("padding を 0 より大きくしてください (1 原子の構造の箱の大きさが 0 になります)", "padding must be positive for a single atom"))
         a.set_cell(np.diag(size)); a.pbc = (True, True, True); a.center()
         return a
-    if not all(a.pbc):
-        raise RecipeError(L("一部の方向だけ周期の構造です。先に vacuum でその方向に真空を置いてください", "the structure is periodic in only some directions; add vacuum first"))
     cell = np.asarray(a.cell)
+    if abs(np.linalg.det(cell)) < 1e-6:
+        raise RecipeError(L("セルの体積が 0 です (周期でない方向のセルベクトルの長さが 0。真空の無いスラブなど)。その方向に真空を含むセルを持つ構造を読み込んでください",
+                            "the cell has zero volume (a cell vector of zero length in a nonperiodic direction, e.g. a slab without vacuum); "
+                            "load a structure whose cell includes vacuum in that direction"))
+    # A slab with vacuum is handled as periodic in all three directions, which the orthogonal box is anyway.
+    a.pbc = (True, True, True)
     P = _orthogonal_matrix(cell, st.max_multiple)
     if P is None:
         raise RecipeError(L(f"元のセルの {st.max_multiple} 倍までに、直交する格子の取り方が見つかりません。max_multiple を大きくしてください",
@@ -585,7 +590,8 @@ def op_solvate(atoms: Atoms, st: Solvate) -> Atoms:
         if n <= 0:
             raise RecipeError(L(f"箱 ({' × '.join(f'{x:.1f}' for x in np.linalg.norm(cell, axis=1))} Å) が溶質だけで密度 {st.density_g_cm3} g/cm³ に達し、"
                                 f"{mols[k][0].get_chemical_formula()} を入れる余地がありません。padding を大きくしてください",
-                                f"the box is already at {st.density_g_cm3} g/cm3 with the solute alone; no room for {mols[k][0].get_chemical_formula()}. Increase padding"))
+                                f"the box ({' × '.join(f'{x:.1f}' for x in np.linalg.norm(cell, axis=1))} Å) is already at {st.density_g_cm3} g/cm3 with the solute alone; "
+                                f"no room for {mols[k][0].get_chemical_formula()}. Increase padding"))
         mols[k] = (mols[k][0], n)
     if sum(n for _, n in mols) <= 0:
         raise RecipeError(L("個数が 0 です", "the counts are all zero"))
@@ -611,7 +617,7 @@ def op_fix(atoms: Atoms, st: Fix) -> Atoms:
     if st.bottom_layers > 0:
         layers = planes(a.positions[:, 2], st.layer_tolerance)
         if st.bottom_layers > len(layers):
-            raise RecipeError(L(f"層は {len(layers)} 枚しかありません (z の差 {st.layer_tolerance} Å で分けたとき)", f"there are only {len(layers)} layers"))
+            raise RecipeError(L(f"層は {len(layers)} 枚しかありません (z の差 {st.layer_tolerance} Å で分けたとき)", f"there are only {len(layers)} layers (when split by z differences of {st.layer_tolerance} Å)"))
         mb = np.zeros(len(a), dtype=bool)
         mb[np.concatenate(layers[:st.bottom_layers])] = True
         m &= mb

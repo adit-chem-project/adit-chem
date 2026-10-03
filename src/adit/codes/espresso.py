@@ -11,7 +11,7 @@ from ase.io.espresso import write_espresso_in
 
 from adit.bandpath import KPATH_FILE, band_path, kpath_json, qe_crystal_b
 from adit.citations import Citation
-from adit.codes.base import GenerationError, InputGenerator, ReadmeNotes, register
+from adit.codes.base import GenerationError, InputGenerator, ReadmeNotes, command_values, register
 from adit.codes.upf import UpfError, UpfLibrary
 from adit.config import Config, Profile
 from adit.spec import CalculationSpec, EspressoMethod
@@ -23,7 +23,7 @@ INPUT_FILE = "pw.in"
 PH_FILE = "ph.in"
 DYNMAT_FILE = "dynmat.in"
 PSEUDO_SUBDIR = "pseudo"
-DEFAULT_COMMAND = "mpirun -np {mpiprocs} pw.x"
+DEFAULT_COMMAND = "mpirun -np {ntasks} pw.x"
 RY_PER_BOHR_IN_EV_PER_ANG = 25.71104309541616  # 1 Ry/Bohr = 25.711 eV/Å
 CELL_DOFREE = {"shape_and_volume": "all", "volume_only": "volume"}
 
@@ -239,7 +239,7 @@ class EspressoGenerator(InputGenerator):
         return out
 
     def run_command(self, spec: CalculationSpec, profile: Profile) -> str:
-        cmd = profile.command_for(self.code, DEFAULT_COMMAND).format(mpiprocs=spec.runtime.mpiprocs, omp_threads=spec.runtime.omp_threads, binary="")
+        cmd = profile.command_for(self.code, DEFAULT_COMMAND).format(**command_values(spec))
         if spec.task.type == "vibrations":
             ph = cmd.replace("pw.x", "ph.x")
             return f"{cmd} -in {INPUT_FILE} > output.log 2>&1 && {ph} -in {PH_FILE} > ph.log 2>&1 && dynmat.x < {DYNMAT_FILE} > dynmat.log 2>&1"

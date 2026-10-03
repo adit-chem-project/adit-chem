@@ -278,3 +278,20 @@ def test_csvr_period_is_a_number_of_md_steps(cfg_pp, coupling_fs, timestep_fs, p
     inc = build_project(spec, cfg_pp).texts["INCAR"]
     assert "MDALGO = 5" in inc and f"CSVR_PERIOD = {period}\n" in inc
     assert f"POTIM = {timestep_fs:g}" in inc
+
+
+def test_extra_incar_replaces_generated_tags_instead_of_repeating_them(cfg_pp):
+    spec = si_spec(method=VaspMethod(encut=240, ismear=0, sigma=0.1, extra_incar={"ISIF": 2, "nelm": 99, "ISTART": 0}))
+    inc = build_project(spec, cfg_pp).texts["INCAR"]
+    tags = [line.split("=", 1)[0].strip() for line in inc.splitlines() if "=" in line and not line.startswith("#")]
+    assert tags.count("ISIF") == 1 and tags.count("NELM") == 1 and tags.count("ISTART") == 1
+    assert "NELM = 99" in inc and "NELM = 60" not in inc and "ISMEAR = 0" in inc
+
+
+def test_default_command_counts_processes_over_all_nodes(sk_root):
+    from adit.config import Profile
+
+    spec = h2o_spec(runtime=Runtime(profile="local", nodes=2, ncpus=8, mpiprocs=8, omp_threads=1, job_name="h2o"))
+    assert "mpirun -np 16 vasp_std" in gen.run_command(spec, Profile(kind="direct"))
+    custom = Profile(kind="direct", commands={"vasp": "mpirun -np {mpiprocs} --map-by node vasp_{binary}"})
+    assert "mpirun -np 8 --map-by node vasp_std" in gen.run_command(spec, custom)

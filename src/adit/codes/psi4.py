@@ -7,7 +7,7 @@ from pathlib import Path
 from ase.data import atomic_numbers
 
 from adit.citations import Citation
-from adit.codes.base import InputGenerator, ReadmeNotes, register
+from adit.codes.base import InputGenerator, ReadmeNotes, command_values, register
 from adit.config import Config, Profile
 from adit.lang import L
 from adit.spec import CalculationSpec, Psi4Method
@@ -150,8 +150,7 @@ class Psi4Generator(InputGenerator):
 
     def run_command(self, spec: CalculationSpec, profile: Profile) -> str:
         r = spec.runtime
-        exe = profile.command_for(self.code, DEFAULT_COMMAND).format(
-            mpiprocs=r.mpiprocs, omp_threads=r.omp_threads, binary="")
+        exe = profile.command_for(self.code, DEFAULT_COMMAND).format(**command_values(spec))
         return f"{exe} -i {INPUT_FILE} -o output.log -n {r.omp_threads} > stdout.log 2>&1"
 
     def version_probe(self, spec):

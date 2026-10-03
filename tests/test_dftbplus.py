@@ -133,3 +133,39 @@ def test_real_run_matches_tutorial(tmp_path):
     assert abs(a.get_distance(0, 1) - ref.get_distance(0, 1)) < 1e-3
     assert abs(a.get_angle(1, 0, 2) - ref.get_angle(1, 0, 2)) < 0.05
     assert (out / "results.tag").is_file()
+
+
+def c2_spec(**method):
+    from adit.spec import AtomsData, KPoints
+
+    atoms = AtomsData(symbols=["C", "C"], positions=[(0.0, 0.0, 0.0), (1.5, 1.5, 1.5)],
+                      cell=[(3.0, 0.0, 0.0), (0.0, 3.0, 0.0), (0.0, 0.0, 3.0)], pbc=(True, True, True))
+    return water_spec(structure=Structure(source="file", source_ref="c2", atoms=atoms), method=DftbMethod(sk_set="fake-1-0", **method),
+                      task=Task(type="band_structure"), kpoints=KPoints(mode="mesh", mesh=(2, 2, 2)))
+
+
+def test_non_scc_band_structure_does_not_hand_over_charges(sk_root):
+    from adit.config import Profile
+
+    skset = SKSet.from_dir(sk_root / "fake-1-0")
+    profile = Profile(kind="direct")
+    run = gen.run_command(c2_spec(scc=False), profile)
+    assert "charges.bin" not in run and run.endswith("&& cd bands && dftb+ > output.log 2>&1")
+    bands = gen.generate(c2_spec(scc=False), skset)["bands/dftb_in.hsd"]
+    assert "ReadInitialCharges" not in bands and "Scc = No" in bands
+    assert "電荷は引き継がず" in gen.readme_notes(c2_spec(scc=False), skset, {}).files[-1]
+    run = gen.run_command(c2_spec(scc=True), profile)
+    assert "&& cp charges.bin bands/ && cd bands && dftb+" in run
+    assert "ReadInitialCharges = Yes" in gen.generate(c2_spec(scc=True), skset)["bands/dftb_in.hsd"]
+
+
+def test_all_atoms_fixed_is_a_clear_error(sk_root):
+    skset = SKSet.from_dir(sk_root / "fake-1-0")
+    base = water_spec()
+    spec = base.model_copy(update={"structure": base.structure.model_copy(update={"fixed_atoms": [0, 1, 2]})})
+    with pytest.raises(GenerationError, match="MovedAtoms"):
+        gen.generate(spec, skset)
+    with pytest.raises(GenerationError, match="MovedAtoms"):
+        gen.generate(spec.model_copy(update={"task": Task(type="molecular_dynamics")}), skset)
+    partly = base.model_copy(update={"structure": base.structure.model_copy(update={"fixed_atoms": [0, 1]})})
+    assert "MovedAtoms = 3" in gen.generate(partly, skset)["dftb_in.hsd"]

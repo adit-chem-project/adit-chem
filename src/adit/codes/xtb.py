@@ -7,7 +7,7 @@ from pathlib import Path
 from ase.io import write
 
 from adit.citations import Citation
-from adit.codes.base import InputGenerator, ReadmeNotes, register
+from adit.codes.base import InputGenerator, ReadmeNotes, command_values, register
 from adit.config import Config, Profile
 from adit.spec import CalculationSpec, XtbMethod
 from adit.validate import electron_parity_error
@@ -102,7 +102,7 @@ class XtbGenerator(InputGenerator):
 
     def run_command(self, spec: CalculationSpec, profile: Profile) -> str:
         m, st, t = spec.method, spec.structure, spec.task
-        exe = profile.command_for(self.code, DEFAULT_COMMAND).format(mpiprocs=spec.runtime.mpiprocs, omp_threads=spec.runtime.omp_threads, binary="")
+        exe = profile.command_for(self.code, DEFAULT_COMMAND).format(**command_values(spec))
         args = [exe, GEOMETRY_FILE, "--gfnff" if m.gfn == "ff" else f"--gfn {m.gfn}", f"--chrg {st.charge}", f"--uhf {st.multiplicity - 1}",
                 f"--acc {m.accuracy:g}", f"--etemp {m.etemp:g}", f"--input {CONTROL_FILE}", f"--parallel {spec.runtime.omp_threads}"]
         if m.solvation != "none":

@@ -9,7 +9,7 @@ from __future__ import annotations
 import math
 from pathlib import Path
 
-from adit.codes.base import InputGenerator, ReadmeNotes, register
+from adit.codes.base import InputGenerator, ReadmeNotes, command_values, register
 from adit.config import Config, Profile
 from adit.lang import L
 from adit.spec import CalculationSpec, NamdMethod
@@ -156,7 +156,8 @@ class NamdGenerator(InputGenerator):
                  f"temperature {md.temperature_k:.10g}", f"seed {m.seed}",
                  "outputName adit", f"DCDfreq {md.dump_interval}",
                  f"outputEnergies {md.dump_interval}", f"timestep {md.timestep_fs:.10g}"]
-        lines += [f"parameters parameter_{i:02d}.prm" for i in range(1, len(m.parameter_files) + 1)]
+        # The parameter files are CHARMM .prm; NAMD reads X-PLOR format unless told otherwise (User's Guide, paraTypeCharmm).
+        lines += ["paraTypeCharmm on"] + [f"parameters parameter_{i:02d}.prm" for i in range(1, len(m.parameter_files) + 1)]
         lines += [f"exclude {m.exclude}", f"oneFourScaling {m.one_four_scaling:.10g}",
                   f"switching {'on' if m.switching else 'off'}"]
         if m.switching:
@@ -177,8 +178,7 @@ class NamdGenerator(InputGenerator):
         return copies
 
     def run_command(self, spec: CalculationSpec, profile: Profile) -> str:
-        exe = profile.command_for(self.code, "namd3").format(
-            mpiprocs=spec.runtime.mpiprocs, omp_threads=spec.runtime.omp_threads, binary="")
+        exe = profile.command_for(self.code, "namd3").format(**command_values(spec))
         return f"{exe} namd.conf > output.log 2>&1"
 
     def readme_notes(self, spec: CalculationSpec, res: None, copies: dict[str, Path]) -> ReadmeNotes:
@@ -187,6 +187,8 @@ class NamdGenerator(InputGenerator):
             "  namd.conf / topology.psf / coordinates.pdb / parameter_*.prm   NAMD NVE input and user-supplied force field")],
             prepare=[L("  PSF の原子電荷と、PSF・PDB・パラメータの原子順・力場を確認してください。NAMD は初速度を指定した温度と seed から作ります。ADIT は力場を作りません。",
                        "  Check atom order, charges and force field across PSF, PDB and parameter files. NAMD draws initial velocities from the specified temperature and seed. ADIT does not build force fields."),
+                     L("  パラメータファイルは CHARMM 形式として読みます (namd.conf に paraTypeCharmm on を書きます。NAMD の既定は X-PLOR 形式)。",
+                       "  Parameter files are read as CHARMM format (namd.conf sets paraTypeCharmm on; NAMD's default is X-PLOR format)."),
                      L("  NVE では共通 Spec の熱浴・結合時定数・圧力・圧力浴時定数は使いません。",
                        "  NVE does not use the common thermostat, coupling time, pressure, or barostat time.")],
             outputs=[L("  output.log / adit.dcd   NAMD の出力。ADIT はまだ内容を解析しません。",

@@ -8,7 +8,7 @@ from ase.io.vasp import write_vasp
 
 from adit.bandpath import KPATH_FILE, band_path, kpath_json, vasp_line_mode
 from adit.citations import Citation
-from adit.codes.base import GenerationError, InputGenerator, ReadmeNotes, register
+from adit.codes.base import GenerationError, InputGenerator, ReadmeNotes, command_values, register
 from adit.codes.potcar import PotcarError, PotcarLibrary
 from adit.codes.potcar_names import MP_POTCAR_NAMES
 from adit.config import Config, Profile
@@ -22,7 +22,7 @@ PP_ENV = "VASP_PP_PATH"
 POTCAR_SPEC = "potcar.spec"
 MAKE_POTCAR = "make_potcar.sh"
 ISIF_OF = {"no": 2, "shape_and_volume": 3, "volume_only": 7}
-DEFAULT_COMMAND = "mpirun -np {mpiprocs} vasp_{binary}"
+DEFAULT_COMMAND = "mpirun -np {ntasks} vasp_{binary}"
 
 
 def potcar_name(m: VaspMethod, element: str) -> str:
@@ -176,8 +176,7 @@ class VaspGenerator(InputGenerator):
         return ("vasprun.xml", "name=.version.")
 
     def run_command(self, spec: CalculationSpec, profile: Profile) -> str:
-        cmd = profile.command_for(self.code, DEFAULT_COMMAND).format(
-            mpiprocs=spec.runtime.mpiprocs, omp_threads=spec.runtime.omp_threads, binary=spec.method.binary)
+        cmd = profile.command_for(self.code, DEFAULT_COMMAND).format(**command_values(spec, binary=spec.method.binary))
         if spec.task.type == "band_structure":
             return f"bash {MAKE_POTCAR} && {cmd} > output.log 2>&1 && cp CHGCAR POTCAR bands/ && cd bands && {cmd} > output.log 2>&1"
         return f"bash {MAKE_POTCAR} && {cmd} > output.log 2>&1"
@@ -355,8 +354,11 @@ class VaspGenerator(InputGenerator):
         elif t.type == "band_structure":
             lines += ["NSW = 0", "IBRION = -1"]
         if m.extra_incar:
+            extra = {k.strip().upper(): v for k, v in m.extra_incar.items()}
+            # A tag given in extra_incar replaces the generated one; VASP must not see the same tag twice.
+            lines = [l for l in lines if l.startswith("#") or "=" not in l or l.split("=", 1)[0].strip().upper() not in extra]
             lines += ["", "# 追加 (extra_incar。そのまま書く)"]
-            lines += [f"{k.strip().upper()} = {_inc(v)}" for k, v in m.extra_incar.items()]
+            lines += [f"{k} = {_inc(v)}" for k, v in extra.items()]
         return "\n".join(lines) + "\n"
 
     @staticmethod

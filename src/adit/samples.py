@@ -71,10 +71,10 @@ def list_samples() -> list[Sample]:
 
 
 def missing_message() -> str:
-    return L(f"サンプル (examples/) が見つかりません。pip で入れた場合は同梱されないので、"
-             f"ソースを取得してください: {REPO_URL}",
-             f"The samples (examples/) were not found; they are not included in the pip package. "
-             f"Get the source: {REPO_URL}")
+    return L(f"サンプルが見つかりません (パッケージの中にも、ソースの examples/ にもありません)。"
+             f"インストールをやり直すか、ソースを取得してください: {REPO_URL}",
+             f"No samples were found (neither inside the package nor in examples/ next to the source). "
+             f"Reinstall, or get the source: {REPO_URL}")
 
 
 def copy_sample(name: str, destination: Path | str, *, overwrite: bool = False) -> Path:

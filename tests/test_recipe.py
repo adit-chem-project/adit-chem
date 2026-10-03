@@ -12,6 +12,7 @@ from ase.neighborlist import neighbor_list
 
 from adit.builder import (Recipe, RecipeError, build_recipe, file_base, has_op, interface_steps, list_terminations, recipe_structure,
                          salt_count, split_molecules)
+from adit import lang
 from adit.builder.ops import planes
 from adit.mixture import Component, MixtureError, MixtureSpec, build_mixture
 from adit.structure import StructureError, build_structure
@@ -386,3 +387,27 @@ def test_disabled_step_is_skipped_and_only_false_is_written():
     assert len(st.fixed_atoms) == 32
     assert R(AU, _water_layer(enabled=False)).total_charge() == 0
     assert not has_op(rec.steps, "vacuum") and has_op(rec.steps, "fix")
+
+
+def test_box_keeps_the_lattice_of_a_partially_periodic_slab():
+    from adit.builder.model import Box
+    from adit.builder.ops import op_box
+
+    bare = fcc111("Al", size=(2, 2, 3))  # pbc (T, T, F) and a zero c vector, as ASE builds it without vacuum
+    with pytest.raises(RecipeError, match="体積が 0"):
+        op_box(bare, Box())
+    slab = fcc111("Al", size=(2, 2, 3), vacuum=5.0)  # still pbc (T, T, F), but with a proper cell
+    boxed = op_box(slab, Box())
+    assert all(boxed.pbc) and np.allclose(boxed.cell.angles(), 90)
+    assert min(boxed.cell.lengths()) == pytest.approx(slab.cell.lengths()[0]) and len(boxed) % len(slab) == 0
+    assert abs(density(boxed) - density(slab)) < 1e-9
+
+
+def test_english_fix_message_names_the_layer_tolerance():
+    before = lang.LANGUAGE
+    lang.set_language("en")
+    try:
+        with pytest.raises(RecipeError, match=r"when split by z differences of 0\.5 Å"):
+            run(AU, {"op": "fix", "bottom_layers": 99})
+    finally:
+        lang.set_language(before)

@@ -16,6 +16,8 @@ from pathlib import Path
 import re
 import shlex
 
+from pydantic import ValidationError
+
 from adit.lang import L
 from adit.spec import AtomsData, CalculationSpec, Structure
 
@@ -72,7 +74,19 @@ _ISSUE_REASONS_JA = {
     "atom IDs must cover 1..N exactly": "原子 ID は 1 から N までを重複なく指定してください",
     "all atom types require explicit element labels": "全原子タイプに元素ラベルを指定してください",
     "commands differ from the supported generated sequence; options / ordering / initialization cannot be preserved": "コマンドの内容・順序・初期化が対応する生成入力と異なります。そのまま保持できないため読み込みません",
+    "occupations / smearing value without an equivalent in the shared fields (e.g. tetrahedra_lin, tetrahedra_opt, from_input)":
+        "共通の欄に対応のない occupations / smearing の値です (tetrahedra_lin・tetrahedra_opt・from_input など)",
 }
+
+# INCAR tags that are strings in the shared fields; VASP spells their logical values .TRUE. / .FALSE. (wiki LREAL).
+_VASP_STRING_KEYS = {"LREAL", "ALGO", "PREC"}
+# pw.x accepts these spellings (INPUT_PW, &SYSTEM smearing / occupations); the shared fields use the long names.
+_QE_SMEARING = {"gaussian": "gaussian", "gauss": "gaussian",
+                "methfessel-paxton": "methfessel-paxton", "m-p": "methfessel-paxton", "mp": "methfessel-paxton",
+                "marzari-vanderbilt": "marzari-vanderbilt", "cold": "marzari-vanderbilt", "m-v": "marzari-vanderbilt", "mv": "marzari-vanderbilt",
+                "fermi-dirac": "fermi-dirac", "f-d": "fermi-dirac", "fd": "fermi-dirac"}
+_QE_OCCUPATIONS = {"fixed": "fixed", "smearing": "smearing", "tetrahedra": "tetrahedra"}
+_QE_CHOICES = {"smearing": _QE_SMEARING, "occupations": _QE_OCCUPATIONS}
 
 
 @dataclass
@@ -198,6 +212,8 @@ def _vasp(path, result):
                 result.issue(incar, no, raw, "unsupported INCAR syntax")
                 continue
             key, value = match[1].upper(), _scalar(match[2])
+            if key in _VASP_STRING_KEYS and isinstance(value, bool):
+                value = ".TRUE." if value else ".FALSE."
             if key in allowed:
                 method[key.lower()] = value
                 result.record("method." + key.lower(), value, incar, no, raw)
@@ -305,8 +321,13 @@ def _qe(path, result):
                             result.issue(path, no, raw, "duplicate assignment")
                         values[full] = value
                         if key in allowed.get(section, set()):
-                            method[key] = value
-                            result.record("method." + key, value, path, no, raw)
+                            if key in _QE_CHOICES:
+                                value = _QE_CHOICES[key].get(str(value).strip().lower())
+                            if value is None:
+                                result.issue(path, no, raw, "occupations / smearing value without an equivalent in the shared fields (e.g. tetrahedra_lin, tetrahedra_opt, from_input)")
+                            else:
+                                method[key] = value
+                                result.record("method." + key, value, path, no, raw)
                         elif full in {"system.ibrav", "system.nat", "system.ntyp", "control.calculation"}:
                             result.record("native." + full, value, path, no, raw)
                         elif full in {"control.tstress", "control.tprnfor"}:
@@ -599,7 +620,8 @@ def _gromacs(path, result):
             result.issue(mdp_path, no, raw, L("「名前 = 値」の形ではありません", "not of the form name = value"))
             continue
         key, _, value = line.partition("=")
-        key, value = key.strip().lower(), value.strip()
+        # GROMACS ignores the difference between a dash and an underscore in option names (mdp-options).
+        key, value = key.strip().lower().replace("_", "-"), value.strip()
         if key in values:
             result.issue(mdp_path, no, raw, L("同じ項目が重複して指定されています", "duplicate assignment"))
         values[key] = (value, no, raw)
@@ -743,6 +765,11 @@ def import_native(source: Path | str, code: str | None = None) -> NativeImportRe
         {"vasp": _vasp, "espresso": _qe, "lammps": _lammps, "gromacs": _gromacs}[code](path, result)
     except NativeImportError as exc:
         result.issue(path, 1, "", str(exc))
+        result.spec = None
+    except ValidationError as exc:
+        from adit.validate_types import friendly_pydantic
+        result.issue(path, 1, "", L("読み取った値を共通の欄に入れられません: ", "the imported values do not fit the shared fields: ") + friendly_pydantic(exc))
+        result.unsupported[-1]["detail"] = str(exc)
         result.spec = None
     except (OSError, UnicodeError, ValueError, KeyError, IndexError, TypeError, StopIteration) as exc:
         result.issue(path, 1, "", L(

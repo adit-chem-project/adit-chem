@@ -194,3 +194,13 @@ def test_abinit_real_run_relaxation(sk_root, tmp_path):
     assert 2.2 < d < 2.5
     summary = summarize_run(out)
     assert summary.converged is True and summary.geometry_steps == len(run.energies_ev)
+
+
+def test_gamma_only_writes_a_zero_shift(pseudo):
+    from adit.codes.abinit import AbinitGenerator
+
+    text = AbinitGenerator().generate(spec_for(pseudo, kpoints=KPoints(mode="gamma", shift=(0.5, 0.5, 0.5))), None)["input.abi"]
+    v = variables(text)
+    assert v["ngkpt"] == ["1", "1", "1"] and v["shiftk"] == ["0", "0", "0"]
+    v = variables(AbinitGenerator().generate(spec_for(pseudo, kpoints=KPoints(mode="mesh", mesh=(2, 2, 2), shift=(0.5, 0.5, 0.5))), None)["input.abi"])
+    assert v["shiftk"] == ["0.5", "0.5", "0.5"]

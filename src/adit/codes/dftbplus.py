@@ -8,7 +8,7 @@ from ase.io import write
 
 from adit.bandpath import KPATH_FILE, band_path, dftb_klines, kpath_json
 from adit.citations import Citation
-from adit.codes.base import GenerationError, InputGenerator, ReadmeNotes, register
+from adit.codes.base import GenerationError, InputGenerator, ReadmeNotes, command_values, register
 from adit.codes.sk_sets import SKSet, SKSetError, discover_sets
 from adit.config import Config, Profile
 from adit.spec import CalculationSpec, DftbMethod
@@ -191,9 +191,11 @@ class DftbPlusGenerator(InputGenerator):
         return out
 
     def run_command(self, spec: CalculationSpec, profile: Profile) -> str:
-        cmd = profile.command_for(self.code, "dftb+").format(mpiprocs=spec.runtime.mpiprocs, omp_threads=spec.runtime.omp_threads)
+        cmd = profile.command_for(self.code, "dftb+").format(**command_values(spec))
         if spec.task.type == "band_structure":
-            return f"{cmd} > output.log 2>&1 && cp charges.bin bands/ && cd bands && {cmd} > output.log 2>&1"
+            # Without SCC no charges.bin is written, so the second stage has nothing to read (manual: ReadInitialCharges).
+            carry = "cp charges.bin bands/ && " if spec.method.scc else ""
+            return f"{cmd} > output.log 2>&1 && {carry}cd bands && {cmd} > output.log 2>&1"
         return f"{cmd} > output.log 2>&1"
 
     def readme_notes(self, spec: CalculationSpec, skset: SKSet, copies: dict[str, Path]) -> ReadmeNotes:
@@ -207,9 +209,12 @@ class DftbPlusGenerator(InputGenerator):
             L(f"  skf/          Slater-Koster ファイル (セット {skset.name}。DFTB+ が使う、元素の組ごとのパラメータ) と LICENSE、README: {', '.join(skf_names)}",
               f"  skf/          Slater-Koster files (set {skset.name}; DFTB+ parameters for each pair of elements) plus LICENSE and README: {', '.join(skf_names)}"),
         ]
-        if t == "band_structure":
+        if t == "band_structure" and spec.method.scc:
             files.append(L("  bands/        バンド計算の 2 段階目。1 段階目の電荷を読み、高対称点を結ぶ経路 (bands/kpath.json) に沿って計算します",
                            "  bands/        second stage of the band calculation: reads the charges of the first stage and follows the high-symmetry path (bands/kpath.json)"))
+        elif t == "band_structure":
+            files.append(L("  bands/        バンド計算の 2 段階目。SCC なしなので電荷は引き継がず、高対称点を結ぶ経路 (bands/kpath.json) に沿って計算します",
+                           "  bands/        second stage of the band calculation: without SCC no charges are handed over; it follows the high-symmetry path (bands/kpath.json)"))
         out = [
             L("  output.log    実行ログ (SCC = 電荷を自己無撞着に決める反復。その様子と、各ステップのエネルギー。単位は Hartree)",
               "  output.log    run log (SCC = the self-consistent charge iterations, and the energy of each step, in Hartree)"),
@@ -316,7 +321,10 @@ class DftbPlusGenerator(InputGenerator):
         if not fixed:
             return "1:-1"
         moved = [i + 1 for i in range(len(spec.structure.atoms.symbols)) if i not in fixed]
-        return " ".join(str(i) for i in moved) if moved else "{}"
+        if not moved:
+            raise GenerationError(L("全原子が固定されていて、動かす原子がありません (MovedAtoms が空になります)。固定を減らすか、一点計算にしてください",
+                                    "every atom is fixed, so there is nothing to move (MovedAtoms would be empty); fix fewer atoms or run a single-point calculation"))
+        return " ".join(str(i) for i in moved)
 
     def _kpoints_lines(self, spec: CalculationSpec) -> list[str]:
         if not spec.structure.periodic:

@@ -7,7 +7,7 @@ import shutil
 from pathlib import Path
 
 from adit.citations import Citation
-from adit.codes.base import GenerationError, InputGenerator, ReadmeNotes, register
+from adit.codes.base import GenerationError, InputGenerator, ReadmeNotes, command_values, register
 from adit.codes.plumed import PLUMED_FILE, output_lines as plumed_outputs, plumed_text, readme_lines as plumed_prepare
 from adit.config import Config, Profile
 from adit.lang import L
@@ -242,7 +242,7 @@ class GromacsGenerator(InputGenerator):
 
     def run_command(self, spec: CalculationSpec, profile: Profile) -> str:
         m, r = spec.method, spec.runtime
-        cmd = profile.command_for(self.code, DEFAULT_COMMAND).format(mpiprocs=r.mpiprocs, omp_threads=r.omp_threads, binary="")
+        cmd = profile.command_for(self.code, DEFAULT_COMMAND).format(**command_values(spec))
         exe = cmd.split()[-1]
         conf = _run_conf(spec)
         grompp = [exe, "grompp", "-f", MDP_FILE, "-c", conf, "-p", TOP_FILE, "-o", f"{DEFFNM}.tpr"]

@@ -260,3 +260,61 @@ def test_lammps_md_unsupported_semantics_block(tmp_path, before, after):
     result = import_native(tmp_path)
     assert result.spec is None
     assert result.unsupported
+
+
+def test_vasp_logical_for_a_string_tag_is_kept_as_text(tmp_path):
+    result = vasp(tmp_path, incar="ENCUT=400\nLREAL=.FALSE.\nNSW=0\nIBRION=-1\n")
+    assert result.spec is not None, result.report()
+    assert result.spec.method.lreal == ".FALSE."
+    assert result.provenance["method.lreal"]["line"] == 2
+
+
+def test_vasp_value_outside_the_shared_fields_is_reported_by_field(tmp_path):
+    result = vasp(tmp_path, incar="ENCUT=400\nISPIN=3\nNSW=0\nIBRION=-1\n")
+    assert result.spec is None
+    reasons = [issue["reason"] for issue in result.unsupported]
+    assert any("共通の欄に入れられません" in reason for reason in reasons), reasons
+    assert not any("形式と数値" in reason for reason in reasons)
+    assert "ispin" in result.unsupported[-1]["detail"]
+
+
+@pytest.mark.parametrize("text,expected", [
+    ("'mv'", "marzari-vanderbilt"), ("'m-v'", "marzari-vanderbilt"), ("'cold'", "marzari-vanderbilt"), ("'Marzari-Vanderbilt'", "marzari-vanderbilt"),
+    ("'gauss'", "gaussian"), ("'mp'", "methfessel-paxton"), ("'m-p'", "methfessel-paxton"), ("'fd'", "fermi-dirac"), ("'f-d'", "fermi-dirac")])
+def test_qe_smearing_abbreviations_map_to_the_long_names(tmp_path, text, expected):
+    path = tmp_path / "pw.in"
+    path.write_text(QE.replace("ecutwfc = 30", f"ecutwfc = 30, occupations = 'smearing', smearing = {text}, degauss = 0.01"), encoding="utf-8")
+    result = import_native(path)
+    assert result.spec is not None, result.report()
+    assert result.spec.method.smearing == expected and result.spec.method.occupations == "smearing"
+    assert f"smearing = {text}" in result.provenance["method.smearing"]["text"]
+
+
+def test_qe_tetrahedra_variants_are_reported_not_mapped(tmp_path):
+    path = tmp_path / "pw.in"
+    path.write_text(QE.replace("ecutwfc = 30", "ecutwfc = 30, occupations = 'tetrahedra_opt'"), encoding="utf-8")
+    result = import_native(path)
+    assert result.spec is None
+    assert any("tetrahedra_opt" in issue["reason"] for issue in result.unsupported), result.unsupported
+
+
+GRO = """water
+    3
+    1SOL      O    1   0.126   0.639   0.322
+    1SOL      H    2   0.187   0.713   0.290
+    1SOL      H    3   0.108   0.577   0.248
+   3.00000   3.00000   3.00000
+"""
+
+
+def test_gromacs_mdp_keys_with_underscores_are_read(tmp_path):
+    (tmp_path / "grompp.mdp").write_text("integrator = md\nnsteps = 100\ndt = 0.002\nnstxout_compressed = 10\n"
+                                         "tcoupl = v-rescale\nref_t = 300\ntau_t = 0.1\ngen_seed = 7\n", encoding="utf-8")
+    (tmp_path / "conf.gro").write_text(GRO, encoding="utf-8")
+    (tmp_path / "topol.top").write_text("[ system ]\nx\n[ molecules ]\nSOL 1\n", encoding="utf-8")
+    result = import_native(tmp_path)
+    assert result.unknown == [] and result.spec is not None, result.report()
+    md = result.spec.task.md
+    assert md.temperature_k == 300 and md.coupling_time_fs == pytest.approx(100.0) and md.dump_interval == 10
+    assert md.thermostat == "csvr" and result.spec.method.gen_seed == 7
+    assert result.provenance["task.md.temperature_k"]["text"].startswith("ref_t")

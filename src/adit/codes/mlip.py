@@ -7,7 +7,7 @@ from pathlib import Path
 
 from ase.io import write
 
-from adit.codes.base import GenerationError, InputGenerator, ReadmeNotes, register
+from adit.codes.base import GenerationError, InputGenerator, ReadmeNotes, command_values, register
 from adit.config import Config, Profile
 from adit.lang import L
 from adit.spec import CalculationSpec, MlipMethod
@@ -254,7 +254,7 @@ class MlipGenerator(InputGenerator):
         return {mf.name: mf} if mf is not None else {}
 
     def run_command(self, spec: CalculationSpec, profile: Profile) -> str:
-        exe = profile.command_for(self.code, DEFAULT_COMMAND).format(mpiprocs=spec.runtime.mpiprocs, omp_threads=spec.runtime.omp_threads, binary="")
+        exe = profile.command_for(self.code, DEFAULT_COMMAND).format(**command_values(spec))
         return f"{exe} {SCRIPT_FILE} > output.log 2>&1"
 
     def readme_notes(self, spec: CalculationSpec, res, copies) -> ReadmeNotes:

@@ -11,7 +11,7 @@ from pathlib import Path
 from ase.data import atomic_numbers
 import numpy as np
 
-from adit.codes.base import InputGenerator, ReadmeNotes, register
+from adit.codes.base import InputGenerator, ReadmeNotes, command_values, register
 from adit.config import Config, Profile
 from adit.lang import L
 from adit.spec import CalculationSpec, OpenmxMethod
@@ -118,8 +118,7 @@ class OpenmxGenerator(InputGenerator):
         return {}
 
     def run_command(self, spec: CalculationSpec, profile: Profile) -> str:
-        exe = profile.command_for(self.code, "openmx").format(
-            mpiprocs=spec.runtime.mpiprocs, omp_threads=spec.runtime.omp_threads, binary="")
+        exe = profile.command_for(self.code, "openmx").format(**command_values(spec))
         return f"{exe} openmx.dat > output.log 2>&1"
 
     def readme_notes(self, spec: CalculationSpec, res: None, copies: dict[str, Path]) -> ReadmeNotes:

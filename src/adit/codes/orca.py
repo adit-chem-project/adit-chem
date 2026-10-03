@@ -5,7 +5,7 @@ import math
 from pathlib import Path
 
 from adit.citations import Citation
-from adit.codes.base import GenerationError, InputGenerator, ReadmeNotes, register
+from adit.codes.base import GenerationError, InputGenerator, ReadmeNotes, command_values, register
 from adit.config import Config, Profile
 from adit.spec import CalculationSpec, OrcaMethod, HARTREE_PER_BOHR_IN_EV_PER_ANG
 from adit.validate import electron_parity_error
@@ -181,7 +181,7 @@ class OrcaGenerator(InputGenerator):
         return {}
 
     def run_command(self, spec: CalculationSpec, profile: Profile) -> str:
-        exe = profile.command_for(self.code, DEFAULT_COMMAND).format(mpiprocs=spec.runtime.mpiprocs, omp_threads=spec.runtime.omp_threads, binary="")
+        exe = profile.command_for(self.code, DEFAULT_COMMAND).format(**command_values(spec))
         return f"{exe} {INPUT_FILE} > output.log 2>&1"
 
     def readme_notes(self, spec, res, copies) -> ReadmeNotes:

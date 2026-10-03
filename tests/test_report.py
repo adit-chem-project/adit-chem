@@ -101,7 +101,8 @@ def test_md_and_kpoints_rows(tmp_path, sk_root):
 
 def test_zero_method_fields_are_not_shown_as_values(run_dir):
     rows = [name for name, _, _ in condition_rows(load_run_report(run_dir))]
-    assert all(not name.endswith("_ev") or True for name in rows)
+    assert "method.filling_temperature" not in rows  # 0 K = no Fermi filling, i.e. not specified
+    assert "method.scc_tolerance" in rows
     values = {name: value for name, value, _ in condition_rows(load_run_report(run_dir))}
     assert all(value != "0" for name, value in values.items() if name.startswith("method."))
 
@@ -191,7 +192,8 @@ def test_cli_writes_files_and_reports_tampering(run_dir, tmp_path, capsys):
 
 def test_cli_reports_a_bad_directory(tmp_path, capsys):
     assert main([str(tmp_path / "missing")]) == 2
-    assert "ディレクトリがありません" in capsys.readouterr().out
+    captured = capsys.readouterr()
+    assert "ディレクトリがありません" in captured.err and captured.out == ""
 
 
 def test_analysis_summary_is_copied_when_it_exists(run_dir):
@@ -285,3 +287,91 @@ def test_bib_option_and_bundle_write_references(run_dir, tmp_path, capsys):
     write_bundle([load_run_report(run_dir)], dest)
     with zipfile.ZipFile(dest) as zf:
         assert "references.bib" in zf.namelist() and b"@article{dftbplus_hourahine2020," in zf.read("references.bib")
+
+
+def test_meaningful_zeros_are_kept_and_unset_cutoffs_are_hidden(tmp_path):
+    from adit.report import RunReport
+    from adit.spec import VaspMethod, XtbMethod
+
+    spec = water_spec(method=VaspMethod(ismear=0, ibrion=0, sigma=0.05), task=Task(type="single_point"))
+    rows = {name: value for name, value, _ in condition_rows(RunReport(run_dir=tmp_path, spec=spec))}
+    assert rows["method.ismear"] == "0" and rows["method.ibrion"] == "0"
+    for unset in ("method.encut", "method.nbands", "method.nelmin", "method.lmaxmix", "method.idipol"):
+        assert unset not in rows, unset
+    assert "method.ismear [" not in conditions_csv([RunReport(run_dir=tmp_path, spec=spec)]).splitlines()[0]
+    assert "method.ismear" in conditions_csv([RunReport(run_dir=tmp_path, spec=spec)]).splitlines()[0]
+    xtb = water_spec(method=XtbMethod(md_shake=0), task=Task(type="single_point"))
+    rows = {name: value for name, value, _ in condition_rows(RunReport(run_dir=tmp_path, spec=xtb))}
+    assert rows["method.md_shake"] == "0"
+    text = methods_markdown([RunReport(run_dir=tmp_path, spec=spec)], "ja")
+    assert "| method.ismear | 0 |" in text and "0 が「指定しない (入力に書かない)」の意味になる方法の欄" in text
+
+
+def test_bundle_tells_apart_runs_with_the_same_name(tmp_path, sk_root):
+    runs = []
+    for parent in ("a", "b"):
+        out = tmp_path / parent / "run"
+        out.parent.mkdir()
+        write_project(water_spec(), cfg_for(sk_root), out)
+        runs.append(load_run_report(out))
+    dest = tmp_path / "pack.zip"
+    write_bundle(runs, dest)
+    with zipfile.ZipFile(dest) as zf:
+        names = zf.namelist()
+        manifest = json.loads(zf.read("manifest.json"))
+    assert "a__run/spec.json" in names and "b__run/spec.json" in names and "run/spec.json" not in names
+    assert [r["package_dir"] for r in manifest["runs"]] == ["a__run", "b__run"]
+    folder = tmp_path / "pack"
+    write_bundle(runs, folder)
+    assert (folder / "a__run" / "dftb_in.hsd").is_file() and (folder / "b__run" / "dftb_in.hsd").is_file()
+    alike = []
+    for parent in ("x", "y"):
+        out = tmp_path / parent / "p" / "run"
+        out.parent.mkdir(parents=True)
+        write_project(water_spec(), cfg_for(sk_root), out)
+        alike.append(load_run_report(out))
+    with pytest.raises(ReportError, match="区別できません"):
+        write_bundle(alike, tmp_path / "pack2.zip")
+    assert not (tmp_path / "pack2.zip").exists()
+    single = write_bundle([runs[0]], tmp_path / "pack3.zip")
+    with zipfile.ZipFile(single) as zf:
+        assert "run/spec.json" in zf.namelist()
+
+
+def test_parameter_rows_skip_backups(run_dir):
+    from adit.report import parameter_rows
+
+    upf = "<UPF version=\"2.0.1\">\n<PP_HEADER element=\"Si\" z_valence=\"4\" functional=\"PBE\" pseudo_type=\"NC\"/>\n</UPF>\n"
+    backup = run_dir / ".adit_backup" / "20260101-000000"
+    backup.mkdir(parents=True)
+    (backup / "Si.UPF").write_text(upf, encoding="utf-8")
+    assert not any(name.startswith(".adit_backup") for name, _, _ in parameter_rows(load_run_report(run_dir)))
+    (run_dir / "pseudo").mkdir()
+    (run_dir / "pseudo" / "Si.UPF").write_text(upf, encoding="utf-8")
+    assert [name for name, _, _ in parameter_rows(load_run_report(run_dir))] == ["pseudo/Si.UPF"]
+
+
+def test_fingerprint_note_is_written_once(run_dir, tmp_path):
+    data = json.loads((run_dir / "spec.json").read_text(encoding="utf-8"))
+    data["provenance"].pop("inputs")
+    (run_dir / "spec.json").write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    report = load_run_report(run_dir)
+    write_bundle([report], tmp_path / "pack.zip")
+    text = methods_markdown([report], "ja")
+    assert text.count("入力の照合用のハッシュの記録が無") == 1
+    assert len([n for n in report.notes if "照合用のハッシュの記録が無" in n]) == 1
+
+
+def test_cli_uses_the_configured_language(run_dir, capsys, monkeypatch):
+    from adit.config import config_path, default_config, save_config
+
+    monkeypatch.delenv("ADIT_LANG", raising=False)
+    save_config(default_config().model_copy(update={"language": "en"}), config_path())
+    assert main([str(run_dir)]) == 0
+    assert capsys.readouterr().out.startswith("# Computational details (methods)")
+    assert main([str(run_dir / "missing")]) == 2
+    assert "directory not found" in capsys.readouterr().err
+    config_path().write_text("language = [broken", encoding="utf-8")
+    lang.set_language("ja")
+    assert main([str(run_dir)]) == 0
+    assert capsys.readouterr().out.startswith("# 計算条件 (方法)")

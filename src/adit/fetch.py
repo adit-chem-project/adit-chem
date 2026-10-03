@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import http.client
 import io
 import json
 import math
@@ -120,15 +121,34 @@ def _get(url: str, *, what: str, headers: dict[str, str] | None = None, timeout:
         raise _cannot(L(f"{what} が HTTP {ex.code} を返しました ({url})", f"{what} returned HTTP {ex.code} ({url})")) from ex
     except urllib.error.URLError as ex:
         raise _cannot(L(f"{what} に接続できません ({ex.reason})", f"cannot connect to {what} ({ex.reason})")) from ex
-    except (TimeoutError, OSError) as ex:
+    except (TimeoutError, OSError, http.client.HTTPException) as ex:
         raise _cannot(L(f"{what} との通信に失敗しました ({ex})", f"communication with {what} failed ({ex})")) from ex
 
 
-def _json(data: bytes, what: str) -> dict:
+def _json(data: bytes, what: str, *, expect: type | tuple[type, ...] = dict) -> dict | list:
     try:
-        return json.loads(data.decode("utf-8"))
+        parsed = json.loads(data.decode("utf-8"))
     except (ValueError, UnicodeDecodeError) as ex:
         raise _cannot(L(f"{what} の応答を JSON として読めません ({ex})", f"the response of {what} is not JSON ({ex})")) from ex
+    if not isinstance(parsed, expect):
+        raise _cannot(L(f"{what} の応答が想定した形の JSON ではありません (オブジェクトの代わりに {type(parsed).__name__})",
+                        f"the response of {what} is JSON of an unexpected shape ({type(parsed).__name__} instead of an object)"))
+    return parsed
+
+
+def _finite_triplet(value) -> bool:
+    return (isinstance(value, (list, tuple)) and len(value) == 3
+            and all(isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x) for x in value))
+
+
+def _check_full_occupancy(atoms: Atoms, what: str) -> None:
+    # ASE keeps only one species per disordered CIF site; the full picture is in info["occupancy"].
+    for site in (atoms.info.get("occupancy") or {}).values():
+        if not isinstance(site, dict) or not site:
+            continue
+        if len(site) != 1 or abs(float(next(iter(site.values()))) - 1.0) > 1e-6:
+            raise _cannot(L(f"{what} の構造に部分占有か混合占有のサイトがあります。ADIT では扱えないので、別の項目を選んでください",
+                            f"the {what} structure has a partially occupied or mixed-species site; ADIT cannot use it, choose another entry"))
 
 
 def _record(db: str, query: str, entry_id: str, url: str, data: bytes, fmt: str, *, title: str = "", provider: str = "",
@@ -238,9 +258,10 @@ def fetch_cod(query: str) -> FetchResult:
             raise _cannot(L(f"COD に ID {cod_id} の項目がありません", f"COD has no entry {cod_id}")) from ex
         raise
     atoms = _read_atoms(data.decode("utf-8", errors="replace"), "cif", "COD")
+    _check_full_occupancy(atoms, "COD")
     title, extra = "", {}
     try:
-        meta = _json(_get(f"{COD_BASE}/result?id={cod_id}&format=json", what="COD"), "COD")
+        meta = _json(_get(f"{COD_BASE}/result?id={cod_id}&format=json", what="COD"), "COD", expect=(dict, list))
         if isinstance(meta, list) and meta:
             m = meta[0]
             title = " / ".join(str(x) for x in (m.get("chemname") or m.get("formula") or "", m.get("title") or "") if x)
@@ -260,15 +281,21 @@ def _atoms_from_pymatgen(struct: dict, what: str) -> Atoms:
     except (KeyError, TypeError) as ex:
         raise _cannot(L(f"{what} の構造の形式を読めません ({ex})", f"cannot read the structure format of {what} ({ex})")) from ex
     symbols, positions = [], []
-    for site in sites:
-        species = site.get("species") or []
-        if len(species) != 1 or abs(float(species[0].get("occu", 1.0)) - 1.0) > 1e-6:
-            raise _cannot(L(f"{what} の構造に部分占有のサイトがあります。ADIT では扱えないので、別の項目を選んでください",
-                            f"the {what} structure has a partially occupied site; ADIT cannot use it, choose another entry"))
-        symbols.append(species[0]["element"])
-        positions.append([float(x) for x in site["xyz"]])
-    pbc = struct["lattice"].get("pbc") or (True, True, True)
-    return Atoms(symbols=symbols, positions=positions, cell=matrix, pbc=tuple(bool(b) for b in pbc))
+    try:
+        for site in sites:
+            species = site.get("species") or []
+            if len(species) != 1 or abs(float(species[0].get("occu", 1.0)) - 1.0) > 1e-6:
+                raise _cannot(L(f"{what} の構造に部分占有のサイトがあります。ADIT では扱えないので、別の項目を選んでください",
+                                f"the {what} structure has a partially occupied site; ADIT cannot use it, choose another entry"))
+            element, xyz = species[0].get("element"), site.get("xyz")
+            if not element or not _finite_triplet(xyz):
+                raise _cannot(L(f"{what} の構造のサイトに元素か座標がありません", f"a site of the {what} structure has no element or no coordinates"))
+            symbols.append(str(element))
+            positions.append([float(x) for x in xyz])
+        pbc = struct["lattice"].get("pbc") or (True, True, True)
+        return Atoms(symbols=symbols, positions=positions, cell=matrix, pbc=tuple(bool(b) for b in pbc))
+    except (AttributeError, KeyError, TypeError, ValueError) as ex:
+        raise _cannot(L(f"{what} の構造の形式を読めません ({ex})", f"cannot read the structure format of {what} ({ex})")) from ex
 
 
 def fetch_mp(query: str, api_key: str = "") -> FetchResult:
@@ -396,12 +423,25 @@ def _atoms_from_optimade(attrs: dict, what: str) -> Atoms:
                             f"the {what} structure has a partially occupied or vacancy site; ADIT cannot use it, choose another entry"))
         symbols.append(syms[0])
     positions = attrs.get("cartesian_site_positions") or []
-    if not symbols or len(symbols) != len(positions):
+    if not symbols or not isinstance(positions, list) or len(symbols) != len(positions):
         raise _cannot(L(f"{what} の構造にサイトの情報がありません", f"the {what} structure has no usable site information"))
+    if not all(_finite_triplet(p) for p in positions):
+        raise _cannot(L(f"{what} の構造に座標の無いサイトがあります (null か数でない値)",
+                        f"the {what} structure has sites without coordinates (null or non-numeric values)"))
     cell = attrs.get("lattice_vectors")
+    bad_cell = _cannot(L(f"{what} の構造の格子ベクトルを読めません", f"cannot read the lattice vectors of the {what} structure"))
+    if cell is not None:
+        if not (isinstance(cell, list) and len(cell) == 3 and all(isinstance(r, list) and len(r) == 3 for r in cell)):
+            raise bad_cell
+        if any(v is None for row in cell for v in row):
+            cell = None
+        elif not all(_finite_triplet(r) for r in cell):
+            raise bad_cell
     dims = attrs.get("dimension_types") or ([1, 1, 1] if cell else [0, 0, 0])
-    if cell is None or any(v is None for row in cell for v in row):
+    if cell is None:
         return Atoms(symbols=symbols, positions=positions)
+    if not (isinstance(dims, list) and len(dims) == 3):
+        raise bad_cell
     return Atoms(symbols=symbols, positions=positions, cell=cell, pbc=tuple(bool(d) for d in dims))
 
 

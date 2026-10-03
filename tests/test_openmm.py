@@ -263,3 +263,12 @@ def test_conversion_to_openmm_lists_unapplied_settings(src):
     assert "task.md.barostat_time_fs" in report["not_applied_by_target"]
     assert {"structure.charge", "structure.multiplicity"} <= set(report["not_applied_by_target"])
     assert "task.md.pressure_bar" in report["preserved"]
+
+
+def test_include_dir_is_written_as_an_absolute_path(src, tmp_path, monkeypatch):
+    from adit.codes.openmm import OpenmmGenerator
+
+    (tmp_path / "ff_top").mkdir()
+    monkeypatch.chdir(tmp_path)
+    assert OpenmmGenerator().settings(spec_for(src, include_dir="ff_top"))["include_dir"] == str((tmp_path / "ff_top").resolve())
+    assert OpenmmGenerator().settings(spec_for(src))["include_dir"] == ""

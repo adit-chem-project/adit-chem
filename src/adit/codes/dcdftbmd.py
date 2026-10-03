@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from adit.codes.base import InputGenerator, ReadmeNotes, register
+from adit.codes.base import InputGenerator, ReadmeNotes, command_values, register
 from adit.config import Config, Profile
 from adit.lang import L
 from adit.spec import CalculationSpec, DcdftbmdMethod, HARTREE_PER_BOHR_IN_EV_PER_ANG
@@ -107,8 +107,7 @@ class DcdftbmdGenerator(InputGenerator):
         return {f"params/{pair}.spl": path for pair, path in res.items()}
 
     def run_command(self, spec: CalculationSpec, profile: Profile) -> str:
-        exe = profile.command_for(self.code, "dftb_serial.00.x").format(mpiprocs=spec.runtime.mpiprocs,
-                                                                        omp_threads=spec.runtime.omp_threads, binary="")
+        exe = profile.command_for(self.code, "dftb_serial.00.x").format(**command_values(spec))
         return f"{exe} > output.log 2>&1"
 
     def readme_notes(self, spec: CalculationSpec, res, copies) -> ReadmeNotes:

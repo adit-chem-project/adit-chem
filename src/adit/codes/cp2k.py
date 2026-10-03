@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 
 from adit.citations import Citation
-from adit.codes.base import GenerationError, InputGenerator, ReadmeNotes, register
+from adit.codes.base import GenerationError, InputGenerator, ReadmeNotes, command_values, register
 from adit.codes.cp2k_data import Cp2kData
 from adit.config import Config, Profile
 from adit.lang import L
@@ -18,7 +18,7 @@ INPUT_FILE = "cp2k.inp"
 BASIS_OUT = "BASIS_adit"
 POTENTIAL_OUT = "POTENTIAL_adit"
 PROJECT = "adit"
-DEFAULT_COMMAND = "mpirun -np {mpiprocs} cp2k.psmp"
+DEFAULT_COMMAND = "mpirun -np {ntasks} cp2k.psmp"
 D3_FILE = "dftd3.dat"
 EXTRA_SECTIONS = ("GLOBAL", "FORCE_EVAL", "FORCE_EVAL/DFT", "FORCE_EVAL/DFT/SCF", "FORCE_EVAL/DFT/XC", "FORCE_EVAL/SUBSYS",
                   "MOTION", "MOTION/GEO_OPT", "MOTION/CELL_OPT", "MOTION/MD")
@@ -232,7 +232,7 @@ class Cp2kGenerator(InputGenerator):
         return {}
 
     def run_command(self, spec: CalculationSpec, profile: Profile) -> str:
-        cmd = profile.command_for(self.code, DEFAULT_COMMAND).format(mpiprocs=spec.runtime.mpiprocs, omp_threads=spec.runtime.omp_threads, binary="")
+        cmd = profile.command_for(self.code, DEFAULT_COMMAND).format(**command_values(spec))
         return f"{cmd} -i {INPUT_FILE} > output.log 2>&1"
 
     def readme_notes(self, spec: CalculationSpec, data: Cp2kData, copies) -> ReadmeNotes:

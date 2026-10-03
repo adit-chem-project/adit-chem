@@ -240,3 +240,67 @@ def test_structure_and_project_carry_the_record(routes, tmp_path, sk_root):
     assert any(f["name"] == "pubchem_962.sdf" and f["sha256"] == st.fetched["sha256"] for f in prov["files"])
     readme = files.texts["README.txt"]
     assert "== 構造の出どころ (データベースから取得) ==" in readme and "public domain" in readme and "pubchem_962.sdf" in readme
+
+
+CIF_SITES = """data_test
+_cell_length_a 5.64
+_cell_length_b 5.64
+_cell_length_c 5.64
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 90
+_symmetry_space_group_name_H-M 'P 1'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+{sites}Cl1 Cl 0.5 0.5 0.5 1.0
+"""
+COD_CIF_URL = "https://www.crystallography.net/cod/1000041.cif"
+
+
+def test_cod_refuses_partially_occupied_and_mixed_sites(routes):
+    _, extra = routes
+    extra[COD_CIF_URL] = CIF_SITES.format(sites="Na1 Na 0.0 0.0 0.0 0.5\nK1 K 0.0 0.0 0.0 0.5\n").encode()
+    with pytest.raises(FetchError, match="取得できません: COD の構造に部分占有か混合占有のサイトがあります"):
+        F.fetch("cod:1000041")
+    extra[COD_CIF_URL] = CIF_SITES.format(sites="Na1 Na 0.0 0.0 0.0 0.7\n").encode()
+    with pytest.raises(FetchError, match="部分占有か混合占有"):
+        F.fetch("cod:1000041")
+    extra[COD_CIF_URL] = CIF_SITES.format(sites="Na1 Na 0.0 0.0 0.0 1.0\n").encode()
+    assert F.fetch("cod:1000041").fetched.atoms.get_chemical_formula() == "ClNa"
+
+
+def test_truncated_response_is_a_fetch_error(monkeypatch):
+    import http.client
+
+    def truncated(req, timeout=None):
+        raise http.client.IncompleteRead(b"partial")
+
+    monkeypatch.setattr(urllib.request, "urlopen", truncated)
+    with pytest.raises(FetchError, match="COD との通信に失敗しました"):
+        F.fetch("cod:1000041")
+
+
+def test_json_body_that_is_not_an_object_is_a_fetch_error(routes):
+    _, extra = routes
+    extra["https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/water/cids/JSON"] = b"[1, 2, 3]"
+    with pytest.raises(FetchError, match="PubChem の応答が想定した形の JSON ではありません"):
+        F.fetch("pubchem:water")
+
+
+def test_null_positions_and_missing_elements_are_fetch_errors(routes):
+    _, extra = routes
+    doc = json.loads((DATA / "oqmd_4061352.json").read_text(encoding="utf-8"))
+    doc["data"]["attributes"]["cartesian_site_positions"][0] = [None, None, None]
+    extra["https://oqmd.org/optimade/v1/structures/4061352"] = json.dumps(doc).encode()
+    with pytest.raises(FetchError, match="座標の無いサイト"):
+        F.fetch("optimade:oqmd:4061352")
+    mp = json.loads((DATA / "mp_summary_mp-149.json").read_text(encoding="utf-8"))
+    del mp["data"][0]["structure"]["sites"][0]["species"][0]["element"]
+    extra[next(u for u in ROUTES if "materialsproject" in u)] = json.dumps(mp).encode()
+    with pytest.raises(FetchError, match="元素か座標がありません"):
+        F.fetch("mp:mp-149", mp_api_key="k")
