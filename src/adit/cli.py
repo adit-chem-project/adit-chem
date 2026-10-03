@@ -7,7 +7,7 @@ from pathlib import Path
 
 from adit import lang
 from adit.lang import L
-from adit.config import ConfigError, config_path, ensure_config, env_var, first_run_message, unknown_keys_message
+from adit.config import ConfigError, ConfigMissing, config_path, ensure_config, env_var, first_run_message, load_config, unknown_keys_message
 from adit.project import OutputNotEmpty, ProjectError, build_project, write_project
 from adit.spec import CalculationSpec
 from adit.validate import validate
@@ -50,6 +50,52 @@ def _fetch_structure(spec: CalculationSpec, ref: str, cfg) -> CalculationSpec:
     for note in result.notes:
         print(f"  {note}", file=sys.stderr)
     return spec.model_copy(update={"structure": st})
+
+
+def _unknown_keys_of(path: Path, skip: tuple[str, ...] = ()) -> list[str]:
+    import json
+
+    from adit.spec import unknown_keys
+
+    try:
+        data = json.loads(Path(path).read_text(encoding="utf-8-sig"))
+    except (OSError, ValueError):
+        return []    # the loader reports unreadable files itself
+    if not isinstance(data, dict):
+        return []
+    return unknown_keys({k: v for k, v in data.items() if k not in skip})
+
+
+def _check_unknown_keys(args, cfg) -> int | None:
+    # pydantic drops keys it does not know, so a typo in a hand-edited file would silently run with the default
+    from adit.templates import TemplateError, find_template
+
+    checks: list[tuple[Path, tuple[str, ...]]] = []
+    if args.continue_from:
+        if args.output_dir is not None and args.spec is not None:
+            checks.append((Path(args.spec), ()))
+        checks.append((Path(args.continue_from).expanduser() / "spec.json", ()))
+    elif args.spec is not None:
+        checks.append((Path(args.spec), ()))
+    if args.template:
+        try:
+            checks.append((find_template(args.template, cfg), ("template",)))
+        except TemplateError:
+            pass    # reported when the template is loaded
+    found = [(p, keys) for p, skip in checks for keys in [_unknown_keys_of(p, skip)] if keys]
+    if not found:
+        return None
+    for p, keys in found:
+        text = L(f"{p} に知らない項目があります: {', '.join(keys)}。綴りを確かめてください。",
+                 f"{p} has unknown entries: {', '.join(keys)}. Check the spelling.")
+        if args.ignore_unknown_keys:
+            print(L(f"注意: {text} (--ignore-unknown-keys により、これらは無視して既定値で続けます)",
+                    f"Note: {text} (--ignore-unknown-keys: they are ignored and the defaults are used)"), file=sys.stderr)
+        else:
+            print(text + "\n" + L("  知らない項目は黙って捨てられ、既定値が使われてしまうので止めました。そのまま進めるなら --ignore-unknown-keys を付けます。",
+                                 "  Unknown entries would be dropped silently and the defaults used, so nothing was done. Add --ignore-unknown-keys to continue anyway."),
+                  file=sys.stderr)
+    return None if args.ignore_unknown_keys else 1
 
 
 def _run_group(args, spec: CalculationSpec, cfg, output_dir) -> int | None:
@@ -95,7 +141,7 @@ def _run_group(args, spec: CalculationSpec, cfg, output_dir) -> int | None:
     except ImportError as ex:
         print(L(f"必要なパッケージがありません: {ex}", f"a required package is missing: {ex}"), file=sys.stderr)
         return 1
-    except (ProjectError, ConfigError, ValueError) as ex:
+    except (ProjectError, ConfigError, ValueError, OSError) as ex:
         print(str(ex), file=sys.stderr)
         return 1
     out = Path(output_dir).resolve()
@@ -121,6 +167,9 @@ def main(argv: list[str] | None = None) -> int:
         "printed when it cannot run. ADIT never submits to a cluster"))
     ap.add_argument("--overwrite", action="store_true", help=L("出力ディレクトリが空でなくても上書きします", "overwrite even if the output directory is not empty"))
     ap.add_argument("--validate", action="store_true", help=L("検証だけ行い、生成しません", "validate only, do not generate"))
+    ap.add_argument("--ignore-unknown-keys", action="store_true", help=L(
+        "spec.json (や雛形) に ADIT の知らない項目があっても止めず、注意を出して既定値で続けます (既定では綴り違いを疑って止まります)",
+        "do not stop when spec.json (or a template) has entries unknown to ADIT; warn and continue with the defaults (by default it stops, suspecting a typo)"))
     ap.add_argument("--structures", metavar="FILE", action="append", default=[], help=L(
         "同じ条件で構造だけを差し替えた計算をまとめて作ります (ファイル名か * を使った書き方。複数回指定可)。"
         "1 つのファイルに複数フレームがあれば、フレームごとに 1 つの計算にします。例 --structures \"mols/*.xyz\"",
@@ -209,10 +258,19 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     try:
-        cfg, cfg_file, created = ensure_config(Path(args.config).expanduser() if args.config else config_path())
+        if args.config:   # an explicit path must exist: a typo must not create a fresh settings file
+            cfg_file, created = Path(args.config).expanduser(), False
+            cfg = load_config(cfg_file)
+        else:
+            cfg, cfg_file, created = ensure_config(config_path())
         warning = unknown_keys_message(cfg)
         if warning:
             print(warning, file=sys.stderr)
+    except ConfigMissing as ex:
+        hint = L("  --config に指定したファイルがありません。パスの綴りを確かめてください (既定の場所の環境設定ファイルを使うなら、--config を付けずに実行します)。",
+                 "  The file given with --config does not exist; check the path (run without --config to use the settings file at the default location).")
+        print(str(ex) + ("\n" + hint if args.config else ""), file=sys.stderr)
+        return 2
     except ConfigError as ex:
         print(str(ex), file=sys.stderr)
         return 2
@@ -297,6 +355,9 @@ def main(argv: list[str] | None = None) -> int:
             print(L("  (雛形はありません)", "  (no templates)"))
         return 0
 
+    rc = _check_unknown_keys(args, cfg)
+    if rc is not None:
+        return rc
     output_dir = args.output_dir
     try:
         if args.continue_from:
@@ -338,7 +399,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.save_template:
         try:
             p = save_template(spec, args.save_template, cfg=cfg, comment=spec.meta.comment, overwrite=args.overwrite)
-        except TemplateError as ex:
+        except (TemplateError, OSError) as ex:
             print(str(ex), file=sys.stderr)
             return 1
         print(L(f"雛形を保存しました: {p}", f"saved the template: {p}"))
@@ -359,7 +420,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.show:
             try:
                 files = build_project(spec, cfg, output_dir=output_dir)
-            except ProjectError as ex:
+            except (ProjectError, OSError) as ex:
                 print(str(ex), file=sys.stderr)
                 return 1
             if args.show not in files.texts:
@@ -397,7 +458,7 @@ def main(argv: list[str] | None = None) -> int:
         except OutputNotEmpty as ex:
             print(f"{ex}\n" + L(*_OVERWRITE_HINT), file=sys.stderr)
             return 1
-        except (StageError, ProjectError, ConfigError) as ex:
+        except (StageError, ProjectError, ConfigError, OSError) as ex:
             print(str(ex), file=sys.stderr)
             return 1
         out = Path(output_dir).resolve()
@@ -415,7 +476,7 @@ def main(argv: list[str] | None = None) -> int:
         except OutputNotEmpty as ex:
             print(f"{ex}\n" + L(*_OVERWRITE_HINT), file=sys.stderr)
             return 1
-        except (EnumerateError, ProjectError, ConfigError, ValueError) as ex:
+        except (EnumerateError, ProjectError, ConfigError, ValueError, OSError) as ex:
             print(str(ex), file=sys.stderr)
             return 1
         out = Path(output_dir).resolve()
@@ -429,7 +490,7 @@ def main(argv: list[str] | None = None) -> int:
         except OutputNotEmpty as ex:
             print(f"{ex}\n" + L(*_OVERWRITE_HINT), file=sys.stderr)
             return 1
-        except (StructuresError, ProjectError, ConfigError, ValueError) as ex:
+        except (StructuresError, ProjectError, ConfigError, ValueError, OSError) as ex:
             print(str(ex), file=sys.stderr)
             return 1
         out = Path(output_dir).resolve()
@@ -446,7 +507,7 @@ def main(argv: list[str] | None = None) -> int:
         except OutputNotEmpty as ex:
             print(f"{ex}\n" + L(*_OVERWRITE_HINT), file=sys.stderr)
             return 1
-        except (ScanError, ProjectError, ConfigError) as ex:
+        except (ScanError, ProjectError, ConfigError, OSError) as ex:
             print(str(ex), file=sys.stderr)
             return 1
         out = Path(output_dir).resolve()
@@ -467,7 +528,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"{ex}\n" + L("  中のファイルを上書きしてよければ、同じコマンドの最後に --overwrite を付けて実行すると上書きします。",
                             "  To overwrite the files inside, run the same command again with --overwrite at the end."), file=sys.stderr)
         return 1
-    except (ProjectError, ConfigError) as ex:
+    except (ProjectError, ConfigError, OSError) as ex:
         print(str(ex), file=sys.stderr)
         return 1
     subdirs: dict[str, int] = {}

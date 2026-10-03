@@ -14,11 +14,26 @@ import multiprocessing
 import sys
 
 
+def _console_executable() -> str | None:
+    # The windowed ADIT.exe has no stdout (sys.stdout is None); the console build adit-cli next to it does
+    from pathlib import Path
+
+    exe = Path(sys.executable)
+    cli = exe.with_name("adit-cli" + exe.suffix)
+    return str(cli) if cli.is_file() and cli.resolve() != exe.resolve() else None
+
+
 def main() -> int:
     multiprocessing.freeze_support()
     commands = {"gen": "adit.cli", "analyze": "adit.analysis.cli", "web": "adit.web.server",
                 "report": "adit.report", "convert": "adit.convert"}
     if len(sys.argv) > 1 and sys.argv[1] in commands:
+        if sys.stdout is None:
+            cli = _console_executable()
+            if cli:
+                import subprocess
+
+                return subprocess.call([cli, *sys.argv[1:]])
         import importlib
 
         module = importlib.import_module(commands[sys.argv[1]])

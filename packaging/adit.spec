@@ -20,9 +20,12 @@ ONEFILE = False          # Keep this False: PySide6 (Qt) is LGPL-3.0 and users m
 #   ADIT.exe      the window application (console=False, so it has no standard output on Windows)
 #   adit-cli.exe  the command line (console=True): gen / analyze / report / convert / web
 
-ROOT = Path(os.getcwd())
+ROOT = Path(SPECPATH).parent   # noqa: F821  (SPECPATH, the directory of this file, is set by PyInstaller)
 datas = collect_data_files("adit")                     # Jinja templates
 datas += collect_data_files("ase", include_py_files=False)
+# Copied into run directories at run time, so they must exist as plain files (a .pyc in the archive is not enough)
+datas += [(str(ROOT / "src" / "adit" / "handoff.py"), "adit"),
+          (str(ROOT / "src" / "adit" / "analysis" / "msd_worker.py"), str(Path("adit") / "analysis"))]
 
 examples = ROOT / "examples"
 if examples.is_dir():                                    # sample settings only (spec.json)
@@ -51,6 +54,8 @@ if licenses_dir.is_dir():
 # ASE imports its per-format modules by name, so PyInstaller cannot find them on its own.
 hiddenimports = (collect_submodules("adit") + collect_submodules("ase.io") + collect_submodules("ase.calculators")
                  + ["scipy.spatial.transform._rotation_groups"])
+# savefig() imports these by name (svg / pdf / eps figure formats); no hook lists them
+hiddenimports += ["matplotlib.backends.backend_svg", "matplotlib.backends.backend_pdf", "matplotlib.backends.backend_ps"]
 
 # Linux only: bundle the conda OpenGL/EGL libraries when they are present.
 binaries = []
@@ -59,6 +64,16 @@ if os.sys.platform.startswith("linux"):
         found = Path(os.sys.prefix) / "lib" / lib
         if found.is_file():
             binaries.append((str(found), "."))
+
+# Windows only: pywinpty loads winpty-agent.exe / conpty.dll by path, which dependency analysis cannot see.
+if os.sys.platform == "win32":
+    try:
+        from PyInstaller.utils.hooks import collect_dynamic_libs
+
+        datas += collect_data_files("winpty", include_py_files=False)
+        binaries += collect_dynamic_libs("winpty")
+    except Exception:   # without pywinpty the workspace terminal shows its "not available" message
+        pass
 
 a = Analysis(
     [str(ROOT / "packaging" / "launch.py")],

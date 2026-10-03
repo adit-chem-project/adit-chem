@@ -17,6 +17,7 @@ from adit.spec import CalculationSpec
 SCAN_FILE = "scan.json"
 TABLE_FILE = "scan_energies.csv"
 SCALE = "scale"
+MAX_SCAN_DIRS = 1000
 
 
 class ScanError(AditValueError):
@@ -158,6 +159,7 @@ def write_scan(spec: CalculationSpec, cfg, out_dir: Path | str, scan: Scan | lis
                overwrite: bool = False) -> list[Path]:
     """Write one directory per value. Nothing is written unless every value assembles. Several scans give the full grid of combinations."""
     import itertools
+    import math
 
     from adit.project import build_project, write_project
 
@@ -165,6 +167,10 @@ def write_scan(spec: CalculationSpec, cfg, out_dir: Path | str, scan: Scan | lis
     if not scans:
         raise ScanError(L("振る項目がありません", "no parameter to scan"))
     out = Path(out_dir).expanduser()
+    total = math.prod(len(s.values) for s in scans)
+    if total > MAX_SCAN_DIRS:
+        raise ScanError(L(f"計算の数が {total} になり、上限 {MAX_SCAN_DIRS} を超えます (値の数を減らすか、何回かに分けてください)",
+                          f"{total} runs exceed the limit {MAX_SCAN_DIRS} (use fewer values, or split the scan)"))
     combos = list(itertools.product(*[s.values for s in scans]))
     specs = []
     for combo in combos:
@@ -174,9 +180,13 @@ def write_scan(spec: CalculationSpec, cfg, out_dir: Path | str, scan: Scan | lis
         specs.append((combo, one))
     from adit.batch import check_output
 
+    names = ["__".join(sc.dir_name(v) for sc, v in zip(scans, combo)) for combo, _ in specs]
+    if len(set(names)) != len(names):
+        dup = sorted({n for n in names if names.count(n) > 1})
+        raise ScanError(L(f"値が違ってもディレクトリの名前が同じになります (英数字と . + - 以外は _ に変わるため): {dup}。値の書き方を変えてください",
+                          f"different values give the same directory name (characters other than letters, digits, . + - become _): {dup}; write the values differently"))
     check_output(out, overwrite)
     out.mkdir(parents=True, exist_ok=True)
-    names = ["__".join(sc.dir_name(v) for sc, v in zip(scans, combo)) for combo, _ in specs]
     for name, (_, s) in zip(names, specs):
         build_project(s, cfg, output_dir=out / name)
     dirs = []

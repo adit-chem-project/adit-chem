@@ -16,7 +16,7 @@ ok() { echo "OK: $1"; }
 ng() { echo "NG: $1"; fail=1; }
 remote() { printf '%s\n' "$@" | $SSH "$TARGET" bash -l -s 2>&1; }
 {% if modules %}
-MODULE_PRELUDE='command -v module >/dev/null 2>&1 || { [ -r /etc/profile ] && . /etc/profile; }; command -v module >/dev/null 2>&1 || exit 2; module -s purge >/dev/null 2>&1{% for m in modules %}; module -s load {{ m }} || exit 1{% endfor %}'
+MODULE_PRELUDE='command -v module >/dev/null 2>&1 || { [ -r /etc/profile ] && . /etc/profile; }; command -v module >/dev/null 2>&1 || exit 2; module purge >/dev/null 2>&1{% for m in modules %}; module load {{ m }} || exit 1{% endfor %}'
 {% else %}
 MODULE_PRELUDE=':'
 {% endif %}
@@ -37,9 +37,9 @@ fi
 {% if modules %}
 out=$(remote "$MODULE_PRELUDE"); rc=$?
 case $rc in
-  0) ok "module -s load {{ modules | join(' ') }}";;
+  0) ok "module load {{ modules | join(' ') }}";;
   2) ng "{{ 'module command not found on the cluster' if lang == 'en' else 'クラスタに module コマンドが無い' }}";;
-  *) ng "module -s load {{ modules | join(' ') }}{{ ' failed: ' if lang == 'en' else ' に失敗: ' }}$(echo "$out" | tail -n 3 | tr '\n' ' ')";;
+  *) ng "module load {{ modules | join(' ') }}{{ ' failed: ' if lang == 'en' else ' に失敗: ' }}$(echo "$out" | tail -n 3 | tr '\n' ' ')";;
 esac
 {% else %}
 ok "{{ 'no modules in the profile (nothing to load)' if lang == 'en' else 'プロファイルに module の指定なし (読み込みは省略)' }}"

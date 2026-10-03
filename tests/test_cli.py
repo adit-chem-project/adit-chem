@@ -33,10 +33,10 @@ def test_cli_reports_errors(sk_root, tmp_path, capsys):
     assert "Slater-Koster パラメータ:" in capsys.readouterr().err
     assert main([str(tmp_path / "missing.json"), "--validate", "--config", str(cfg_path)]) == 2
     capsys.readouterr()
-    assert main([str(spec_path), "--validate", "--config", str(tmp_path / "nocfg.toml")]) == 1
+    assert main([str(spec_path), "--validate", "--config", str(tmp_path / "nocfg.toml")]) == 2
     err = capsys.readouterr().err
-    assert (tmp_path / "nocfg.toml").is_file() and "環境設定ファイルを作りました" in err and "sk_root" in err
-    assert "save_config" not in err and "default_config" not in err
+    assert not (tmp_path / "nocfg.toml").exists() and "環境設定ファイルがまだありません" in err and "--config" in err
+    assert "save_config" not in err and "default_config" not in err and "Traceback" not in err
 
 
 def test_cli_first_run_writes_template(tmp_path, capsys, monkeypatch):

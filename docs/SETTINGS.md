@@ -71,10 +71,11 @@ dftbplus = ["<DFTB+ の module 名>"]
 
 # VASP_PP_PATH = "<POTCAR ライブラリの親ディレクトリ>"
 
-[profiles.remote.commands]       # 計算コードごとの実行コマンド。{mpiprocs} {omp_threads} {binary} が埋められます
+[profiles.remote.commands]       # 計算コードごとの実行コマンド。{mpiprocs} {omp_threads} {binary} {ntasks} が埋められます
+                                 # {ntasks} = ノード数 × ノードあたりの MPI プロセス数 (複数ノードの mpirun -np に使います)。それ以外の {...} は生成の前の検証で止まります
 dftbplus = "dftb+"
 
-# vasp = "mpirun -np {mpiprocs} <VASP の bin>/vasp_{binary}"
+# vasp = "mpirun -np {ntasks} <VASP の bin>/vasp_{binary}"
 
 # orca = "<ORCA を展開したディレクトリ>/orca"   # ORCA は絶対パスで呼び、mpirun は付けません
 ```

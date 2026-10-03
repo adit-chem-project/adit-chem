@@ -32,8 +32,27 @@ def output_dir_errors(output_dir: Path | str) -> list[ValidationError]:
             f"the parent directory does not exist: {parent} (ADIT does not create intermediate directories, to catch typos; "
             f"create it with `mkdir -p {parent}` and run again)"))]
     return []
-_WALLTIME = re.compile(r"^\d{1,3}:\d{2}:\d{2}$")
+_WALLTIME = re.compile(r"^\d{1,3}:[0-5]\d:[0-5]\d$")
 _PLACEHOLDER = re.compile(r"<[^<>\n]*[^\x00-\x7f][^<>\n]*>|<[A-Za-z][A-Za-z0-9_-]*(?: [A-Za-z0-9_-]+)+>|/path/to\b")
+RUN_COMMAND_PLACEHOLDERS = ("mpiprocs", "omp_threads", "binary", "ntasks")
+
+
+def run_command_placeholder_error(value: str) -> str | None:
+    # None when every {...} in a commands.<code> value is a placeholder the generators fill in
+    import string
+
+    allowed = " ".join("{" + name + "}" for name in RUN_COMMAND_PLACEHOLDERS)
+    try:
+        fields = [f for _text, f, _spec, _conv in string.Formatter().parse(value) if f is not None]
+    except ValueError as ex:
+        return L(f"実行コマンド {value!r} の波括弧の対応が取れていません ({ex})。波括弧をそのまま書くなら {{{{ と }}}} のように 2 つ重ねます",
+                 f"the braces in the run command {value!r} do not match ({ex}); to write a literal brace, double it as {{{{ and }}}}")
+    bad = sorted({"{" + f + "}" for f in fields if f not in RUN_COMMAND_PLACEHOLDERS})
+    if not bad:
+        return None
+    return L(f"実行コマンド {value!r} に使えない波括弧があります: {', '.join(bad)}。使えるのは {allowed} です (波括弧をそのまま書くなら {{{{ と }}}} のように 2 つ重ねます)",
+             f"the run command {value!r} has a placeholder that is not available: {', '.join(bad)}. Available: {allowed} "
+             f"(to write a literal brace, double it as {{{{ and }}}})")
 
 
 def validate(spec: CalculationSpec, cfg: Config, *, output_dir: Path | str | None = None) -> list[ValidationError]:
@@ -45,6 +64,7 @@ def validate(spec: CalculationSpec, cfg: Config, *, output_dir: Path | str | Non
     errs += _check_structure(spec)
     errs += _check_numbers(spec)
     errs += _check_velocities_and_handoff(spec)
+    errs += _check_code_specific(spec)
     if spec.plumed is not None:
         from adit.codes.plumed import validate_plumed
         errs += validate_plumed(spec)
@@ -115,6 +135,10 @@ def _check_placeholders(name: str, profile, code: str) -> list[ValidationError]:
                 "要らない行なら行頭に # を付けて無効にしてください",
                 f"a placeholder is still in the settings: {key} = {value!r} in [profiles.{name}]. Replace the <...> or /path/to part with your own value, "
                 "or put # at the start of the line if it is not needed")))
+    custom = profile.commands.get(code, "")
+    why = run_command_placeholder_error(custom) if custom else None
+    if why:
+        errs.append(ValidationError("runtime.profile", L(f"環境設定の [profiles.{name}] の commands.{code}: {why}", f"commands.{code} in [profiles.{name}]: {why}")))
     return errs
 
 
@@ -136,6 +160,12 @@ def _check_limits(name: str, profile, r) -> list[ValidationError]:
         errs.append(ValidationError("runtime.ncpus", L(
             f"{over}: [profiles.{name}] の cores_max = {profile.cores_max} に対して、ノード数 {r.nodes} × ノードあたりのコア数 {r.ncpus} = {r.nodes * r.ncpus}",
             f"{over}: cores_max = {profile.cores_max} in [profiles.{name}], but nodes {r.nodes} x cores/node {r.ncpus} = {r.nodes * r.ncpus}")))
+    if profile.kind != "direct" and min(r.ncpus, r.mpiprocs, r.omp_threads) >= 1 and r.mpiprocs * r.omp_threads > r.ncpus:
+        errs.append(ValidationError("runtime.ncpus", L(
+            f"ノードあたりの MPI プロセス数 {r.mpiprocs} × OpenMP スレッド数 {r.omp_threads} = {r.mpiprocs * r.omp_threads} が、"
+            f"ノードあたりのコア数 {r.ncpus} を超えています (コア数を {r.mpiprocs * r.omp_threads} 以上にするか、プロセス数かスレッド数を減らしてください)",
+            f"MPI processes per node {r.mpiprocs} x OpenMP threads {r.omp_threads} = {r.mpiprocs * r.omp_threads} exceeds the cores per node {r.ncpus} "
+            f"(raise the cores per node to at least {r.mpiprocs * r.omp_threads}, or lower the processes or threads)")))
     if profile.walltime_max.strip():
         limit = walltime_seconds(profile.walltime_max)
         if limit is None:
@@ -306,6 +336,15 @@ def _check_periodic(spec: CalculationSpec) -> list[ValidationError]:
         if abs(np.linalg.det(cell)) < 1e-6:
             errs.append(ValidationError("structure.atoms", L("周期系なのに格子ベクトルが退化しています (体積 0)", "periodic system but the cell is degenerate (zero volume)")))
         elif kp is not None and (kp.mode != "density" or kp.density > 0) and (kp.mode != "mesh" or all(k >= 1 for k in kp.mesh)):
+            per_axis = None
+            if kp.mode == "density":
+                with np.errstate(over="ignore"):
+                    per_axis = kp.density * np.linalg.norm(2 * np.pi * np.linalg.inv(cell).T, axis=1)
+            if per_axis is not None and (not np.all(np.isfinite(per_axis)) or float(np.max(per_axis)) > MAX_KPOINTS):
+                errs.append(ValidationError("kpoints.density", L(
+                    f"k 点の密度 {kp.density:g} では、1 方向だけで {MAX_KPOINTS:.0e} 点を超えます (密度を下げてください)",
+                    f"a k-point density of {kp.density:g} gives more than {MAX_KPOINTS:.0e} points along one axis alone (lower the density)")))
+                return errs
             mesh = kp.resolved_mesh(cell)
             total = int(np.prod([float(k) for k in mesh]))
             if total > MAX_KPOINTS:
@@ -354,8 +393,11 @@ def _check_velocities_and_handoff(spec: CalculationSpec) -> list[ValidationError
             errs.append(ValidationError("structure.velocities", L("速度は分子動力学 (MD) でしか使われません (計算の種類を MD にするか、速度を外してください)",
                                                                   "velocities are used only in molecular dynamics (choose MD or drop the velocities)")))
         elif gen is not None and not gen.writes_velocities:
-            errs.append(ValidationError("structure.velocities", L(f"この計算コードの生成器 ({spec.method.code}) は速度を入力に書けません (書けるのは DFTB+ と VASP)",
-                                                                  f"the {spec.method.code} generator cannot write velocities (DFTB+ and VASP can)")))
+            from adit.project import code_display_name
+
+            able = [code_display_name(c) for c, g in GENERATORS.items() if g.writes_velocities]
+            errs.append(ValidationError("structure.velocities", L(f"この計算コードの生成器 ({spec.method.code}) は速度を入力に書けません (書けるのは {'、'.join(able)})",
+                                                                  f"the {spec.method.code} generator cannot write velocities ({', '.join(able)} can)")))
     if h is None:
         return errs
     if h.velocities and (t.type != "molecular_dynamics" or h.previous_task != "molecular_dynamics"):
@@ -369,6 +411,28 @@ def _check_velocities_and_handoff(spec: CalculationSpec) -> list[ValidationError
         if missing:
             errs.append(ValidationError("handoff", L(f"前の計算のディレクトリ {h.previous_dir} に、引き継ぐファイルがありません: {missing}",
                                                      f"files to carry over are missing from the previous directory {h.previous_dir}: {missing}")))
+    return errs
+
+
+def _check_code_specific(spec: CalculationSpec) -> list[ValidationError]:
+    # Combinations the code itself refuses at start-up (documented limits, not opinions)
+    errs: list[ValidationError] = []
+    code, t, m, r = spec.method.code, spec.task, spec.method, spec.runtime
+    if code == "lammps" and t.type == "geometry_optimization" and t.optimizer == "FIRE" and t.relax_cell != "no":
+        errs.append(ValidationError("task.optimizer", L(
+            "LAMMPS の min_style fire は格子の緩和 (fix box/relax) と併用できません (LAMMPS の min_style の文書)。"
+            "最適化の方法を Rational (min_style cg) か SteepestDescent (sd) にするか、格子を固定 (task.relax_cell = no) してください",
+            "LAMMPS min_style fire cannot be combined with cell relaxation (fix box/relax; see the LAMMPS min_style documentation). "
+            "Choose Rational (min_style cg) or SteepestDescent (sd), or keep the cell fixed (task.relax_cell = no)")))
+    if code == "gromacs" and t.type == "geometry_optimization" and t.optimizer == "LBFGS":
+        if getattr(m, "constraints", "none") != "none":
+            errs.append(ValidationError("task.optimizer", L(
+                f"GROMACS の integrator = l-bfgs は拘束 (constraints = {m.constraints}) と併用できません。拘束を none にするか、最適化の方法を SteepestDescent (steep) にしてください",
+                f"GROMACS integrator = l-bfgs cannot be used with constraints (constraints = {m.constraints}); set constraints to none or choose SteepestDescent (steep)")))
+        if r.mpiprocs > 1:
+            errs.append(ValidationError("task.optimizer", L(
+                f"GROMACS の integrator = l-bfgs は MPI 並列 (mpiprocs = {r.mpiprocs}) では動きません。mpiprocs を 1 にするか、最適化の方法を SteepestDescent (steep) にしてください",
+                f"GROMACS integrator = l-bfgs does not run with MPI (mpiprocs = {r.mpiprocs}); set mpiprocs to 1 or choose SteepestDescent (steep)")))
     return errs
 
 

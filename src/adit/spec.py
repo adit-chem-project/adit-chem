@@ -498,6 +498,10 @@ class CalculationSpec(BaseModel):
 
     @staticmethod
     def migrate(data: dict) -> dict:
+        if not isinstance(data, dict):
+            from adit.lang import L
+            raise ValueError(L(f"spec.json は {{…}} のオブジェクトで書いてください (いまは JSON の{'配列' if isinstance(data, list) else '文字列や数'}です)",
+                               f"spec.json must be a JSON object {{...}} (it is a JSON {'array' if isinstance(data, list) else 'string or number'})"))
         data = dict(data)
         version = data.get("version", 1)
         if version < 2:
@@ -520,7 +524,7 @@ class CalculationSpec(BaseModel):
 
     @classmethod
     def load(cls, path: Path | str) -> "CalculationSpec":
-        return cls.from_json(Path(path).read_text(encoding="utf-8"))
+        return cls.from_json(Path(path).read_text(encoding="utf-8-sig"))
 
     @staticmethod
     def describe_error(ex: Exception) -> str:

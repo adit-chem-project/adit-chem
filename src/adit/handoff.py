@@ -1,18 +1,21 @@
 """Carry the final structure, and velocities when continuing MD, from one run into the next. Standard library only, because this file is copied next to the run."""
 
-from __future__ import annotations
+# Runs under the cluster's python3, which may be 3.6: no `from __future__ import annotations`,
+# no PEP 604 / PEP 585 annotations, no walrus. Messages are "日本語 / English" because L() is not here.
 
 import os
 import re
 import shutil
 import sys
+from typing import Dict, List, Optional, Tuple
 
 BOHR_ANG = 0.529177210903
-CONVERTS = ("dftbplus", "xtb", "espresso", "orca")
+CONVERTS = ("dftbplus", "xtb", "espresso", "orca", "vasp")
 VELOCITY_FILE = "velocities.dat"
 
 
 PREFIXES = ("adit", "vista", "qcgui")
+_ORCA_XYZ = re.compile(r"^\*\s*xyz\b", re.IGNORECASE)
 
 
 def existing_name(directory: str, pattern: str) -> str:
@@ -38,10 +41,8 @@ def _write_text(path: str, text: str) -> None:
 
 
 def copy_files(code: str, previous_task: str, velocities: bool, gromacs_conf: str = "conf.gro",
-               previous_dir: str = "") -> dict[str, str]:
+               previous_dir: str = "") -> Dict[str, str]:
     md = previous_task == "molecular_dynamics"
-    if code == "vasp" and previous_task in ("geometry_optimization", "molecular_dynamics"):
-        return {"POSCAR": "CONTCAR"}
     if code == "cp2k" and previous_task in ("geometry_optimization", "molecular_dynamics"):
         return {"prev.restart": existing_name(previous_dir, "{}-1.restart")}
     if code == "lammps" and previous_task in ("geometry_optimization", "molecular_dynamics"):
@@ -56,12 +57,30 @@ def copy_files(code: str, previous_task: str, velocities: bool, gromacs_conf: st
     return {}
 
 
-def _floats(tokens) -> list[float]:
+def _floats(tokens) -> List[float]:
     return [float(t.replace("D", "E").replace("d", "e")) for t in tokens]
 
 
 def _mat_vec(cell, frac):
     return [sum(frac[j] * cell[j][i] for j in range(3)) for i in range(3)]
+
+
+def _inv3(m):
+    (a, b, c), (d, e, f), (g, h, i) = m
+    det = a * (e * i - f * h) - b * (d * i - f * g) + c * (d * h - e * g)
+    if abs(det) < 1e-12:
+        raise HandoffError("格子ベクトルが退化しています (体積 0) / the cell is degenerate (zero volume)")
+    adj = [[e * i - f * h, -(b * i - c * h), b * f - c * e],
+           [-(d * i - f * g), a * i - c * g, -(a * f - c * d)],
+           [d * h - e * g, -(a * h - b * g), a * e - b * d]]
+    return [[x / det for x in row] for row in adj]
+
+
+def _find_line(lines: List[str], pred, what: str, path: str) -> int:
+    for i, line in enumerate(lines):
+        if pred(line):
+            return i
+    raise HandoffError("{}: {} の行がありません / no {} line".format(path, what, what))
 
 
 def parse_gen(text: str) -> dict:
@@ -97,7 +116,7 @@ def format_gen(symbols, positions, cell) -> str:
     return "\n".join(lines) + "\n"
 
 
-def last_xyz_frame(path: str) -> list[list[str]]:
+def last_xyz_frame(path: str) -> List[List[str]]:
     last = None
     with open(path, encoding="utf-8", errors="replace") as f:
         while True:
@@ -110,14 +129,14 @@ def last_xyz_frame(path: str) -> list[list[str]]:
             try:
                 n = int(s.split()[0])
             except ValueError as ex:
-                raise HandoffError(f"{path}: xyz の原子数の行が読めません: {s!r}") from ex
+                raise HandoffError(f"{path}: xyz の原子数の行が読めません / cannot read the atom-count line of the xyz file: {s!r}") from ex
             f.readline()
             rows = [f.readline().split() for _ in range(n)]
             if len(rows) != n or any(len(r) < 4 for r in rows):
                 break
             last = rows
     if last is None:
-        raise HandoffError(f"{path}: フレームがありません")
+        raise HandoffError(f"{path}: フレームがありません / no frames")
     return last
 
 
@@ -151,7 +170,7 @@ def parse_poscar(text: str) -> dict:
     return {"symbols": symbols, "positions": pos, "cell": cell, "velocities": vel}
 
 
-def _qe_block(path: str, key: str, n: int) -> tuple[str, list[list[str]]] | None:
+def _qe_block(path: str, key: str, n: int) -> Optional[Tuple[str, List[List[str]]]]:
     found = None
     with open(path, encoding="utf-8", errors="replace") as f:
         for line in f:
@@ -161,7 +180,7 @@ def _qe_block(path: str, key: str, n: int) -> tuple[str, list[list[str]]] | None
     return found
 
 
-def _qe_cell(header: str, rows, alat_bohr: float | None) -> list[list[float]]:
+def _qe_cell(header: str, rows, alat_bohr: Optional[float]) -> List[List[float]]:
     v = [_floats(r[:3]) for r in rows]
     h = header.lower()
     if "angstrom" in h:
@@ -171,11 +190,11 @@ def _qe_cell(header: str, rows, alat_bohr: float | None) -> list[list[float]]:
     m = re.search(r"alat\s*=\s*([-\d.Ee+]+)", h)
     a = float(m.group(1)) if m else alat_bohr
     if a is None:
-        raise HandoffError("CELL_PARAMETERS (alat) の alat が分かりません")
+        raise HandoffError("CELL_PARAMETERS (alat) の alat が分かりません / the alat of CELL_PARAMETERS (alat) is unknown")
     return [[x * a * BOHR_ANG for x in r] for r in v]
 
 
-def read_pw_in_cell(path: str) -> list[list[float]] | None:
+def read_pw_in_cell(path: str) -> Optional[List[List[float]]]:
     lines = _read_text(path).splitlines()
     for i, l in enumerate(lines):
         if l.strip().upper().startswith("CELL_PARAMETERS"):
@@ -186,7 +205,7 @@ def read_pw_in_cell(path: str) -> list[list[float]] | None:
 def read_pw_in_nat(path: str) -> int:
     m = re.search(r"\bnat\s*=\s*(\d+)", _read_text(path))
     if not m:
-        raise HandoffError(f"{path}: nat がありません")
+        raise HandoffError(f"{path}: nat がありません / nat not found")
     return int(m.group(1))
 
 
@@ -194,7 +213,7 @@ def final_espresso(prev: str) -> dict:
     log = os.path.join(prev, "output.log")
     nat = read_pw_in_nat(os.path.join(prev, "pw.in"))
     if not os.path.isfile(log):
-        raise HandoffError(f"{log} がありません")
+        raise HandoffError(f"{log} がありません / not found")
     alat = None
     with open(log, encoding="utf-8", errors="replace") as f:
         for line in f:
@@ -206,7 +225,8 @@ def final_espresso(prev: str) -> dict:
     cell = _qe_cell(*cellb, alat) if cellb else read_pw_in_cell(os.path.join(prev, "pw.in"))
     posb = _qe_block(log, "ATOMIC_POSITIONS", nat)
     if posb is None:
-        raise HandoffError(f"{log} に ATOMIC_POSITIONS がありません (最適化・MD の出力ではないか、途中で止まっています)")
+        raise HandoffError(f"{log} に ATOMIC_POSITIONS がありません (最適化・MD の出力ではないか、途中で止まっています) / "
+                           f"no ATOMIC_POSITIONS in {log} (not an optimization or MD output, or it stopped early)")
     header, rows = posb
     h = header.lower()
     symbols = [r[0] for r in rows]
@@ -226,7 +246,7 @@ def final_espresso(prev: str) -> dict:
 def final_cp2k(prev: str) -> dict:
     path = os.path.join(prev, existing_name(prev, "{}-1.restart"))
     if not os.path.isfile(path):
-        raise HandoffError(f"{path} がありません")
+        raise HandoffError(f"{path} がありません / not found")
     cell, symbols, pos, in_subsys, in_cell, in_coord, has_vel = [None, None, None], [], [], False, False, False, False
     with open(path, encoding="utf-8", errors="replace") as f:
         for line in f:
@@ -250,14 +270,14 @@ def final_cp2k(prev: str) -> dict:
                 p = s.split()
                 if p[0].upper() in ("UNIT", "SCALED"):
                     if p[0].upper() == "SCALED" or (len(p) > 1 and p[1].lower() != "angstrom"):
-                        raise HandoffError(f"{path}: COORD が Å 以外で書かれています ({s})")
+                        raise HandoffError(f"{path}: COORD が Å 以外で書かれています / COORD is not written in Å ({s})")
                     continue
                 symbols.append(p[0])
                 pos.append(_floats(p[1:4]))
             elif in_subsys and u.startswith("&VELOCITY"):
                 has_vel = True
     if not pos:
-        raise HandoffError(f"{path} に &COORD がありません")
+        raise HandoffError(f"{path} に &COORD がありません / no &COORD in {path}")
     return {"symbols": [re.sub(r"[^A-Za-z].*$", "", s) for s in symbols], "positions": pos,
             "cell": cell if all(c is not None for c in cell) else None, "velocities": None, "has_velocities": has_vel,
             "source": os.path.basename(path)}
@@ -299,12 +319,12 @@ def final_structure(code: str, prev: str, previous_task: str) -> dict:
         return final_espresso(prev)
     if code == "cp2k":
         return final_cp2k(prev)
-    raise HandoffError(f"{code} の最終構造はこのファイルでは読みません")
+    raise HandoffError(f"{code} の最終構造はこのファイルでは読みません / this script does not read the final structure of {code}")
 
 
 def _orca_input_coords(path: str) -> dict:
     lines = _read_text(path).splitlines()
-    k = next(i for i, l in enumerate(lines) if l.strip().lower().startswith("* xyz"))
+    k = _find_line(lines, lambda l: _ORCA_XYZ.match(l.strip()) is not None, "* xyz", path)
     rows = []
     for l in lines[k + 1:]:
         if l.strip() == "*":
@@ -313,12 +333,17 @@ def _orca_input_coords(path: str) -> dict:
     return {"symbols": [r[0] for r in rows], "positions": [_floats(r[1:4]) for r in rows], "cell": None, "velocities": None, "source": "orca.inp"}
 
 
-def _check_same(symbols_here: list[str], symbols_prev: list[str], where: str) -> None:
+def _check_same(symbols_here: List[str], symbols_prev: List[str], where: str) -> None:
     if [s.capitalize() for s in symbols_here] != [s.capitalize() for s in symbols_prev]:
-        raise HandoffError(f"{where}: 前の段階の原子の並び ({len(symbols_prev)} 個) が、この段階の入力 ({len(symbols_here)} 個) と合いません")
+        raise HandoffError(f"{where}: 前の段階の原子の並び ({len(symbols_prev)} 個) が、この段階の入力 ({len(symbols_here)} 個) と合いません / "
+                           f"the atoms of the previous stage ({len(symbols_prev)}) do not match the input of this stage ({len(symbols_here)})")
 
 
-def rewritten_at_run(code: str, velocities: bool = False) -> list[str]:
+def _no_velocities(prev: str, source) -> HandoffError:
+    return HandoffError(f"{prev} の {source} に速度がありません / no velocities in {source} of {prev}")
+
+
+def rewritten_at_run(code: str, velocities: bool = False) -> List[str]:
     if code == "dftbplus":
         return ["geometry.gen"] + ([VELOCITY_FILE] if velocities else [])
     if code == "xtb":
@@ -327,10 +352,45 @@ def rewritten_at_run(code: str, velocities: bool = False) -> list[str]:
         return ["orca.inp"]
     if code == "espresso":
         return ["pw.in"]
+    if code == "vasp":
+        return ["POSCAR", "bands/POSCAR"]
     return []
 
 
-def apply_stage(code: str, prev: str, here: str, previous_task: str, velocities: bool) -> list[str]:
+def _vasp_poscar(text: str, d: dict, velocities: bool, prev: str) -> str:
+    # Rewrite positions and cell, keep the header and the Selective dynamics flags of this stage's POSCAR.
+    # Velocities only when asked; the predictor-corrector block of a CONTCAR is never carried.
+    lines = text.splitlines()
+    cur = parse_poscar(text)
+    _check_same(cur["symbols"], d["symbols"], "POSCAR")
+    n = len(cur["symbols"])
+    k = 7
+    selective = lines[k].strip().lower().startswith("s")
+    if selective:
+        k += 1
+    mode = lines[k].strip()
+    direct = mode.lower()[:1] not in ("c", "k")
+    flags = [" ".join(l.split()[3:6]) for l in lines[k + 1:k + 1 + n]]
+    cell = d["cell"] or cur["cell"]
+    inv = _inv3(cell) if direct else None
+    out = [lines[0], "1.0"]
+    out += [f"  {v[0]:.16f}  {v[1]:.16f}  {v[2]:.16f}" for v in cell]
+    out += [lines[5], lines[6]]
+    if selective:
+        out.append("Selective dynamics")
+    out.append(mode)
+    for p, flag in zip(d["positions"], flags):
+        c = _mat_vec(inv, p) if direct else p
+        out.append(f"  {c[0]:.16f}  {c[1]:.16f}  {c[2]:.16f}" + (f"   {flag}" if flag else ""))
+    if velocities:
+        if not d["velocities"]:
+            raise _no_velocities(prev, d.get("source"))
+        out.append("")
+        out += [f"  {v[0]:.10e}  {v[1]:.10e}  {v[2]:.10e}" for v in d["velocities"]]
+    return "\n".join(out) + "\n"
+
+
+def apply_stage(code: str, prev: str, here: str, previous_task: str, velocities: bool) -> List[str]:
     if code not in CONVERTS:
         return []
     d = final_structure(code, prev, previous_task)
@@ -343,10 +403,17 @@ def apply_stage(code: str, prev: str, here: str, previous_task: str, velocities:
         done = ["geometry.gen"]
         if velocities:
             if not d["velocities"]:
-                raise HandoffError(f"{prev} の {d.get('source')} に速度がありません")
-            _write_text(j(VELOCITY_FILE), 
-                "".join(f"{v[0] * 1000.0:.10f} {v[1] * 1000.0:.10f} {v[2] * 1000.0:.10f}\n" for v in d["velocities"]))  # Å/ps
+                raise _no_velocities(prev, d.get("source"))
+            _write_text(j(VELOCITY_FILE),
+                        "".join(f"{v[0] * 1000.0:.10f} {v[1] * 1000.0:.10f} {v[2] * 1000.0:.10f}\n" for v in d["velocities"]))  # Å/ps
             done.append(VELOCITY_FILE)
+        return done
+    if code == "vasp":
+        _write_text(j("POSCAR"), _vasp_poscar(_read_text(j("POSCAR")), d, velocities, prev))
+        done = ["POSCAR"]
+        if os.path.isfile(j(os.path.join("bands", "POSCAR"))):
+            _write_text(j(os.path.join("bands", "POSCAR")), _vasp_poscar(_read_text(j(os.path.join("bands", "POSCAR"))), d, False, prev))
+            done.append("bands/POSCAR")
         return done
     if code == "xtb":
         cur = last_xyz_frame(j("struct.xyz"))
@@ -356,15 +423,15 @@ def apply_stage(code: str, prev: str, here: str, previous_task: str, velocities:
         return ["struct.xyz"]
     if code == "orca":
         lines = _read_text(j("orca.inp")).splitlines()
-        k = next(i for i, l in enumerate(lines) if l.strip().lower().startswith("* xyz"))
-        e = next(i for i in range(k + 1, len(lines)) if lines[i].strip() == "*")
+        k = _find_line(lines, lambda l: _ORCA_XYZ.match(l.strip()) is not None, "* xyz", j("orca.inp"))
+        e = k + 1 + _find_line(lines[k + 1:], lambda l: l.strip() == "*", "*", j("orca.inp"))
         _check_same([l.split()[0] for l in lines[k + 1:e]], d["symbols"], "orca.inp")
         lines[k + 1:e] = [f"  {s:2s} {p[0]:14.8f} {p[1]:14.8f} {p[2]:14.8f}" for s, p in zip(d["symbols"], d["positions"])]
         _write_text(j("orca.inp"), "\n".join(lines) + "\n")
         return ["orca.inp"]
     if code == "espresso":
         lines = _read_text(j("pw.in")).splitlines()
-        k = next(i for i, l in enumerate(lines) if l.strip().upper().startswith("ATOMIC_POSITIONS"))
+        k = _find_line(lines, lambda l: l.strip().upper().startswith("ATOMIC_POSITIONS"), "ATOMIC_POSITIONS", j("pw.in"))
         n = len(d["symbols"])
         rows = [lines[k + 1 + i].split() for i in range(n)]
         _check_same([re.sub(r"\d+$", "", r[0]) for r in rows], d["symbols"], "pw.in")
@@ -382,30 +449,32 @@ def apply_stage(code: str, prev: str, here: str, previous_task: str, velocities:
     return []
 
 
-def run_stage_handoff(code: str, prev: str, previous_task: str, velocities: bool, files: dict[str, str], here: str = ".") -> None:
+def run_stage_handoff(code: str, prev: str, previous_task: str, velocities: bool, files: Dict[str, str], here: str = ".") -> None:
     for dest, src in files.items():
         s = os.path.join(prev, src)
         if not os.path.isfile(s):
-            raise HandoffError(f"前の段階の出力 {s} がありません (前の段階が終わっていないか、失敗しています)")
+            raise HandoffError(f"前の段階の出力 {s} がありません (前の段階が終わっていないか、失敗しています) / "
+                               f"the output {s} of the previous stage is missing (it has not finished, or it failed)")
         shutil.copyfile(s, os.path.join(here, dest))
     apply_stage(code, prev, here, previous_task, velocities)
 
 
-def _main(argv: list[str]) -> int:
+def _main(argv: List[str]) -> int:
     import argparse
     import json
 
-    ap = argparse.ArgumentParser(prog="handoff.py", description="前の段階の最終構造 (と速度) を、この段階の入力に入れる (ADIT が生成)")
+    ap = argparse.ArgumentParser(prog="handoff.py", description="前の段階の最終構造 (と速度) を、この段階の入力に入れる (ADIT が生成) / "
+                                                                "put the final structure (and velocities) of the previous stage into this stage's input (generated by ADIT)")
     ap.add_argument("code")
     ap.add_argument("previous_dir")
     ap.add_argument("previous_task")
     ap.add_argument("--velocities", action="store_true")
-    ap.add_argument("--files", default="{}", help="写すファイル (JSON: この段階での名前 → 前の段階での名前)")
+    ap.add_argument("--files", default="{}", help="写すファイル (JSON: この段階での名前 → 前の段階での名前) / files to copy (JSON: name in this stage -> name in the previous stage)")
     a = ap.parse_args(argv)
     try:
         run_stage_handoff(a.code, a.previous_dir, a.previous_task, a.velocities, json.loads(a.files))
     except (HandoffError, OSError, ValueError, StopIteration, IndexError) as ex:
-        print(f"handoff.py: {ex}", file=sys.stderr)
+        print("handoff.py: {}".format(str(ex) or type(ex).__name__), file=sys.stderr)
         return 1
     return 0
 

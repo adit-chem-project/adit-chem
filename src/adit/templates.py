@@ -42,7 +42,7 @@ def template_dirs(cfg=None) -> list[Path]:
 
 def _read(path: Path) -> dict:
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        data = json.loads(path.read_text(encoding="utf-8-sig"))
     except (OSError, json.JSONDecodeError) as ex:
         raise TemplateError(L(f"雛形 {path} を読めません: {ex}", f"cannot read the template {path}: {ex}")) from ex
     if not isinstance(data, dict) or not isinstance(data.get("method"), dict) or "code" not in data["method"]:

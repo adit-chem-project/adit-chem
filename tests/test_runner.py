@@ -27,6 +27,7 @@ def _generated(tmp_path, sk_root, profile="local"):
     make_fake_skset(sk_root, "mio-1-1", ["H", "O"])
     spec = CalculationSpec.load(copy_sample("water_generated", tmp_path / f"spec_{profile}.json"))
     spec.runtime.profile = profile
+    spec.runtime.ncpus = spec.runtime.mpiprocs * spec.runtime.omp_threads   # a cluster profile checks that the cores fit
     cfg = cfg_for(sk_root)
     out = tmp_path / f"run_{profile}"
     write_project(spec, cfg, out)

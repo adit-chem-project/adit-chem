@@ -42,7 +42,7 @@ def test_generated_md_bundle_verifies(tmp_path, sk_root):
 def test_units_are_converted_back(tmp_path, sk_root):
     out = tmp_path / "em"
     task = Task(type="geometry_optimization", optimizer="LBFGS", max_steps=200, force_tolerance_ev_per_ang=0.05)
-    write_project(spec_for(task), cfg_for(sk_root), out)
+    write_project(spec_for(task, constraints="none"), cfg_for(sk_root), out)   # GROMACS: L-BFGS cannot be combined with constraints
     native = import_native(out, code="gromacs")
     assert native.parsed["task.max_steps"] == 200
     assert native.parsed["task.force_tolerance_ev_per_ang"] == pytest.approx(0.05, rel=1e-6)

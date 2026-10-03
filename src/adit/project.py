@@ -223,7 +223,7 @@ def _transfer_commands(profile, output_dir) -> str:
     here = Path(output_dir).expanduser().resolve() if output_dir else None
     name = shlex.quote(here.name) if here else L("<このディレクトリの名前>", "<directory name>")
     host = profile.target or L("<ユーザー名>@<クラスタのホスト名>", "<user>@<cluster host name>")
-    work = profile.remote_dir.strip() or L("<クラスタでの作業ディレクトリ>", "<work directory on the cluster>")
+    work = shlex.quote(profile.remote_dir.strip()) if profile.remote_dir.strip() else L("<クラスタでの作業ディレクトリ>", "<work directory on the cluster>")
     todo = "" if profile.target and profile.remote_dir.strip() else L(
         "# <...> の部分は自分の値に置き換えてください (環境設定のプロファイルに host と remote_dir を書くと、ここが埋まります)。",
         "# Replace the <...> parts with your own values (set host and remote_dir in the profile to fill them in).")
@@ -287,8 +287,12 @@ def build_project(spec: CalculationSpec, cfg: Config, *, output_dir: Path | str 
                 files.copies[dest] = Path(h.previous_dir).expanduser() / src
         for dest, src in _fetched_copies(spec).items():
             files.copies.setdefault(dest, src)
+        missing = [f"{rel} ← {src}" for rel, src in files.copies.items() if not Path(src).is_file()]
+        if missing:
+            raise ProjectError(L(f"写すファイルがありません (何も書いていません): {', '.join(missing)}",
+                                 f"files to copy are missing (nothing was written): {', '.join(missing)}"))
         notes = gen.readme_notes(spec, res, files.copies)
-        run_command = gen.run_command(spec, profile)
+        run_command = _run_command(gen, spec, profile)
         if run_transform is not None:
             run_command = run_transform(run_command)
         sources = gen.parameter_sources(spec, res)
@@ -321,6 +325,21 @@ def build_project(spec: CalculationSpec, cfg: Config, *, output_dir: Path | str 
         files.texts[CHECK_FILE] = render_check_remote(spec, profile, _programs_to_check(spec.method.code, profile, notes.program))
     _check_names_stay_inside(list(files.texts) + list(files.copies))
     return files
+
+
+def _run_command(gen, spec: CalculationSpec, profile) -> str:
+    # A user's commands.<code> with an unknown {...} must give a readable error, not a KeyError
+    from adit.validate import RUN_COMMAND_PLACEHOLDERS, run_command_placeholder_error
+
+    try:
+        return gen.run_command(spec, profile)
+    except (KeyError, IndexError, ValueError) as ex:
+        custom = profile.commands.get(spec.method.code, "")
+        why = run_command_placeholder_error(custom) if custom else None
+        if why is None and isinstance(ex, KeyError) and ex.args and ex.args[0] in RUN_COMMAND_PLACEHOLDERS:
+            why = L(f"{spec.method.code} の生成器は実行コマンドの {{{ex.args[0]}}} をまだ埋められません",
+                    f"the {spec.method.code} generator does not fill {{{ex.args[0]}}} in the run command yet")
+        raise GenerationError(why or L(f"実行コマンドを組み立てられません: {ex}", f"cannot build the run command: {ex}")) from ex
 
 
 def _programs_to_check(code: str, profile, program: str) -> list[str]:
@@ -361,24 +380,29 @@ def write_project(spec: CalculationSpec, cfg: Config, output_dir: Path | str, *,
         keep.copy(files.names())
     out.mkdir(parents=True, exist_ok=True)
     written: list[Path] = []
-    for rel, text in files.texts.items():
-        p = out / rel
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(text, encoding="utf-8", newline="\n")
-        written.append(p)
-    for name in (SUBMIT_FILE, "make_potcar.sh"):
-        if (out / name).exists():
-            try:
-                (out / name).chmod(0o755)
-            except OSError:
-                pass
-    for rel, src in files.copies.items():
-        p = out / rel
-        p.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src, p)
-        written.append(p)
-    if keep is not None:
-        keep.finish()
+    try:
+        for rel, text in files.texts.items():
+            p = out / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(text, encoding="utf-8", newline="\n")
+            written.append(p)
+        for name in (SUBMIT_FILE, "make_potcar.sh"):
+            if (out / name).exists():
+                try:
+                    (out / name).chmod(0o755)
+                except OSError:
+                    pass
+        for rel, src in files.copies.items():
+            p = out / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            if p.exists() and Path(src).resolve() == p.resolve():
+                written.append(p)   # the source already is the destination (regenerating in place)
+                continue
+            shutil.copy2(src, p)
+            written.append(p)
+    finally:
+        if keep is not None:
+            keep.finish()   # the manifest must exist even after a failed write, or Undo cannot run
     return written
 
 
@@ -483,7 +507,7 @@ def _readme(spec: CalculationSpec, profile, notes: ReadmeNotes, output_dir: Path
         dir_name = L("<このディレクトリの名前>", "<directory name>")
     local_dir = L("'<この計算ディレクトリのパス>'", "'<path to this calculation directory>'")
     host = profile.target or L("<ユーザー名>@<クラスタのホスト名>", "<user>@<cluster host name>")
-    work = profile.remote_dir.strip() or L("<クラスタでの作業ディレクトリ>", "<work directory on the cluster>")
+    work = shlex.quote(profile.remote_dir.strip()) if profile.remote_dir.strip() else L("<クラスタでの作業ディレクトリ>", "<work directory on the cluster>")
     back = L("<手元の置き場所>", "<local folder>")
     kind = profile.kind
     where = {"direct": L("この PC で直接実行する", "run directly on this PC"), "pbs": L("PBS のクラスタ", "a PBS cluster"),

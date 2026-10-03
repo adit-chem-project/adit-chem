@@ -328,12 +328,17 @@ def _merged_config_text(data: dict, path: Path) -> str | None:
     lines = text.splitlines()
     top = lines[:_first_table(lines)]
     tables = {k: v for k, v in data.items() if isinstance(v, dict)}
-    if any(k in tomllib.loads("\n".join(top)) for k in tables):
+    try:
+        top_data = tomllib.loads("\n".join(top))
+    except tomllib.TOMLDecodeError:
+        return None
+    if any(k in top_data for k in tables):
         return None
     for key, value in data.items():
         if key not in tables:
             _replace_top_level(top, key, value)
-    merged: dict = {name: body for name, body in old.items() if isinstance(body, dict) and name not in tables}
+    # inline tables such as `foo = { a = 1 }` stay in the top lines: do not emit them a second time
+    merged: dict = {name: body for name, body in old.items() if isinstance(body, dict) and name not in tables and name not in top_data}
     known_profile = set(Profile.model_fields)
     for name, table in tables.items():
         if name == "profiles":
@@ -342,7 +347,10 @@ def _merged_config_text(data: dict, path: Path) -> str | None:
                      for pname, body in table.items()}
         merged[name] = table
     out = "\n".join(top).rstrip("\n") + "\n\n" + tomli_w.dumps(merged)
-    tomllib.loads(out)
+    try:
+        tomllib.loads(out)
+    except tomllib.TOMLDecodeError:
+        return None
     return out
 
 

@@ -190,7 +190,7 @@ def test_check_remote_script_is_written_for_a_cluster_and_never_submits(tmp_path
         assert 'REMOTE_DIR="/work/me"' in s and "mkdir -p '$REMOTE_DIR' && touch" in s
         assert "command -v dftb+" in s and "command -v mpirun" in s and "load dftbplus/25.1 || exit 1" in s
         if profile == "pbs":
-            assert 'QUEUE="normal"' in s and "qstat -Q $QUEUE" in s and "module -s load" in s and "sbatch" not in s
+            assert 'QUEUE="normal"' in s and "qstat -Q $QUEUE" in s and "module load" in s and "module -s" not in s and "sbatch" not in s
         else:
             assert "sbatch --test-only" in s and "qsub" not in s and "module load dftbplus/25.1" in s
         assert "qsub submit.sh" not in s and "sbatch submit.sh" not in s

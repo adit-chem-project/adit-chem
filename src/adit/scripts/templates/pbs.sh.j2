@@ -15,7 +15,7 @@
 {% endif %}
 
 if [ ! -z "${PBS_O_WORKDIR}" ]; then
-   cd ${PBS_O_WORKDIR}
+   cd "${PBS_O_WORKDIR}"
 fi
 
 {% if lang == "en" %}
@@ -28,9 +28,9 @@ if ! command -v module >/dev/null 2>&1; then
    [ -r /etc/profile ] && . /etc/profile
 fi
 command -v module >/dev/null 2>&1 || { echo "{{ 'module command not available (not found even after sourcing /etc/profile)' if lang == 'en' else 'module コマンドが使えない (/etc/profile を読んでも見つからない)' }}" >&2; exit 1; }
-module -s purge
+module purge
 {% for m in modules %}
-module -s load {{ m }} || { echo "{{ 'module -s load ' ~ m ~ ' failed' if lang == 'en' else 'module -s load ' ~ m ~ ' に失敗' }}" >&2; exit 1; }
+module load {{ m }} || { echo "{{ 'module load ' ~ m ~ ' failed' if lang == 'en' else 'module load ' ~ m ~ ' に失敗' }}" >&2; exit 1; }
 {% endfor %}
 {% endif %}
 

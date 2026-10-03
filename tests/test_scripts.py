@@ -24,11 +24,12 @@ def test_pbs_script_is_generic():
     assert "#PBS -N water" in lines
     assert "#PBS -l select=1:ncpus=8:mpiprocs=1:ompthreads=8:jobtype=core" in lines
     assert "#PBS -l walltime=72:00:00" in lines and "#PBS -j oe" in lines and "#PBS -q normal" in lines
-    assert "module -s purge" in lines
-    assert any(l.startswith("module -s load dftbplus/25.1 ||") for l in lines)
+    assert "module purge" in lines and "module -s" not in s   # Lmod reads -s as --style
+    assert any(l.startswith("module load dftbplus/25.1 ||") for l in lines)
     assert "export OMP_NUM_THREADS=8" in lines
     assert ". /etc/profile" in s and "command -v module" in s
-    assert s.index(". /etc/profile") < s.index("module -s purge")
+    assert s.index(". /etc/profile") < s.index("module purge")
+    assert 'cd "${PBS_O_WORKDIR}"' in s
     assert "qsub submit.sh" in s
     assert s.rstrip().endswith("dftb+ > output.log 2>&1")
     assert "sample.sh" not in s and "公式サンプル" not in s
@@ -38,7 +39,7 @@ def test_pbs_without_extras_or_modules():
     p = Profile(kind="pbs")
     s = render_submit(water_spec(), p, "dftb+")
     assert "jobtype" not in s
-    assert "module -s load" not in s and "module -s purge" not in s and "qsub submit.sh" in s
+    assert "module load" not in s and "module purge" not in s and "qsub submit.sh" in s
 
 
 def test_slurm_script():

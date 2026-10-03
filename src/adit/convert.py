@@ -646,7 +646,8 @@ def main(argv: list[str] | None = None) -> int:
             print(str(ex), file=sys.stderr); return 1
         print(L(f"構造を書きました: {p.resolve()}", f"wrote the structure: {p.resolve()}")); return 0
     try:
-        cfg, _path, _created = ensure_config(Path(args.config).expanduser() if args.config else config_path())
+        # an explicit --config must exist; a typo must not create a fresh settings file
+        cfg = load_config(Path(args.config).expanduser()) if args.config else ensure_config(config_path())[0]
         lang.set_language(env_var("LANG", cfg.language))
         src_path = Path(args.source).expanduser()
         source_file = src_path / "spec.json" if src_path.is_dir() else src_path

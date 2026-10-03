@@ -4,7 +4,6 @@ from __future__ import annotations
 from adit.errors import AditValueError
 import json
 import re
-import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -37,6 +36,7 @@ class PlannedStage:
     pre_command: str = ""
     readme: list[str] = field(default_factory=list)
     uses_script: bool = False
+    overrides: dict = field(default_factory=dict)
 
 
 def parse_stages(data) -> list[Stage]:
@@ -65,7 +65,13 @@ def parse_stages(data) -> list[Stage]:
 
 def load_stages(path: Path | str) -> list[Stage]:
     try:
-        return parse_stages(json.loads(Path(path).read_text(encoding="utf-8")))
+        text = Path(path).read_text(encoding="utf-8-sig")
+    except FileNotFoundError as ex:
+        raise StageError(L(f"段階のファイルがありません: {path}", f"stages file not found: {path}")) from ex
+    except OSError as ex:
+        raise StageError(L(f"段階のファイル {path} を読めません: {ex}", f"cannot read the stages file {path}: {ex}")) from ex
+    try:
+        return parse_stages(json.loads(text))
     except json.JSONDecodeError as ex:
         raise StageError(L(f"{path} を JSON として読めません: {ex}", f"cannot read {path} as JSON: {ex}")) from ex
 
@@ -121,7 +127,7 @@ def plan_stages(spec: CalculationSpec, stages: list[Stage]) -> list[PlannedStage
             s = CalculationSpec.model_validate(data)
         except PydanticError as ex:
             raise StageError(L(f"{i} 段階目 ({stg.name}): ", f"stage {i} ({stg.name}): ") + friendly_pydantic(ex)) from ex
-        plan = PlannedStage(d, s)
+        plan = PlannedStage(d, s, overrides=dict(stg.overrides))
         if i == 1:
             plan.readme = [L("== 段階 ==", "== Stage =="),
                            L(f"  {n} 段階のうち 1 段階目 ({stg.name}: {_describe(s)})。spec.json の構造から始めます。",
@@ -137,6 +143,12 @@ def plan_stages(spec: CalculationSpec, stages: list[Stage]) -> list[PlannedStage
                 raise StageError(L(f"{i} 段階目 ({stg.name}): {code} は出力に速度を書かないので引き継げません (\"velocities\": false にしてください)",
                                    f"stage {i} ({stg.name}): {code} does not write velocities, so they cannot be carried over (set \"velocities\": false)"))
             files = hf.copy_files(code, ptask, vel)
+            if code not in hf.CONVERTS and not files and ptask in ("geometry_optimization", MD):
+                raise StageError(L(f"{i} 段階目 ({stg.name}): {code} では前の段階の最終構造を次の段階へ渡せません (この計算コードの出力から構造を取り出す仕組みが"
+                                   "まだありません)。段階に分けず、前の計算の最終構造を構造ファイルとして読み込んで次の計算を作ってください",
+                                   f"stage {i} ({stg.name}): the final structure of the previous stage cannot be carried over for {code} (ADIT has no "
+                                   "converter for this code's output yet). Instead of stages, load the previous run's final structure from its output "
+                                   "file and generate the next run from it"))
             s = s.model_copy(update={"handoff": Handoff(previous_dir=f"../{prev.dir}", previous_task=ptask, previous_code=code,
                                                          at_run=True, velocities=vel, files=files)})
             plan.spec = s
@@ -152,19 +164,20 @@ def plan_stages(spec: CalculationSpec, stages: list[Stage]) -> list[PlannedStage
             what = (L(f"{', '.join(f'{src} → {dest}' for dest, src in files.items())} を写し", f"copies {', '.join(f'{src} -> {dest}' for dest, src in files.items())}")
                     if files else "")
             conv = L("構造を前の段階の最終構造に書き換え", "rewrites the structure with the final structure of the previous stage") if code in hf.CONVERTS else ""
+            tool = L(" (python3 3.6 以上と ../handoff.py を使います)", " (uses python3 3.6 or newer and ../handoff.py)") if plan.uses_script else ""
             plan.readme = [
                 L("== 段階 ==", "== Stage =="),
                 L(f"  {n} 段階のうち {i} 段階目 ({stg.name}: {_describe(s)})。前の段階 ../{prev.dir} が終わってから実行します。",
                   f"  Stage {i} of {n} ({stg.name}: {_describe(s)}); run it after the previous stage ../{prev.dir} has finished."),
-                L(f"  submit.sh は計算の前に、前の段階の出力から{what}{'、' if what and conv else ''}{conv}ます"
-                  f"{' (python3 と ../handoff.py を使います)' if plan.uses_script else ''}。前の段階の出力が無ければ、そこで止まります。",
-                  f"  Before the calculation, submit.sh {what}{'; ' if what and conv else ''}{conv}"
-                  f"{' (uses python3 and ../handoff.py)' if plan.uses_script else ''}; it stops if the previous output is missing."),
-                (L("  速度 (MD の続きの情報) も前の段階から引き継ぎます。", "  Velocities (MD restart data) are also carried over from the previous stage.") if vel else
-                 L("  速度は引き継ぎません (MD なら新しく初速を作ります)。", "  Velocities are not carried over (MD generates new initial velocities).")),
-                L("  spec.json の構造は 1 段階目の最初の構造のままです。実際の出発点は前の段階の出力です。",
-                  "  The structure in spec.json is still the initial structure of stage 1; the actual starting point is the previous stage's output."),
             ]
+            if what or conv:
+                plan.readme.append(L(f"  submit.sh は計算の前に、前の段階の出力から{what}{'、' if what and conv else ''}{conv}ます{tool}。前の段階の出力が無ければ、そこで止まります。",
+                                     f"  Before the calculation, submit.sh {what}{'; ' if what and conv else ''}{conv}{tool}; it stops if the previous output is missing."))
+            plan.readme.append(L("  速度 (MD の続きの情報) も前の段階から引き継ぎます。", "  Velocities (MD restart data) are also carried over from the previous stage.") if vel else
+                               L("  速度は引き継ぎません (MD なら新しく初速を作ります)。", "  Velocities are not carried over (MD generates new initial velocities)."))
+            if what or conv:
+                plan.readme.append(L("  spec.json の構造は 1 段階目の最初の構造のままです。実際の出発点は前の段階の出力です。",
+                                     "  The structure in spec.json is still the initial structure of stage 1; the actual starting point is the previous stage's output."))
         out.append(plan)
     return out
 
@@ -184,8 +197,8 @@ def _top_readme(plan: list[PlannedStage], profile) -> str:
               L("2 段階目からの submit.sh は、実行する直前に前の段階の出力から構造 (と速度) を写します。前の段階が終わっていなければ止まります。",
                 "From stage 2 on, submit.sh copies the structure (and velocities) from the previous stage right before running; it stops if that stage has not finished.")]
     if any(p.uses_script for p in plan):
-        lines.append(L("そのとき python3 で handoff.py (このディレクトリにあります。標準ライブラリだけで動きます) を使います。",
-                       "It uses handoff.py (in this directory; standard library only) with python3."))
+        lines.append(L("そのとき python3 (3.6 以上) で handoff.py (このディレクトリにあります。標準ライブラリだけで動きます) を使います。",
+                       "It uses handoff.py (in this directory; standard library only) with python3 3.6 or newer."))
     lines += ["", L("== この PC で実行する ==", "== Run on this PC ==")]
     if profile.kind == "direct":
         lines += [L("  bash submit.sh   (段階を順に実行します。途中の段階が失敗したら、そこで止まります)", "  bash submit.sh   (runs the stages in order; stops at the first stage that fails)")]
@@ -218,6 +231,24 @@ def _top_submit(plan: list[PlannedStage]) -> str:
             + f"for d in {dirs}; do\n  echo \"== $d\"\n  bash \"$d/submit.sh\"\ndone\n")
 
 
+def _handoff_source() -> str:
+    # In a frozen build handoff.py ships as a data file that importlib.resources finds; hf.__file__ then names a .pyc
+    try:
+        from importlib.resources import files
+        return files("adit").joinpath(HANDOFF_SCRIPT).read_text(encoding="utf-8")
+    except Exception:
+        return Path(hf.__file__).read_text(encoding="utf-8")
+
+
+def _stage_record(p: PlannedStage) -> dict:
+    rec = {"dir": p.dir, "name": p.spec.meta.stage["name"], "task": p.spec.task.model_dump(mode="json")}
+    for key in ("method", "runtime"):
+        if key in p.overrides:
+            rec[key] = p.overrides[key]
+    rec["velocities"] = bool(p.spec.handoff.velocities) if p.spec.handoff else False
+    return rec
+
+
 def write_stages(spec: CalculationSpec, cfg, out_dir: Path | str, stages: list[Stage], *, overwrite: bool = False) -> list[Path]:
     from adit.batch import check_output
     from adit.project import build_project, write_project
@@ -233,10 +264,8 @@ def write_stages(spec: CalculationSpec, cfg, out_dir: Path | str, stages: list[S
         write_project(p.spec, cfg, out / p.dir, overwrite=overwrite, pre_command=p.pre_command, extra_readme=p.readme)
         dirs.append(out / p.dir)
     if any(p.uses_script for p in plan):
-        shutil.copyfile(Path(hf.__file__), out / HANDOFF_SCRIPT)
-    (out / STAGES_FILE).write_text(json.dumps({"stages": [
-        {"dir": p.dir, "name": p.spec.meta.stage["name"], "task": p.spec.task.model_dump(mode="json"),
-         "velocities": bool(p.spec.handoff.velocities) if p.spec.handoff else False} for p in plan]}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        (out / HANDOFF_SCRIPT).write_text(_handoff_source(), encoding="utf-8", newline="\n")
+    (out / STAGES_FILE).write_text(json.dumps({"stages": [_stage_record(p) for p in plan]}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     profile = cfg.profile(spec.runtime.profile)
     if profile.kind == "direct":
         (out / "submit.sh").write_text(_top_submit(plan), encoding="utf-8", newline="\n")
