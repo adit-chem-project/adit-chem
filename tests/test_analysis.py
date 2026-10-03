@@ -101,6 +101,18 @@ def test_run_analysis_writes_figures(tmp_path):
     assert (d / "analysis" / "rdf.json").is_file()
 
 
+def test_figure_files_are_identical_when_the_analysis_is_run_again(tmp_path):
+    import shutil
+    d = tmp_path / "run"
+    shutil.copytree(EX / "dftb_md_water_generated", d)
+    opts = AnalysisOptions(rdf=False, msd=False, dos=False, figure_format="svg,pdf")
+    run_analysis(d, opts)
+    first = {p.name: p.read_bytes() for p in (d / "analysis").glob("energy.*")}
+    run_analysis(d, opts)
+    assert set(first) == {"energy.png", "energy.svg", "energy.pdf"}
+    assert first == {p.name: p.read_bytes() for p in (d / "analysis").glob("energy.*")}
+
+
 def test_rdf_rmax_is_capped_at_half_cell_width(tmp_path):
     import shutil
     d = tmp_path / "run"
