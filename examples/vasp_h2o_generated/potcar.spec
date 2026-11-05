@@ -1,4 +1,4 @@
-# 使う POTCAR。順番は POSCAR の元素の順。set = potpaw_PBE
-# element  name  TITEL  ZVAL   (TITEL と ZVAL はライブラリがあれば生成時に、無ければ make_potcar.sh が実行時に potcar.used へ記録)
-O  O  (未確認)  (未確認)
-H  H  (未確認)  (未確認)
+# POTCARs to use, in the order of the elements in POSCAR. set = potpaw_PBE
+# element  name  TITEL  ZVAL   (TITEL and ZVAL are recorded at generation if the library is available; otherwise make_potcar.sh records them in potcar.used at run time)
+O  O  (unverified)  (unverified)
+H  H  (unverified)  (unverified)

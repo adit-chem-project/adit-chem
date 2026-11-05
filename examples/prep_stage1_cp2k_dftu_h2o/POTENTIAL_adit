@@ -1,4 +1,4 @@
-# adit: miniforge3/envs/cp2k/share/cp2k/data/GTH_POTENTIALS から、この計算で使う項目だけを写したもの (CP2K の配布物。GPL-2.0-or-later)
+# ADIT: copied from miniforge3/envs/cp2k/share/cp2k/data/GTH_POTENTIALS, only the entries this calculation uses (part of the CP2K distribution; GPL-2.0-or-later)
 
 O GTH-PBE-q6 GTH-PBE
     2    4

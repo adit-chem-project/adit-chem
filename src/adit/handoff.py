@@ -1,7 +1,7 @@
 """Carry the final structure, and velocities when continuing MD, from one run into the next. Standard library only, because this file is copied next to the run."""
 
 # Runs under the cluster's python3, which may be 3.6: no `from __future__ import annotations`,
-# no PEP 604 / PEP 585 annotations, no walrus. Messages are "日本語 / English" because L() is not here.
+# no PEP 604 / PEP 585 annotations, no walrus. Messages are "Japanese / English" because L() is not here.
 
 import os
 import re

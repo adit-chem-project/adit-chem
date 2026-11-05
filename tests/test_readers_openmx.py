@@ -84,7 +84,7 @@ def test_load_run_uses_it(tmp_path):
     assert any("最高被占準位" in n or "highest occupied" in n for n in data.notes)
 
 
-@pytest.mark.skipif(not os.environ.get("ADIT_OPENMX_OUT"), reason="ADIT_OPENMX_OUT に本物の .out が要る")
+@pytest.mark.skipif(not os.environ.get("ADIT_OPENMX_OUT"), reason="needs a real .out in ADIT_OPENMX_OUT")
 def test_real_output_file():
     out = read_openmx(Path(os.environ["ADIT_OPENMX_OUT"]))
     assert out.energies_ev

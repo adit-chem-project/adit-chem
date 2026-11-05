@@ -1,4 +1,4 @@
-# Sources / 出典
+# Sources
 
 - NWChem input examples and invocation: https://nwchemgit.github.io/Getting-Started.html
 - GEOMETRY units, noautosym, nocenter, noautoz: https://nwchemgit.github.io/Geometry.html
@@ -9,4 +9,4 @@
 - TASK energy: https://nwchemgit.github.io/TASK.html
 - Total SCF energy output label: https://nwchemgit.github.io/Sample.html
 
-The executable was not installed for a live calculation in this environment. / この環境には NWChem 本体がなく、実行しての確認はしていません。
+The executable was not installed for a live calculation in this environment.

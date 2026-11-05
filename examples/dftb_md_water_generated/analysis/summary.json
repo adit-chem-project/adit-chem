@@ -48,7 +48,7 @@
         ],
         "source": "detailed.out:18",
         "unit": "e",
-        "note": "DFTB+ の Mulliken 電荷 (価電子の数 − Mulliken の電子数。負なら電子が多い)。MD では detailed.out は最後に書かれたステップの値",
+        "note": "DFTB+ Mulliken charges (valence electrons minus Mulliken population; negative means excess electrons); for MD, detailed.out holds the last step written",
         "sum": 9.999999994736442e-09,
         "atoms": [
           "O1",
@@ -73,6 +73,6 @@
     "temperature": "analysis/temperature.png"
   },
   "notes": [
-    "MD の温度: 目標 300 K、平均 2703 K"
+    "MD temperature: target 300 K, mean 2703 K"
   ]
 }

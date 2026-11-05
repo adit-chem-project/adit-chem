@@ -90,7 +90,7 @@ def test_file_multi_frame_takes_last(tmp_path):
     assert np.isclose(from_file(p).get_distance(0, 1), b.get_distance(0, 1))
 
 
-@pytest.mark.skipif(not has_rdkit(), reason="RDKit が無い")
+@pytest.mark.skipif(not has_rdkit(), reason="RDKit is missing")
 def test_smiles_ethanol():
     atoms = from_smiles("CCO")
     assert sorted(atoms.get_chemical_symbols()) == sorted(["C", "C", "O"] + ["H"] * 6)
@@ -98,7 +98,7 @@ def test_smiles_ethanol():
     assert d.min() > 0.9
 
 
-@pytest.mark.skipif(not has_rdkit(), reason="RDKit が無い")
+@pytest.mark.skipif(not has_rdkit(), reason="RDKit is missing")
 def test_smiles_invalid():
     with pytest.raises(StructureError):
         from_smiles("C(C")

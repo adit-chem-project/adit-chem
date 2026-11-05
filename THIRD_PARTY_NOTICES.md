@@ -1,102 +1,102 @@
-# 同梱している第三者のファイルと、そのライセンス
+# Bundled third-party files and their licenses
 
-**ADIT 自身のコード (`src/adit/`、`tests/*.py`、文書) は MIT です** (`LICENSE`)。
-一方、`examples/` と `tests/data/` には、**他のプロジェクトから取ってきたファイル**が入っています。
-それらは**元のライセンスのまま**で、MIT にはなりません。この文書がその一覧です。
-各ディレクトリの `SOURCES.md` に、取得日・URL・sha256 まで書いてあります。
+**ADIT's own code (`src/adit/`, `tests/*.py`, documentation) is MIT** (`LICENSE`).
+However, `examples/` and `tests/data/` contain **files taken from other projects**.
+Those files **keep their original licenses** and do not become MIT. This document lists them.
+The `SOURCES.md` in each directory gives the retrieval date, URL and sha256.
 
-ライセンスの全文は `licenses/` にあります。
+The full license texts are in `licenses/`.
 
-## PyPI に出す配布物 (adit-chem) には入っていません
+## Not included in the PyPI distribution (adit-chem)
 
-`pip install adit-chem` で入るもの (wheel / sdist) は **ADIT 自身のコードだけ**です。
-下の第三者のファイルは、GitHub のリポジトリにだけ入っています。
+What `pip install adit-chem` installs (wheel / sdist) is **only ADIT's own code**.
+The third-party files below are only in the GitHub repository.
 
-## 計算コードの配布物から取ったファイル
+## Files taken from calculation code distributions
 
-| ファイル | 出典 | ライセンス | 全文 |
+| File | Source | License | Full text |
 |---|---|---|---|
-| `examples/lammps_cu/Cu_u3.eam` と、その写し `examples/lammps_cu_nvt_generated/Cu_u3.eam`、`examples/plumed_lammps_cu_generated/Cu_u3.eam` | LAMMPS の `potentials/` | GPL-2.0 | `licenses/GPL-2.0.txt` |
-| `examples/cp2k_h2o_generated/BASIS_adit`、`POTENTIAL_adit` ほか CP2K の例 | CP2K の `data/` (BASIS_MOLOPT、GTH_POTENTIALS の一部) | GPL-2.0-or-later | `licenses/GPL-2.0.txt` |
-| `examples/gromacs_spce/conf.gro` と、その写し `examples/gromacs_spce_em_generated/`、`examples/gromacs_spce_nvt_generated/`、`examples/openmm_spce_nvt_generated/` の `conf.gro` | GROMACS の `share/gromacs/top/spc216.gro` | LGPL-2.1 | `licenses/LGPL-2.1.txt` |
-| `examples/water_generated/skf/`、`examples/dftb_md_water_generated/skf/`、`examples/dftb_tio2_generated/skf/`、`examples/dftb_tio2_bands_generated/skf/`、`examples/prep_stage1_dftb_continue_nve/skf/`、`examples/prep_stage1_dftb_stages/*/skf/`、`examples/prep_stage2_dftb_adsorption/*/skf/`、`examples/prep_stage3_dftb_elastic/*/skf/`、`examples/prep_stage3_dftb_neb_images/*/skf/`、`examples/prep_stage3_dftb_phonons_ase/*/skf/`、`examples/prep_stage3_dftb_phonons_phonopy/*/skf/` の `.skf`、`LICENSE`、`README` (合計 92 個の `.skf`) | dftb.org の Slater-Koster セット mio-1-1。`dftb_tio2*` の Ti を含む組 (`Ti-Ti`、`Ti-O`、`O-Ti`) は同じ dftb.org の tiorg-0-1 (https://dftb.org/parameters/download.html) | CC BY-SA 4.0 | `licenses/CC-BY-SA-4.0.txt` (各 `skf/LICENSE` にも同じ全文) |
+| `examples/lammps_cu/Cu_u3.eam` and its copies `examples/lammps_cu_nvt_generated/Cu_u3.eam`, `examples/plumed_lammps_cu_generated/Cu_u3.eam` | `potentials/` in LAMMPS | GPL-2.0 | `licenses/GPL-2.0.txt` |
+| `examples/cp2k_h2o_generated/BASIS_adit`, `POTENTIAL_adit` and other CP2K examples | `data/` in CP2K (parts of BASIS_MOLOPT and GTH_POTENTIALS) | GPL-2.0-or-later | `licenses/GPL-2.0.txt` |
+| `examples/gromacs_spce/conf.gro` and its copies, the `conf.gro` in `examples/gromacs_spce_em_generated/`, `examples/gromacs_spce_nvt_generated/`, `examples/openmm_spce_nvt_generated/` | `share/gromacs/top/spc216.gro` in GROMACS | LGPL-2.1 | `licenses/LGPL-2.1.txt` |
+| `.skf`, `LICENSE` and `README` in `examples/water_generated/skf/`, `examples/dftb_md_water_generated/skf/`, `examples/dftb_tio2_generated/skf/`, `examples/dftb_tio2_bands_generated/skf/`, `examples/prep_stage1_dftb_continue_nve/skf/`, `examples/prep_stage1_dftb_stages/*/skf/`, `examples/prep_stage2_dftb_adsorption/*/skf/`, `examples/prep_stage3_dftb_elastic/*/skf/`, `examples/prep_stage3_dftb_neb_images/*/skf/`, `examples/prep_stage3_dftb_phonons_ase/*/skf/`, `examples/prep_stage3_dftb_phonons_phonopy/*/skf/` (92 `.skf` files in total) | Slater-Koster set mio-1-1 from dftb.org. The pairs containing Ti in `dftb_tio2*` (`Ti-Ti`, `Ti-O`, `O-Ti`) are from tiorg-0-1, also from dftb.org (https://dftb.org/parameters/download.html) | CC BY-SA 4.0 | `licenses/CC-BY-SA-4.0.txt` (each `skf/LICENSE` also has the same full text) |
 
-同じディレクトリの `topol.top` (`examples/gromacs_spce/` とその写し) は、GROMACS 同梱の力場を `#include` するだけの短いファイルで、ADIT 側で書いたものです。
+`topol.top` in the same directories (`examples/gromacs_spce/` and its copies) is a short file that only `#include`s force fields shipped with GROMACS. It was written on the ADIT side.
 
-**ADIT はこれらのファイルを作りません。**利用者が用意したものを写すだけで、例は「動く形」を示すために置いています。
+**ADIT does not create these files.** It only copies what the user has provided. The examples are here to show a setup that works.
 
-## 文書・レシピから取ったもの
+## Taken from documentation and recipes
 
-| ファイル | 出典 | ライセンス | 全文 |
+| File | Source | License | Full text |
 |---|---|---|---|
-| `examples/vasp_h2o`、`examples/vasp_cd_si` | VASP 公式 wiki の例 (原文のまま転載) | GNU Free Documentation License 1.2 | `licenses/GNU-FDL-1.2.txt` |
-| `examples/dftb_tio2`、`examples/water`、`examples/prep_stage2_dftb_adsorption` | DFTB+ の公式レシピ集 | CC BY-SA 4.0 | `licenses/CC-BY-SA-4.0.txt` |
+| `examples/vasp_h2o`, `examples/vasp_cd_si` | Examples from the official VASP wiki (reproduced verbatim) | GNU Free Documentation License 1.2 | `licenses/GNU-FDL-1.2.txt` |
+| `examples/dftb_tio2`, `examples/water`, `examples/prep_stage2_dftb_adsorption` | The official DFTB+ recipes | CC BY-SA 4.0 | `licenses/CC-BY-SA-4.0.txt` |
 
-## 書式を確かめるために置いた、他のプロジェクトの試験ファイル
+## Test files from other projects, kept to check file formats
 
-| ファイル | 出典 | ライセンス |
+| File | Source | License |
 |---|---|---|
-| `tests/data/gaussian_dvb_raman.out.gz`、`gamess_dvb_ir.out.gz`、`qchem_dvb_raman.out.gz`、`orca_dvb_raman.out.gz` | [cclib](https://github.com/cclib/cclib) の `data/` | BSD-3-Clause |
-| `tests/data/PROCAR.simple`、`PROCAR.new_format_5.4.4.gz`、`WAVEDER.gz` | [pymatgen](https://github.com/materialsproject/pymatgen) の `test-files/` | MIT |
-| `tests/data/fetch/pubchem_*` | PubChem PUG REST の実際の応答 | NCBI の方針 (米国政府の著作物はパブリックドメイン) |
-| `tests/data/fetch/cod_1000041*` | Crystallography Open Database の実際の応答 | CC0 1.0 |
-| `tests/data/fetch/providers.json`、`idx_oqmd_links.json`、`oqmd_*.json` | OPTIMADE の実際の応答 (providers.json は OPTIMADE 連合、残りは OQMD) | providers.json は MIT、OQMD の項目は OQMD の規約 |
+| `tests/data/gaussian_dvb_raman.out.gz`, `gamess_dvb_ir.out.gz`, `qchem_dvb_raman.out.gz`, `orca_dvb_raman.out.gz` | `data/` in [cclib](https://github.com/cclib/cclib) | BSD-3-Clause |
+| `tests/data/PROCAR.simple`, `PROCAR.new_format_5.4.4.gz`, `WAVEDER.gz` | `test-files/` in [pymatgen](https://github.com/materialsproject/pymatgen) | MIT |
+| `tests/data/fetch/pubchem_*` | Real responses from PubChem PUG REST | NCBI policy (works of the US government are in the public domain) |
+| `tests/data/fetch/cod_1000041*` | Real responses from the Crystallography Open Database | CC0 1.0 |
+| `tests/data/fetch/providers.json`, `idx_oqmd_links.json`, `oqmd_*.json` | Real OPTIMADE responses (providers.json from the OPTIMADE consortium, the rest from OQMD) | providers.json is MIT; the OQMD entries are under the OQMD terms |
 
-**これらは「読み取りが本当に合っているか」を、実物の書式で確かめるために置いています。**
-出典と確かめた内容は `tests/data/SOURCES.md` にあります。
+**These are here to check, against real file formats, that the parsers really read them correctly.**
+The sources and what was checked are in `tests/data/SOURCES.md`.
 
-## データベースから取得した構造 (利用者が取得するもの)
+## Structures fetched from databases (fetched by the user)
 
-「データベースから取得」(`adit-gen --fetch`) で手元に来るファイルは ADIT の配布物ではなく、**利用者がそのサイトから取得したもの**です。
-ADIT は取得元・ID・取得日時・応答の SHA-256 とライセンスの表記を spec.json (`provenance.fetched_structure`) と README.txt に記録し、
-取得したファイルを出力ディレクトリに写します。**公開・再配布するときは、その表記の条件に従ってください。**
-各サイトの表記は 2026-09-19 に確認しました。
+Files that arrive through "Fetch from a database" (`adit-gen --fetch`) are not part of the ADIT distribution. They are **what the user fetched from that site**.
+ADIT records the source, ID, fetch date and time, the SHA-256 of the response and the license statement in spec.json (`provenance.fetched_structure`) and README.txt,
+and copies the fetched file to the output directory. **If you publish or redistribute a file, follow the terms of that statement.**
+The statements of each site were checked on 2026-09-19.
 
-| 取得元 | 表記 | 確認したページ |
+| Source | Statement | Page checked |
 |---|---|---|
-| PubChem | NCBI の方針: 米国政府が作った情報はパブリックドメイン。提供元 (submitter) が特許・著作権などを主張する場合があり、NCBI は個別の許諾を出せないとしている。PubChem の案内も「提供元のライセンス表記を確かめること」としている | https://www.ncbi.nlm.nih.gov/home/about/policies/ 、https://pubchem.ncbi.nlm.nih.gov/docs/downloads |
-| COD (Crystallography Open Database) | 「All data in the COD and the database itself are dedicated to the public domain and licensed under the CC0 License」 | https://www.crystallography.net/cod/ |
-| Materials Project | 「By downloading Content from Materials Project, User agrees to accept the Creative Commons Attribution 4.0 License … provided proper attribution is given to the Materials Project」 | https://next-gen.materialsproject.org/about/terms (ブラウザ以外からは 403 になるので、同じ文面のある https://legacy.materialsproject.org/terms で確認) |
-| OPTIMADE (横断検索) | 提供元ごとに異なる。ADIT は提供元の名前とホームページを記録するので、そこで条件を確かめてください | https://providers.optimade.org/ |
+| PubChem | NCBI policy: information produced by the US government is in the public domain. Submitters may claim patent, copyright or other rights, and NCBI states that it cannot grant individual permissions. PubChem's guidance also tells users to check the submitter's license statement | https://www.ncbi.nlm.nih.gov/home/about/policies/ , https://pubchem.ncbi.nlm.nih.gov/docs/downloads |
+| COD (Crystallography Open Database) | "All data in the COD and the database itself are dedicated to the public domain and licensed under the CC0 License" | https://www.crystallography.net/cod/ |
+| Materials Project | "By downloading Content from Materials Project, User agrees to accept the Creative Commons Attribution 4.0 License … provided proper attribution is given to the Materials Project" | https://next-gen.materialsproject.org/about/terms (returns 403 to clients other than browsers, so it was checked at https://legacy.materialsproject.org/terms, which has the same text) |
+| OPTIMADE (federated search) | Differs by provider. ADIT records the provider's name and home page, so check the terms there | https://providers.optimade.org/ |
 
-PubChem の利用方針は「1 秒に 5 回まで」の要求で、ADIT は 1 回の取得で 3 回 (名前 → CID、SDF、化合物名) までしか要求しません。
+PubChem's usage policy asks for no more than 5 requests per second. ADIT makes at most 3 requests per fetch (name → CID, SDF, compound name).
 
-## 同梱していないもの (配れないもの)
+## Not included (cannot be distributed)
 
-- **VASP の POTCAR**: ライセンス保持者以外に配布できません。ADIT は**書きも写しもしません**
-- **Slater-Koster パラメータ (slakos/)**: 利用者が dftb.org から入れます。セットごとの置き場所 `slakos/` はリポジトリには入れていません (`.gitignore`)。上の表にある `examples/**/skf/` の mio-1-1 / tiorg-0-1 の写しだけが例外です
-- **擬ポテンシャル (UPF、psp8 など)**: 同上
-- **計算コード本体** (DFTB+、VASP、Gaussian、ORCA ほか): 入れていません
+- **VASP POTCAR files**: These cannot be distributed to anyone other than license holders. ADIT **neither writes nor copies them**
+- **Slater-Koster parameters (slakos/)**: Users install these from dftb.org. `slakos/`, the location for each set, is not in the repository (`.gitignore`). The only exception is the copies of mio-1-1 / tiorg-0-1 under `examples/**/skf/` listed in the table above
+- **Pseudopotentials (UPF, psp8 and others)**: Same as above
+- **The calculation codes themselves** (DFTB+, VASP, Gaussian, ORCA and others): Not included
 
-## 実行ファイル (.exe / .app) に入るもの
+## What goes into the executables (.exe / .app)
 
-PyInstaller で作る配布物には、**日本語のフォント (Noto Sans CJK JP、OFL-1.1)** が入ります。
-**その全文 `licenses/OFL-1.1-NotoSansCJK.txt` も一緒に入ります** (`packaging/adit.spec` がそのように組み立てます。
-全文が無いときは、フォントを入れずに組み立てが止まります)。
+The distributions built with PyInstaller contain **a Japanese font (Noto Sans CJK JP, OFL-1.1)**.
+**Its full text, `licenses/OFL-1.1-NotoSansCJK.txt`, is included with it** (`packaging/adit.spec` builds it this way.
+If the full text is missing, the build stops without bundling the font).
 
-同じ配布物に、`LICENSE`、この `THIRD_PARTY_NOTICES.md`、`licenses/*.txt` も入ります
-(受け取った人が、手元で権利の表示を読めるように)。
+The same distributions also contain `LICENSE`, this `THIRD_PARTY_NOTICES.md` and `licenses/*.txt`
+(so that recipients can read the rights notices on their own machines).
 
-| 入るもの | ライセンス | 全文 |
+| Included | License | Full text |
 |---|---|---|
-| Noto Sans CJK JP (フォント) | SIL Open Font License 1.1 | `licenses/OFL-1.1-NotoSansCJK.txt` (実行ファイルの中では `fonts/` にも同じ全文) |
-| Python、ASE、pydantic、Jinja2、matplotlib、SciPy、NumPy | それぞれの配布物のライセンス (PSF / LGPL-2.1+ / MIT / BSD-3 ほか) | 各パッケージの配布物に含まれます |
-| tomli-w | MIT | 同上 |
-| PySide6 (画面のとき) | **LGPL-3.0** | Qt / PySide6 の配布物を参照 |
-| PyQtDarkTheme-fork (画面のテーマ) | MIT | 各パッケージの配布物に含まれます |
-| pyte (ワークスペースのターミナルの画面) | **LGPL-3.0** | 同上 |
-| ptyprocess (Linux / macOS のターミナル) | ISC | 同上 |
-| pywinpty (Windows のターミナル) | MIT | 同上 |
-| RDKit (SMILES と Draw。入れて作ったときだけ) | BSD-3-Clause | 同上 |
-| spglib (空間群。入れて作ったときだけ) | BSD-3-Clause | 同上 |
+| Noto Sans CJK JP (font) | SIL Open Font License 1.1 | `licenses/OFL-1.1-NotoSansCJK.txt` (inside the executable, the same full text is also in `fonts/`) |
+| Python, ASE, pydantic, Jinja2, matplotlib, SciPy, NumPy | The license of each distribution (PSF / LGPL-2.1+ / MIT / BSD-3 and others) | Included in each package's distribution |
+| tomli-w | MIT | Same as above |
+| PySide6 (for the GUI) | **LGPL-3.0** | See the Qt / PySide6 distribution |
+| PyQtDarkTheme-fork (GUI theme) | MIT | Included in each package's distribution |
+| pyte (screen of the Workspace terminal) | **LGPL-3.0** | Same as above |
+| ptyprocess (terminal on Linux / macOS) | ISC | Same as above |
+| pywinpty (terminal on Windows) | MIT | Same as above |
+| RDKit (SMILES and Draw; only if installed at build time) | BSD-3-Clause | Same as above |
+| spglib (space groups; only if installed at build time) | BSD-3-Clause | Same as above |
 
-**PySide6 (Qt) と pyte は LGPL-3.0 です。**画面つきの実行ファイルを配るときは、LGPL の求めに応じて
-「利用者が Qt を差し替えられること」を満たす必要があります (PyInstaller の 1 ディレクトリ形式なら、
-Qt の共有ライブラリが別ファイルとして入るので差し替えられます。**1 つにまとめた形式 (onefile) は避けてください**)。
-`packaging/adit.spec` の `ONEFILE` は False のままにしてあります。
+**PySide6 (Qt) and pyte are LGPL-3.0.** When you distribute an executable with the GUI, you must meet the LGPL requirement
+that "users can replace Qt" (with PyInstaller's one-directory format,
+Qt's shared libraries are included as separate files, so they can be replaced. **Avoid the single-file format (onefile)**).
+`ONEFILE` in `packaging/adit.spec` is left as False.
 
-## 商標について
+## Trademarks
 
-VASP、Gaussian、ORCA、GAMESS、Q-Chem、GRRM、Materials Studio などは、それぞれの権利者の商標または登録商標です。
-ADIT はこれらのソフトの**入力ファイルを書き、出力を読むだけ**で、これらの提供元とは無関係であり、
-提供元からの承認も受けていません。
+VASP, Gaussian, ORCA, GAMESS, Q-Chem, GRRM, Materials Studio and others are trademarks or registered trademarks of their respective owners.
+ADIT **only writes input files for these programs and reads their output**. It is not affiliated with their providers
+and has not been endorsed by them.

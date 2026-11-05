@@ -159,7 +159,7 @@ def test_check_detects_changed_and_missing_inputs(run_dir):
 
 def test_check_covers_copied_parameter_files(run_dir):
     copied = sorted((run_dir / "skf").glob("*.skf"))
-    assert copied, "写したファイルが無いと試験にならない"
+    assert copied, "the test means nothing without a copied file"
     copied[0].write_text("tampered\n", encoding="utf-8")
     lines, verdict = check_lines(load_run_report(run_dir))
     assert verdict == "bad" and any(copied[0].name in l and "書き換え" in l for l in lines)

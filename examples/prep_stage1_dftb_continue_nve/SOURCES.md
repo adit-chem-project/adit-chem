@@ -1,12 +1,12 @@
-# examples/prep_stage1_dftb_continue_nve —— 前の計算の続き (DFTB+ の MD → NVE) の生成したファイルと実際に実行した結果
+# examples/prep_stage1_dftb_continue_nve —— generated files for continuing a previous run (DFTB+ MD → NVE) and the results of actually running them
 
-`adit.continuation.continue_from("examples/dftb_md_water_generated", 条件)` で作ったもの (コマンド行なら `adit-gen --continue-from …`)。
-条件は元の spec.json の MD を NVE・10 ステップ・毎ステップ出力にしたもの。位置と速度は元の geo_end.xyz の最後のフレーム
-(速度は Å/ps → Å/fs に直して spec.json の structure.velocities、dftb_in.hsd には Velocities [AA/ps] で書く)。DFTB+ 25.1、2026-09-12。
+Made with `adit.continuation.continue_from("examples/dftb_md_water_generated", settings)` (on the command line, `adit-gen --continue-from …`).
+The settings are the MD of the original spec.json changed to NVE, 10 steps, output every step. Positions and velocities come from the last frame of the original geo_end.xyz
+(velocities converted from Å/ps to Å/fs for structure.velocities in spec.json, and written in dftb_in.hsd as Velocities [AA/ps]). DFTB+ 25.1, 2026-09-12.
 
-| 項目 | 値 |
+| Item | Value |
 |---|---|
-| 元の MD の最後の温度 (examples/dftb_md_water_generated/md.out) | 5885.4585 K |
-| 続きの最初の温度 (md.out) | 5885.4585 K |
+| Last temperature of the original MD (examples/dftb_md_water_generated/md.out) | 5885.4585 K |
+| First temperature of the continuation (md.out) | 5885.4585 K |
 
-2 つが一致したので、速度は単位も含めて引き継がれている。温度が高いのは元の例 (歪んだ水の MD) の値で、続きの確認とは関係しない。
+The two match, so the velocities carry over, units included. The high temperature comes from the original example (MD of distorted water) and has nothing to do with this check of the continuation.

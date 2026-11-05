@@ -23,7 +23,7 @@ def test_no_old_name_is_left_in_the_source():
         for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
             if re.search(r"(?<![A-Za-z])vista|VISTA", line, re.I):
                 hits.append(f"{path.relative_to(SRC)}:{n}: {line.strip()[:80]}")
-    assert hits == [], "旧名が残っています"
+    assert hits == [], "the old name is still present"
 
 
 def test_the_old_settings_file_is_still_read(tmp_path, monkeypatch):

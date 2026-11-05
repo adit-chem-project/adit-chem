@@ -95,7 +95,7 @@ def test_analysis_writes_are_utf8_even_if_locale_is_cp932(monkeypatch, tmp_path)
 
     src = Path(__file__).resolve().parents[1] / "examples" / "water_generated"
     if not (src / "detailed.out").is_file():
-        pytest.skip("基準の実行結果が無い")
+        pytest.skip("no reference run")
     import shutil
     run = tmp_path / "run"
     shutil.copytree(src, run)

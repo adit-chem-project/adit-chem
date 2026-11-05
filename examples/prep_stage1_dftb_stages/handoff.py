@@ -100,14 +100,14 @@ def last_xyz_frame(path: str) -> list[list[str]]:
             try:
                 n = int(s.split()[0])
             except ValueError as ex:
-                raise HandoffError(f"{path}: xyz の原子数の行が読めません: {s!r}") from ex
+                raise HandoffError(f"{path}: cannot read the atom-count line of the xyz file: {s!r}") from ex
             f.readline()
             rows = [f.readline().split() for _ in range(n)]
             if len(rows) != n or any(len(r) < 4 for r in rows):
                 break
             last = rows
     if last is None:
-        raise HandoffError(f"{path}: フレームがありません")
+        raise HandoffError(f"{path}: no frames")
     return last
 
 
@@ -161,7 +161,7 @@ def _qe_cell(header: str, rows, alat_bohr: float | None) -> list[list[float]]:
     m = re.search(r"alat\s*=\s*([-\d.Ee+]+)", h)
     a = float(m.group(1)) if m else alat_bohr
     if a is None:
-        raise HandoffError("CELL_PARAMETERS (alat) の alat が分かりません")
+        raise HandoffError("the alat of CELL_PARAMETERS (alat) is unknown")
     return [[x * a * BOHR_ANG for x in r] for r in v]
 
 
@@ -176,7 +176,7 @@ def read_pw_in_cell(path: str) -> list[list[float]] | None:
 def read_pw_in_nat(path: str) -> int:
     m = re.search(r"\bnat\s*=\s*(\d+)", open(path, encoding="utf-8").read())
     if not m:
-        raise HandoffError(f"{path}: nat がありません")
+        raise HandoffError(f"{path}: nat not found")
     return int(m.group(1))
 
 
@@ -184,7 +184,7 @@ def final_espresso(prev: str) -> dict:
     log = os.path.join(prev, "output.log")
     nat = read_pw_in_nat(os.path.join(prev, "pw.in"))
     if not os.path.isfile(log):
-        raise HandoffError(f"{log} がありません")
+        raise HandoffError(f"{log} not found")
     alat = None
     with open(log, encoding="utf-8", errors="replace") as f:
         for line in f:
@@ -196,7 +196,7 @@ def final_espresso(prev: str) -> dict:
     cell = _qe_cell(*cellb, alat) if cellb else read_pw_in_cell(os.path.join(prev, "pw.in"))
     posb = _qe_block(log, "ATOMIC_POSITIONS", nat)
     if posb is None:
-        raise HandoffError(f"{log} に ATOMIC_POSITIONS がありません (最適化・MD の出力ではないか、途中で止まっています)")
+        raise HandoffError(f"no ATOMIC_POSITIONS in {log} (not an optimization or MD output, or it stopped early)")
     header, rows = posb
     h = header.lower()
     symbols = [r[0] for r in rows]
@@ -216,7 +216,7 @@ def final_espresso(prev: str) -> dict:
 def final_cp2k(prev: str) -> dict:
     path = os.path.join(prev, existing_name(prev, "{}-1.restart"))
     if not os.path.isfile(path):
-        raise HandoffError(f"{path} がありません")
+        raise HandoffError(f"{path} not found")
     cell, symbols, pos, in_subsys, in_cell, in_coord, has_vel = [None, None, None], [], [], False, False, False, False
     with open(path, encoding="utf-8", errors="replace") as f:
         for line in f:
@@ -240,14 +240,14 @@ def final_cp2k(prev: str) -> dict:
                 p = s.split()
                 if p[0].upper() in ("UNIT", "SCALED"):
                     if p[0].upper() == "SCALED" or (len(p) > 1 and p[1].lower() != "angstrom"):
-                        raise HandoffError(f"{path}: COORD が Å 以外で書かれています ({s})")
+                        raise HandoffError(f"{path}: COORD is not written in Å ({s})")
                     continue
                 symbols.append(p[0])
                 pos.append(_floats(p[1:4]))
             elif in_subsys and u.startswith("&VELOCITY"):
                 has_vel = True
     if not pos:
-        raise HandoffError(f"{path} に &COORD がありません")
+        raise HandoffError(f"no &COORD in {path}")
     return {"symbols": [re.sub(r"[^A-Za-z].*$", "", s) for s in symbols], "positions": pos,
             "cell": cell if all(c is not None for c in cell) else None, "velocities": None, "has_velocities": has_vel,
             "source": os.path.basename(path)}
@@ -289,7 +289,7 @@ def final_structure(code: str, prev: str, previous_task: str) -> dict:
         return final_espresso(prev)
     if code == "cp2k":
         return final_cp2k(prev)
-    raise HandoffError(f"{code} の最終構造はこのファイルでは読みません")
+    raise HandoffError(f"this script does not read the final structure of {code}")
 
 
 def _orca_input_coords(path: str) -> dict:
@@ -305,7 +305,7 @@ def _orca_input_coords(path: str) -> dict:
 
 def _check_same(symbols_here: list[str], symbols_prev: list[str], where: str) -> None:
     if [s.capitalize() for s in symbols_here] != [s.capitalize() for s in symbols_prev]:
-        raise HandoffError(f"{where}: 前の段階の原子の並び ({len(symbols_prev)} 個) が、この段階の入力 ({len(symbols_here)} 個) と合いません")
+        raise HandoffError(f"{where}: the atoms of the previous stage ({len(symbols_prev)}) do not match the input of this stage ({len(symbols_here)})")
 
 
 def rewritten_at_run(code: str, velocities: bool = False) -> list[str]:
@@ -333,7 +333,7 @@ def apply_stage(code: str, prev: str, here: str, previous_task: str, velocities:
         done = ["geometry.gen"]
         if velocities:
             if not d["velocities"]:
-                raise HandoffError(f"{prev} の {d.get('source')} に速度がありません")
+                raise HandoffError(f"no velocities in {d.get('source')} of {prev}")
             open(j(VELOCITY_FILE), "w", encoding="utf-8").write(
                 "".join(f"{v[0] * 1000.0:.10f} {v[1] * 1000.0:.10f} {v[2] * 1000.0:.10f}\n" for v in d["velocities"]))  # Å/ps
             done.append(VELOCITY_FILE)
@@ -376,7 +376,7 @@ def run_stage_handoff(code: str, prev: str, previous_task: str, velocities: bool
     for dest, src in files.items():
         s = os.path.join(prev, src)
         if not os.path.isfile(s):
-            raise HandoffError(f"前の段階の出力 {s} がありません (前の段階が終わっていないか、失敗しています)")
+            raise HandoffError(f"the output {s} of the previous stage is missing (it has not finished, or it failed)")
         shutil.copyfile(s, os.path.join(here, dest))
     apply_stage(code, prev, here, previous_task, velocities)
 
@@ -385,12 +385,12 @@ def _main(argv: list[str]) -> int:
     import argparse
     import json
 
-    ap = argparse.ArgumentParser(prog="handoff.py", description="前の段階の最終構造 (と速度) を、この段階の入力に入れる (ADIT が生成)")
+    ap = argparse.ArgumentParser(prog="handoff.py", description="put the final structure (and velocities) of the previous stage into this stage's input (generated by ADIT)")
     ap.add_argument("code")
     ap.add_argument("previous_dir")
     ap.add_argument("previous_task")
     ap.add_argument("--velocities", action="store_true")
-    ap.add_argument("--files", default="{}", help="写すファイル (JSON: この段階での名前 → 前の段階での名前)")
+    ap.add_argument("--files", default="{}", help="files to copy (JSON: name in this stage -> name in the previous stage)")
     a = ap.parse_args(argv)
     try:
         run_stage_handoff(a.code, a.previous_dir, a.previous_task, a.velocities, json.loads(a.files))

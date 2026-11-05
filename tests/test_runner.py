@@ -75,7 +75,7 @@ def test_nothing_generated_yet(sk_root):
     assert "生成" in reason or "generate" in reason
 
 
-@pytest.mark.skipif(os.name == "nt", reason="Windows では submit.sh を実行しない (block_reason で止める)")
+@pytest.mark.skipif(os.name == "nt", reason="submit.sh is not run on Windows (block_reason stops it)")
 def test_it_runs_and_reports_the_exit_code(tmp_path):
     d = tmp_path / "fake"
     d.mkdir()
@@ -86,7 +86,7 @@ def test_it_runs_and_reports_the_exit_code(tmp_path):
     assert (d / "run.log").read_text(encoding="utf-8").strip() == "hello"
 
 
-@pytest.mark.skipif(os.name == "nt", reason="Windows では実行しない")
+@pytest.mark.skipif(os.name == "nt", reason="not run on Windows")
 def test_the_cli_can_run_what_it_generated(tmp_path, sk_root):
     from adit.config import save_config
 
@@ -102,7 +102,7 @@ def test_the_cli_can_run_what_it_generated(tmp_path, sk_root):
     r = subprocess.run([sys.executable, "-m", "adit.cli", str(spec), str(tmp_path / "out"), "--run",
                         "--config", str(config)], capture_output=True, text=True, cwd=REPO, timeout=600, env=env)
     if "が見つかりません" in r.stderr or "not found" in r.stderr:
-        pytest.skip("dftb+ が PATH にない")
+        pytest.skip("dftb+ is not on PATH")
     assert r.returncode in (0, 4), r.stderr
     assert "実行します" in r.stdout or "running" in r.stdout
     assert (tmp_path / "out" / "run.log").is_file()

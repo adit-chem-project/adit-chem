@@ -162,7 +162,7 @@ SI_PSEUDO = PSEUDO_DIR / "14si.pspnc" if str(PSEUDO_DIR) else Path("/nonexistent
 
 
 @pytest.mark.skipif(not (ABINIT and SI_PSEUDO.is_file()),
-                    reason="abinit か ADIT_ABINIT_PSEUDOS/14si.pspnc が無い")
+                    reason="abinit or ADIT_ABINIT_PSEUDOS/14si.pspnc is missing")
 def test_abinit_real_run_single_point(sk_root, tmp_path):
     out = tmp_path / "si"
     write_project(spec_for(SI_PSEUDO), cfg_for(sk_root), out)
@@ -176,7 +176,7 @@ def test_abinit_real_run_single_point(sk_root, tmp_path):
 
 
 @pytest.mark.skipif(not (ABINIT and SI_PSEUDO.is_file()),
-                    reason="abinit か ADIT_ABINIT_PSEUDOS/14si.pspnc が無い")
+                    reason="abinit or ADIT_ABINIT_PSEUDOS/14si.pspnc is missing")
 def test_abinit_real_run_relaxation(sk_root, tmp_path):
     atoms = bulk("Si", "diamond", a=5.43)
     atoms.positions[1] += [0.1, 0.0, 0.0]

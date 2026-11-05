@@ -1,158 +1,158 @@
-# 画面の説明
+# Screen reference
 
-デスクトップ版とウェブ版の画面を、上から順に説明します。
-構造の作り方、計算条件、まとめて作る機能の順です。
+This page walks through the desktop and web screens from top to bottom:
+structure sources, calculation settings, then the features that generate many calculations at once.
 
-**はじめて使うときは [チュートリアル](USAGE.md) から読んでください。**ここでは、画面のそれぞれの欄が何を指定するものかを説明します。
+**If you are new, start with the [tutorial](USAGE.md).** This page explains what each field on the screen sets.
 
-## 画面の構成
+## Screen layout
 
-![デスクトップ版](images/desktop_menus.png)
+![Desktop version](images/desktop_menus.png)
 
-- **進捗と空の領域**: 「作る」と「解析を実行」は裏で動きます。1 秒未満なら何も出ず、1 秒を超えると進捗バーと「中止」が出て、10 秒を超えると割合と残り時間の目安に変わります (溶液の詰め込みは分子数、組み立て手順は手順数で数えます)。まだ何もない領域 (ワークスペースのエディタ、解析の結果、生成できないときの生成ファイル、一括生成の画面) には、見出しと 1 行の説明と次に押すボタンが出ます
-- **コマンドパレット** (Ctrl+K): 操作・欄・プリセットを名前で検索して、そのまま実行したり欄へ飛んだりできます。日本語でも英語でも探せます (例「温度」「generate」「水」)。ボタンにカーソルを合わせると、ショートカットが「生成 (Ctrl+G)」の形で出ます。Ctrl+/ で全ショートカットの一覧が開きます
-- **リボン** (Word と同じ形): 見出しを押すと、その下にボタンが群ごとに並びます。ファイル (計算設定 spec.json を開く・保存、続きを作る、雛形、変換、入力と結果の点検、終了)、挿入 (Draw: 分子を描く、構造ファイルの読み込み、溶液に成分を追加)、表示 (右側のタブ)、実行 (生成、1 つの条件を変えて一括生成、段階に分けて生成、まとめて作る: 比べる組・配座・反応経路・フォノン・弾性定数・遷移状態)、設定 (環境設定、言語、テーマ、ウィンドウの枠)、ヘルプ (コマンドパレット、ショートカット一覧、README、ADIT について)。最初は畳まれていて、見出しの列だけが見えます。見出しを押すとその下にボタンが 1 行で並び、ボタンを押すとまた畳まれます。開いたままにするには、見出しの右の ˅ ボタンか Ctrl+F1 を押します (もう一度押すと畳みます)。畳む / 開くの状態は環境設定の `ribbon_collapsed` に保存され、次回も同じ状態で始まります
-- **上端**: 題名の行の左に小さな「元に戻す / やり直す」(設定の履歴、Ctrl+Z / Ctrl+Shift+Z)。その下がリボンの見出しの列、さらにその下に「構造」「計算条件」「解析」「ワークスペース」の切り替えがあり、画面の左側がその内容に変わります
-- **左側** (「計算条件」のとき): 2 列に分かれ、左の列に「計算の種類」「k 点」「実行環境とリソース」、右の列に「計算手法」の群が並びます (窓が狭いときは 1 列になります)。「構造」のときは構造の作り方と組み立て手順の群です
-- **右側のタブ**: 構造 (マウスで回せる 3D 表示。原子を選んで距離や角度を測り、欄に送れます) と生成ファイル (プレビュー。生成できないときは、その理由と「欄へ移動」のボタン)。「ワークスペース」のときは隠れて、画面全体をファイル・エディタ・ターミナルに使います
-- **右下**: 「生成」ボタン (Ctrl+G)。押すと出力ディレクトリに入力一式が書かれ、ワークスペースのターミナルがそこへ移動します。生成できないときは、その左に「2 件の不足」のような赤いバッジが出ます。押すと全件の一覧が開き、行を選ぶとその欄へ移動します。問題のある欄は赤い枠で囲まれ、欄の下に理由が赤字で 1 行出ます (直すと消えます)
-- **下端のステータス行**: 左に状態 (生成したファイルの数と次にすること。上書きしたあとの 10 秒間は「元に戻す」)、右にいま使えるキー (Ctrl+K コマンド、Ctrl+G 生成、Ctrl+Z 戻す、Ctrl+/ キー一覧。ワークスペースでは Ctrl+S 保存)。ラベルや入力欄にカーソルを合わせると、その欄の説明が左側に出ます
+- **Progress and empty areas**: "Build" and "Run analysis" run in the background. Under 1 second, nothing appears. Past 1 second, a progress bar and "Cancel" appear. Past 10 seconds, the display changes to a percentage and an estimate of the time remaining (solution packing counts molecules; build steps count steps). An area with nothing in it yet (the Workspace editor, the analysis results, Generated files when generation is not possible, the parameter scan screen) shows a heading, a one-line explanation and the next button to click
+- **Command palette** (Ctrl+K): Search for actions, fields and presets by name, then run them or jump to the field. Japanese and English both work (for example "temperature", "generate", "water"). Hover over a button to see its shortcut in the form "Generate (Ctrl+G)". Ctrl+/ opens the list of all shortcuts
+- **Ribbon** (the same style as Word): Click a heading, and its buttons appear below in groups. File (open or save the calculation settings spec.json, Continue, templates, Convert, Inspect inputs/results, Quit); Insert (Draw: draw a molecule, load a structure file, add a component to the solution); View (the right-side tabs); Run (Generate, Parameter scan, Stages, Batch generation: Compare a set, Conformers, Reaction path, Phonons, Elastic constants, TS and IRC); Settings (Preferences, language, theme, window frame); Help (command palette, keyboard shortcuts, README, About ADIT). The ribbon starts collapsed, with only the row of headings visible. Click a heading and its buttons appear in one row. Click a button and the ribbon collapses again. To keep it open, click the ˅ button to the right of the headings or press Ctrl+F1 (do it again to collapse). The collapsed or open state is saved as `ribbon_collapsed` in the preferences, and the next session starts the same way
+- **Top edge**: At the left of the title bar are small "Undo / Redo" buttons (settings history, Ctrl+Z / Ctrl+Shift+Z). Below that is the row of ribbon headings, and below that a switch between "Structure", "Calculation settings", "Analysis" and "Workspace". The left side of the screen changes to match
+- **Left side** (on "Calculation settings"): It has two columns. The left column has "Task", "k-points (periodic)" and "Execution target and resources"; the right column has the "Method" group (one column when the window is narrow). On "Structure", it shows the structure source and build step groups
+- **Right-side tabs**: Structure (a 3D view you can rotate with the mouse; select atoms to measure distances and angles and send them to fields) and Generated files (a preview; when generation is not possible, the reason and a "Go to the field" button). On "Workspace" these are hidden, and the whole screen is used for files, the editor and the terminal
+- **Lower right**: The "Generate" button (Ctrl+G). It writes the full set of inputs to the output directory and moves the Workspace terminal there. When generation is not possible, a red badge such as "2 issues" appears to its left. Click the badge to open the full list. Select a row to jump to that field. A field with a problem gets a red border and one line of red text under it giving the reason (both disappear once you fix it)
+- **Status line at the bottom**: On the left is the status (how many files were generated and what to do next; for 10 seconds after an overwrite, "Undo"). On the right are the keys available now (Ctrl+K commands, Ctrl+G generate, Ctrl+Z undo, Ctrl+/ all keys; on Workspace, Ctrl+S save). Hover over a label or input field, and its description appears on the left
 
-「必須」の印が付いた青字のラベルは必須項目、黒字は既定値のある任意項目です。最初から入っている値は、計算コード自身の既定値か「指定しない」です。ADIT が値を置いた欄は、説明にその出典 (公式文書) が書いてあります。既定 (spec.json の既定値 = 計算コード自身の既定) から変えた欄は、ラベルの左に細い青い線が付きます (雛形から読み込んだ値は灰色の線)。ラベルを右クリックすると「既定に戻す (コードの既定: 200)」でその欄だけ戻せます。「計算条件」の右上の「変えた欄だけ」を押すと、変えた欄 (と計算コード) だけが表示されます。ラベルや入力欄にカーソルを合わせると、その値が何を指定するものかの短い説明が、ツールチップと画面下端に表示されます。
+Blue labels tagged "required" are required fields. Black labels are optional fields with a default. Initial values are either the code's own default or "Not set". For a field where ADIT does set a value, the description gives its source (the official documentation). A field changed from its default (the default in spec.json, which is the code's own default) gets a thin blue line to the left of its label (a gray line for a value loaded from a template). Right-click a label and choose "Reset to default (code default: 200)" to reset only that field. "Changed only" at the upper right of "Calculation settings" shows only the changed fields (and the code). Hover over a label or input field to see a short description of what it sets, in a tooltip and at the bottom of the screen.
 
-### 構造の作り方
+### Structure sources
 
-![構造の作り方](images/tutorial/01_structure.png)
+![Structure sources](images/tutorial/01_structure.png)
 
-| 作り方 | 内容 |
+| Source | Description |
 |---|---|
-| プリセット | ASE に収録された分子 (G2 セットなど) を名前で選びます |
-| SMILES | 文字列から RDKit で 3D 構造を作ります。「Draw」ボタンで分子を描いて入力することもできます |
-| ファイル | ASE が読める構造ファイル (xyz、cif、POSCAR、gen など) |
-| バルク | 元素と結晶構造 (fcc、bcc、diamond など) から単位格子を作ります |
-| スラブ | 面指数 (fcc111 など)、元素、層数、真空層から表面スラブを切り出します |
-| データベースから取得 | PubChem、COD、Materials Project、OPTIMADE から名前や ID で構造を取得します (「取得」を押したときだけ通信) |
-| 溶液・混合物 | 複数の分子・イオンを個数で指定し、密度または一辺で決めた立方体の周期セルに詰めます (下記) |
-| 2 次元材料・ナノチューブ | グラフェン型 (C₂、BN)、MX₂ 型 (MoS₂ など)、ナノリボン、ナノチューブ。周期でない方向には真空を付けます |
-| ナノ粒子 | 正二十面体・十面体・八面体・Wulff 形 (面のエネルギーから) のナノ粒子。周期のない構造です |
-| ポリマー | 繰り返し単位の SMILES (つなぐ位置に `*` を 2 つ。例 `*CC*`) を重合度の数だけつないだ鎖 1 本 (H を含めて 500 原子まで)。「作る」で作ります |
+| Preset | Choose a molecule by name from those included in ASE (the G2 set and others) |
+| SMILES | RDKit builds a 3D structure from the string. You can also draw the molecule with the "Draw" button |
+| File | Any structure file ASE can read (xyz, cif, POSCAR, gen and so on) |
+| Bulk | Builds a unit cell from an element and a crystal structure (fcc, bcc, diamond and so on) |
+| Slab | Cuts a surface slab from a surface index (fcc111 and so on), an element, a layer count and a vacuum layer |
+| Fetch from a database | Fetches a structure from PubChem, COD, Materials Project or OPTIMADE by name or ID (goes online only when you click "Fetch") |
+| Solution / mixture | Takes several molecules and ions by count and packs them into a cubic periodic cell set by density or edge length (see below) |
+| 2D material / nanotube | Graphene-type (C₂, BN), MX₂ sheet (MoS₂ and others), nanoribbon, nanotube. Adds vacuum in the nonperiodic directions |
+| Nanoparticle | Icosahedral, decahedral, octahedral and Wulff-shape (from surface energies) nanoparticles. These structures are not periodic |
+| Polymer | One chain, made by joining a repeat unit given as SMILES (with two `*` at the joining positions, for example `*CC*`) as many times as the degree of polymerization (up to 500 atoms including H). Click "Build" to make it |
 
-![バルク結晶](images/tutorial/07_bulk.png)
+![Bulk crystal](images/tutorial/07_bulk.png)
 
-共通設定として、分子を周期セルに入れる (VASP と pw.x で必要)、固定する原子、全電荷、スピン多重度を指定します。
+The common settings cover putting a molecule in a periodic cell (needed for VASP and pw.x), fixed atoms, total charge and spin multiplicity.
 
-**組み立て手順**: 構造の群の「組み立て手順」で、土台 (上の作り方で作った構造) に加工を上から順に重ねられます。手順の種類をプルダウンで選んで「追加」、一覧の「上へ」「下へ」「削除」で並べ替えます。一覧の行を選ぶと、その手順の欄が下に出ます。行のチェックを外すと、その手順を削除せずに飛ばして作ります (spec.json には `"enabled": false` と書かれます)。抜いたらどうなるかを試すときに使います。
+**Build steps**: In the "Build steps" part of the structure group, you can stack operations from top to bottom on a base (a structure made with one of the sources above). Choose a step type from the drop-down and click "Add". Reorder the list with "Up", "Down" and "Remove". Select a row to show that step's fields below. Clear a row's checkbox to skip the step without deleting it (spec.json records `"enabled": false`). Use this to test what happens without a step.
 
-| 手順 | 内容 |
+| Step | Description |
 |---|---|
-| 面で切る | いまのバルクを任意のミラー指数 (h k l) の面で切った板にします。層の数、真空 (片側)、どの原子面を最上面にするか (終端。1 周期の原子面の組成が一覧に出ます) |
-| 溶液の層 (界面) | スラブの上に、同じ断面の溶液の層を置きます (電極と電解質の界面)。成分は溶液の表と同じ。厚みは密度からか直接指定。スラブとの隙間、上の真空 (0 なら両側が溶液)、最短距離、乱数の種。「濃度から個数」で、表で選んだ行 (イオン) の個数を濃度 [mol/L] から入れられます |
-| 固定 | 下から n 層、z の範囲、元素で選んだ原子を固定します。固定の手順があるときは、共通設定の「固定原子」の欄は使いません (手順が優先) |
-| 超格子 | 各軸の繰り返しか、3×3 の整数の変換行列 |
-| 原子を抜く / 元素の置換 | 元素と z の範囲で選んだ原子から、個数か割合だけ無作為に抜く・置き換える (空孔、脱リチウム、ドープ)。乱数の種で再現 |
-| 吸着 | 分子 1 つ (プリセット / SMILES / ファイル) を、吸着サイトの名前・原子の真上・xy 座標に、高さと下に向ける原子を決めて置きます |
-| 真空層 / 直方体のセル / 溶媒和 | 軸の方向の真空、直方体の箱 (分子なら余白、結晶なら直交するセルに取り直し)、溶質を動かさずに溶媒で満たす |
+| slab | Cuts the current bulk into a slab along any Miller-index (h k l) plane. Sets the number of layers, the vacuum (one side) and which atomic plane is on top (the termination; the composition of the atomic planes in one period is listed) |
+| solvent layer (interface) | Places a solution layer with the same cross-section on top of the slab (an electrode-electrolyte interface). Components work as in the solution table. Thickness comes from the density or is set directly. Also sets the gap to the slab, the vacuum on top (0 means solution on both sides), the minimum distance and the random seed. "Count from concentration" fills in the count of the row (ion) selected in the table from a concentration [mol/L] |
+| fix | Fixes atoms chosen by the bottom n layers, a z range or an element. When a fix step exists, the "Fixed atoms" field in the common settings is not used (the step takes priority) |
+| supercell | Repeats along each axis, or a 3×3 integer transformation matrix |
+| remove / substitute | Randomly removes or replaces a count or fraction of the atoms selected by element and z range (vacancies, delithiation, doping). A random seed makes the result reproducible |
+| adsorb | Places one molecule (preset / SMILES / file) at a named adsorption site, directly above an atom, or at xy coordinates, with a chosen height and the atom facing down |
+| vacuum / box / solvate | Vacuum along an axis; a rectangular box (padding for a molecule, re-cut to an orthogonal cell for a crystal); filling with solvent without moving the solute |
 
-手順があるときは、欄を変えるたびには作り直しません。「作る」を押すと裏で構造を作り (溶液の詰め込みは数秒、ポリマーは最大 20 秒ほど。作っている間も画面は動き、「中止」で結果を捨てられます)、手順ごとの原子数と分子どうしの最短距離を表示します。失敗したときは「手順 k (名前): …」と理由が出て、その手順の行が選ばれます。全電荷の初期値は成分の電荷の和です (吸着や置換で電荷が変わるなら欄を直してください)。spec.json には土台と手順がそのまま保存され、開くと画面に戻ります (原子座標は保存したものを使い、作り直しません)。ファイルの土台は中身の SHA-256 を控え、ファイルが変わっていたら作り直しを止めて知らせます。
+When build steps exist, the structure is not rebuilt each time a field changes. Click "Build" to build it in the background. (Solution packing takes a few seconds and a polymer up to about 20 seconds. The screen stays responsive while it runs, and "Cancel" discards the result.) ADIT then shows the atom count per step and the minimum distance between molecules. On failure, the message reads "step k (name): …" with the reason, and that step's row is selected. The total charge starts as the sum of the component charges (if adsorption or substitution changes the charge, edit the field). spec.json stores the base and the steps as they are, and opening it brings them back on screen (the saved atomic coordinates are used, with no rebuild). For a file base, ADIT records the SHA-256 of the file's contents. If the file has changed, it stops the rebuild and tells you.
 
-**電極と電解質の界面の例** (電極の板 + C₃H₄O₃ と LiPF₆ の電解液、真空なしで板の両側が溶液): 構造の作り方を「ファイル」にして板の構造ファイルを選び (バルクから始めるなら「バルク」)、手順のプルダウンで「電極と電解質の界面 (面 + 断面の自動調整 + 溶液 + 固定)」を選んで「追加」します。面で切る (土台がすでに板なら省かれます)、断面を溶液に合わせて広げる超格子、溶液の層 (C₃H₄O₃ = SMILES `O=C1OCCO1`、Li⁺ = `[Li+]`、PF₆⁻ = `F[P-](F)(F)(F)(F)F` の 3 行、真空 0)、固定 (下の 1 層) が、この順で入ります。超格子は、各成分が周期境界で自分の像と重ならない断面になるまで a・b 方向の繰り返し数を増やします。表示される繰り返し数は下限です。個数と密度は例なので、自分の条件を入力してください (イオンの個数は「濃度から個数」でも決められます。密度から厚みを決めるときは帯の体積が総質量で変わるので、陰イオンの行を決めたあとに陽イオンの行でもう一度押します)。最後に「作る」を押します。
+**Example: an electrode-electrolyte interface** (an electrode slab plus a C₃H₄O₃ and LiPF₆ electrolyte, no vacuum, solution on both sides of the slab): Set the source to "File" and choose the slab's structure file (or "Bulk" to start from a bulk). In the step drop-down, choose "Electrode–electrolyte interface (surface cut + auto-sized cross-section + solution + fixed layer)" and click "Add". This adds, in order: a surface cut (omitted if the base is already a slab), a supercell that widens the cross-section to fit the solution, a solution layer (three rows: C₃H₄O₃ = SMILES `O=C1OCCO1`, Li⁺ = `[Li+]`, PF₆⁻ = `F[P-](F)(F)(F)(F)F`; vacuum 0), and a fix step (the bottom layer). The supercell raises the repeat counts along a and b until no component overlaps its own periodic image. The repeat counts shown are lower bounds. The counts and density are examples, so enter your own conditions. (Ion counts can also come from "Count from concentration". When thickness comes from the density, the band volume depends on the total mass, so after setting the anion row, click "Fill selected row" once more on the cation row.) Finally, click "Build".
 
-指定した個数と密度によっては、溶液を詰められず停止します。スラブとの隙間 `gap` は溶液帯の厚みを変えないため、詰め込み失敗の案内に表示される帯の広さと最短距離を確認してください。乱数シードによって初期配置も変わります。
+Depending on the counts and density you give, packing can fail and stop. The slab gap `gap` does not change the thickness of the solution band, so check the band width and minimum distance shown in the packing failure message. The random seed also changes the initial arrangement.
 
-**溶液・混合物**: 成分 (プリセット / SMILES / ファイル) を個数と電荷つきで表に並べます。「指定」の列は成分の種類に合わせて変わり、プリセットは分子の一覧 (H₂O のような式) から選び、SMILES は入力欄に書くかその行の「Draw」で描き、ファイルは「参照…」で選びます。セルの大きさは密度 [g/cm³] か一辺 [Å] で決め、分子間の最短距離と乱数の種も指定できます。各成分の濃度 [mol/L] と全電荷 (成分の電荷の合計) が表示されます。詰め込みは ASE と numpy だけで行い (packmol などは不要)、格子状に並べてから近すぎる分子を押し離すので、水の 1 g/cm³ のような液体の密度でも入ります。分子は剛体のまま動かすので形は変わらず、セルの境目でも切れません。同じシードなら spec.json から同じ構造が再現されます。ウェブ版とコマンドラインでは 1 行に 1 成分の書式で指定します (`H2O * 32`、`smiles:[Na+] * 1 charge=+1 label=Na+`、`file:ion.xyz * 2`)。
+**Solution / mixture**: List the components (preset / SMILES / file) in the table with their counts and charges. The "Molecule" column changes with the component kind. A preset is chosen from the list of molecules (formulas such as H₂O), a SMILES string is typed in the field or drawn with that row's "Draw", and a file is chosen with "Browse…". The cell size is set by density [g/cm³] or edge length [Å]. You can also set the minimum distance between molecules and the random seed. The concentration [mol/L] of each component and the total charge (the sum of the component charges) are shown. Packing uses only ASE and numpy (no packmol or the like). It places the molecules on a lattice and then pushes apart those that are too close, so it reaches liquid densities such as 1 g/cm³ for water. Molecules move as rigid bodies, so their shapes do not change, and they are not cut at the cell boundary. The same seed reproduces the same structure from spec.json. The web version and the command line take one component per line (`H2O * 32`, `smiles:[Na+] * 1 charge=+1 label=Na+`, `file:ion.xyz * 2`).
 
-![Draw](images/tutorial/10_draw.png)
+![The Draw window](images/tutorial/10_draw.png)
 
-**Draw**: 構造の作り方の「Draw」ボタン (またはリボンの「挿入」、溶液の表の「Draw」) で、分子を描く画面が開きます (RDKit が必要)。
-元素を選んでクリックで原子を置き、原子からドラッグで結合を伸ばします。結合のツールで単結合・二重結合・三重結合を選ぶと、原子から別の原子へのドラッグでその次数の結合でつなげます (たとえば C6H6 の環に CH3 をつなぐ)。
-結合をクリックすると次数が変わり、消しゴムで原子や結合を消せます (Ctrl+Z で元に戻す)。環のテンプレート (C6H6、C6H12、C5H10)、電荷の +/− もあります。水素は自動で補われます。描いた分子は SMILES に変換され、3D 構造が生成されます。
+**Draw**: The "Draw" button in the structure source (or "Insert" on the ribbon, or "Draw" in the solution table) opens the molecule drawing screen (requires RDKit).
+Choose an element and click to place an atom. Drag from an atom to extend a bond. With a bond tool (single, double or triple), dragging from one atom to another joins them with a bond of that order (to join CH3 to a C6H6 ring, for example).
+Clicking a bond changes its order, and the eraser removes atoms or bonds (Ctrl+Z undoes). There are also ring templates (C6H6, C6H12, C5H10) and +/− for charge. Hydrogens are added automatically. The molecule you draw is converted to SMILES and a 3D structure is generated.
 
-![溶液の例](images/desktop_mixture.png)
+![Solution example](images/desktop_mixture.png)
 
-**データベースから取得**: 構造の作り方で「データベースから取得」を選び、取得元 (PubChem / COD / Materials Project / OPTIMADE) と名前か ID を入れて「取得」を押します。通信するのはこのボタンを押したときだけで、起動時や欄の変更では通信しません。
+**Fetch from a database**: Set the source to "Fetch from a database", choose where to fetch from (PubChem / COD / Materials Project / OPTIMADE), enter a name or ID, and click "Fetch". ADIT goes online only when you click this button, not at startup or when a field changes.
 
-| 取得元 | 入れるもの | 返るもの | データの表記 (取得日 2026-09-19 に各サイトで確認) |
+| Database | What to enter | What comes back | Data terms (checked on each site, retrieved 2026-09-19) |
 |---|---|---|---|
-| PubChem | 化合物名 (例 `water`) か CID (例 `962`) | 3D 配座の SDF (3D 配座が無い化合物は「取得できません」で止まります) | NCBI の方針: 米国政府が作った情報はパブリックドメイン。提供元 (submitter) が別の条件を付けている場合があります |
-| COD | COD の ID (例 `1000041`) | CIF | CC0 1.0 (パブリックドメインに献呈) |
-| Materials Project | mp-ID (例 `mp-149`)。環境設定の `mp_api_key` が要ります | 構造 (JSON → extxyz に書き出し) | CC BY 4.0 (Materials Project への出典表示が要ります) |
-| OPTIMADE | 組成 (例 `SiO2`) か `データベース:ID` (例 `oqmd:4061352`)。`elements HAS ALL "Si","O"` のような filter もそのまま書けます | 登録された全提供元を横断して候補を集め、選んだ 1 件の構造 (JSON → extxyz) | 提供元ごとの規約に従います (提供元のページを記録します) |
+| PubChem | A compound name (for example `water`) or CID (for example `962`) | SDF of the 3D conformer (a compound with no 3D conformer stops with "cannot fetch") | NCBI policy: information created by the US government is public domain. A provider (submitter) may attach other terms |
+| COD | A COD ID (for example `1000041`) | CIF | CC0 1.0 (dedicated to the public domain) |
+| Materials Project | An mp-ID (for example `mp-149`). Needs `mp_api_key` in the preferences | Structure (JSON, written out as extxyz) | CC BY 4.0 (requires attribution to Materials Project) |
+| OPTIMADE | A composition (for example `SiO2`) or `database:ID` (for example `oqmd:4061352`). A filter such as `elements HAS ALL "Si","O"` also works as is | Collects candidates across all registered providers, then returns the structure of the one you choose (JSON, written out as extxyz) | Follows each provider's terms (ADIT records the provider's page) |
 
-名前や組成に候補が複数あるときは一覧が出るので、使うものを選びます (どれを使うかは ADIT は判断しません)。取得した構造は「ファイル」と同じ経路で入り、3D 表示・組み立て手順・spec.json の保存もファイルと同じです。取得したファイルは `~/adit_runs/fetched/` に置き、生成した出力ディレクトリにも写します。取得元・ID・取得日時・応答の SHA-256・ライセンスは spec.json の `provenance.fetched_structure` と README.txt に記録されます。
+When a name or composition has several candidates, a list appears and you choose which to use (ADIT does not decide). A fetched structure comes in by the same path as "File", so the 3D view, build steps and saving to spec.json all work as they do for a file. The fetched file is placed in `~/adit_runs/fetched/` and also copied to the generated output directory. The source, ID, date and time, SHA-256 of the response and license are recorded in `provenance.fetched_structure` in spec.json and in README.txt.
 
-ウェブ版も同じで、「構造の作り方」の「データベースから取得」に取得元のプルダウン、名前/ID の欄、「取得」ボタンがあります。候補が複数あるときは「候補」のプルダウンが現れるので、選んでもう一度「取得」を押します。
+The web version works the same way. Under "Source", "Fetch from a database" has a drop-down for the database, a name/ID field and a "Fetch" button. When there are several candidates, a "Candidates" drop-down appears. Choose one and click "Fetch" again.
 
-### 3D 表示で測る・原子を欄に送る
+### Measure in the 3D view and send atoms to fields
 
-![3D 表示で角度を測る](images/viewer_measure.png)
+![Measuring an angle in the 3D view](images/viewer_measure.png)
 
-右側の「構造」タブの 3D 表示で、原子をクリックすると選べます (Shift+クリックで追加、もう一度 Shift+クリックで外す、何もない所をクリックで解除)。
-2 個選ぶと距離 [Å]、3 個で角度 [度] (2 番目の原子を頂点)、4 個で二面角 [度] が、絵の上と絵の下の行に出ます。
-周期系では最も近い像との距離で測ります (繰り返し数を 2×2×2 などにしていても同じ)。
+In the 3D view on the right-side "Structure" tab, click an atom to select it (Shift+click to add, Shift+click again to remove, click an empty spot to clear).
+Select 2 atoms for the distance [Å], 3 for the angle [degrees] (with the second atom as the vertex), and 4 for the dihedral [degrees]. The value appears on the picture and in the row below it.
+In periodic systems, the distance is to the nearest image (even with a repeat count such as 2×2×2).
 
-「欄に送る」で、選んだ原子の番号 (1 始まり) を次の欄に入れられます。
+"Send to a field" enters the numbers of the selected atoms (starting from 1) in one of these fields.
 
-| 送り先 | 入る形 | 使い所 |
+| Destination | Format | Use |
 |---|---|---|
-| 固定原子の欄 | `1-2,7` (既にある番号と合わせて並べ直す。`7:xy` のような軸の指定はそのまま残る) | 構造最適化や MD で動かさない原子 |
-| 解析の「原子の選び方」 | `index 1,3` (別の式が入っていれば `… or index 1,3`) | RDF・MSD・配位数などを一部の原子だけで |
-| 解析の時系列の欄 | 2 個なら距離、3 個なら角度、4 個なら二面角の欄に `2,1,3` (クリックした順) | 結合長や角度の時間変化 |
+| The fixed-atoms field | `1-2,7` (merged with the numbers already there and re-sorted; axis specifications such as `7:xy` are kept) | Atoms that should not move in a geometry optimization or MD |
+| "Atom selection" in analysis | `index 1,3` (if another expression is there, `… or index 1,3`) | RDF, MSD, coordination number and so on for only some atoms |
+| The series fields in analysis | 2 atoms go to the distance field, 3 to the angle field, 4 to the dihedral field, as `2,1,3` (in click order) | Time evolution of bond lengths or angles |
 
-繰り返して表示している周期系では、番号は基本セルのものに直します (同じ原子の像を 2 つ選ぶと、その旨が出ます)。
+In a periodic system displayed with repeats, numbers are mapped back to the base cell (selecting two images of the same atom shows a message saying so).
 
-ウェブ版の「構造 (3D)」でも同じように測れます (送り先は固定原子の欄だけ。解析ページの欄には、表示された番号を貼ります)。
+"Structure (3D)" in the web version measures the same way. (The only destination there is the fixed-atoms field. For the fields on the analysis page, paste the numbers shown.)
 
-### 計算の準備: 溶媒、磁性と DFT+U、前の計算の続き、段階に分けた計算、研究室の雛形
+### Preparing calculations: solvents, magnetism and DFT+U, continuing a calculation, stages, group templates
 
-![段階に分けて生成](images/tutorial/16_stages.png)
+![Staged calculation](images/tutorial/16_stages.png)
 
-ADIT は、溶媒・U の値・段階の組み方などを推奨しません。欄の既定値は計算コード自身の既定か「指定しない」です。
+ADIT does not recommend solvents, U values or how to arrange stages. Field defaults are the code's own default or "Not set".
 
-**溶媒** (計算手法の群):
+**Solvent** (in the "Method" group):
 
-| 計算コード | 欄 | 書かれるもの |
+| Code | Fields | What is written |
 |---|---|---|
-| xtb | 溶媒モデル (なし / ALPB / GBSA) と溶媒 | `--alpb <溶媒>` / `--gbsa <溶媒>`。溶媒の候補は、モデルと計算手法 (GFN1 / GFN2 / GFN-FF) で xtb が受け付ける名前だけ。GFN0-xTB では使えません |
-| ORCA | 溶媒モデル (なし / CPCM / SMD) と溶媒 | `! CPCM(<溶媒>)` / `! SMD(<溶媒>)`。候補は ORCA 6.1 マニュアルの溶媒の表 |
-| DFTB+ | 溶媒のパラメータファイル (GBSA) | `Solvation = GeneralisedBorn { ParamFile }`。`param_gbsa_<溶媒>.txt` の形のファイルを指定します。分子 (非周期) だけ |
-| CP2K | 溶媒の比誘電率 (SCCS) | `&SCCS` の `RELATIVE_PERMITTIVITY`。0 なら溶媒なし |
+| xtb | Solvation model (None / ALPB / GBSA) and solvent | `--alpb <solvent>` / `--gbsa <solvent>`. The solvent choices are only the names xtb accepts for that model and method (GFN1 / GFN2 / GFN-FF). Not available with GFN0-xTB |
+| ORCA | Solvation model (None / CPCM / SMD) and solvent | `! CPCM(<solvent>)` / `! SMD(<solvent>)`. The choices come from the solvent table in the ORCA 6.1 manual |
+| DFTB+ | Solvation parameter file (GBSA) | `Solvation = GeneralisedBorn { ParamFile }`. Give a file named like `param_gbsa_<solvent>.txt`. Molecules (nonperiodic) only |
+| CP2K | Solvent permittivity (SCCS) | `RELATIVE_PERMITTIVITY` in `&SCCS`. 0 means no solvent |
 
-**元素ごとの初期磁気モーメントと DFT+U** (VASP・Quantum ESPRESSO・CP2K): 元素ごとの欄 (VASP は MAGMOM を POSCAR の原子の順に展開、QE は `starting_magnetization`、CP2K は KIND の `MAGNETIZATION`。空欄は指定しない) と、DFT+U の表 (行ごとに元素・殻・U [eV]・J [eV]) があります。表の元素はいまの構造にあるものだけを選べ、U に既定値はありません。形式は VASP が LDAUTYPE、QE が HUBBARD の射影 (QE の生成器は J を書かないので J の列はありません)、CP2K が PLUS_U_METHOD で選びます。
+**Per-element initial magnetic moments and DFT+U** (VASP, Quantum ESPRESSO, CP2K): There are per-element fields (for VASP, MAGMOM expanded in POSCAR atom order; for QE, `starting_magnetization`; for CP2K, `MAGNETIZATION` in KIND; empty means not specified) and a DFT+U table (each row has an element, shell, U [eV] and J [eV]). The table offers only the elements in the current structure, and U has no default. The formalism is chosen with LDAUTYPE in VASP, the HUBBARD projector in QE (the QE generator does not write J, so there is no J column) and PLUS_U_METHOD in CP2K.
 
-**前の計算の続き**: リボンの「ファイル」→「続きを作る」で、ADIT が生成して実行したディレクトリを選びます。その最終構造 (MD なら速度も) から始める計算が画面に読み込まれ、引き継いだもの・引き継がないものの一覧が出ます。「速度を引き継ぐ」を外すと新しく初速を作ります。「計算の条件はいまの画面の値を使う」に印を付けると、構造 (と速度) だけを前の計算から取ります。
+**Continuing a previous calculation**: On the ribbon, choose "File" → "Continue" and pick a directory that ADIT generated and that has been run. A calculation that starts from its final structure (and velocities, for MD) is loaded on screen, with a list of what is and is not carried over. Clear "Carry over the velocities (when both runs are MD)" to create new initial velocities. Check "Use the current settings for the conditions (untick for the previous run's conditions)" to take only the structure (and velocities) from the previous calculation.
 
-| 計算コード | MD の続きで引き継ぐもの |
+| Code | What an MD continuation carries over |
 |---|---|
-| DFTB+・VASP | 位置と速度 |
-| xtb | 位置と `mdrestart` (座標と速度) |
-| CP2K | 位置・セルと restart (速度)。熱浴・圧力浴の状態は引き継ぎません |
-| LAMMPS | `final.data` (位置と速度) |
-| GROMACS | `adit.gro` と `adit.cpt` (速度と熱浴・圧力浴の状態) |
-| Quantum ESPRESSO・ORCA | 位置 (とセル) だけ。速度は出力に書かれないので引き継げません |
+| DFTB+, VASP | Positions and velocities |
+| xtb | Positions and `mdrestart` (coordinates and velocities) |
+| CP2K | Positions, cell and restart (velocities). The thermostat and barostat state is not carried over |
+| LAMMPS | `final.data` (positions and velocities) |
+| GROMACS | `adit.gro` and `adit.cpt` (velocities and thermostat and barostat state) |
+| Quantum ESPRESSO, ORCA | Positions (and cell) only. Velocities are not written to the output, so they cannot be carried over |
 
-続きの状態は「生成ファイル」タブに小さく出ます (「外す」で捨てられます)。計算の種類を MD 以外にしたり計算コードを変えたりすると、速度と写すファイルは使いません。出力ディレクトリは前の計算とは別の場所にしてください。
+The continuation state appears in small text on the "Generated files" tab ("Clear" discards it). If you change the task to something other than MD, or change the code, the velocities and copied files are not used. Use a different output directory from the previous calculation.
 
-**段階に分けた計算**: リボンの「実行」→「段階に分けて生成」(「1 つの条件を変えて一括生成」の隣) で、段階の表 (名前・計算の種類・アンサンブル・熱浴・温度・ステップ数・時間刻み・圧力・速度・ほかの項目) を編集します。空欄の列はいまの画面の値のままで、前の段階の値は受け継ぎません。保存先に `stage_01_<名前>/` … と、段階を順に実行する `submit.sh`、クラスタで依存付きで投入する例を書いた `README.txt`、段階の一覧 `stages.json` を作ります。2 段階目からの `submit.sh` は、実行する直前に前の段階の最終構造 (MD が続くなら速度も) を写します。表は `stages.json` として保存・読み込みできます。
+**Staged calculations**: On the ribbon, choose "Run" → "Stages" (next to "Parameter scan") and edit the table of stages (name, task, ensemble, thermostat, temperature, steps, time step, pressure, velocities, other items). An empty column keeps the current screen value; values from the previous stage are not inherited. The output directory gets `stage_01_<name>/` …, a `submit.sh` that runs the stages in order, a `README.txt` with an example of submitting to a cluster with dependencies, and `stages.json`, the list of stages. From the second stage on, `submit.sh` copies the previous stage's final structure (and velocities when MD continues) just before running. The table can be saved and loaded as `stages.json`.
 
-**研究室の雛形**: 雛形は構造を除いた `spec.json` です。リボンの「ファイル」→「雛形として保存」でいまの設定を保存し、「雛形を読み込む」で一覧から選ぶと、構造はそのままで条件だけが雛形の値になります。雛形の値のままの欄には、ラベルの下に「雛形 xx の値」と小さく出ます (値を変えると消えます)。置き場所は環境設定の「研究室の雛形」(`templates_dir`) と、環境設定ファイルと同じ場所の `templates/` です。
+**Group templates**: A template is a `spec.json` without the structure. On the ribbon, "File" → "Save as template" saves the current settings. "Load template" lets you pick from a list, and only the settings take the template's values; the structure stays. A field that still has the template's value shows "value from template xx" in small text under its label (it disappears when you change the value). Templates are stored in "Group templates" (`templates_dir`) in the preferences and in `templates/` next to the preferences file.
 
-**作成時の記録**: 「生成ファイル」タブの下に、ADIT・Python・ASE のバージョンと、写したパラメータファイルの数が小さく出ます。「SHA-256 を表示」で、ファイルごとの SHA-256 (中身から計算する照合用のハッシュ。同じ値なら同じファイル) を確かめられます。同じものが `spec.json` の `provenance` と `README.txt` にも書かれます。
+**Creation record**: Below the "Generated files" tab, the versions of ADIT, Python and ASE and the number of copied parameter files appear in small text. "Show SHA-256" lets you check each file's SHA-256 (a hash computed from the contents for verification; the same value means the same file). The same information is in `provenance` in `spec.json` and in `README.txt`.
 
-ウェブ版では、同じ欄が計算手法の群に、「段階に分けて生成」「前の計算の続きを作る」「研究室の雛形」が一括生成の欄の下にあります (前の計算のディレクトリはパスで入れます)。
+In the web version, the same fields are in the "Method" group, and "Staged calculation", "Continue a previous calculation" and "Group templates" are below the parameter scan section (enter the previous calculation's directory as a path).
 
-コマンドラインでは次のように使います。
+On the command line:
 
 ```bash
-adit-gen --continue-from runs/nvt/ runs/nvt2/                   # 前の計算の続き (条件も前のまま)
-adit-gen --continue-from runs/nvt/ npt.json runs/npt/           # 条件は npt.json、構造と速度は前の計算から
-adit-gen --continue-from runs/nvt/ runs/nve/ --no-velocities    # 速度を引き継がない
-adit-gen spec.json runs/staged/ --stages stages.json            # 段階に分けて生成
-adit-gen spec.json --save-template lab-md                        # spec.json から構造を除いて雛形として保存
-adit-gen --list-templates                                        # 雛形の一覧
-adit-gen spec.json runs/x/ --template lab-md                     # 条件は雛形、構造は spec.json から
+adit-gen --continue-from runs/nvt/ runs/nvt2/                   # continue the previous calculation (same settings)
+adit-gen --continue-from runs/nvt/ npt.json runs/npt/           # settings from npt.json, structure and velocities from the previous calculation
+adit-gen --continue-from runs/nvt/ runs/nve/ --no-velocities    # do not carry over velocities
+adit-gen spec.json runs/staged/ --stages stages.json            # generate stages
+adit-gen spec.json --save-template lab-md                        # remove the structure from spec.json and save it as a template
+adit-gen --list-templates                                        # list the templates
+adit-gen spec.json runs/x/ --template lab-md                     # settings from the template, structure from spec.json
 ```
 
-`stages.json` の形 (段階の数・温度・ステップ数は自分で決めます):
+The form of `stages.json` (you decide the number of stages, temperatures and step counts):
 
 ```json
 {"stages": [
@@ -162,62 +162,62 @@ adit-gen spec.json runs/x/ --template lab-md                     # 条件は雛�
 ]}
 ```
 
-### 計算をまとめて作る: 比べる組・配座・反応経路・フォノン・弾性定数・遷移状態
+### Batch generation: sets to compare, conformers, reaction paths, phonons, elastic constants, transition states
 
-![実行タブ](images/tutorial/09_ribbon_run.png)
+![The Run tab](images/tutorial/09_ribbon_run.png)
 
-配座の候補と反応経路 (NEB) の画面です。
+These are the conformer candidate and reaction path (NEB) screens.
 
-| 配座の候補 | 反応経路 (NEB) |
+| Conformer candidates | Reaction path (NEB) |
 |---|---|
-| ![配座](images/tutorial/17_conformers.png) | ![NEB](images/tutorial/18_neb.png) |
+| ![Conformer candidates](images/tutorial/17_conformers.png) | ![Reaction path (NEB)](images/tutorial/18_neb.png) |
 
-リボンの「実行」の「まとめて作る」に 6 つのボタンがあります (ウェブ版では「まとめて作る」の折りたたみの欄で、上のプルダウンから選びます)。
-どれも**いまの画面の条件をそのまま使い**、変えるのは下の表の欄だけです。ADIT は値を勧めません (既定値のある欄は、その計算コードやパッケージの既定です)。
+The "Batch generation" group under "Run" on the ribbon has six buttons. (In the web version, it is the collapsible "Batch generation" section; choose from the drop-down at the top.)
+Each one **uses the current screen settings as they are** and changes only the fields in the table below. ADIT recommends no values (a field with a default uses the default of that code or package).
 
-| 作るもの | 入れる値 | 実行したあと |
+| What to build | Values to enter | After running |
 |---|---|---|
-| 比べる計算の組 | 組の種類 (吸着 / 反応 / 溶媒和) と、各計算の構造のファイル・係数 ν・電荷。組の定義を書いた `set.json` を指定することもできます | 解析の「組にして比べる」で基準のディレクトリにその場所を入れます (`compare.json` を読みます)。CLI は `adit-analyze <out> --compare` |
-| 配座の候補 | 作る配座の数、重複とみなす RMSD [Å] (必須。既定値なし)、乱数の種、力場、残す数 | 解析でそのディレクトリを開くと、配座ごとのエネルギーの表と図 (`scan.json`) |
-| 反応経路 (NEB) | 終状態の構造 (必須)、中間の像の数 (必須)、作り方 (計算コードの NEB / 像ごとの一点計算)、補間、climbing image、SPRING・K_SPRING・opt_scheme | 解析でそのディレクトリを開くとエネルギーの曲線と障壁 (像ごとの一点計算なら表と図) |
-| フォノン (有限変位) | 超格子の倍率 (必須)、変位の大きさ、変位の作り方 (phonopy / ASE)、DOS の q 点のメッシュと幅 | `python <out>/phonon_collect.py` で力を集めてから、解析でそのディレクトリを開きます |
-| 弾性定数 (歪み) | 歪みの大きさ (必須。カンマ区切り)、歪みを与える成分 (Voigt 記法の番号) | `python <out>/elastic_collect.py` で応力を集め、`elastic_constants.csv` を書きます |
-| 遷移状態と IRC | 作るもの (ORCA の OptTS / IRC / 段階に分けた両方、または ASE + Sella のスクリプト) | ORCA は段階ごとに実行します。Sella は `pip install ase sella <calculator のパッケージ>` を入れてから `bash submit.sh` |
+| Set of runs to compare | The set kind (adsorption / reaction / solvation) and, for each calculation, the structure file, coefficient ν and charge. You can also give a `set.json` that defines the set | In analysis, enter that location as the base directory in "Compare runs" (it reads `compare.json`). On the CLI, `adit-analyze <out> --compare` |
+| Conformer candidates | Number of conformers to make, RMSD for duplicates [Å] (required; no default), random seed, force field, number to keep | Open the directory in analysis for a table and plot of energies per conformer (`scan.json`) |
+| Reaction path (NEB) | Final-state structure (required), number of intermediate images (required), mode (the code's NEB / a single point per image), interpolation, climbing image, SPRING, K_SPRING, opt_scheme | Open the directory in analysis for the energy curve and barrier (with a single point per image, a table and plot) |
+| Phonons (finite displacements) | Supercell multiples (required), displacement size, how displacements are made (phonopy / ASE), DOS q-point mesh and width | Collect the forces with `python <out>/phonon_collect.py`, then open the directory in analysis |
+| Elastic constants (strains) | Strain magnitudes (required; comma-separated), strain components (numbers in Voigt notation) | `python <out>/elastic_collect.py` collects the stresses and writes `elastic_constants.csv` |
+| Transition state and IRC | What to generate (ORCA OptTS / IRC / both as stages, or an ASE + Sella script) | For ORCA, run each stage. For Sella, run `pip install ase sella <calculator package>`, then `bash submit.sh` |
 
-生成すると、作ったディレクトリの一覧と「次にすること」が出ます。保存先が空でなければ、そこにあるファイルの数と、上書き前の内容を残す場所 (`<保存先>/.adit_backup/<日時>/`) を示して確認します。
+After generating, ADIT shows the list of directories it made and "Next steps". If the output directory is not empty, ADIT asks for confirmation. It shows the number of files there and where the previous contents will be kept (`<output directory>/.adit_backup/<timestamp>/`).
 
-**ORCA の遷移状態と IRC** は、計算手法の群の欄でも書けます。計算の種類が構造最適化のときに「遷移状態の探索 (OptTS)」を入れると `! OptTS`、一点計算のときに「反応座標をたどる (IRC)」を入れると `! Freq IRC` になります (最初のヘシアン `Calc_Hess`、計算し直す間隔 `Recalc_Hess`、最後の `Freq`、IRC の反復の上限と向きも欄にあります)。両方を続けて実行するときは「まとめて作る」の「遷移状態と IRC」で段階に分けて生成します (ORCA 6.1 のマニュアルで 1 つのジョブにまとめる形を確かめていないため)。
+**ORCA transition states and IRC** can also be set in the "Method" group. Setting "Transition-state search (OptTS)" with a geometry optimization task writes `! OptTS`. Setting "Follow the reaction path (IRC)" with a single-point task writes `! Freq IRC`. (There are also fields for the initial Hessian `Calc_Hess`, the recalculation interval `Recalc_Hess`, the final `Freq`, and the IRC iteration limit and direction.) To run both in turn, generate them as stages with "TS and IRC" in "Batch generation". (The form that combines them into one job has not been verified against the ORCA 6.1 manual.)
 
-**機械学習ポテンシャル**は計算コードのプルダウンから選びます。種類 (MACE-MP / MACE-OFF / CHGNet)、モデル、device、dtype、D3 (mace_mp のみ)、乱数の種を指定します。入力の代わりに `run_mlip.py` (ASE) と `mlip_settings.json`、`structure.extxyz` が書かれ、実行する環境に入れるパッケージ (`pip install ase mace-torch` など) が画面に 1 行出ます。全電荷とスピン多重度は使わず (0 と 1 のまま)、k 点の群は出ません。
+**Machine-learning potentials** are chosen from the code drop-down. Set the type (MACE-MP / MACE-OFF / CHGNet), model, device, dtype, D3 (mace_mp only) and random seed. Instead of an input file, `run_mlip.py` (ASE), `mlip_settings.json` and `structure.extxyz` are written, and one line on the screen shows the packages to install in the environment that runs the calculation (`pip install ase mace-torch` and so on). Total charge and spin multiplicity are not used (they stay at 0 and 1), and the k-points group does not appear.
 
-**文書に書かれた値**: カットオフなどの欄の下に、使うパラメータのファイルに書かれている値が「ファイル名:行番号 の記載: …」の形で小さく出ます (pw.x の UPF と SSSP の JSON、VASP の POTCAR の ENMAX / ENMIN、CP2K の基底と擬ポテンシャルの注釈、DFTB+ の README の Hubbard 微分・ζ・D3 係数と spinw.txt)。**ADIT の推奨ではありません。**単位が欄と同じときだけ「入れる」が出て、押したときだけ欄に入ります。文書に何も書かれていなければ何も出ません。
+**Values from the documents**: Below fields such as the cutoff, the values written in the parameter files you use appear in small text in the form "written in file name:line number: …" (the UPF and SSSP JSON for pw.x; ENMAX / ENMIN in the POTCAR for VASP; basis and pseudopotential annotations for CP2K; Hubbard derivatives, ζ, D3 coefficients and spinw.txt in the DFTB+ README). **These are not ADIT recommendations.** "Use" appears only when the unit matches the field, and the value enters the field only when you click it. If the documents say nothing, nothing appears.
 
-コマンドラインでは次のように使います (詳しい書式は `adit-gen --help`)。
+On the command line (see `adit-gen --help` for the full syntax):
 
 ```bash
-adit-gen spec.json out/ --compare-set set.json          # 比べる計算の組 (吸着・反応・溶媒和)
-adit-gen spec.json out/ --conformers 50 --rmsd 0.5      # 配座の候補
+adit-gen spec.json out/ --compare-set set.json          # set of runs to compare (adsorption, reaction, solvation)
+adit-gen spec.json out/ --conformers 50 --rmsd 0.5      # conformer candidates
 adit-gen spec.json out/ --neb start.xyz end.xyz --images 5
-adit-gen spec.json out/ --phonons 2x2x2                 # フォノン (実行したあと python out/phonon_collect.py)
-adit-gen spec.json out/ --elastic=-0.01,0.01            # 弾性定数 (実行したあと python out/elastic_collect.py)
-adit-gen spec.json out/ --ts ts+irc                     # ORCA の OptTS → IRC を段階に分けて
-adit-gen spec.json out/ --sella                         # ASE + Sella のスクリプト (xtb・機械学習ポテンシャル)
-adit-gen spec.json --documented                         # 文書に書かれた値を出典付きで並べる
+adit-gen spec.json out/ --phonons 2x2x2                 # phonons (after running, python out/phonon_collect.py)
+adit-gen spec.json out/ --elastic=-0.01,0.01            # elastic constants (after running, python out/elastic_collect.py)
+adit-gen spec.json out/ --ts ts+irc                     # ORCA OptTS -> IRC as stages
+adit-gen spec.json out/ --sella                         # ASE + Sella script (xtb, machine-learning potentials)
+adit-gen spec.json --documented                         # list values from the documents, with sources
 ```
 
-### 生成 → 実行 → 解析
+### Generate, run, analyze
 
-![生成ファイル](images/tutorial/03_generated.png)
+![Generated files](images/tutorial/03_generated.png)
 
-1. **生成**: 出力ディレクトリに入力ファイル一式、`submit.sh`、`spec.json`、`README.txt`、`analyze.py` が書かれます。空でないディレクトリには上書きの確認があり、そこにある何ファイルのうち何件をどの名前で上書きするかが出ます。上書きされるファイルは `<出力ディレクトリ>/.adit_backup/<日時>/` に写してから書き、生成後 10 秒間はステータス行の「元に戻す」で上書き前に戻せます (足したファイルは消えます)。
-2. **実行**: ワークスペースのターミナルで `bash submit.sh`。クラスタなら `transfer_and_submit.sh` のコマンドで転送し、`qsub submit.sh` または `sbatch submit.sh` で投入します。手順は各ディレクトリの `README.txt` にも書かれています。
-3. **解析**: 「解析」タブで計算結果のディレクトリを指定して「解析を実行」。生成したフォルダは自動で入っています。
-4. **再生**: 解析のあと、要約の下の「3D で再生」に、MD の軌跡・構造最適化の各ステップ・振動モードを動かす 3D 表示が出ます。スライダーと再生・コマ送りのボタンで動かし、下のグラフ (エネルギー・温度の推移、または振動数) の縦線がフレームに追従します。グラフをクリックするとそのフレーム (振動なら最も近いモード) に飛びます。詳しくは [解析の詳細](ANALYSIS.md) の「3D で再生」。
+1. **Generate**: The output directory gets the input files, `submit.sh`, `spec.json`, `README.txt` and `analyze.py`. For a non-empty directory, ADIT asks before overwriting and shows how many of the files there will be overwritten, and under which names. Files to be overwritten are first copied to `<output directory>/.adit_backup/<timestamp>/`. For 10 seconds after generating, "Undo" on the status line restores the previous state (files that were added are removed).
+2. **Run**: Run `bash submit.sh` in the Workspace terminal. For a cluster, transfer the files with the commands in `transfer_and_submit.sh` and submit with `qsub submit.sh` or `sbatch submit.sh`. The steps are also in `README.txt` in each directory.
+3. **Analyze**: On the "Analysis" tab, give the run directory and click "Run analysis". The generated folder is already filled in.
+4. **Play**: After analysis, "Play in 3D" below the summary gives a 3D view that animates the MD trajectory, the geometry optimization steps or the vibrational modes. Use the slider and the play and step buttons. A vertical line in the plot below (energy and temperature over time, or frequencies) follows the frame. Click the plot to jump to that frame (for vibrations, the nearest mode). See "Play in 3D" in [Analysis details](ANALYSIS.md).
 
-![軌跡の再生](images/viewer_playback.png)
+![Trajectory playback](images/viewer_playback.png)
 
-5. **等値面**: 計算結果のディレクトリに cube や CHGCAR・PARCHG・LOCPOT・CHG があると、要約の下に「等値面」の枠が出ます。ファイルを選ぶと値の最小・最大が出るので、等値を自分で入れて「表示」を押すと、その面が原子の上に半透明で描かれます (正と負で色を分けます。既定の等値はありません)。三角形が多すぎるときは間引きを提案します。詳しくは [解析の詳細](ANALYSIS.md) の「等値面」。
+5. **Isosurface**: If the run directory has cube, CHGCAR, PARCHG, LOCPOT or CHG files, an "Isosurface" box appears below the summary. Choose a file to see its minimum and maximum values. Enter a level yourself and click "Draw the surface". The surface is drawn semi-transparently over the atoms (positive and negative in different colors; there is no default level). When there are too many triangles, ADIT suggests thinning them. See "Isosurface" in [Analysis details](ANALYSIS.md).
 
-![等値面](images/viewer_isosurface.png)
+![Isosurface](images/viewer_isosurface.png)
 
-(上の絵の軌道は、画面の説明のために作った関数で、計算の結果ではありません)
+(The orbital in the picture above is a function made up to illustrate the screen, not a calculation result.)

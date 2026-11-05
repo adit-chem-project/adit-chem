@@ -765,11 +765,11 @@
       },
       {
         "name": "in.lammps",
-        "sha256": "8b32a51e3a73d720f1532c6684ae1e684085da2f36aa3a85a0853a3a836fb6d6"
+        "sha256": "98c54a75351ddd3f6aa6cbf5cadfb4f23fcb873cc7d9efd5d745e9adad405d84"
       },
       {
         "name": "submit.sh",
-        "sha256": "be9c3a2ccb06747dfcdd0b8c4ae123f733c7ed9632dec0296b88af694d5ff173"
+        "sha256": "2b9d67cebefa57730af2ac133e7c08cf53e34d2c7b35e4e72af62da56b557a1d"
       }
     ],
     "code_version_file": "code_version.txt"

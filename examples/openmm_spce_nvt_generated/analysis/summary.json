@@ -1794,9 +1794,9 @@
         "depends_on_rmax": false,
         "periodic_frames": 4,
         "n_frames": 4,
-        "definition": "g(r) = (距離 r の殻にある組の数) × V / (組の総数 × 殻の体積)。周期系は V = セルの体積 (rmax を変えても g(r) は変わらない)。非周期 (分子・クラスター) は V = 半径 rmax の球の体積で、基準にする密度が rmax で決まるので **rmax を変えると g(r) の絶対値が変わる**。有限の系には遠方の一様な密度が無いため、この規格化を rmax に依らない形にはできない。rmax に依らない量は rdf.json の density [Å^-3] (元素 a の原子 1 個から距離 r の位置にある元素 b の数密度。density_reverse は入れ替え) と n(r)。別の rmax・別の計算と比べるときは g(r) ではなく density か n(r) を使う"
+        "definition": "g(r) = (pairs in the shell at r) x V / (total number of pairs x shell volume). For periodic systems V is the cell volume, so g(r) does not change with rmax. For non-periodic systems (molecules, clusters) V is the volume of a sphere of radius rmax, so the reference density is set by rmax and **the absolute value of g(r) changes when rmax changes**. A finite system has no uniform density far away, so this normalization cannot be made independent of rmax. The rmax-independent quantities are density [Å^-3] in rdf.json (number density of element b at distance r from one atom of element a; density_reverse swaps them) and n(r). Compare density or n(r), not g(r), across different rmax or different runs"
       },
-      "coordination_definition": "n: 1 つ目の元素の原子 1 個のまわりで r 以内にある 2 つ目の元素の原子の数 (フレーム平均)。n_reverse は元素を入れ替えたもの。r は各区間の上端 r_upper"
+      "coordination_definition": "n: number of atoms of the second element within r of one atom of the first element (frame average); n_reverse swaps the elements; r is the upper bin edge r_upper"
     },
     "msd": {
       "species": "O",
@@ -1886,12 +1886,12 @@
         ],
         "n_frames_used": 0,
         "d_blocks_mean_cm2_s": null,
-        "reason": "区間を 2 つ以上 (1 区間 4 フレーム以上) 取れません (使ったフレーム 4)",
+        "reason": "Cannot form at least two blocks of 4 or more frames (4 frames used)",
         "reason_code": "insufficient_blocks",
         "estimator": "standard_error_of_block_mean",
         "estimate_for": "mean_of_block_D"
       },
-      "definition": "D は当てはめ範囲で MSD を直線に当てはめた傾きから。D_error は各ブロックから出した D の平均の標準誤差で、全軌跡の D 自体の厳密な誤差ではありません。loglog_slope は当てはめ範囲での log MSD 対 log t の傾き (拡散なら 1 に近い)"
+      "definition": "D comes from a straight-line fit of the MSD over the fit range. D_error is the standard error of the mean block D, not a rigorous error on D from the full trajectory. loglog_slope is the slope of log MSD vs log t over the fit range (close to 1 for diffusion)"
     },
     "spacegroup": {
       "results": [
@@ -1918,8 +1918,8 @@
         }
       ],
       "spglib": "2.7.0",
-      "structure": "最終構造",
-      "angle_tolerance": "spglib の既定"
+      "structure": "final structure",
+      "angle_tolerance": "spglib default"
     }
   },
   "figures": {
@@ -1930,10 +1930,10 @@
     "msd": "examples/openmm_spce_nvt_generated/analysis/msd.png"
   },
   "notes": [
-    "エネルギーは md.log (OpenMM の StateDataReporter) の Total Energy (系全体の kJ/mol を ÷ 96.485 で 1 系あたりの eV に換算)",
-    "軌跡 trajectory.dcd は読みません (DCD はバイナリ形式で、依存を増やさないため)。RDF・MSD・書き出しは trajectory.extxyz を使います",
-    "力場・原子型・電荷は外部のトポロジーが決めています。ADIT は照合していません。",
-    "MSD の前に系全体の質量重心を各フレームから引きました (重心は最初と最後で 0.001 Å、最初のフレームからの最大 0.001 Å 動いています)",
-    "軌跡は 4 フレームです (RDF と MSD は、フレームが少ないと 1 フレームの揺らぎで形が変わります)"
+    "energy is Total Energy in md.log (OpenMM StateDataReporter); whole-system kJ/mol divided by 96.485 to give eV per system",
+    "the trajectory trajectory.dcd is not read (DCD is a binary format, and reading it would add a dependency); RDF, MSD and export use trajectory.extxyz",
+    "the force field, atom types and charges come from the external topology; ADIT did not check them.",
+    "the center-of-mass of the whole system was subtracted from every frame before the MSD (it moved 0.001 Å between the first and last frame, at most 0.001 Å)",
+    "the trajectory has 4 frames (with few frames, RDF and MSD change shape with single-frame fluctuations)"
   ]
 }

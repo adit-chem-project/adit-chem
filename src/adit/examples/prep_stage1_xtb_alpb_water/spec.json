@@ -125,11 +125,11 @@
       },
       {
         "name": "submit.sh",
-        "sha256": "6dd27aa48edad511b500c24b9605d998b94f6627a150ebf5b2dfeee57ae459b1"
+        "sha256": "50572308d1c47958a9b604c21571d2bddd41f900d5a68495b3655aed97993eca"
       },
       {
         "name": "xtb.inp",
-        "sha256": "980a5797cf508597fa75a5e30060b8acb1544a8fe69cf411b1510f037d7fd580"
+        "sha256": "6fab8b6f833a2f25c931fc139d70e7b3505731412d5a82182d2baf318a760376"
       }
     ],
     "code_version_file": "code_version.txt"

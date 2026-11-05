@@ -1,23 +1,23 @@
-# この例について (2026-09-14 に追記)
+# About this example (added 2026-09-14)
 
-**この例の構造は、構造最適化をしていません。** O–H が 1.27 Å（測定は約 0.96 Å）に伸びた水分子です。
-そのため振動数は 819 / 1100 / 1657 cm⁻¹ になり、**測定の水（1595 / 3657 / 3756 cm⁻¹）とは合いません。**
-O–H 伸縮に当たる振動が出てきません。
+**The structure in this example has not been geometry-optimized.** It is a water molecule with O–H stretched to 1.27 Å (measured: about 0.96 Å).
+So the frequencies come out as 819 / 1100 / 1657 cm⁻¹ and **do not match measured water (1595 / 3657 / 3756 cm⁻¹).**
+No vibration corresponding to the O–H stretch appears.
 
-置いてある理由: **ADIT が「力が残っている構造で振動解析をした」と気づけるかを確かめるための例**だからです。
-解析を実行すると、次の注が出ます。
+Why it is here: **this example checks whether ADIT notices "a vibrational analysis on a structure with residual forces."**
+Running the analysis gives the following note.
 
 ```
-注: 振動解析の元の構造で、原子にかかる力の最大値は 6.52 eV/Å 以上 …
-   この計算条件の構造最適化の収束の目安は 0.00514 eV/Å。
-   振動解析は、最適化済みの構造 (力がほぼ 0) で行うのが普通です
+note: on the starting structure of the vibrational analysis, the largest force on an atom is at least 6.52 eV/Å …
+   the convergence threshold for geometry optimization in these settings is 0.00514 eV/Å.
+   vibrational analysis is normally done on an optimized structure (forces close to zero)
 ```
 
-**自分の分子でやるときの順序**
+**Order for your own molecule**
 
-1. まず構造最適化（`task.type = "geometry_optimization"`）を実行する
-2. 収束したら、その最終構造で振動解析（`task.type = "vibrations"`）を実行する
-3. 測定と比べるときは `--freq-scale`（補正係数。0.96 など、値は自分で決めます）と
-   `--spectrum-measured`（測定の表を重ねる）を使います
+1. First run a geometry optimization (`task.type = "geometry_optimization"`)
+2. When it converges, run the vibrational analysis (`task.type = "vibrations"`) on that final structure
+3. To compare with measurements, use `--freq-scale` (a correction factor such as 0.96; you choose the value) and
+   `--spectrum-measured` (overlays a measured table)
 
-2026-09-14 の試用で、実験が専門の利用者がこの例を「手本」と読んで 10 分 止まったため、この注を置きました。
+This note was added because, in a trial on 2026-09-14, a user with an experimental background took this example as a model and got stuck for 10 minutes.

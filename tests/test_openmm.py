@@ -139,7 +139,7 @@ def test_include_dir_required_when_topology_uses_gromacs_library(tmp_path, sk_ro
     spec = spec_for(d)
     errs = errors(spec, cfg_for(sk_root))
     if gmx_top_dir() is None or not (gmx_top_dir() / "oplsaa.ff" / "forcefield.itp").is_file():
-        pytest.skip("GROMACS の力場の置き場所が無いので、この検査は「未確認」になる")
+        pytest.skip("no GROMACS force field directory, so this check would report 'not verified'")
     assert "method.include_dir" in places(errs)
 
 
@@ -172,7 +172,7 @@ TOP_DIR = gmx_top_dir()
 HAVE_SPCE = bool(TOP_DIR and (TOP_DIR / "spc216.gro").is_file() and (TOP_DIR / "oplsaa.ff" / "spce.itp").is_file())
 
 
-@pytest.mark.skipif(not (OPENMM_PY and HAVE_SPCE), reason="openmm の python3 か GROMACS 同梱の SPC/E が無い")
+@pytest.mark.skipif(not (OPENMM_PY and HAVE_SPCE), reason="the python3 with openmm or the SPC/E model shipped with GROMACS is missing")
 def test_openmm_real_run_md(sk_root, tmp_path):
     s = tmp_path / "src"
     s.mkdir()
@@ -200,7 +200,7 @@ def test_openmm_real_run_md(sk_root, tmp_path):
     assert summary.finished is True and summary.geometry_steps == 20
 
 
-@pytest.mark.skipif(not (OPENMM_PY and HAVE_SPCE), reason="openmm の python3 か GROMACS 同梱の SPC/E が無い")
+@pytest.mark.skipif(not (OPENMM_PY and HAVE_SPCE), reason="the python3 with openmm or the SPC/E model shipped with GROMACS is missing")
 def test_openmm_real_run_md_without_text_trajectory(sk_root, tmp_path):
     s = tmp_path / "src"
     s.mkdir()
@@ -219,7 +219,7 @@ def test_openmm_real_run_md_without_text_trajectory(sk_root, tmp_path):
     assert any("write_xyz_trajectory" in n for n in run.notes)
 
 
-@pytest.mark.skipif(not (OPENMM_PY and HAVE_SPCE), reason="openmm の python3 か GROMACS 同梱の SPC/E が無い")
+@pytest.mark.skipif(not (OPENMM_PY and HAVE_SPCE), reason="the python3 with openmm or the SPC/E model shipped with GROMACS is missing")
 def test_openmm_real_run_minimization(sk_root, tmp_path):
     s = tmp_path / "src"
     s.mkdir()

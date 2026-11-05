@@ -1,6 +1,6 @@
-# 追加コードの入力仕様 / Input references for additional engines
+# Input references for additional engines
 
-ADIT はこれらの文書の入力形式・キーワード・起動方法に合わせて、限定した計算種類だけを生成する。下の書式例は化学的な推奨条件ではない。実行可能な本体と必要なパラメータがこの開発環境に揃っていないため、7コードの実行しての確認はしていません。
+ADIT follows the input formats, keywords and launch methods in these documents, and generates only a limited set of calculation types. The format examples below are not chemical recommendations. The executables and required parameters are not available in this development environment, so these 7 codes have not been checked by running them.
 
 ADIT follows these documents for input syntax, keywords, and launch commands within the explicitly limited task subsets. Example values are not chemical recommendations. Live runs for the seven codes have not been verified because the required executables and parameters are not all available in this development environment.
 

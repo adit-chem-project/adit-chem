@@ -213,7 +213,7 @@ def test_structure_source_is_one_dropdown_with_icons(app, quiet, sk_root, tmp_pa
     src = win.structure.source
     assert src.count() == 10 and src.currentData() == "preset"
     assert [src.itemData(i) for i in range(6, 10)] == ["2d", "cluster", "polymer", "fetch"]
-    assert all(not src.itemIcon(i).isNull() for i in range(src.count())), "すべての項目に絵記号"
+    assert all(not src.itemIcon(i).isNull() for i in range(src.count())), "every item has an icon"
     form = win.structure._form
     assert form.isRowVisible(win.structure.preset) and not form.isRowVisible(win.structure.mixture)
     win.structure.set_source("mixture")
@@ -224,7 +224,7 @@ def test_structure_source_is_one_dropdown_with_icons(app, quiet, sk_root, tmp_pa
 def test_toolbar_has_no_menu_duplicates(app, quiet, sk_root, tmp_path):
     win = make_window(sk_root, tmp_path)
     shown = [a for a in win.action_bar.actions() if a.text()]
-    assert shown == [], f"操作の列に文字のボタンが残っている: {[a.text() for a in shown]}"
+    assert shown == [], f"text buttons remain in the action column: {[a.text() for a in shown]}"
     assert win.act_back not in win.action_bar.actions() and win.act_forward not in win.action_bar.actions()
     assert [b.defaultAction() for b in win.quick_access.buttons] == [win.act_back, win.act_forward]
     assert win.ribbon.page_titles() == ["ファイル", "挿入", "表示", "実行", "設定", "ヘルプ"]

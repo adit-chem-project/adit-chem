@@ -10,7 +10,7 @@
   },
   "structure": {
     "source": "file",
-    "source_ref": "examples/vasp_cd_si/POSCAR (数値を写した)",
+    "source_ref": "examples/vasp_cd_si/POSCAR (values copied)",
     "atoms": {
       "symbols": [
         "Si",
@@ -149,7 +149,7 @@
     "inputs": [
       {
         "name": "INCAR",
-        "sha256": "14fbaacf7a2b62b5a3df1e1545af4dc989f1840a63c43f34e512cbafa7050b8c"
+        "sha256": "670c0ef59c345aa2316b12ade8db2293c2c16e195ab40a6c21c9e75b5a75e0ca"
       },
       {
         "name": "KPOINTS",
@@ -161,15 +161,15 @@
       },
       {
         "name": "make_potcar.sh",
-        "sha256": "8a92ac5d942cdc92c5bd22d4d272da3318a6e872a80683defe4d27be16705e03"
+        "sha256": "7bca0da01a91af2be5841e78c01b3e5548b84210d4af2162f8161f0088ce0e1e"
       },
       {
         "name": "potcar.spec",
-        "sha256": "5c01a3fda9212203fff6184af3fd97a89b9143cc91861c6b6e2b1bb2c7e7a890"
+        "sha256": "0a65a93b625ccf3bf8995b83c5c904baa2275f4b23214c8504b6a6df73975291"
       },
       {
         "name": "submit.sh",
-        "sha256": "613a22395f566c129a0fc4dd7982ba2b2380ee67199effa38a302617d5922960"
+        "sha256": "10c4a2c7db1915eb973882dfc0221a649b9e363022c2a5c75af031b215365cf8"
       }
     ],
     "code_version_file": "code_version.txt"

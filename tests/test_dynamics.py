@@ -103,7 +103,7 @@ def test_orca_md_and_freq(sk_root):
         build_project(water_spec(method=OrcaMethod(), task=md_task(thermostat="langevin")), cfg_for(sk_root))
 
 
-@pytest.mark.skipif(not (DFTB and (REAL_SK_ROOT / "mio-1-1").is_dir()), reason="dftb+ か mio-1-1 が無い")
+@pytest.mark.skipif(not (DFTB and (REAL_SK_ROOT / "mio-1-1").is_dir()), reason="dftb+ or mio-1-1 is missing")
 def test_dftb_md_real_run(tmp_path):
     out = tmp_path / "md"
     write_project(water_spec(method=DftbMethod(sk_set="mio-1-1"), task=md_task(steps=50, dump_interval=5)), cfg_for(REAL_SK_ROOT), out)
@@ -112,7 +112,7 @@ def test_dftb_md_real_run(tmp_path):
     assert (out / "md.out").read_text(encoding="utf-8").count("MD step:") == 11 and (out / "geo_end.xyz").is_file()
 
 
-@pytest.mark.skipif(not XTB, reason="xtb が無い")
+@pytest.mark.skipif(not XTB, reason="xtb is missing")
 def test_xtb_hess_real_run(sk_root, tmp_path):
     out = tmp_path / "h"
     write_project(water_spec(method=XtbMethod(), task=Task(type="vibrations")), cfg_for(sk_root), out)

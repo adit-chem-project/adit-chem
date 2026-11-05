@@ -46,7 +46,7 @@ def test_the_screen_keeps_the_size_it_was_given(tmp_path):
         session.close()
 
 
-@pytest.mark.skipif(os.name == "nt", reason="cmd.exe の出力の書式が違う")
+@pytest.mark.skipif(os.name == "nt", reason="cmd.exe formats its output differently")
 def test_wide_characters_take_two_columns(tmp_path):
     session = ShellSession(cwd=tmp_path, command=SHELL, rows=8, cols=40)
     try:
@@ -64,7 +64,7 @@ def test_the_default_shell_is_a_real_program():
     assert argv and (Path(argv[0]).name or argv[0])
 
 
-@pytest.mark.skipif(os.name == "nt", reason="Windows は別のシェル")
+@pytest.mark.skipif(os.name == "nt", reason="Windows has a different shell")
 def test_the_editor_opens_saves_and_refuses_binaries(tmp_path):
     pytest.importorskip("PySide6")
     from PySide6.QtWidgets import QApplication
@@ -115,7 +115,7 @@ def test_the_history_can_be_scrolled_back(tmp_path):
         session.close()
 
 
-@pytest.mark.skipif(os.name == "nt", reason="Windows は別のシェル")
+@pytest.mark.skipif(os.name == "nt", reason="Windows has a different shell")
 def test_several_terminals_can_be_open_at_once(tmp_path):
     pytest.importorskip("PySide6")
     from PySide6.QtWidgets import QApplication
@@ -153,7 +153,7 @@ def _wait_busy(session, seconds: float = 8.0) -> bool:
     return False
 
 
-@pytest.mark.skipif(os.name == "nt", reason="Windows は別のシェル")
+@pytest.mark.skipif(os.name == "nt", reason="Windows has a different shell")
 def test_closing_a_tab_asks_while_a_program_is_running(tmp_path, monkeypatch):
     pytest.importorskip("PySide6")
     from PySide6.QtWidgets import QApplication, QMessageBox
@@ -180,7 +180,7 @@ def test_closing_a_tab_asks_while_a_program_is_running(tmp_path, monkeypatch):
         tabs.close_session()
 
 
-@pytest.mark.skipif(os.name == "nt", reason="printf の書式が違う")
+@pytest.mark.skipif(os.name == "nt", reason="printf formats differently")
 def test_bytes_that_are_not_utf8_do_not_stop_the_terminal(tmp_path):
     session = ShellSession(cwd=tmp_path, command=["/bin/sh", "-c", "printf 'before\\n\\377\\376\\nafter\\n'; sleep 1"], rows=6, cols=40)
     try:
@@ -189,7 +189,7 @@ def test_bytes_that_are_not_utf8_do_not_stop_the_terminal(tmp_path):
         session.close()
 
 
-@pytest.mark.skipif(os.name == "nt", reason="Windows は別のシェル")
+@pytest.mark.skipif(os.name == "nt", reason="Windows has a different shell")
 def test_control_keys_and_tab_reach_the_shell_not_the_window(tmp_path):
     pytest.importorskip("PySide6")
     from PySide6.QtCore import Qt
@@ -229,7 +229,7 @@ def test_control_keys_and_tab_reach_the_shell_not_the_window(tmp_path):
         win.close()
 
 
-@pytest.mark.skipif(os.name == "nt", reason="Windows は別のシェル")
+@pytest.mark.skipif(os.name == "nt", reason="Windows has a different shell")
 def test_pasted_line_breaks_become_single_enters(tmp_path):
     pytest.importorskip("PySide6")
     from PySide6.QtWidgets import QApplication
@@ -248,7 +248,7 @@ def test_pasted_line_breaks_become_single_enters(tmp_path):
         term.close_session()
 
 
-@pytest.mark.skipif(os.name == "nt", reason="Windows は別のシェル")
+@pytest.mark.skipif(os.name == "nt", reason="Windows has a different shell")
 def test_the_editor_keeps_crlf_and_does_not_rewrite_other_encodings(tmp_path):
     pytest.importorskip("PySide6")
     from PySide6.QtGui import QTextCursor
@@ -274,7 +274,7 @@ def test_the_editor_keeps_crlf_and_does_not_rewrite_other_encodings(tmp_path):
         panel.close_session()
 
 
-@pytest.mark.skipif(os.name == "nt", reason="Windows は別のシェル")
+@pytest.mark.skipif(os.name == "nt", reason="Windows has a different shell")
 def test_rename_refuses_an_existing_name_and_follows_the_open_file(tmp_path, monkeypatch):
     pytest.importorskip("PySide6")
     from PySide6.QtWidgets import QApplication, QMessageBox
@@ -299,7 +299,7 @@ def test_rename_refuses_an_existing_name_and_follows_the_open_file(tmp_path, mon
         panel.close_session()
 
 
-@pytest.mark.skipif(os.name == "nt", reason="Windows は別のシェル")
+@pytest.mark.skipif(os.name == "nt", reason="Windows has a different shell")
 def test_the_restart_button_follows_the_shell_of_every_tab(tmp_path, monkeypatch):
     pytest.importorskip("PySide6")
     from PySide6.QtWidgets import QApplication
@@ -330,7 +330,7 @@ def test_the_restart_button_follows_the_shell_of_every_tab(tmp_path, monkeypatch
         panel.close_session()
 
 
-@pytest.mark.skipif(os.name == "nt", reason="Windows は別のシェル")
+@pytest.mark.skipif(os.name == "nt", reason="Windows has a different shell")
 def test_the_font_size_changes_the_number_of_columns(tmp_path):
     pytest.importorskip("PySide6")
     from PySide6.QtWidgets import QApplication
@@ -350,7 +350,7 @@ def test_the_font_size_changes_the_number_of_columns(tmp_path):
         term.close_session()
 
 
-@pytest.mark.skipif(os.name == "nt", reason="Windows は別のシェル")
+@pytest.mark.skipif(os.name == "nt", reason="Windows has a different shell")
 def test_the_editor_and_terminal_can_be_rearranged_and_folded(tmp_path):
     pytest.importorskip("PySide6")
     from PySide6.QtCore import Qt

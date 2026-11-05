@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}ADIT — {{ T("組にして比べる", "Compare runs") }}{% endblock %}
 {% block body %}
-{#- 組にして比べる表 (adit.analysis.compare)。行は (反応の名前, 係数, ディレクトリ)。名前が空の行は上の行と同じ反応。JS なし: 行を増やすのも送信ボタン -#}
+{#- Table of paired comparisons (adit.analysis.compare). Rows are (reaction name, coefficient, directory). An empty name continues the reaction above. No JS: adding a row is a submit button too -#}
 <form method="post" action="/compare">
 <fieldset><legend>{{ T("組にして比べる", "Compare runs") }}</legend>
   <p class="hint">{{ T("係数 ν は生成物を正、反応物を負にします (ΔE = ΣνE)。ディレクトリは基準のディレクトリからの相対パスか絶対パス。反応の名前が空の行は、上の行と同じ反応に入ります。",

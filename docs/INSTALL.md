@@ -1,100 +1,100 @@
-# 各 OS のインストール方法
+# Installation for each OS
 
-ADIT を入れて、最初の計算を実行するまでの手順です。
+These are the steps from installing ADIT to running your first calculation.
 
-## いちばん簡単な方法: 実行ファイルを使う (Windows / macOS)
+## The easiest way: Using the executables (Windows / macOS)
 
-**Python も WSL も要りません。**
+**You don't need Python or WSL.**
 
-1. [Releases](https://github.com/adit-chem-project/adit-chem/releases) を開きます
-2. Windows なら `ADIT-windows-x64.zip`、macOS (Apple Silicon) なら `ADIT-arm64.zip` を
-   ダウンロードします (Intel の Mac 用は配っていません。下の pip で入れてください)
-3. 展開し、Windows は `ADIT.exe`、macOS は `ADIT.app` をダブルクリックします
+1. Open [Releases](https://github.com/adit-chem-project/adit-chem/releases)
+2. Download `ADIT-windows-x64.zip` for Windows, or `ADIT-arm64.zip` for macOS (Apple Silicon)
+   (there is no build for Intel Macs; install with pip as described below)
+3. Extract it, then double-click `ADIT.exe` on Windows or `ADIT.app` on macOS
 
-署名を付けていないため、初回だけ警告が出ます。Windows は「詳細情報」→「実行」、
-macOS は Finder で右クリック →「開く」を選んでください。
+The executables are not signed, so a warning appears the first time only. On Windows, choose "More info" → "Run anyway".
+On macOS, right-click the app in Finder and choose "Open".
 
-コマンドライン (`adit-gen` など) を使いたいときは、Windows は同じフォルダの `adit-cli.exe` を呼びます。
-macOS の zip には `ADIT.app` だけが入っているので、ターミナルで `ADIT.app/Contents/MacOS/adit-cli` を呼びます
-(例: `./ADIT.app/Contents/MacOS/adit-cli gen --list-samples`)。
+To use the command line (`adit-gen` and so on), call `adit-cli.exe` in the same folder on Windows.
+The macOS zip contains only `ADIT.app`, so call `ADIT.app/Contents/MacOS/adit-cli` in a terminal
+(for example: `./ADIT.app/Contents/MacOS/adit-cli gen --list-samples`).
 
-同じ PC で計算まで実行したい場合は、次の節へ進んでください。
+If you also want to run calculations on the same PC, go on to the next section.
 
-## 同じ PC で計算まで実行したい人へ (Windows、この順に進めてください)
+## Running calculations on the same PC (Windows; follow these steps in order)
 
-Linux を使ったことがなくても、この節の手順を上から順に行えば、最初の入力ファイルを作って計算を実行するところまで進めます。
-コマンドは **1 行ずつ**コピーしてターミナル (文字でコンピュータに指示を出す黒い画面) に貼り付け、Enter を押します。
-`#` から行末までは説明なので、貼り付けなくてもかまいません。`<...>` は自分の値に置き換えます。
+Even if you have never used Linux, following this section from top to bottom gets you as far as creating your first input files and running a calculation.
+Copy the commands **one line at a time**, paste them into the terminal (the black window where you give the computer instructions as text), and press Enter.
+The part from `#` to the end of a line is only an explanation, so you don't have to paste it. Replace `<...>` with your own values.
 
-### 1. WSL (Windows の中で Linux を動かす仕組み) を入れる
+### 1. Install WSL (which runs Linux inside Windows)
 
-1. スタートメニューで「PowerShell」を右クリックし、「管理者として実行」を選びます
-2. 次の 1 行を入力して Enter を押し、終わったら PC を再起動します
+1. In the Start menu, right-click "PowerShell" and choose "Run as administrator"
+2. Type the following line and press Enter. When it finishes, restart the PC
 
    ```powershell
    wsl --install
    ```
 
-3. 再起動後に「Ubuntu」の画面が開くので、Linux 用のユーザー名とパスワードを決めます (Windows のものとは別です。パスワードは入力しても画面に表示されません)
+3. After the restart, an "Ubuntu" window opens. Choose a user name and password for Linux (these are separate from your Windows ones, and the password does not appear on screen as you type)
 
-以後は、スタートメニューの「Ubuntu」で開く画面 (ターミナル) で作業します。
+From here on, work in the window (the terminal) that "Ubuntu" in the Start menu opens.
 
-### 2. miniforge (conda) を入れる
+### 2. Install miniforge (conda)
 
-conda は、Python や計算コードを「環境」という箱に分けて入れる仕組みです。miniforge はその配布版で、conda-forge (DFTB+、xtb、Quantum ESPRESSO を配布している場所) を既定で使います。
+conda is a system that installs Python and calculation codes into separate boxes called "environments". miniforge is a distribution of it that uses conda-forge (where DFTB+, xtb and Quantum ESPRESSO are distributed) by default.
 
 ```bash
 curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
-bash Miniforge3-$(uname)-$(uname -m).sh      # 質問には Enter と yes で答えます
+bash Miniforge3-$(uname)-$(uname -m).sh      # answer the questions with Enter and yes
 ```
 
-終わったら、ターミナルを一度閉じて開き直します。行頭に `(base)` と出ていれば入っています。
+When it finishes, close the terminal and open it again. If `(base)` appears at the start of the line, it is installed.
 
-> **venv ではなく conda を勧める理由**: ADIT は Python だけで動きますが、この PC で計算を実行するには DFTB+ などの計算コードが要ります。
-> conda ならそれらを同じ手順で入れられます。WSL の Ubuntu には最初 `python` コマンドが無く `python3` だけですが、conda の環境を有効にすると `python` が使えます。
-> 計算はクラスタでしか実行せず、手元では入力の生成だけをする場合は、`python3 -m venv adit-env` と `source adit-env/bin/activate` の venv でもかまいません。
+> **Why conda rather than venv**: ADIT runs on Python alone, but running calculations on this PC needs a calculation code such as DFTB+.
+> With conda, you can install those in the same way. WSL's Ubuntu starts with only `python3` and no `python` command, but activating a conda environment gives you `python`.
+> If you only run calculations on a cluster and only generate input locally, a venv made with `python3 -m venv adit-env` and `source adit-env/bin/activate` is also fine.
 
-### 3. ADIT と DFTB+ を入れる環境を作る
+### 3. Create an environment for ADIT and DFTB+
 
 ```bash
 conda create -n adit -c conda-forge "python>=3.11" dftbplus rdkit font-ttf-noto-cjk git
-conda activate adit                         # 行頭が (adit) に変わります。ターミナルを開くたびに打ちます
+conda activate adit                         # the start of the line changes to (adit); type this each time you open a terminal
 ```
 
-`font-ttf-noto-cjk` はデスクトップ版の画面で日本語を表示するためのフォントです (WSL には最初、日本語のフォントがありません)。
-xtb と Quantum ESPRESSO は、DFTB+ と同じ環境に入れると DFTB+ のバージョンが古いものに下がることがあるため、別の環境に入れます (使うものだけで十分です)。
+`font-ttf-noto-cjk` is the font for showing Japanese in the desktop app (WSL has no Japanese font at first).
+Install xtb and Quantum ESPRESSO in separate environments, because installing them alongside DFTB+ can downgrade DFTB+ to an older version (you only need the ones you will use).
 
 ```bash
 conda create -n xtb -c conda-forge xtb
 conda create -n qe -c conda-forge qe
-conda activate --stack xtb                   # adit の環境を有効にしたまま、xtb も使えるようにする例
+conda activate --stack xtb                   # example: make xtb available too, with the adit environment still active
 ```
 
-### 4. ADIT を入れる
+### 4. Install ADIT
 
 ```bash
 git clone https://github.com/adit-chem-project/adit-chem.git
 cd adit-chem && pip install -e ".[gui,smiles,analysis]"
 ```
 
-`[gui,smiles,analysis]` は、デスクトップ版の画面、SMILES と Draw、空間群の解析に要るパッケージをまとめて入れる指定です。
+`[gui,smiles,analysis]` installs the packages needed for the desktop app's GUI, SMILES and Draw, and space-group analysis.
 
-### 5. パラメータを入手して置く
+### 5. Get the parameters and put them in place
 
-計算コードによっては、元素ごとのパラメータのファイルが要ります。ADIT には入っていないので、配布元から入手します。
-Windows のブラウザでダウンロードしたファイルは、WSL の中からは `/mnt/c/Users/<Windows のユーザー名>/Downloads/` に見えます。
+Some calculation codes need parameter files for each element. ADIT does not include them, so get them from their distributors.
+Files downloaded with a browser on Windows appear inside WSL at `/mnt/c/Users/<your Windows user name>/Downloads/`.
 
-**DFTB+ の Slater-Koster パラメータ** (元素の組ごとの `.skf` ファイル。ライセンスは CC BY-SA 4.0 です)
+**Slater-Koster parameters for DFTB+** (`.skf` files for each element pair, licensed under CC BY-SA 4.0)
 
-入手先: https://dftb.org/parameters/download.html (水や有機分子なら mio が入り口です。mio が扱う元素は H, C, N, O, S, P)
+Where to get them: https://dftb.org/parameters/download.html (for water and organic molecules, start with mio; the elements mio covers are H, C, N, O, S, P)
 
 ```bash
-mkdir -p ~/slakos                                                   # 置き場所を作る (~ は自分のホームフォルダ)
-tar -xf /mnt/c/Users/<Windows のユーザー名>/Downloads/mio-1-1.tar.xz -C ~/slakos
-ls ~/slakos/mio-1-1                                                 # H-H.skf などが並べば置けています
+mkdir -p ~/slakos                                                   # create the location (~ is your home folder)
+tar -xf /mnt/c/Users/<your Windows user name>/Downloads/mio-1-1.tar.xz -C ~/slakos
+ls ~/slakos/mio-1-1                                                 # if you see H-H.skf and so on, they are in place
 ```
 
-展開後は次の形になります。セットのフォルダ (`mio-1-1/`) の中に `.skf` と `LICENSE`、`README` が直接入っている形です。
+After extraction it looks like this: the `.skf` files, `LICENSE` and `README` sit directly inside the folder of the set (`mio-1-1/`).
 
 ```
 ~/slakos/
@@ -102,10 +102,10 @@ ls ~/slakos/mio-1-1                                                 # H-H.skf �
     H-H.skf  H-O.skf  O-H.skf  O-O.skf  C-C.skf  …  LICENSE  README
 ```
 
-**Quantum ESPRESSO の擬ポテンシャル (UPF ファイル)**
+**Pseudopotentials for Quantum ESPRESSO (UPF files)**
 
-入手先の例: SSSP https://www.materialscloud.org/discover/sssp (ライセンスは配布元で確認してください)。
-展開して、`.UPF` ファイルが直接入ったフォルダを、たとえば `~/pseudo/SSSP_efficiency/` として置きます。フォルダの名前が ADIT の「擬ポテンシャルのセット」になります。
+One source: SSSP https://www.materialscloud.org/discover/sssp (check the license with the distributor).
+Extract it and place the folder that directly contains the `.UPF` files, for example as `~/pseudo/SSSP_efficiency/`. The folder name becomes the "Pseudopotential set" in ADIT.
 
 ```
 ~/pseudo/
@@ -113,53 +113,53 @@ ls ~/slakos/mio-1-1                                                 # H-H.skf �
     Si.pbe-n-rrkjus_psl.1.0.0.UPF  O.pbe-n-kjpaw_psl.0.1.UPF  …
 ```
 
-xtb は計算手法にパラメータが入っているので不要です。VASP の POTCAR と ORCA は、[環境設定](SETTINGS.md#各計算コードで用意するもの) の「各計算コードで用意するもの」を見てください。
+xtb needs no parameter files, because the parameters are built into the method. For VASP POTCAR files and ORCA, see "What to prepare for each code" in [Settings](SETTINGS.md#what-to-prepare-for-each-code).
 
-### 6. 環境設定ファイルに置き場所を書く
+### 6. Write the locations in the settings file
 
-はじめて `adit-web` か `adit-gen` を実行すると、環境設定ファイル `~/.config/adit/cluster.toml` が作られ、その場所が表示されます。
-次のコマンドで開き (nano は端末で使う簡単な文字エディタです。Ctrl+O → Enter で保存、Ctrl+X で終了)、置き場所を書きます。
+The first time you run `adit-web` or `adit-gen`, the settings file `~/.config/adit/cluster.toml` is created and its location is shown.
+Open it with the commands below and write the locations (nano is a simple text editor for the terminal. Ctrl+O and then Enter saves; Ctrl+X exits).
 
 ```bash
-echo $HOME                                   # 自分のホームフォルダ (例 /home/taro) が出ます
+echo $HOME                                   # shows your home folder (for example /home/taro)
 nano ~/.config/adit/cluster.toml
 ```
 
 ```toml
-sk_root = "/home/<ユーザー名>/slakos"        # 5 で作った置き場所。セットのフォルダ (mio-1-1) の 1 つ上
-pseudo_root = "/home/<ユーザー名>/pseudo"    # Quantum ESPRESSO を使うとき
+sk_root = "/home/<user name>/slakos"        # the location created in step 5; one level above the folder of the set (mio-1-1)
+pseudo_root = "/home/<user name>/pseudo"    # when you use Quantum ESPRESSO
 ```
 
-パスは必ず `"..."` で囲みます。Windows の書き方 (`C:\Users\...`) はそのままでは読めません。WSL の中では `C:\Users\taro` は `/mnt/c/Users/taro` です。
+Always enclose paths in `"..."`. Windows-style paths (`C:\Users\...`) cannot be read as they are. Inside WSL, `C:\Users\taro` is `/mnt/c/Users/taro`.
 
-### 7. 最初の入力を作って実行する
+### 7. Create your first input and run it
 
 ```bash
-adit-web --open                             # ブラウザが開かなければ、Windows のブラウザで http://127.0.0.1:8765/ を開きます
+adit-web --open                             # if no browser opens, open http://127.0.0.1:8765/ in a browser on Windows
 ```
 
-ブラウザの画面で、構造「プリセット」の H2O、計算コード DFTB+、Slater-Koster パラメータ mio-1-1、プロファイル local のまま「プレビュー」→「生成」と進み、ターミナルで `bash submit.sh` を実行したあと「解析へ進む」を押し、解析のページで「解析を実行」を押します。
-ターミナルだけで行う場合は、画面で保存した計算設定 (spec.json) から次のように作れます。
+In the browser, choose H2O under the "Preset" structure, the code DFTB+, the "Slater-Koster set" mio-1-1, and leave "Profile" as local. Go through "Preview" → "Generate", run `bash submit.sh` in the terminal, then press "Go to analysis", and on the analysis page press "Run analysis".
+To work only in the terminal, you can create the run from calculation settings (spec.json) saved on screen, like this:
 
 ```bash
-adit-gen spec.json ~/adit_runs/water       # 入力ファイル一式を ~/adit_runs/water に書きます
-cd ~/adit_runs/water && bash submit.sh      # 計算を実行します (記録は output.log)
-python analyze.py                            # 図と要約を analysis/ に書きます
+adit-gen spec.json ~/adit_runs/water       # writes the full set of input files to ~/adit_runs/water
+cd ~/adit_runs/water && bash submit.sh      # runs the calculation (the log is output.log)
+python analyze.py                            # writes figures and a summary to analysis/
 ```
 
-各ディレクトリの `README.txt` に、そのディレクトリでの手順が書かれています。
+The `README.txt` in each directory describes the steps for that directory.
 
-## 実行ファイル (.exe / .app) を自分で作る
+## Building the executables (.exe / .app) yourself
 
-配布している実行ファイルは、この手順で作っています。`v` で始まるタグ (例 `v0.1.0`) をプッシュすると、
-GitHub Actions が Windows の `.exe` と macOS の `.app` を作り、Releases に添付します。
-手元で作るときは、下の手順です。この設定は Linux で実際に作り、CLI が動くところまで確かめてあります (2026-09-13)。
+The distributed executables are built with this procedure. When you push a tag starting with `v` (for example `v0.1.0`),
+GitHub Actions builds the Windows `.exe` and the macOS `.app` and attaches them to Releases.
+To build locally, follow the steps below. This configuration has actually been built on Linux and checked as far as the CLI running (2026-09-13).
 
 ### Windows
 
-#### 1 Windows の PC で作る
+#### 1 Build on a Windows PC
 
-PowerShell で、リポジトリを置いた場所に移動してから:
+In PowerShell, go to where you put the repository, then run:
 
 ```powershell
 py -3.12 -m venv build-env
@@ -168,169 +168,169 @@ pip install -e ".[gui,smiles,analysis]" pyinstaller
 pyinstaller packaging\adit.spec --noconfirm
 ```
 
-`dist\adit\` に**実行ファイルが 2 つ**出来ます。フォルダごと配ってください (中のファイルが要ります)。
+`dist\adit\` will contain **two executables**. Distribute the whole folder (the files inside it are needed).
 
-| ファイル | 使いみち |
+| File | Use |
 |---|---|
-| `ADIT.exe` | 画面 (デスクトップ版)。黒い画面が出ない代わりに、**標準出力を持たないので CLI には使えません** |
-| `adit-cli.exe` | CLI。`adit-cli.exe gen ...` / `analyze` / `report` / `convert` / `web` |
+| `ADIT.exe` | The GUI (desktop app). No black window appears, but in exchange it **has no standard output, so it cannot be used for the CLI** |
+| `adit-cli.exe` | The CLI. `adit-cli.exe gen ...` / `analyze` / `report` / `convert` / `web` |
 
-2 つに分けるのは Windows の決まりのためです。画面用の実行ファイル (GUI サブシステム) には標準出力が無く、
-**1 つにすると CLI の表示が何も出ません** (実際に作って確かめました)。
-1 つの .exe にまとめたいときは `packaging/adit.spec` の `ONEFILE = False` を `True` に変えます
-(起動のたびに一時フォルダへ展開するので、開くまで数秒かかります)。
+There are two because of how Windows works. An executable for the GUI (GUI subsystem) has no standard output,
+and **with a single executable the CLI shows nothing** (we confirmed this by actually building it).
+To combine them into one .exe, change `ONEFILE = False` to `True` in `packaging/adit.spec`
+(it extracts to a temporary folder at every launch, so opening takes several seconds).
 
-#### 2 出来た実行ファイルの確認 (作った人が必ず通す)
+#### 2 Checking the built executables (whoever builds them must go through this)
 
 ```powershell
-dist\adit\ADIT.exe                             # 画面が開く。日本語が □ になっていないか
-dist\adit\adit-cli.exe gen --list-samples      # サンプルの一覧が出るか (同梱の examples を読めているか)
+dist\adit\ADIT.exe                             # does the GUI open? Is any Japanese text shown as □?
+dist\adit\adit-cli.exe gen --list-samples      # is the list of samples shown? (can it read the bundled examples?)
 dist\adit\adit-cli.exe gen --sample water_generated mine.json
-dist\adit\adit-cli.exe gen mine.json out\run1  # 入力・submit.sh・README.txt が書けるか
-dist\adit\adit-cli.exe analyze out\run1        # 実行していないディレクトリでは理由を言って止まるか (終了コード 2)
-dist\adit\adit-cli.exe web --open              # ブラウザで http://127.0.0.1:8765 が開くか (--open が無いとブラウザは開きません)
+dist\adit\adit-cli.exe gen mine.json out\run1  # are the input, submit.sh and README.txt written?
+dist\adit\adit-cli.exe analyze out\run1        # in a directory not yet run, does it give the reason and stop? (exit code 2)
+dist\adit\adit-cli.exe web --open              # does http://127.0.0.1:8765 open in a browser? (without --open, no browser opens)
 ```
 
-**画面の日本語が □ (豆腐) になるとき**は、フォントが同梱されていません。conda の環境で
-`conda install -c conda-forge font-ttf-noto-cjk` を入れてから作り直すか、`ADIT_FONT_DIR` に
-`NotoSansCJKjp-VF.ttf` のあるフォルダを指定して作り直します。
+**If Japanese on screen appears as □ (tofu)**, the font is not bundled. In a conda environment, run
+`conda install -c conda-forge font-ttf-noto-cjk` and rebuild, or set `ADIT_FONT_DIR` to
+a folder containing `NotoSansCJKjp-VF.ttf` and rebuild.
 
-#### 3 同梱するもの・しないもの
+#### 3 What is bundled and what is not
 
-| 同梱する | 理由 |
+| Bundled | Why |
 |---|---|
-| `adit/scripts/templates/*.j2`、`adit/web/templates/*.html` | submit.sh と画面の雛形 |
-| `examples/*/spec.json` | `gen --list-samples` / `--sample` が読む |
-| `fonts/NotoSansCJKjp-VF.ttf` (あれば) | 画面と図の日本語 |
+| `adit/scripts/templates/*.j2`, `adit/web/templates/*.html` | Templates for submit.sh and the screens |
+| `examples/*/spec.json` | Read by `gen --list-samples` / `--sample` |
+| `fonts/NotoSansCJKjp-VF.ttf` (if present) | Japanese on screen and in figures |
 
-| 同梱しない | 理由 |
+| Not bundled | Why |
 |---|---|
-| DFTB+・xtb・Quantum ESPRESSO などの計算コード | 配布条件が別。**Windows では計算を実行しない** (生成した入力を Linux のサーバーへ転送して使う) ので、そもそも要らない |
-| Slater-Koster セット、擬ポテンシャル、POTCAR | ライセンス上、ADIT が配ってはいけない |
+| Calculation codes such as DFTB+, xtb and Quantum ESPRESSO | They have separate distribution terms. **Calculations are not run on Windows** (the generated input is transferred to a Linux server), so they are not needed in the first place |
+| Slater-Koster sets, pseudopotentials, POTCAR | Under their licenses, ADIT must not distribute them |
 
-#### 4 分かっている制限
+#### 4 Known limitations
 
-- **Windows では計算を実行できません。**ワークスペースのターミナル (PowerShell) から `ssh` でクラスタに入り、
-  `transfer_and_submit.sh` のコマンドで転送して投入します。exe で出来るのは入力の生成と、手元にある出力の解析です
-- **大きさは 300〜500 MB** (PySide6 と matplotlib と SciPy を同梱するため)。`ONEFILE = True` でも縮みません
-- **署名していません。**SmartScreen が「発行元不明」と警告します。配るなら署名するか、受け取る人に
-  「詳細情報 → 実行」を案内してください
-- **RDKit を入れた環境で作ると SMILES から構造を作れます**。入れずに作ると、その欄だけが使えません
-- Linux で確かめたのは `gen --list-samples` / `--sample` / 入力の生成 / `analyze` (未実行のディレクトリで終了コード 2) /
-  `report` / `convert verify` の 6 つと、**画面が起動して窓を作るところまで** (`QT_QPA_PLATFORM=offscreen`)。
-  **Windows で生成したファイルは未確認**です (Windows の実行ファイルは Windows 上でしか作れないため)。
-  上の「2 出来た実行ファイルの確認」を必ず通してください
-- 作ってみて分かったこと 4 つ (どれも spec に入れてあります):
-  1. **ASE は形式ごとのモジュールを名前で動的に読み込む**ので、`hiddenimports` に `ase.io` を入れないと
-     `.gen` の書き出しが `UnknownFileTypeError` で落ちる
-  2. Linux では **conda の `libOpenGL.so.0` を同梱しないと画面が起動しない** (Windows の PySide6 は
-     OpenGL の DLL を自分で持っているので、この処理は Linux でだけ働く)
-  3. **画面用の実行ファイルは標準出力を持たない**ので、CLI 用に console 版 (`adit-cli.exe`) を別に作る
-  4. 窓の大きさの既定 (1800x1000) が **1536x864 の画面からはみ出した**ので、画面の 95 % に収めるようにした
+- **Calculations cannot be run on Windows.** From the Workspace terminal (PowerShell), log in to the cluster with `ssh`,
+  then transfer and submit with the commands in `transfer_and_submit.sh`. What the exe can do is generate input and analyze output that is on the local machine
+- **The size is 300 to 500 MB** (because PySide6, matplotlib and SciPy are bundled). `ONEFILE = True` does not make it smaller
+- **It is not signed.** SmartScreen warns of an "Unknown publisher". If you distribute it, sign it or tell recipients
+  to choose "More info" → "Run anyway"
+- **Built in an environment with RDKit, it can create structures from SMILES.** Built without RDKit, only that field is unavailable
+- What was checked on Linux is six things, `gen --list-samples` / `--sample` / generating input / `analyze` (exit code 2 on a directory not yet run) /
+  `report` / `convert verify`, plus **the GUI starting and creating a window** (`QT_QPA_PLATFORM=offscreen`).
+  **Files produced on Windows have not been checked** (Windows executables can only be built on Windows).
+  Be sure to go through "2 Checking the built executables" above
+- Four things we learned by building it (all are handled in the spec):
+  1. **ASE loads its per-format modules dynamically by name**, so unless `ase.io` is in `hiddenimports`,
+     writing `.gen` fails with `UnknownFileTypeError`
+  2. On Linux, **the GUI does not start unless conda's `libOpenGL.so.0` is bundled** (PySide6 on Windows
+     has its own OpenGL DLL, so this step only takes effect on Linux)
+  3. **An executable for the GUI has no standard output**, so a separate console version (`adit-cli.exe`) is built for the CLI
+  4. The default window size (1800x1000) **did not fit on a 1536x864 screen**, so it now fits within 95 % of the screen
 
 
 ### macOS
 
-#### 作る
+#### Building
 
-GitHub の Actions から手で動かします。
+Run it by hand from GitHub Actions.
 
-`v` で始まるタグ (例 `v0.1.0a1`) をプッシュすると自動で作られ、Releases に `ADIT-arm64.zip` が添付されます。
-手で動かすこともできます。
+When you push a tag starting with `v` (for example `v0.1.0a1`), it is built automatically and `ADIT-arm64.zip` is attached to Releases.
+You can also run it by hand.
 
-1. リポジトリの **Actions** → **macos-app** → **Run workflow**
-2. Apple Silicon (arm64) の 1 つが走ります
-3. 終わると成果物 (artifact) に `adit-macos-arm64` が出ます。中身は
-   - `ADIT-arm64.zip` … 二重クリックで開く `ADIT.app` (`ditto` でまとめたもの。Finder の権限が保たれます)
-   - `dist/adit/` … 画面を使わない人向けの一式 (`adit-cli` が入っています)
+1. In the repository, go to **Actions** → **macos-app** → **Run workflow**
+2. One Apple Silicon (arm64) job runs
+3. When it finishes, `adit-macos-arm64` appears under the artifacts. It contains
+   - `ADIT-arm64.zip` … `ADIT.app`, which opens with a double-click (packed with `ditto`, which preserves Finder permissions)
+   - `dist/adit/` … the set for people who don't use the GUI (it contains `adit-cli`)
 
-手元の Mac で作るなら:
+To build on your own Mac:
 
 ```bash
 python -m pip install -e ".[gui,smiles,analysis]" pyinstaller
 pyinstaller packaging/adit.spec --noconfirm
-open dist/ADIT.app          # 画面
-./dist/adit/adit-cli gen --list-samples   # コマンド
+open dist/ADIT.app          # GUI
+./dist/adit/adit-cli gen --list-samples   # command line
 ```
 
-#### 署名と公証をしていません
+#### No code signing or notarization
 
-Apple の開発者登録 (有料) が要るため、**署名 (codesign) も公証 (notarization) もしていません。**
-そのため、受け取った人が初めて開くときは次のどちらかが要ります。
+This requires a paid Apple developer registration, so **the app has neither code signing (codesign) nor notarization.**
+For that reason, recipients need one of the following the first time they open it.
 
-- Finder で `ADIT.app` を**右クリック → 開く** → 出てくる確認で「開く」
-- または `xattr -dr com.apple.quarantine /Applications/ADIT.app`
+- In Finder, **right-click `ADIT.app` → Open**, then choose "Open" in the confirmation that appears
+- Or run `xattr -dr com.apple.quarantine /Applications/ADIT.app`
 
-**この手順を配布物の案内に必ず書いてください。**書かないと「壊れているから開けません」と表示され、
-利用者は原因が分かりません。
+**Always include these steps in the instructions that come with the distribution.** Otherwise macOS says the app is damaged and can't be opened,
+and users have no way of knowing why.
 
-署名するときは、Apple Developer Program に登録したうえで
+To sign it, enroll in the Apple Developer Program, then run:
 
 ```bash
-codesign --deep --force --options runtime --sign "Developer ID Application: <名前> (<チーム ID>)" dist/ADIT.app
-xcrun notarytool submit dist/ADIT-arm64.zip --apple-id <id> --team-id <team> --password <app 用パスワード> --wait
+codesign --deep --force --options runtime --sign "Developer ID Application: <name> (<team ID>)" dist/ADIT.app
+xcrun notarytool submit dist/ADIT-arm64.zip --apple-id <id> --team-id <team> --password <app-specific password> --wait
 xcrun stapler staple dist/ADIT.app
 ```
 
-#### 確認 (実機で最初に通すこと)
+#### Checks (run these first on a real machine)
 
-Windows の 6 点 (上の「2 出来た実行ファイルの確認」) に、別の Mac で確かめる 1 点を足した 7 点です。**通ったものに印を付けて、この文書を更新してください。**
+There are 7 checks: the 6 for Windows (in "2 Checking the built executables" above) plus 1 on another Mac. **Mark the ones that pass and update this document.**
 
-1. `ADIT.app` を二重クリックして画面が出る (日本語が豆腐 □ にならない)
-2. 構造を作り、入力を生成できる (`adit-cli gen --sample water_generated` → 生成 → `README.txt` がある)
-3. 解析が図まで出る (`adit-cli analyze <ディレクトリ>`)
-4. Draw が開き、描いた分子が SMILES になる (RDKit が同梱されているか)
-5. ウェブ版が開く (`adit-cli web` → ブラウザで 127.0.0.1:8765)
-6. 3D 表示が回る (画面の「構造」タブと、ウェブ版の「構造 (3D)」)
-7. 別の Mac (作った機械ではない Mac) に写して、上の 1〜6 が通る
+1. Double-clicking `ADIT.app` shows the GUI (Japanese does not turn into tofu □)
+2. A structure can be built and input generated (`adit-cli gen --sample water_generated` → generate → `README.txt` exists)
+3. Analysis gets as far as figures (`adit-cli analyze <directory>`)
+4. Draw opens and a drawn molecule becomes SMILES (is RDKit bundled?)
+5. The web app opens (`adit-cli web` → 127.0.0.1:8765 in a browser)
+6. The 3D view rotates (the "Structure" tab in the GUI, and "Structure (3D)" in the web app)
+7. After copying it to another Mac (not the machine it was built on), checks 1 to 6 pass
 
-**7 が最も大事です。**作った機械では動いて、他の機械では足りないものがあって動かない、が起きます。
+**Check 7 is the most important.** It can work on the machine it was built on and still fail on other machines because something is missing.
 
-#### Intel の Mac
+#### Intel Macs
 
-**配っているのは Apple Silicon (arm64) 版だけです。**GitHub が Intel の実行環境 (`macos-13`) の提供を
-終えたため、CI では作れません。Intel の Mac では pip で入れてください。
-1 つにまとめた universal2 は、PySide6 と RDKit が両対応の wheel を配っていないと作れないので、していません。
+**Only the Apple Silicon (arm64) build is distributed.** GitHub has stopped providing its Intel runner (`macos-13`),
+so CI cannot build it. On an Intel Mac, install with pip.
+We do not make a combined universal2 build, because that is only possible if PySide6 and RDKit ship wheels for both architectures.
 
-## インストールと起動 (Linux / macOS / 慣れている人向け)
+## Installing and starting (Linux / macOS / experienced users)
 
-Python 3.11 以上が必要です。仮想環境 (conda か venv) を作り、pip でインストールします。Windows で初めての人は上の節から進めてください。
-依存パッケージは ASE、pydantic、Jinja2、matplotlib、SciPy、tomli-w と、デスクトップ版には PySide6、pyqtdarktheme-fork、
-ワークスペースのターミナル用の pyte と ptyprocess (Windows は pywinpty) です。SMILES と Draw (分子を描く機能) を使うには RDKit も必要です。
+Python 3.11 or later is required. Create a virtual environment (conda or venv) and install with pip. If you are on Windows and new to this, start from the sections above.
+The dependencies are ASE, pydantic, Jinja2, matplotlib, SciPy and tomli-w, plus, for the desktop app, PySide6, pyqtdarktheme-fork,
+and pyte and ptyprocess for the Workspace terminal (pywinpty on Windows). To use SMILES and Draw (the molecule-drawing feature), you also need RDKit.
 
 ```bash
-python3 -m venv adit-env                # conda を使うなら上の節の 3 のとおり
-source adit-env/bin/activate            # Windows (PowerShell) では  adit-env\Scripts\Activate.ps1
+python3 -m venv adit-env                # if you use conda, follow step 3 in the section above
+source adit-env/bin/activate            # on Windows (PowerShell):  adit-env\Scripts\Activate.ps1
 git clone https://github.com/adit-chem-project/adit-chem.git
 cd adit-chem && pip install -e ".[gui,smiles,analysis]"
 ```
 
-配布名は `adit-chem` です (PyPI の `adit` は別のパッケージです)。インポート名とコマンド名は `adit` です。
+The distribution name is `adit-chem` (`adit` on PyPI is a different package). The import name and the command name are `adit`.
 
-| 使い方 | コマンド | 備考 |
+| Use | Command | Notes |
 |---|---|---|
-| デスクトップ版 | `adit` | PySide6 が必要です |
-| ウェブ版 (ブラウザ) | `adit-web --open` | PySide6 は不要です。`http://127.0.0.1:8765/` が開きます |
-| コマンドライン (生成) | `adit-gen spec.json <出力ディレクトリ>` | GUI で保存した計算設定から生成します |
-| コマンドライン (変換) | `adit-convert structure ...` / `adit-convert calculation ...` | 構造形式を変換するか、共通条件を保って別の計算コードの入力を生成します |
-| コマンドライン (解析) | `adit-analyze <計算結果のディレクトリ> --rdf --msd --dos` | 図と要約を `analysis/` に書きます |
+| Desktop app | `adit` | Requires PySide6 |
+| Web app (browser) | `adit-web --open` | Does not need PySide6. Opens `http://127.0.0.1:8765/` |
+| Command line (generate) | `adit-gen spec.json <output directory>` | Generates from calculation settings saved in the GUI |
+| Command line (convert) | `adit-convert structure ...` / `adit-convert calculation ...` | Converts a structure format, or generates input for another calculation code while keeping the shared settings |
+| Command line (analyze) | `adit-analyze <run directory> --rdf --msd --dos` | Writes figures and a summary to `analysis/` |
 
-### 構造形式と計算コードの変換
+### Converting structure formats and calculation codes
 
-構造ファイルは、ASE が対応する形式の間で変換できます。入力と出力の形式は通常、ファイル名から判定されます。
-デスクトップ版では「ファイル」タブの「変換」、ウェブ版では上部の「変換」から同じ機能を使えます。判定できないファイル名では、ASE の形式名を入力形式・出力形式の欄に指定できます。
-どちらの画面でも、準備画面でプレビューした現在の構造を extended XYZ として保存できます。セル、周期境界、固定原子・軸固定、設定済みの初速度も保持されます。CLI で `spec.json` や生成ディレクトリから構造を変換するときも同じ情報を読みます。
+Structure files can be converted between the formats ASE supports. The input and output formats are normally inferred from the file names.
+The same feature is under "Convert" on the "File" tab in the desktop app, and under "Convert" at the top in the web app. For file names that cannot be inferred, you can give ASE format names in the "Input format (optional)" and "Output format (optional)" fields.
+In both, you can save the current structure previewed on the preparation screen ("Prepare" in the web app) as extended XYZ. The cell, periodic boundaries, fixed atoms and axis constraints, and any velocities already set are also kept. The CLI reads the same information when it converts a structure from `spec.json` or a generated directory.
 
 ```bash
 adit-convert structure data.lammps POSCAR
 adit-convert structure POSCAR structure.data
 adit-convert structure POSCAR structure.xyz
 adit-convert structure trajectory.extxyz final.cif --frame -1
-adit-convert crystal "225 Na:0,0,0 Cl:0.5,0,0 cell=5.64" nacl.cif        # 空間群と原子の分率座標から結晶を作る
-adit-convert surface "fcc111 Al 2x2x3 vacuum=10" slab.xyz                # 面・元素・大きさから表面スラブを作る
+adit-convert crystal "225 Na:0,0,0 Cl:0.5,0,0 cell=5.64" nacl.cif        # builds a crystal from the space group and the atoms' fractional coordinates
+adit-convert surface "fcc111 Al 2x2x3 vacuum=10" slab.xyz                # builds a surface slab from the plane, element and size
 adit-convert combine molecule_a.xyz molecule_b.xyz combined.xyz
 adit-convert openbabel source.sdf target.mol2 --input-format sdf --output-format mol2
 adit-convert dock6 prepared/dock.in ready/
 ```
 
-GOAT、ORCA DOCKER、DCDFTBMD 2.0、DOCK6 の入力整理、Open Babel の変換入口は、[対応ソフトウェア](SOFTWARE.md) に手順と制限を書いています。これらはコマンドラインだけで、デスクトップ版とウェブ版の欄はまだありません。
+GOAT, ORCA DOCKER, DCDFTBMD 2.0, DOCK6 input preparation and the Open Babel conversion entry point are covered, with steps and limits, in [Supported software](SOFTWARE.md). They are command-line only; the desktop and web apps have no fields for them yet.

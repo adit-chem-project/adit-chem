@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}ADIT — Draw{% endblock %}
-{#- Draw (2 次元エディタ)。操作と SMILES への変換はデスクトップ版 (gui/sketcher.py) と共通の adit/sketch.py。
-    描く部分だけ JavaScript (web/static/sketch.js)。外部のライブラリは読み込まない -#}
+{#- Draw (2D editor). Editing and SMILES conversion live in adit/sketch.py, shared with the desktop app (gui/sketcher.py).
+    Only the drawing is JavaScript (web/static/sketch.js). No external libraries -#}
 {% block body %}
 <form method="post" action="/draw">
 {% if error %}<div class="error-banner" role="alert">{{ error }}</div>{% endif %}

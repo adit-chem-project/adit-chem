@@ -1,13 +1,13 @@
-# examples/prep_stage1_dftb_stages —— 段階に分けた MD (最小化 → NVT → NVE) の生成したファイルと実際に実行した結果
+# examples/prep_stage1_dftb_stages —— generated files for MD in stages (minimization → NVT → NVE) and the results of actually running them
 
-`adit.stages.write_stages` (コマンド行なら `adit-gen spec.json out/ --stages stages.json`) で作ったもの。構造はテスト用の歪んだ水 (tests/conftest.py の water_spec)、
-SK セットは mio-1-1、DFTB+ 25.1 (conda-forge、開発バージョンの表示)。`bash submit.sh` を 1 回実行した (OMP 1 スレッド、2026-09-19 に現在の生成器で作り直して実行し直した)。
+Made with `adit.stages.write_stages` (on the command line, `adit-gen spec.json out/ --stages stages.json`). The structure is the distorted test water (water_spec in tests/conftest.py),
+the SK set is mio-1-1, DFTB+ 25.1 (conda-forge, shown as a development version). `bash submit.sh` was run once (OMP 1 thread; on 2026-09-19 it was regenerated with the current generator and rerun).
 
-| 段 | 条件 | 結果 |
+| Stage | Settings | Result |
 |---|---|---|
-| stage_01_min | 構造最適化 (最大 100 ステップ) | 正常終了。geom.out.gen |
-| stage_02_nvt | NVT、Berendsen 300 K (時定数 20 fs)、0.5 fs × 40 ステップ | 開始の構造は stage_01 の geom.out.gen と 10 桁一致 (handoff.py が geometry.gen を書き換え) |
-| stage_03_nve | NVE、0.5 fs × 20 ステップ、速度は stage_02 から | 最初の温度 314.6884 K = stage_02 の最後の温度 314.6884 K。全エネルギーの変化 1.5e-6 Hartree (20 ステップ) |
+| stage_01_min | Geometry optimization (at most 100 steps) | Normal termination. geom.out.gen |
+| stage_02_nvt | NVT, Berendsen 300 K (time constant 20 fs), 0.5 fs × 40 steps | The starting structure matches geom.out.gen of stage_01 to 10 digits (handoff.py rewrites geometry.gen) |
+| stage_03_nve | NVE, 0.5 fs × 20 steps, velocities from stage_02 | First temperature 314.6884 K = last temperature of stage_02, 314.6884 K. Total energy change 1.5e-6 Hartree (20 steps) |
 
-最初の生成では stage_03 が止まった: 速度 (Velocities) を与えたときに `Thermostat = None { InitialTemperature … }` を書くと、DFTB+ 25.1 は
-「読まなかった項目」として止まる。生成器を直し (速度があるときは `Thermostat = None {}`)、生成し直して上の結果を得た。
+In the first generation stage_03 stopped: when velocities (Velocities) are given and `Thermostat = None { InitialTemperature … }` is written, DFTB+ 25.1
+stops with it as an "item not read". The generator was fixed (`Thermostat = None {}` when velocities are present), and generating again gave the results above.

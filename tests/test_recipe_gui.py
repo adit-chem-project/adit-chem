@@ -58,7 +58,7 @@ def build_and_wait(panel, timeout_ms: int = 120_000) -> None:
     if panel.is_building():
         loop.exec()
     panel.built.disconnect(loop.quit)
-    assert not panel.is_building(), "時間内に作り終わらなかった"
+    assert not panel.is_building(), "did not finish building in time"
 
 
 def spin_events(ms: int) -> None:

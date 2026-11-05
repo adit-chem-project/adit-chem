@@ -112,7 +112,7 @@ def test_geometry_gen_roundtrip(tmp_path):
     assert text.splitlines()[0].split()[:2] == ["3", "C"]
 
 
-@pytest.mark.skipif(not HAVE_MIO, reason="実物の mio-1-1 が無い")
+@pytest.mark.skipif(not HAVE_MIO, reason="the real mio-1-1 set is missing")
 def test_real_mio_generation(tmp_path):
     skset = SKSet.from_dir(REAL_SK_ROOT / "mio-1-1")
     out = write_project(water_spec(method=DftbMethod(sk_set="mio-1-1")), skset, tmp_path / "water")
@@ -120,7 +120,7 @@ def test_real_mio_generation(tmp_path):
     assert skset.spin_constants() is None or "H" in skset.spin_constants()
 
 
-@pytest.mark.skipif(not (HAVE_MIO and HAVE_DFTB), reason="mio-1-1 か dftb+ が無い")
+@pytest.mark.skipif(not (HAVE_MIO and HAVE_DFTB), reason="mio-1-1 or dftb+ is missing")
 def test_real_run_matches_tutorial(tmp_path):
     skset = SKSet.from_dir(REAL_SK_ROOT / "mio-1-1")
     out = write_project(water_spec(method=DftbMethod(sk_set="mio-1-1")), skset, tmp_path / "water")

@@ -1,19 +1,19 @@
-コード: openmm   ディレクトリ: examples/openmm_spce_nvt_generated
-エネルギー: 4 点、最終値 -86.986560 eV (最小 -88.535436、最大 -86.722196)
-温度: 平均 303.4 K (標準偏差 11.0、4 点、先頭 0 点を除く)
-軌跡 (trajectory.extxyz): 4 フレームのうち 4 フレームを使用 (先頭 0 を除き 1 おき)、1 フレーム 100 fs
-結合長 (最終構造): O1-H2 1.000 Å, O1-H3 1.000 Å, O4-H5 1.000 Å, O4-H6 1.000 Å, O7-H8 1.000 Å, O7-H9 1.000 Å, O10-H11 1.000 Å, O10-H12 1.000 Å, O13-H14 1.000 Å, O13-H15 1.000 Å, O16-H17 1.000 Å, O16-H18 1.000 Å …
-RDF: H-H, H-O, O-O (4 フレーム、r ≤ 8.00 Å)。配位数 n(r) は rdf.json の n と n_reverse
-  g(r) の規格化: セルの体積 V = 6456.3 Å³ (周期系)。rmax を変えても g(r) の値は変わりません
-MSD (O、4 フレーム): 最終 0.524 Å^2、拡散係数 2.750e-05 cm^2/s
-  参考・全元素の拡散係数 [cm^2/s]: H 3.048e-05, O 2.750e-05
-  使った式: MSD = 6 D t + c (3 次元、成分 xyz、複数の時間原点で平均した MSD)
-  重心の移動: 除去しました (質量重心、最初と最後で 0.001 Å、最大 0.001 Å 動いた)
-  当てはめ範囲: 100〜300 fs (既定: 最大のずれ 300 fs の 10%〜50%)、この範囲の log MSD 対 log t の傾き 0.92 (拡散なら 1 に近い)
-  ブロック誤差: 出せません。区間を 2 つ以上 (1 区間 4 フレーム以上) 取れません (使ったフレーム 4)
-空間群 (最終構造、spglib 2.7.0): P1 (No. 1, symprec 1e-05 Å), P1 (No. 1, symprec 0.001 Å), P1 (No. 1, symprec 0.1 Å)
-注: エネルギーは md.log (OpenMM の StateDataReporter) の Total Energy (系全体の kJ/mol を ÷ 96.485 で 1 系あたりの eV に換算)
-注: 軌跡 trajectory.dcd は読みません (DCD はバイナリ形式で、依存を増やさないため)。RDF・MSD・書き出しは trajectory.extxyz を使います
-注: 力場・原子型・電荷は外部のトポロジーが決めています。ADIT は照合していません。
-注: MSD の前に系全体の質量重心を各フレームから引きました (重心は最初と最後で 0.001 Å、最初のフレームからの最大 0.001 Å 動いています)
-注: 軌跡は 4 フレームです (RDF と MSD は、フレームが少ないと 1 フレームの揺らぎで形が変わります)
+code: openmm   directory: examples/openmm_spce_nvt_generated
+energy: 4 points; last -86.986560 eV (min -88.535436, max -86.722196)
+temperature: mean 303.4 K (std 11.0, 4 points, first 0 skipped)
+trajectory (trajectory.extxyz): 4 of 4 frames used (first 0 frames skipped, then every 1th frame), 100 fs per frame
+bond lengths (final structure):O1-H2 1.000 Å, O1-H3 1.000 Å, O4-H5 1.000 Å, O4-H6 1.000 Å, O7-H8 1.000 Å, O7-H9 1.000 Å, O10-H11 1.000 Å, O10-H12 1.000 Å, O13-H14 1.000 Å, O13-H15 1.000 Å, O16-H17 1.000 Å, O16-H18 1.000 Å …
+RDF: H-H, H-O, O-O (4 frames, r ≤ 8.00 Å); coordination n(r) is in rdf.json as n and n_reverse
+  g(r) normalization: the cell volume V = 6456.3 Å³ (periodic); the value of g(r) does not change with rmax
+MSD (O, 4 frames): last 0.524 Å^2, diffusion coefficient 2.750e-05 cm^2/s
+  for reference, diffusion coefficients for all elements [cm^2/s]: H 3.048e-05, O 2.750e-05
+  formula used: MSD = 6 D t + c (3D, components xyz, MSD averaged over time origins)
+  center-of-mass drift: removed (center of mass; it moved 0.001 Å between first and last frame, at most 0.001 Å)
+  fit range: 100-300 fs (default: 10%-50% of the maximum lag 300 fs), slope of log MSD vs log t over this range 0.92 (close to 1 for diffusion)
+  block-based error: not available. Cannot form at least two blocks of 4 or more frames (4 frames used)
+space group (final structure, spglib 2.7.0):P1 (No. 1, symprec 1e-05 Å), P1 (No. 1, symprec 0.001 Å), P1 (No. 1, symprec 0.1 Å)
+note: energy is Total Energy in md.log (OpenMM StateDataReporter); whole-system kJ/mol divided by 96.485 to give eV per system
+note: the trajectory trajectory.dcd is not read (DCD is a binary format, and reading it would add a dependency); RDF, MSD and export use trajectory.extxyz
+note: the force field, atom types and charges come from the external topology; ADIT did not check them.
+note: the center-of-mass of the whole system was subtracted from every frame before the MSD (it moved 0.001 Å between the first and last frame, at most 0.001 Å)
+note: the trajectory has 4 frames (with few frames, RDF and MSD change shape with single-frame fluctuations)

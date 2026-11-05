@@ -34,7 +34,7 @@ def test_american_spelling(word):
 
 @pytest.mark.parametrize("word,instead", [("庫", "ライブラリ"), ("圧浴", "圧力浴"), ("参照関数", "参照波動関数")])
 def test_withdrawn_words(word, instead):
-    assert _hits(SRC, word) == [], f"{word} ではなく {instead}"
+    assert _hits(SRC, word) == [], f"use {instead}, not {word}"
 
 
 def test_tool_is_katakana():

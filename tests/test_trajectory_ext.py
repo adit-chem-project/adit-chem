@@ -31,7 +31,7 @@ def test_gromacs_reader_does_not_pretend_to_have_the_trajectory(monkeypatch):
     assert any("読めません" in n or "cannot be read" in n for n in data.notes)
 
 
-@pytest.mark.skipif(not HAS_LIB, reason="MDAnalysis / MDTraj / chemfiles がない")
+@pytest.mark.skipif(not HAS_LIB, reason="MDAnalysis / MDTraj / chemfiles are missing")
 def test_reads_the_real_xtc_and_matches_gromacs():
     frames, lib = ext.read_external(GROMACS / "adit.xtc", ext.find_topology(GROMACS, GROMACS / "adit.xtc"))
     assert len(frames) == 11 and len(frames[0]) == 648
@@ -40,7 +40,7 @@ def test_reads_the_real_xtc_and_matches_gromacs():
     assert frames[0].positions[0][0] == pytest.approx(2.3, abs=1e-3)
 
 
-@pytest.mark.skipif(not HAS_LIB, reason="MDAnalysis / MDTraj / chemfiles がない")
+@pytest.mark.skipif(not HAS_LIB, reason="MDAnalysis / MDTraj / chemfiles are missing")
 def test_gromacs_analysis_uses_the_whole_trajectory():
     from adit.analysis.readers import load_run
 

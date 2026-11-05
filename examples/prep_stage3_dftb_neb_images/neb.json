@@ -15,7 +15,7 @@
   "start": "start.xyz",
   "end": "end.xyz",
   "notes": [
-    "補間: ASE の NEB.interpolate (method = idpp、mic = False)"
+    "interpolation: ASE NEB.interpolate (method = idpp, mic = False)"
   ],
   "images_file": "images.extxyz",
   "path_length_ang": [

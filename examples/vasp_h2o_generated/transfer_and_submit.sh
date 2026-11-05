@@ -1,16 +1,16 @@
-# ADIT が書き出したコマンドです。ADIT は実行しません。ターミナルに貼って使います。
-# <...> の部分は自分の値に置き換えてください (環境設定のプロファイルに host と remote_dir を書くと、ここが埋まります)。
+# Commands written by ADIT. ADIT does not run them; paste them into a terminal.
+# Replace the <...> parts with your own values (set host and remote_dir in the profile to fill them in).
 
-# このファイルのある場所を自分で調べます (フォルダを移動しても、そのまま使えます)
+# Work out where this file is, so the commands keep working if the folder is moved
 HERE="$(cd "$(dirname "$0")" && pwd)"
 
-# 1. このディレクトリをクラスタへ送る
-rsync -av "$HERE" <ユーザー名>@<クラスタのホスト名>:<クラスタでの作業ディレクトリ>/
+# 1. Send this directory to the cluster
+rsync -av "$HERE" <user>@<cluster host name>:<work directory on the cluster>/
 
-# 2. クラスタにログインして投入する
-ssh <ユーザー名>@<クラスタのホスト名>
-cd <クラスタでの作業ディレクトリ>/vasp_h2o_generated && qsub submit.sh
+# 2. Log in to the cluster and submit
+ssh <user>@<cluster host name>
+cd <work directory on the cluster>/vasp_h2o_generated && qsub submit.sh
 qstat -u $USER
 
-# 3. 終わったら結果を手元へ戻す
-rsync -av <ユーザー名>@<クラスタのホスト名>:<クラスタでの作業ディレクトリ>/vasp_h2o_generated "$(dirname "$HERE")"/
+# 3. Bring the results back when it has finished
+rsync -av <user>@<cluster host name>:<work directory on the cluster>/vasp_h2o_generated "$(dirname "$HERE")"/

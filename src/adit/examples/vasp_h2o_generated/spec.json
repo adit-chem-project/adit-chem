@@ -10,7 +10,7 @@
   },
   "structure": {
     "source": "file",
-    "source_ref": "examples/vasp_h2o/POSCAR (数値を写した)",
+    "source_ref": "examples/vasp_h2o/POSCAR (values copied)",
     "atoms": {
       "symbols": [
         "O",
@@ -154,7 +154,7 @@
     "inputs": [
       {
         "name": "INCAR",
-        "sha256": "9af743fb3509f18431aa987d5b6cf321060abe759db84360df2afd28bc7009f8"
+        "sha256": "9c64525c9dc4e3b22525d1d49dd1230cc005255566aae0c69dc96c930905b951"
       },
       {
         "name": "KPOINTS",
@@ -166,15 +166,15 @@
       },
       {
         "name": "make_potcar.sh",
-        "sha256": "a38605bb024ae089efef85f8cc0b5a9cbb4399c5c85009ac03f8ade63ea49bcb"
+        "sha256": "ace6dc949f716259704b6e17d7fc5061f328cb46964b1034f7d8240432231fe3"
       },
       {
         "name": "potcar.spec",
-        "sha256": "b4e014dca62116d10f67541f6c8364da376c03ce288392eddaecdd9350f25e47"
+        "sha256": "bc336032aa4b42c49373eb0e5b62c534e5cdf8f68cc37bb838698a4eac97f4a9"
       },
       {
         "name": "submit.sh",
-        "sha256": "40d0e83a6222976da475e848e2d2fb84c47fbb1d9605e376898988843e4a4601"
+        "sha256": "b373be2f5bb2384035ab0c8a531024dc520d287444b98d9f389a410d50441a96"
       }
     ],
     "code_version_file": "code_version.txt"

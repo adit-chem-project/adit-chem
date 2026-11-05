@@ -1,19 +1,19 @@
-# examples/gromacs_spce_nvt_generated —— GROMACS の生成器の出力 (NVT) と実際に実行した結果
+# examples/gromacs_spce_nvt_generated —— GROMACS generator output (NVT) and the results of actually running it
 
-`examples/gromacs_spce_em_generated` の最後の構造 (`adit.gro`) を構造のファイルに指定して作った NVT。GROMACS 2026.3 (conda-forge)。
+NVT generated with the last structure of `examples/gromacs_spce_em_generated` (`adit.gro`) as the structure file. GROMACS 2026.3 (conda-forge).
 
-| 項目 | 内容 |
+| Item | Details |
 |---|---|
-| 入力 | トポロジーは `examples/gromacs_spce/topol.top`、構造は `examples/gromacs_spce_em_generated/adit.gro` |
-| mdp | integrator md、dt 0.002 ps、nsteps 250 (0.5 ps)、tcoupl V-rescale (画面の熱浴 csvr)、tau-t 0.1 ps、ref-t 300 K、gen-vel yes (gen-seed -1)、PME、0.85 nm |
-| 実行 | grompp → `gmx mdrun -deffnm adit -ntmpi 1 -ntomp 1`。2026-09-12 |
-| 結果 | 正常終了。所要時間 0.41 s。250 ステップの平均: 温度 307.94 K、ポテンシャルエネルギー -9832.91 kJ/mol、圧力 140.9 bar (adit.log の AVERAGES) |
-| 出力 | `adit.xtc` (軌跡、25 ステップごと)、`adit.edr` (エネルギー)、`adit.gro` (最後の構造)、`adit.cpt` (次の段へ渡す続きの情報) |
+| Input | Topology from `examples/gromacs_spce/topol.top`, structure from `examples/gromacs_spce_em_generated/adit.gro` |
+| mdp | integrator md, dt 0.002 ps, nsteps 250 (0.5 ps), tcoupl V-rescale (thermostat csvr on screen), tau-t 0.1 ps, ref-t 300 K, gen-vel yes (gen-seed -1), PME, 0.85 nm |
+| Run | grompp → `gmx mdrun -deffnm adit -ntmpi 1 -ntomp 1`. 2026-09-12 |
+| Result | Normal termination. Run time 0.41 s. Averages over 250 steps: temperature 307.94 K, potential energy -9832.91 kJ/mol, pressure 140.9 bar (AVERAGES in adit.log) |
+| Output | `adit.xtc` (trajectory, every 25 steps), `adit.edr` (energies), `adit.gro` (last structure), `adit.cpt` (continuation data for the next stage) |
 
-gen-seed が -1 (GROMACS の既定。毎回ちがう乱数) なので、実行し直すと値は一致しない。0.5 ps は平衡化には短く、値は「走る」ことの確認用。
+gen-seed is -1 (the GROMACS default; different random numbers each time), so a rerun will not reproduce the values. 0.5 ps is too short for equilibration, and the values only confirm that it runs.
 
-## 名前について (2026-09-14)
+## About the name (2026-09-14)
 
-この計算は**改名前 (VISTA) に実行した**ものです。改名 (VISTA → ADIT) に合わせて、
-ファイル名と中の文字列を ADIT に直しました (いまの ADIT が生成するものと同じ形にするため)。
-**計算そのもの (数値・収束・使ったソフトのバージョン) は実行したときのまま**です。
+This calculation **was run before the rename (VISTA)**. For the rename (VISTA → ADIT),
+file names and strings inside the files were changed to ADIT (to match what ADIT generates now).
+**The calculation itself (numbers, convergence, software versions) is as it was run.**

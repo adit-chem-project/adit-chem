@@ -91,7 +91,7 @@ def test_gromacs_mdrun_gets_plumed_option(tmp_path, sk_root):
     assert "PLUMED_KERNEL" in (out / "README.txt").read_text(encoding="utf-8")
 
 
-@pytest.mark.skipif(not shutil.which("gmx"), reason="gmx (GROMACS の力場の置き場所) が無いと OpenMM の入力を作れない")
+@pytest.mark.skipif(not shutil.which("gmx"), reason="the OpenMM input needs gmx (for the GROMACS force field directory)")
 def test_openmm_script_adds_plumed_force(tmp_path, sk_root):
     out = tmp_path / "calc"
     write_project(openmm_spec(PlumedSettings(lines=LINES)), cfg_for(sk_root), out)
@@ -141,7 +141,7 @@ def test_only_md_and_supported_codes(tmp_path, sk_root):
     assert "plumed" in places(errors(spec, cfg))
 
 
-@pytest.mark.skipif(not shutil.which("plumed"), reason="plumed が PATH にない")
+@pytest.mark.skipif(not shutil.which("plumed"), reason="plumed is not on PATH")
 def test_broken_input_is_caught_by_plumed(tmp_path, sk_root):
     bad = PlumedSettings(lines="d1: NOSUCHACTION ATOMS=1,2\nPRINT ARG=d1 FILE=COLVAR\n")
     assert "plumed.lines" in places(errors(lammps_spec(tmp_path, bad), cfg_for(sk_root)))
@@ -173,7 +173,7 @@ def _openmm_plumed_python() -> str:
     return exe if probe.returncode == 0 else ""
 
 
-@pytest.mark.skipif(not LAMMPS_OK, reason="PLUMED を組み込んだ lmp が無い")
+@pytest.mark.skipif(not LAMMPS_OK, reason="no lmp built with PLUMED")
 def test_lammps_real_run_with_plumed(tmp_path, sk_root):
     out = tmp_path / "run"
     write_project(lammps_spec(tmp_path, PlumedSettings(lines=LINES), md_task(steps=50, dump=25)),
@@ -186,7 +186,7 @@ def test_lammps_real_run_with_plumed(tmp_path, sk_root):
     assert 0.2 < table["first"]["d1"] < 0.3
 
 
-@pytest.mark.skipif(not GROMACS_OK, reason="PLUMED を使える gmx と libplumedKernel.so が無い")
+@pytest.mark.skipif(not GROMACS_OK, reason="no gmx with PLUMED support and libplumedKernel.so")
 def test_gromacs_real_run_with_plumed(tmp_path, sk_root):
     out = tmp_path / "run"
     write_project(gromacs_spec(PlumedSettings(lines=LINES), md_task(steps=50, dump=25)), cfg_for(sk_root), out)
@@ -198,7 +198,7 @@ def test_gromacs_real_run_with_plumed(tmp_path, sk_root):
 
 
 @pytest.mark.skipif(not (_openmm_plumed_python() and shutil.which("gmx")),
-                    reason="openmm-plumed を入れた python3 か gmx (力場の置き場所) が無い")
+                    reason="the python3 with openmm-plumed or gmx (for the force field directory) is missing")
 def test_openmm_real_run_with_plumed(tmp_path, sk_root):
     out = tmp_path / "run"
     write_project(openmm_spec(PlumedSettings(lines=LINES), md_task(steps=50, dump=25)), cfg_for(sk_root), out)

@@ -59,7 +59,7 @@ def test_read_dftb_opt_and_vib(tmp_path):
 def test_frequencies_from_hessian_water_matches_modes():
     hess = (REPO / "tests" / "data" / "water_hessian.out")
     if not hess.is_file():
-        pytest.skip("tests/data/water_hessian.out が無い")
+        pytest.skip("tests/data/water_hessian.out is missing")
     atoms = Atoms("OHH", positions=[(0, -1, 0), (0, 0, 0.783064), (0, 0, -0.783064)])
     f = frequencies_from_hessian(np.array(hess.read_text(encoding="utf-8").split(), dtype=float), atoms)
     big = sorted(x for x in f if x > 100)
@@ -118,7 +118,7 @@ def test_rdf_rmax_is_capped_at_half_cell_width(tmp_path):
     d = tmp_path / "run"
     shutil.copytree(EX / "qe_md_si_generated", d)
     frames = load_run(d).frames
-    assert frames and any(frames[0].pbc), "周期系の軌跡が読めない (このテストが比べる相手が無い)"
+    assert frames and any(frames[0].pbc), "cannot read the periodic trajectory (nothing for this test to compare with)"
     cell = np.asarray(frames[0].cell, dtype=float); vol = abs(np.linalg.det(cell))
     half = 0.5 * min(vol / np.linalg.norm(np.cross(cell[(i + 1) % 3], cell[(i + 2) % 3])) for i in range(3))
     res = run_analysis(d, AnalysisOptions(rdf=True, rdf_rmax=8.0))

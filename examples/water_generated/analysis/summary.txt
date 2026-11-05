@@ -1,3 +1,3 @@
-コード: dftbplus   ディレクトリ: examples/water_generated
-エネルギー: 10 点。最終 -110.966300 eV (最小 -110.966300, 最大 -108.298000)
-結合長 (最終構造): O1-H2 0.967 Å, O1-H3 0.967 Å
+code: dftbplus   directory: examples/water_generated
+energy: 10 points; last -110.966300 eV (min -110.966300, max -108.298000)
+bond lengths (final structure): O1-H2 0.967 Å, O1-H3 0.967 Å

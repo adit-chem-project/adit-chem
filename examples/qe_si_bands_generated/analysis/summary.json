@@ -35,10 +35,10 @@
     }
   },
   "figures": {
-    "energy": "<作業ディレクトリ>/qe_bands/analysis/energy.png",
-    "bands": "<作業ディレクトリ>/qe_bands/analysis/bands.png"
+    "energy": "<work directory>/qe_bands/analysis/energy.png",
+    "bands": "<work directory>/qe_bands/analysis/bands.png"
   },
   "notes": [
-    "フェルミ準位の代わりに最高被占準位 (highest occupied level) を使った"
+    "the highest occupied level is used instead of the Fermi level"
   ]
 }

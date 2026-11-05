@@ -126,7 +126,7 @@ def test_non_md_does_not_receive_md_trajectory_interval(cfg_qe, task_type):
     assert "iprint" not in inp
 
 
-@pytest.mark.skipif(not (PWX and (REAL_PSEUDO / "pslibrary").is_dir()), reason="pw.x か pseudo/pslibrary が無い")
+@pytest.mark.skipif(not (PWX and (REAL_PSEUDO / "pslibrary").is_dir()), reason="pw.x or pseudo/pslibrary is missing")
 def test_pwx_real_run(sk_root, tmp_path):
     from adit.results import summarize_run
     cfg = cfg_for(sk_root); cfg.pseudo_root = str(REAL_PSEUDO)

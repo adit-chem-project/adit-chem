@@ -1,5 +1,5 @@
-コード: espresso   ディレクトリ: <作業ディレクトリ>/qe_bands
-エネルギー: 1 点。最終 -310.556042 eV (最小 -310.556042, 最大 -310.556042)
-結合長 (最終構造): Si1-Si2 2.351 Å
-バンド: 40 k 点 × 8 本 (経路 G X W K G L U W L K U X)、フェルミ準位をまたぐ最小の間隔 0.567 eV
-注: フェルミ準位の代わりに最高被占準位 (highest occupied level) を使った
+code: espresso   directory: <work directory>/qe_bands
+energy: 1 points; last -310.556042 eV (min -310.556042, max -310.556042)
+bond lengths (final structure): Si1-Si2 2.351 Å
+bands: 40 k-points × 8 bands (path G X W K G L U W L K U X), smallest gap across the Fermi level 0.567 eV
+note: the highest occupied level is used instead of the Fermi level

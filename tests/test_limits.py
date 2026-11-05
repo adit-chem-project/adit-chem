@@ -50,7 +50,7 @@ def test_close_pairs_molecule_and_periodic_boundary():
 
 
 def test_overlap_check_scales_for_thousands_of_atoms():
-    resource = pytest.importorskip("resource", reason="Windows には resource が無い")
+    resource = pytest.importorskip("resource", reason="Windows has no resource module")
     c = bulk("C", "diamond", a=3.567, cubic=True).repeat((8, 8, 8))
     st = Structure(source="bulk", source_ref="C", atoms=AtomsData.from_ase(c))
     before = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss

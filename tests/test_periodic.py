@@ -77,7 +77,7 @@ def test_hsd_periodic_blocks(sk_root):
     assert len(geo.strip().splitlines()) == 2 + 6 + 4
 
 
-@pytest.mark.skipif(not HAVE_TIO2, reason="mio-ext (mio-1-1 + tiorg-0-1) か dftb+ が無い")
+@pytest.mark.skipif(not HAVE_TIO2, reason="mio-ext (mio-1-1 + tiorg-0-1) or dftb+ is missing")
 def test_tio2_matches_recipe_energy(tmp_path):
     from adit.project import write_project
     out = tmp_path / "tio2"

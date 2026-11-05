@@ -136,7 +136,7 @@ def test_trajectory_is_lazy_sequence():
 def test_estimate_before_reading(tmp_path):
     t = trj.Trajectory(EX / "dftb_md_water_generated" / "geo_end.xyz", "xyz")
     est = t.estimate_total_frames()
-    assert t._shared["total"] is None, "見積もりのために全部を数えてはいけない"
+    assert t._shared["total"] is None, "the estimate must not count every frame"
     assert abs(est - 21) <= 2
 
 
@@ -149,7 +149,7 @@ def test_budget_stops_before_reading_with_fake_size(tmp_path, monkeypatch):
     with pytest.raises(trj.TrajectoryTooLarge) as ei:
         run_analysis(d, AnalysisOptions(energy=False, temperature=False, bonds=False, msd=True, memory_budget_mb=1024))
     assert "--stride" in str(ei.value) and ei.value.suggested_stride > 1
-    assert all(last == 0 for last in read_calls), "上限を超えたら、最初のフレーム以外を読んではいけない"
+    assert all(last == 0 for last in read_calls), "past the limit, only the first frame may be read"
     est = trj.Trajectory(d / "geo_end.xyz", "xyz").estimate_total_frames()
     info = trj.check_budget(trj.Trajectory(d / "geo_end.xyz", "xyz")[:: ei.value.suggested_stride], 3, 1024)
     assert info["estimated_mb"] <= 1024 and est > 10**8

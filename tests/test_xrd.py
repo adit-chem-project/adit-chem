@@ -5,7 +5,7 @@ from ase.build import bulk
 
 from adit.analysis.xrd import XrdError, has_pymatgen, powder_pattern, read_measured, scale_to_100, write_csv
 
-pytestmark = pytest.mark.skipif(not has_pymatgen(), reason="pymatgen がない")
+pytestmark = pytest.mark.skipif(not has_pymatgen(), reason="pymatgen is missing")
 
 
 def test_silicon_111_peak_is_at_the_known_angle():

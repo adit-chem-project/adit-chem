@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}ADIT — {{ T("準備", "Prepare") }}{% endblock %}
-{#- 部品。ラベルの文言はデスクトップ版 (gui/panels/*.py の add_row と gui/i18n.py の _EN) に合わせる。
-    日本語の文言が help.py の鍵でもあるので、row() は ja と en を別々に受け取り、説明 (title) と必須の印を ja で引く -#}
+{#- Widgets. Label text follows the desktop app (add_row in gui/panels/*.py, _EN in gui/i18n.py).
+    The Japanese label is also the key into help.py, so row() takes ja and en separately and looks up the tooltip and required mark with ja -#}
 {% macro sel(name, options, current) -%}
 <select name="{{ name }}" id="{{ name }}">
 {%- for k, v in options %}<option value="{{ k }}"{% if k|string == current|string %} selected{% endif %}>{{ v }}</option>{% endfor -%}
@@ -11,12 +11,12 @@
 {%- endmacro %}
 {% macro txt(name, cls="", ph="", aria="") -%}<input type="text" name="{{ name }}" id="{{ name }}" class="{{ cls }}" value="{{ form.get(name, '') }}"{% if ph %} placeholder="{{ ph }}"{% endif %}{% if aria %} aria-label="{{ aria }}"{% endif %}>{%- endmacro %}
 {% macro area(name, ph="") -%}<textarea name="{{ name }}" id="{{ name }}"{% if ph %} placeholder="{{ ph }}"{% endif %}>{{ form.get(name, "") }}</textarea>{%- endmacro %}
-{#- チェックボックスの前に同じ名前の空の hidden を置く。外した欄はブラウザが送らないので、そのままでは既定の "on" (SCC など) が勝っていた。
-    送る順は文書の順で、サーバーは同じ名前の最後の値を使う (印があれば "on"、無ければ "") -#}
+{#- Put an empty hidden input of the same name before each checkbox. Browsers omit unchecked boxes, so a default "on" (SCC and so on) used to win.
+    Inputs are sent in document order and the server uses the last value of a name ("on" if checked, otherwise "") -#}
 {% macro chk(name) -%}<input type="hidden" name="{{ name }}" value=""><input type="checkbox" name="{{ name }}" id="{{ name }}"{% if form.get(name) %} checked{% endif %}>{%- endmacro %}
-{#- 雛形の値のままの欄は、ラベルの下に「雛形 xx の値」と小さく出す (tmarks: 日本語のラベル → 雛形の名前。codefields.template_marks) -#}
+{#- A field still holding its template value shows a small "value from template xx" under the label (tmarks: Japanese label -> template name; codefields.template_marks) -#}
 {% macro row(ja, en, for_id, cls="") -%}{% set h = HELP(ja) %}{% set tm = tmarks.get(ja) %}<div class="row {{ cls }}"><label for="{{ for_id }}"{% if h and h.required %} class="required"{% endif %}{% if h %} title="{{ h.text() }}"{% endif %}>{{ T(ja, en) }}{% if h and h.required %}<span class="pill">{{ T("必須", "required") }}</span>{% endif %}{% if tm %}<small class="tmark">{{ T("雛形 " ~ tm ~ " の値", "value from template " ~ tm) }}</small>{% endif %}</label><div class="inline">{{ caller() }}</div></div>{%- endmacro %}
-{#- 準備の第 1 段階の部品: DFT+U の表 (元素はいまの構造のものだけ。U に既定値は無い)、元素ごとの値、溶媒のプルダウン -#}
+{#- Widgets for preparation stage 1: DFT+U table (only the elements of the current structure; U has no default), per-element values, solvent dropdown -#}
 {% macro hubtable(prefix, with_j=True) -%}
 <div class="table-wrap"><table class="hub"><thead><tr><th>{{ T("元素", "Element") }}</th><th>{{ T("殻", "Shell") }}</th><th>U [eV]</th>{% if with_j %}<th>J [eV]</th>{% endif %}</tr></thead><tbody>
 {%- for i in range(1, hub_rows[prefix] + 1) %}{% set p = prefix ~ i %}{% set el = form.get(p ~ "_el", "") %}<tr>
@@ -31,8 +31,8 @@
 {%- if prep_elements %}{% for e in prep_elements %}<label for="{{ prefix }}{{ e }}" class="el">{{ e }}</label><input type="text" class="tiny" name="{{ prefix }}{{ e }}" id="{{ prefix }}{{ e }}" value="{{ form.get(prefix ~ e, '') }}">{% endfor %}<span class="hint">{{ T("空欄 = 指定しない", "empty = not set") }}</span>
 {%- else %}<span class="hint">{{ T("プレビューすると、構造の元素ごとの欄が出ます", "Preview once to get one field per element of the structure") }}</span>{% endif %}
 {%- endmacro %}
-{#- パラメータ集の文書に書かれた値 (web/prep23.py の doc_lines)。出典が先に読める形で並べ、単位が同じ欄にだけ「入れる」を出す。
-    ADIT の推奨ではない (書かれている値をそのまま見せるだけ) -#}
+{#- Values written in the parameter set's documents (doc_lines in web/prep23.py). The source reads first, and only fields with the same unit offer the insert button.
+    These are not ADIT's recommendations, only the documented values as written -#}
 {% macro docv(group) -%}
 {%- set lines = doc_values.get(group, []) %}{% if lines %}<div class="docv">
 {%- for l in lines[:doc_max] %}<div class="docv-line"><span class="hint" title="{{ l.tip }}">{{ l.text }}</span>
@@ -42,19 +42,19 @@
 {% macro solvsel(name, names) -%}{% set cur = form.get(name, "") %}<select name="{{ name }}" id="{{ name }}"><option value="">{{ T("(選んでください)", "(choose one)") }}</option>{% for n in names %}<option value="{{ n }}"{% if n == cur %} selected{% endif %}>{{ n }}</option>{% endfor %}{% if cur and cur not in names %}<option value="{{ cur }}" selected>{{ cur }}</option>{% endif %}</select>{%- endmacro %}
 {% block head %}
 <style>
-/* 選んだ作り方・コード・種類の欄だけを出す。JS を使わず CSS の :has() で切り替える。
-   :has() の無い古いブラウザでは全部の欄が出る (使えなくはならない) */
+/* Show only the fields of the chosen source, code and task, using CSS :has() instead of JS.
+   Old browsers without :has() show every field, which still works */
 @supports selector(:has(*)) {
   .only { display:none; }
 {%- for attr, sel_id, values in only_rules %}{% for v in values %}
   #main:has(#{{ sel_id }} option[value="{{ v }}"]:checked) .only[data-{{ attr }}~="{{ v }}"] { display:block; }
 {%- endfor %}{% endfor %}
   #main:has(#profile option[data-kind="direct"]:checked) .cluster-only { display:none; }
-  /* 古典 MD (LAMMPS、GROMACS) は k 点を使わない (デスクトップ版の uses_kpoints と同じ)。群ごと隠す */
+  /* Classical MD (LAMMPS, GROMACS) has no k-points (same as uses_kpoints on the desktop), so the group is hidden */
 {%- for c in no_kpoints %}
   #main:has(#code option[value="{{ c }}"]:checked) .kp-group { display:none; }
 {%- endfor %}
-  /* 1 つの条件を変えて一括生成: いまのコードと構造に合う項目だけを出す (デスクトップ版 scan_dialog.choices_for と同じ絞り方) */
+  /* Parameter scan: only items that fit the current code and structure (same filter as scan_dialog.choices_for) */
   #scan_item option[data-code], #scan_item option.per { display:none; }
 {%- for c, code, per in scan_choices %}{% if code %}
   #main:has(#code option[value="{{ code }}"]:checked) #scan_item option[data-code="{{ code }}"] { display:block; }
@@ -69,13 +69,13 @@
   #main:has(#scan_item option[value="{{ c.path }}"]:checked) .scan-purpose[data-item="{{ c.path }}"] { display:block; }
 {%- endfor %}
   #main:has(#scan_item option[value="{{ scan_other }}"]:checked) .scan-path-row { display:grid; }
-  /* 組み立て手順: 手順の中の切り替え (超格子の取り方、選ぶ数、置き場所、厚みの決め方)。手順ごとに .stepbox の中だけで効く */
+  /* Recipe: switches inside a step (supercell mode, count, placement, thickness). Each applies only within its .stepbox */
   .stepbox .sw, .stepbox .swi { display:none; }
 {%- for v in ["repeat", "matrix", "count", "fraction", "density", "thickness", "site", "above_atom", "xy"] %}
   .stepbox:has(.swsel option[value="{{ v }}"]:checked) .sw[data-sw~="{{ v }}"] { display:grid; }
   .stepbox:has(.swsel option[value="{{ v }}"]:checked) .swi[data-sw~="{{ v }}"] { display:inline-block; }
 {%- endfor %}
-  /* 溶媒の候補は模型と計算手法の組み合わせごとに別のプルダウン (選んでいる組み合わせのものだけを出し、サーバーもその欄だけを読む) */
+  /* Each model and method pair has its own solvent dropdown (only the chosen one shows, and the server reads only that one) */
   .xsolv, .osolv { display:none; }
 {%- for key in xtb_solvents %}{% set m, g = key.split("_", 1) %}
   #main:has(#xtb_solvation option[value="{{ m }}"]:checked):has(#gfn option[value="{{ g }}"]:checked) .xsolv[data-k="{{ key }}"] { display:block; }
@@ -86,10 +86,10 @@
 {%- for m in ("cpcm", "smd") %}
   #main:has(#orca_solvation option[value="{{ m }}"]:checked) .osolv[data-k="{{ m }}"] { display:block; }
 {%- endfor %}
-  /* ORCA の遷移状態と IRC の細かい欄は、印を付けたときだけ出す (印は選択肢ではなくチェックボックスなので、規則をここに書く) */
+  /* The detailed ORCA TS and IRC fields show only when checked (a checkbox, not a choice, so the rule is written here) */
   #main:has(#orca_ts:checked) .only[data-orcats~="on"] { display:block; }
   #main:has(#orca_irc:checked) .only[data-orcairc~="on"] { display:block; }
-  /* まとめて作る: 選んだ機能の欄と、比べる組の種類ごとの欄 (規則は only_rules から作られる) */
+  /* Build in bulk: fields of the chosen feature and of each comparison kind (rules come from only_rules) */
   #main:has(#ts_mode option[value="sella"]:checked) .only[data-tsmode~="sella"] { display:block; }
   .recipe-build.only { display:none; }
   #main:has(#source option[value="2d"]:checked) .recipe-build.only,
@@ -105,7 +105,7 @@ ol.steps li[data-off] a { color:var(--muted); }
 ol.steps li input[type=checkbox] { margin:0 2px 0 0; }
 .step-btns { display:flex; gap:4px; } .step-btns button { padding:3px 10px; font-size:12px; }
 .recipe-add button, .step-btns button, .recipe-build button { white-space:nowrap; }
-/* 手順の中はラベルの列を狭く (構造の列は画面の 3 分の 1 しかなく、180 px だと入力欄が細くなっていた)。スマホ幅では 1 列に */
+/* Narrower label column inside steps (the structure column is a third of the screen, and 180 px squeezed the fields). One column on phones */
 details.stepbox .row { grid-template-columns: 120px minmax(0,1fr); }
 @media (max-width: 520px) { details.stepbox .row { grid-template-columns: 1fr; gap:2px; } details.stepbox .row > span:empty { display:none; } }
 details.stepbox { border:1px solid var(--line); border-radius:10px; padding:6px 12px; margin:8px 0; }
@@ -117,7 +117,7 @@ details.scan { margin:12px 0 16px; border:1px solid var(--edge); border-radius:v
 details.scan > summary { font-weight:700; font-size:15px; cursor:pointer; }
 details.scan[open] > summary { margin-bottom:6px; }
 .scan-purpose { margin:0 0 4px; }
-/* 準備の第 1 段階 */
+/* Preparation stage 1 */
 small.tmark { display:block; font-size:11px; font-weight:400; color:var(--muted); }
 .row.wide { grid-template-columns: minmax(0,1fr); gap:4px; }
 table.hub, table.stages { border-collapse:collapse; width:100%; font-size:13px; }
@@ -130,13 +130,13 @@ p.pre { white-space:pre-wrap; }
 details.prov { margin-top:8px; } details.prov > summary { cursor:pointer; }
 pre.prov { font-size:11px; max-height:160px; margin:6px 0 0; }
 .origin { margin:6px 0; white-space:pre-wrap; }
-/* 文書に書かれた値 (準備の第 2 段階) と一括生成の表 */
+/* Documented values (preparation stage 2) and the parameter scan table */
 .docv { flex-basis:100%; margin:2px 0 0; }
 .docv-line { display:flex; gap:6px; align-items:baseline; flex-wrap:wrap; }
 table.rx { border-collapse:collapse; width:100%; font-size:13px; }
 table.rx th { font-weight:600; color:var(--muted); text-align:left; padding:2px 4px; white-space:nowrap; }
 table.rx td { padding:2px 4px; } table.rx input { width:100%; min-width:0; }
-table.rx { min-width:520px; }  /* 5 列を詰めすぎない (狭い窓では .table-wrap が横にスクロールする) */
+table.rx { min-width:520px; }  /* keep the five columns readable (.table-wrap scrolls sideways in a narrow window) */
 button.link { border:none; background:none; color:var(--accent); padding:0 4px; font-size:12px; text-decoration:underline; }
 button.link:hover { background:none; }
 </style>
@@ -144,7 +144,7 @@ button.link:hover { background:none; }
 {% block body %}
 <form method="post" action="/preview" enctype="multipart/form-data" id="main"{% if file_periodic %} data-file-periodic="1"{% endif %}>
 <datalist id="shells">{% for s in shells %}<option value="{{ s }}">{% endfor %}</datalist>
-{#- 欄で Enter を押したときの送信先 (最初の送信ボタン)。手順の「追加」などが先に来ないように、見えないプレビューを置く -#}
+{#- Enter in a field submits the first submit button. An invisible preview button comes first so that "Add" in the recipe does not fire -#}
 <button type="submit" formaction="/preview" class="default-submit" tabindex="-1" aria-hidden="true">{{ T("プレビュー", "Preview") }}</button>
 {% if error_head %}<div class="error-banner" role="alert">{{ error_head }}</div>{% endif %}
 {% if message_head %}<div class="message-banner" role="status">{{ message_head }}{% if scan_link %}
@@ -200,7 +200,7 @@ button.link:hover { background:none; }
   {% call row("分子間の最短距離 [Å]", "Min. distance [Å]", "mix_min_dist") %}{{ txt("mix_min_dist", "narrow") }}{% endcall %}
   {% call row("乱数の種", "Random seed", "mix_seed") %}{{ txt("mix_seed", "narrow") }}{% endcall %}
   </div>
-  {#- 新しい土台 3 つ。欄と文言はデスクトップ版 structure_panel.py の _build_new_base_widgets と同じ -#}
+  {#- The three new base structures. Fields and text match _build_new_base_widgets in the desktop structure_panel.py -#}
   <div class="only" data-source="2d">
   {% call row("2 次元材料・ナノチューブ", "2D material / nanotube", "td_kind") %}{{ sel("td_kind", td_kind_opts, form.get("td_kind","graphene")) }}{% endcall %}
   <div class="only" data-tdkind="graphene mx2 nanotube"><div class="row"><span></span><div class="inline">{{ txt("td_formula", "narrow", ph=T("C2 / MoS2 / 元素 (空欄なら既定: C2、MoS2、C)", "C2 / MoS2 / element (empty = default: C2, MoS2, C)"), aria=T("組成・元素", "Formula / element")) }}</div></div></div>
@@ -339,7 +339,7 @@ button.link:hover { background:none; }
   </div>
   <div class="only" data-code="orca">
   {% call row("計算手法 (! 行)", "Method (! line)", "orca_method") %}<input type="text" name="orca_method" id="orca_method" list="orca_methods" value="{{ form.get('orca_method','HF') }}"><datalist id="orca_methods">{% for x in choices.orca_methods %}<option value="{{ x }}">{% endfor %}</datalist>{% endcall %}
-  {# CLI 専用の ORCA 追加条件。画面で spec を読み込んでも再保存で失わない。 #}
+  {# CLI-only extra ORCA options. Loading a spec on this screen and saving again must not lose them. #}
   <input type="hidden" name="orca_goat" value="{{ form.get('orca_goat', '') }}">
   <input type="hidden" name="orca_docker_guest_file" value="{{ form.get('orca_docker_guest_file', '') }}">
   <input type="hidden" name="orca_docker_assume_neutral_singlet" value="{{ form.get('orca_docker_assume_neutral_singlet', '') }}">
@@ -351,7 +351,7 @@ button.link:hover { background:none; }
   {% for m, names in orca_solvents.items() %}<div class="osolv" data-k="{{ m }}">{% call row("溶媒", "Solvent", "orca_solvent__" ~ m) %}{{ solvsel("orca_solvent__" ~ m, names) }}{% endcall %}</div>{% endfor %}
   {% call row("追加のキーワード (! 行)", "Additional keywords (! line)", "extra_kw") %}{{ txt("extra_kw", ph=T("! 行に追加するキーワード (例 D3BJ RIJCOSX)", "Keywords added to the ! line (e.g. D3BJ RIJCOSX)")) }}{% endcall %}
   {% call row("追加の %ブロック", "Additional %blocks", "extra_blocks") %}{{ area("extra_blocks") }}{% endcall %}
-  {#- 遷移状態と IRC (2026-09-12)。キーワードは ORCA 6.1 マニュアル 4.3 と IRC の節の例 (codes/orca.py) -#}
+  {#- Transition state and IRC (2026-09-12). Keywords follow section 4.3 and the IRC section of the ORCA 6.1 manual (codes/orca.py) -#}
   {% call row("遷移状態の探索 (OptTS)", "Transition-state search (OptTS)", "orca_ts") %}{{ chk("orca_ts") }}<label for="orca_ts">{{ T("! OptTS にする (計算の種類は構造最適化)", "Use ! OptTS (with a geometry optimization)") }}</label>{% endcall %}
   <div class="only" data-orcats="on">
   {% call row("最初にヘシアンを計算 (Calc_Hess)", "Compute the Hessian first (Calc_Hess)", "orca_calc_hess") %}{{ chk("orca_calc_hess") }}<label for="orca_calc_hess">%geom Calc_Hess true</label>{% endcall %}
@@ -365,7 +365,7 @@ button.link:hover { background:none; }
   </div>
   <div class="row"><span></span><div class="hint">{{ T("遷移状態の探索は計算の種類が構造最適化のとき、IRC は一点計算のときに書かれます。両方を続けて実行するなら、下の「まとめて作る」の「遷移状態と IRC」で段階に分けて生成します", "The transition-state search is written when the task is a geometry optimization, the IRC when it is a single point. To run both in turn, generate them as stages in \"Batch generation\" below") }}</div></div>
   </div>
-  {#- CP2K・LAMMPS・GROMACS。欄と文言はデスクトップ版 gui/panels/{cp2k,lammps,gromacs}_panel.py と同じ。ファイルはこの PC 上のパスで書く -#}
+  {#- CP2K, LAMMPS, GROMACS. Fields and text match the desktop gui/panels/{cp2k,lammps,gromacs}_panel.py. Files are paths on this PC -#}
   <div class="only" data-code="cp2k">
   {% call row("汎関数", "Functional", "cp_xc") %}<input type="text" name="cp_xc" id="cp_xc" list="cp_xc_list" value="{{ form.get('cp_xc','') }}" placeholder="{{ T('例 PBE、BLYP、PBE0 (CP2K の XC_FUNCTIONAL の名前)', 'e.g. PBE, BLYP, PBE0 (a CP2K XC_FUNCTIONAL name)') }}"><datalist id="cp_xc_list">{% for x in ("PBE", "BLYP", "PBE0", "B3LYP", "TPSS") %}<option value="{{ x }}">{% endfor %}</datalist>{% endcall %}
   {% call row("基底関数のファイル", "Basis-set file", "cp_basis_file") %}<input type="text" name="cp_basis_file" id="cp_basis_file" list="cp_basis_files" value="{{ form.get('cp_basis_file','BASIS_MOLOPT') }}"><datalist id="cp_basis_files">{% for x in cp2k_basis_files %}<option value="{{ x }}">{% endfor %}</datalist>{% endcall %}
@@ -421,7 +421,7 @@ button.link:hover { background:none; }
   {% call row("追加の mdp", "Extra mdp options", "gmx_extra") %}{{ area("gmx_extra", "nstcalcenergy = 100") }}{% endcall %}
   <div class="row"><span></span><div class="hint">{{ T("構造の正本は上の構造のファイル (.gro / .pdb) です。全電荷とスピン多重度はトポロジーが決めるので使いません (0 と 1 のまま)。k 点はありません", "The structure file above (.gro / .pdb) is authoritative. Total charge and multiplicity come from the topology and are not used (leave 0 and 1). There are no k-points") }}</div></div>
   </div>
-  {#- 機械学習ポテンシャル (2026-09-12)。欄と文言はデスクトップ版 gui/panels/mlip_panel.py と同じ。ADIT 自身はモデルのパッケージを使わない -#}
+  {#- Machine-learning potentials (2026-09-12). Fields and text match the desktop gui/panels/mlip_panel.py. ADIT itself does not use the model packages -#}
   <div class="only" data-code="mlip">
   {% call row("機械学習ポテンシャルの種類", "Machine-learning potential", "mlip_family") %}{{ sel("mlip_family", mlip_family_opts, form.get("mlip_family","")) }}{% endcall %}
   {% call row("モデル", "Model", "mlip_model") %}{{ txt("mlip_model", ph=T("空欄ならパッケージの既定のモデル (例 small、medium-mpa-0、またはモデルのファイルのパス)", "Empty = the default model of the package (e.g. small, medium-mpa-0, or the path of a model file)")) }}{% endcall %}
@@ -462,10 +462,10 @@ button.link:hover { background:none; }
   <button type="submit" formaction="/generate">{{ T("生成", "Generate") }}</button>
   <label><input type="checkbox" name="overwrite" id="overwrite"> {{ T("上書きを許可", "Allow overwrite") }}</label>
 </div>
-{#- 2026-09-14 の試用: 画面からクラスタへ投入できるのかどうかが、画面の文字だけでは判断できなかった -#}
+{#- Trial of 2026-09-14: the screen text alone did not tell whether the screen can submit to a cluster -#}
 <p class="hint">{{ T("ADIT は計算を投入しません。ここで作るのは入力ファイル一式です。クラスタで実行する手順は、書き出したディレクトリの README.txt にあります。",
                      "ADIT never submits jobs: what you get here is a set of input files. The README.txt in the generated directory explains how to run them on a cluster.") }}</p>
-{#- 1 つの条件を変えて一括生成。文言はデスクトップ版 gui/scan_dialog.py と同じ。値は利用者が書く (自動で埋めない) -#}
+{#- Batch generation varying one condition. Text matches the desktop gui/scan_dialog.py. The user writes the values (never filled in automatically) -#}
 <details class="scan" id="scan"{% if form.get("scan_item") or message_head or scan_error %} open{% endif %}>
   <summary>{{ T("1 つの条件を変えて一括生成", "Parameter scan") }}</summary>
   {% set h_item = T("1 つだけ値を変え、残りの設定はいまの画面のまま、値ごとに入力を作ります。", "Only this setting changes; everything else is taken from the current settings.") %}
@@ -486,7 +486,7 @@ button.link:hover { background:none; }
   </div>
   {% if scan_error %}<div class="error">{{ scan_error }}</div>{% endif %}
 </details>
-{#- 段階に分けて生成。文言と列はデスクトップ版 gui/prep_dialogs.py の StagesDialog と同じ (表の列は codefields.STAGE_COLUMNS)。値は利用者が書く -#}
+{#- Staged generation. Text and columns match StagesDialog in the desktop gui/prep_dialogs.py (columns are codefields.STAGE_COLUMNS). The user writes the values -#}
 <details class="scan" id="stages"{% if prep.get("stages_open") %} open{% endif %}>
   <summary>{{ T("段階に分けて生成", "Staged calculation") }}</summary>
   <p class="hint">{{ T("空欄の列は、いまの画面の値のままです。各段階は、いまの画面の設定にその段階の列だけを上書きしたものです (前の段階の値は受け継ぎません)。2 段階目からは、実行する直前に前の段階の最終構造 (MD が続くなら速度も) を写します。計算コードは全段階で同じです。",
@@ -507,7 +507,7 @@ button.link:hover { background:none; }
   </div>
   {% if prep.get("stages_error") %}<div class="error">{{ prep.get("stages_error") }}</div>{% endif %}
 </details>
-{#- まとめて作る (準備の第 2・3 段階)。欄と文言はデスクトップ版 gui/prep23_dialogs.py と同じ (名前と解釈は web/prep23.py) -#}
+{#- Build in bulk (preparation stages 2 and 3). Fields and text match the desktop gui/prep23_dialogs.py (names and parsing are in web/prep23.py) -#}
 <details class="scan" id="batch"{% if prep.get("batch_open") %} open{% endif %}>
   <summary>{{ T("まとめて作る (比べる組・配座・反応経路・フォノン・弾性・遷移状態)", "Batch generation (sets, conformers, paths, phonons, elastic constants, transition states)") }}</summary>
   <div class="row"><label for="batch_kind" class="required">{{ T("作るもの", "What to generate") }}<span class="pill">{{ T("必須", "required") }}</span></label><div class="inline">{{ sel("batch_kind", batch_kinds, form.get("batch_kind","compare")) }}</div></div>
@@ -593,7 +593,7 @@ button.link:hover { background:none; }
   </div>
   {% if prep.get("batch_error") %}<div class="error">{{ prep.get("batch_error") }}</div>{% endif %}
 </details>
-{#- 前の計算の続き。デスクトップ版 gui/prep_dialogs.py の ContinueDialog と同じ -#}
+{#- Continue from a previous calculation. Same as ContinueDialog in the desktop gui/prep_dialogs.py -#}
 <details class="scan" id="cont"{% if prep.get("cont_open") or origin_note %} open{% endif %}>
   <summary>{{ T("前の計算の続きを作る", "Continue a previous calculation") }}</summary>
   {% set h_cd = T("ADIT が生成して、計算が最後まで走ったディレクトリ。最終構造 (MD なら速度も) を読みます。", "A directory generated by ADIT whose calculation has finished; its final structure (and MD velocities) is read.") %}
@@ -604,7 +604,7 @@ button.link:hover { background:none; }
   <div class="actions"><button type="submit" formaction="/continue">{{ T("続きを作る", "Continue") }}</button></div>
   {% if prep.get("cont_error") %}<div class="error">{{ prep.get("cont_error") }}</div>{% endif %}
 </details>
-{#- 研究室の雛形。デスクトップ版 gui/prep_dialogs.py の TemplateLoadDialog / TemplateSaveDialog と同じ -#}
+{#- Lab templates. Same as TemplateLoadDialog / TemplateSaveDialog in the desktop gui/prep_dialogs.py -#}
 <details class="scan" id="tmpl"{% if prep.get("tmpl_open") %} open{% endif %}>
   <summary>{{ T("研究室の雛形", "Group templates") }}</summary>
   <p class="hint">{{ T("雛形は構造を除いた計算の条件です。読み込むと、いまの構造はそのままで、条件だけが雛形の値になります。置き場所: ", "A template holds the calculation conditions without a structure. Loading it keeps the current structure and replaces only the conditions. Folders: ") }}{{ template_folders }}</p>
@@ -625,7 +625,7 @@ button.link:hover { background:none; }
 </div>
 
 <div>
-{#- 3D 表示 (2026-09-14)。デスクトップ版の 3D と同じ決まりで描く。JS が使えないときは絵を出さず、その旨を書く -#}
+{#- 3D view (2026-09-14). Drawn by the same rules as the desktop 3D view. Without JS, show no picture and say so -#}
 {% if scene_json %}
 <fieldset><legend>{{ T("構造 (3D)", "Structure (3D)") }}</legend>
   <canvas id="adit3d" width="420" height="320" style="width:100%;max-width:520px;height:320px;border-radius:10px;border:1px solid rgba(0,0,0,0.12)"></canvas>

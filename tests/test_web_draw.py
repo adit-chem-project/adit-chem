@@ -9,7 +9,7 @@ import pytest
 from adit.sketch import Sketch, ring_atoms, sketch_from_dict, sketch_to_dict
 
 pytestmark = pytest.mark.skipif(__import__("importlib.util", fromlist=["util"]).find_spec("rdkit") is None,
-                                reason="RDKit が要る")
+                                reason="needs RDKit")
 
 REPO = Path(__file__).resolve().parents[1]
 JS = REPO / "src" / "adit" / "web" / "static" / "sketch.js"

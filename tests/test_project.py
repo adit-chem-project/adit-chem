@@ -142,7 +142,7 @@ def test_cluster_readme_has_manual_steps(cfg):
     assert "#SBATCH --job-name=w" in slurm.texts["submit.sh"] and "sbatch submit.sh" in slurm.texts["README.txt"]
 
 
-@pytest.mark.skipif(not HAVE_REAL, reason="mio-1-1 か dftb+ が無い")
+@pytest.mark.skipif(not HAVE_REAL, reason="mio-1-1 or dftb+ is missing")
 def test_local_submit_runs(tmp_path):
     cfg = default_config(sk_root=str(REAL_SK_ROOT))
     out = tmp_path / "water"

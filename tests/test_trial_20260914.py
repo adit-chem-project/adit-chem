@@ -119,16 +119,16 @@ def test_the_file_count_message_shows_what_is_in_subdirectories(tmp_path, sk_roo
 
 def test_the_readme_shows_how_to_start():
     text = (REPO / "README.md").read_text(encoding="utf-8")
-    assert "## インストール" in text and "## できること" in text
-    assert "[チュートリアル](docs/USAGE.md)" in text          # the steps live in the tutorial
+    assert "## Installation" in text and "## Features" in text
+    assert "[tutorial](docs/USAGE.md)" in text          # the steps live in the tutorial
     assert text.count("![") >= 4                              # shown with pictures
     assert len(text.splitlines()) < 150
     usage = (REPO / "docs" / "USAGE.md").read_text(encoding="utf-8")
     for command in ("--list-samples", "--sample water_generated", "adit-analyze"):
         assert command in usage, command
-    assert usage.count("![") >= 10, "チュートリアルは画面の画像で説明する"
+    assert usage.count("![") >= 10, "the tutorial explains with screenshots"
     install = REPO / "docs" / "INSTALL.md"
-    assert install.is_file() and "実行ファイルを使う" in install.read_text(encoding="utf-8")
+    assert install.is_file() and "Using the executables" in install.read_text(encoding="utf-8")
 
 
 def test_the_web_form_says_the_detailed_fields_are_optional():

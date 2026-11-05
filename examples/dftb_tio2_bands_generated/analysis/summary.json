@@ -82,7 +82,7 @@
         ],
         "source": "detailed.out:13",
         "unit": "e",
-        "note": "DFTB+ の Mulliken 電荷 (価電子の数 − Mulliken の電子数。負なら電子が多い)",
+        "note": "DFTB+ Mulliken charges (valence electrons minus Mulliken population; negative means excess electrons)",
         "sum": 1.0000000161269895e-08,
         "atoms": [
           "Ti1",
@@ -128,7 +128,7 @@
         "direct_gap_ev": 3.3686999999999996,
         "direct_gap_kpoint_index": 24,
         "direct_gap_label": "",
-        "note": "VBM と CBM が同じ k 点にあるかどうかを「直接」と書いています (機械的な事実)。k 点は与えた経路の中での番号で、経路の外により低い CBM があるかどうかは分かりません。",
+        "note": "'direct' only records whether the VBM and CBM are at the same k-point. The k-point index refers to the given path; whether a lower CBM exists outside the path is unknown.",
         "vbm_kpoint_frac": [
           0.5,
           0.5,
@@ -177,15 +177,15 @@
         }
       ],
       "spglib": "2.7.0",
-      "structure": "最終構造",
-      "angle_tolerance": "spglib の既定"
+      "structure": "final structure",
+      "angle_tolerance": "spglib default"
     }
   },
   "figures": {
     "bands": "examples/dftb_tio2_bands_generated/analysis/bands.png"
   },
   "notes": [
-    "バンドギャップ 3.260 eV: 価電子帯の頂上は Z (k 点 28)、伝導帯の底は G (k 点 1)。別の k 点です (間接遷移)。同じ k 点で最小の間隔は 3.369 eV。与えた経路の中での話で、経路の外はこの計算では分かりません",
-    "有効質量 正孔 (価電子帯の頂上): m*/m_e = -1.735 (5 点、幅 0.5379 1/Å、決定係数 0.9826)。経路に沿った向きの値で、テンソルではありません"
+    "band gap 3.260 eV: the valence-band maximum is at Z (k-point 28), the conduction-band minimum at G (k-point 1) (different k-points: indirect); the smallest gap at a single k-point is 3.369 eV. This is within the path you gave; nothing is known about k-points outside it",
+    "effective mass for holes (valence-band maximum): m*/m_e = -1.735 (5 points, width 0.5379 1/Å, R^2 0.9826); this is along the path direction, not a tensor"
   ]
 }

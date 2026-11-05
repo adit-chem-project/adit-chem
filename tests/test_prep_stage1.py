@@ -29,7 +29,7 @@ REPO = Path(__file__).resolve().parent.parent
 EX = REPO / "examples"
 REAL_SK = REPO / "slakos"
 REAL_PSEUDO = REPO / "pseudo"
-need_sk = pytest.mark.skipif(not (REAL_SK / "mio-1-1").is_dir(), reason="slakos/mio-1-1 が無い (リポジトリに入れていない)")
+need_sk = pytest.mark.skipif(not (REAL_SK / "mio-1-1").is_dir(), reason="slakos/mio-1-1 is missing (not in the repository)")
 
 
 def errors(spec, cfg) -> list:
@@ -150,7 +150,7 @@ def test_qe_starting_magnetization_and_hubbard(cfg):
         assert any(e.location == where for e in errors(si_spec(method=bad), cfg))
 
 
-@pytest.mark.skipif(not (REAL_PSEUDO / "pslibrary").is_dir(), reason="pseudo/pslibrary が無い")
+@pytest.mark.skipif(not (REAL_PSEUDO / "pslibrary").is_dir(), reason="pseudo/pslibrary is missing")
 def test_qe_hubbard_shell_must_be_in_upf(sk_root):
     c = cfg_for(sk_root)
     c.pseudo_root = str(REAL_PSEUDO)
@@ -319,7 +319,7 @@ def test_stage_errors(cfg):
         parse_stages({"stages": [{"structure": {}}]})
 
 
-@pytest.mark.skipif(os.name == "nt", reason="handoff.py を素の PATH で実行する試験 (走り先は Linux)")
+@pytest.mark.skipif(os.name == "nt", reason="runs handoff.py with a bare PATH (the target is Linux)")
 def test_handoff_script_on_real_outputs(tmp_path):
     here = tmp_path / "here"
     here.mkdir()
@@ -385,7 +385,7 @@ def test_provenance_in_spec_and_readme(cfg, tmp_path):
     assert orca["code_version_file"] is None
 
 
-@pytest.mark.skipif(os.name == "nt", reason="sh で実行する試験 (走り先は Linux)")
+@pytest.mark.skipif(os.name == "nt", reason="runs under sh (the target is Linux)")
 def test_version_trap_keeps_exit_status(tmp_path):
     body = version_trap(("output.log", "xtb version")) + "\necho '   * xtb version 6.7.1 (edcfbbe)' > output.log\nfalse\n"
     (tmp_path / "s.sh").write_text("#!/bin/sh\n" + body, encoding="utf-8")

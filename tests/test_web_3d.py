@@ -72,7 +72,7 @@ def test_the_page_shows_the_viewer_and_says_what_happens_without_javascript(tmp_
                                "task_type": "single_point", "sk_set": "mio-1-1",
                                "output_dir": str(tmp_path / "out")})
     if err:
-        pytest.skip(f"この環境では構造を組み立てられない: {err}")
+        pytest.skip(f"cannot build the structure here: {err}")
     scene_json, note, periodic = app.scene()
     assert json.loads(scene_json)["n_atoms"] == 3
     assert "原子 3 個" in note or "3 atoms" in note

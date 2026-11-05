@@ -7,7 +7,7 @@ from adit.samples import copy_sample, examples_dir, list_samples
 from tests.conftest import cfg_for
 
 
-@pytest.mark.skipif(examples_dir() is None, reason="examples/ が無い (pip で入れた配布物)")
+@pytest.mark.skipif(examples_dir() is None, reason="no examples/ (installed with pip)")
 def test_samples_are_listed():
     samples = list_samples()
     assert samples and all(s.code and s.task and s.formula for s in samples)
@@ -17,7 +17,7 @@ def test_samples_are_listed():
     assert "dftbplus" in line
 
 
-@pytest.mark.skipif(examples_dir() is None, reason="examples/ が無い")
+@pytest.mark.skipif(examples_dir() is None, reason="no examples/")
 def test_copy_sample_writes_a_spec(tmp_path):
     out = copy_sample("water_generated", tmp_path / "mine.json")
     assert out.is_file()
@@ -30,7 +30,7 @@ def test_copy_sample_writes_a_spec(tmp_path):
         copy_sample("no_such_sample", tmp_path / "x.json")
 
 
-@pytest.mark.skipif(examples_dir() is None, reason="examples/ が無い")
+@pytest.mark.skipif(examples_dir() is None, reason="no examples/")
 def test_cli_lists_and_copies(tmp_path, capsys):
     assert gen_main(["--list-samples"]) == 0
     assert "water_generated" in capsys.readouterr().out

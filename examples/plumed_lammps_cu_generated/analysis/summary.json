@@ -2641,7 +2641,7 @@
           }
         }
       },
-      "source": "PLUMED が書いた COLVAR 形式のファイル (#! FIELDS の列)"
+      "source": "files in PLUMED COLVAR format (columns of the #! FIELDS line)"
     },
     "trajectory": {
       "source": "traj.lammpstrj",
@@ -2677,8 +2677,8 @@
         }
       ],
       "spglib": "2.7.0",
-      "structure": "最終構造",
-      "angle_tolerance": "spglib の既定"
+      "structure": "final structure",
+      "angle_tolerance": "spglib default"
     }
   },
   "figures": {
@@ -2687,8 +2687,8 @@
     "pressure": "examples/plumed_lammps_cu_generated/analysis/pressure.png"
   },
   "notes": [
-    "エネルギーは log.lammps:40 の thermo の表の TotEng (metal 単位から eV に換算)",
-    "PLUMED の出力を読みました (COLVAR)。列の意味は利用者の plumed.dat が決めるので、ADIT は値を並べるだけです。",
-    "MD の温度: 目標 300 K、平均 202 K"
+    "energy is TotEng of the thermo table in log.lammps:40 (converted from metal units to eV)",
+    "PLUMED output was read (COLVAR); the meaning of each column comes from your plumed.dat, so ADIT only lists the values.",
+    "MD temperature: target 300 K, mean 202 K"
   ]
 }

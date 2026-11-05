@@ -116,11 +116,11 @@
     "inputs": [
       {
         "name": "input.dat",
-        "sha256": "98b7afa08115eae07ff8f662b669ce1fe0663f7f2062e4783292bacb5eb7fb18"
+        "sha256": "4f538dc155576957c1fc015ae2229f860ed58f09565c03969513d0f071af750f"
       },
       {
         "name": "submit.sh",
-        "sha256": "c5e6c8071af6cf8181c4b7455f5314f2d8f50e730553e4893121d1c3b0a7f7dc"
+        "sha256": "e4a99139f958dfa82737528027fda2d02c40c25342edaf986ced0e9846c7c293"
       }
     ],
     "code_version_file": "code_version.txt"

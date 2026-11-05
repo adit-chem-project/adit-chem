@@ -161,11 +161,11 @@
       },
       {
         "name": "submit.sh",
-        "sha256": "700febaa1e72bab0c405cf278438ac95325c6d80cb426aeb1a50470dce4ec370"
+        "sha256": "a55c6927f7825649ee1d5a860b4588f708c1adbecf0d8edb5b204f0bc11d7a4e"
       },
       {
         "name": "xtb.inp",
-        "sha256": "33099224982d8aca4584480deb0d304f8c4c1da69eca78944bb2479806bb3fd8"
+        "sha256": "4310801ebb708dc951f533fbdb6d0ed81cdfa172f9eaafb08144985e0f47effa"
       }
     ],
     "code_version_file": "code_version.txt"

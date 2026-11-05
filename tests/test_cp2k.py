@@ -238,7 +238,7 @@ def test_ot_and_surface_dipole_are_written_only_when_selected(cfg_cp2k):
 CP2K = shutil.which("cp2k.psmp") or ""
 
 
-@pytest.mark.skipif(not (CP2K and Cp2kData.discover().found), reason="cp2k.psmp か data ディレクトリが無い")
+@pytest.mark.skipif(not (CP2K and Cp2kData.discover().found), reason="cp2k.psmp or its data directory is missing")
 def test_cp2k_real_run(sk_root, tmp_path):
     from ase.build import molecule
     cfg = cfg_for(sk_root)

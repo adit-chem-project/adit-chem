@@ -13,7 +13,7 @@
         "H": 2
       },
       "energy_ev": -488.6238,
-      "energy_source": "output.log の Total Energy (MD では md.out の Total MD Energy)",
+      "energy_source": "Total Energy in output.log (Total MD Energy in md.out for MD)",
       "code_g_ev": null,
       "code_g_label": "",
       "note": ""
@@ -29,7 +29,7 @@
         "C": 8
       },
       "energy_ev": -377.7017,
-      "energy_source": "output.log の Total Energy (MD では md.out の Total MD Energy)",
+      "energy_source": "Total Energy in output.log (Total MD Energy in md.out for MD)",
       "code_g_ev": null,
       "code_g_label": "",
       "note": ""
@@ -46,7 +46,7 @@
         "H": 2
       },
       "energy_ev": -110.9604,
-      "energy_source": "output.log の Total Energy (MD では md.out の Total MD Energy)",
+      "energy_source": "Total Energy in output.log (Total MD Energy in md.out for MD)",
       "code_g_ev": null,
       "code_g_label": "",
       "note": ""
@@ -120,5 +120,5 @@
     "kj_mol_per_ev": 96.485332123,
     "kcal_mol_per_ev": 23.060547830619
   },
-  "rule": "違う = その項目を持つ計算のあいだで値が 2 種類以上。一部だけ = その項目を持たない計算がある"
+  "rule": "differing = two or more distinct values among runs that have the setting; partial = some runs do not have the setting"
 }

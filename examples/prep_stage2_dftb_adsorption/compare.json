@@ -29,7 +29,7 @@
       "periodic": true,
       "charge": 0,
       "multiplicity": 1,
-      "structure_source": "<作業ディレクトリ>/ads_inputs/slab.extxyz",
+      "structure_source": "<work directory>/ads_inputs/slab.extxyz",
       "kpoints_mesh": [
         4,
         4,
@@ -45,10 +45,10 @@
       "periodic": false,
       "charge": 0,
       "multiplicity": 1,
-      "structure_source": "<作業ディレクトリ>/ads_inputs/h2o.xyz",
+      "structure_source": "<work directory>/ads_inputs/h2o.xyz",
       "kpoints_mesh": null,
       "changed_for_this_run": [
-        "非周期なので k 点を使いません"
+        "non-periodic, so no k-points"
       ]
     },
     {
@@ -59,7 +59,7 @@
       "periodic": true,
       "charge": 0,
       "multiplicity": 1,
-      "structure_source": "<作業ディレクトリ>/ads_inputs/adsorbed.extxyz",
+      "structure_source": "<work directory>/ads_inputs/adsorbed.extxyz",
       "kpoints_mesh": [
         4,
         4,
@@ -165,5 +165,5 @@
       "charge_imbalance": 0.0
     }
   ],
-  "rule": "違う = その項目を持つ計算のあいだで値が 2 種類以上。一部だけ = その項目を持たない計算がある。intended = 違えるのが目的の項目 (溶媒和の上書き)"
+  "rule": "differing = two or more distinct values among runs that have the setting; partial = some runs lack it; intended = overridden on purpose (solvation)"
 }

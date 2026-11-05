@@ -104,7 +104,7 @@ def test_skset_reads_shells(sk_root):
     assert set(discover_sets(sk_root)) == {"fake-1-0", "nodocs-0-1"}
 
 
-@pytest.mark.skipif(not (REAL_SK_ROOT / "mio-1-1").is_dir(), reason="実物の mio-1-1 が無い")
+@pytest.mark.skipif(not (REAL_SK_ROOT / "mio-1-1").is_dir(), reason="the real mio-1-1 set is missing")
 def test_real_mio_set():
     s = SKSet.from_dir(REAL_SK_ROOT / "mio-1-1")
     assert s.elements == ["C", "H", "N", "O", "P", "S"]

@@ -26,7 +26,7 @@ def _option_names() -> set[str]:
 def test_every_option_is_reachable_from_the_fields():
     source = Path(AF.__file__).read_text(encoding="utf-8")
     unreachable = [name for name in _option_names() if f'"{name}"' not in source]
-    assert not unreachable, f"画面から指定できない解析の条件: {unreachable}"
+    assert not unreachable, f"analysis options the screen cannot set: {unreachable}"
 
 
 def test_desktop_panel_has_a_widget_for_every_field():
@@ -41,7 +41,7 @@ def test_desktop_panel_has_a_widget_for_every_field():
     skip = {"msd_fit", "rmax_label", "sigma_label", "skip_label"}
     missing = [k for k in AF.LABELS
                if k not in fields and k not in skip and not k.startswith(("rx_", "compare", "open_", "more", "export"))]
-    assert not missing, f"デスクトップ版に欄が無い: {missing}"
+    assert not missing, f"fields missing from the desktop app: {missing}"
 
 
 def test_web_form_has_every_field():
@@ -50,7 +50,7 @@ def test_web_form_has_every_field():
             "open_export", "export", "msd_fit",
             "rmax_label", "sigma_label", "skip_label"}
     missing = [k for k in AF.LABELS if k not in skip and f'"{k}"' not in html]
-    assert not missing, f"ウェブ版に欄が無い: {missing}"
+    assert not missing, f"fields missing from the web app: {missing}"
 
 
 def test_fields_round_trip_through_options():
@@ -162,5 +162,5 @@ def test_the_macos_bundle_is_prepared():
     workflow = (repo / ".github" / "workflows" / "macos-app.yml").read_text(encoding="utf-8")
     assert "macos-14" in workflow and "macos-13" not in workflow  # no Intel build: the runner is gone
     doc = (repo / "docs" / "INSTALL.md").read_text(encoding="utf-8")
-    assert "署名" in doc and "公証" in doc
-    assert "実機" in doc          # the document says macOS was not checked on a real machine
+    assert "code signing" in doc.lower() and "notarization" in doc.lower()
+    assert "real machine" in doc          # the document says macOS was not checked on a real machine

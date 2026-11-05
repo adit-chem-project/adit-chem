@@ -1,6 +1,6 @@
-{#- 組み立て手順 (index.html の構造の群から include)。JS は使わない: 手順の並びは hidden の recipe_steps (JSON)、
-    追加・上へ・下へ・削除・濃度から個数・作る はボタンの送信 (POST /recipe、name="recipe_action")。
-    欄の文言はデスクトップ版 gui/panels/recipe_editor.py と同じ (日本語は help.py の鍵、英語は gui/i18n.py の _EN から写した) -#}
+{#- Recipe (included from the structure group in index.html). No JS: the step list is the hidden recipe_steps (JSON);
+    add, up, down, delete, count from concentration and build are submit buttons (POST /recipe, name="recipe_action").
+    Field text matches the desktop gui/panels/recipe_editor.py (Japanese is the help.py key; English comes from _EN in gui/i18n.py) -#}
 {% macro rtxt(name, cls="narrow", ph="", aria="") -%}<input type="text" name="{{ name }}" id="{{ name }}" class="{{ cls }}" value="{{ form.get(name, '') }}"{% if ph %} placeholder="{{ ph }}"{% endif %}{% if aria %} aria-label="{{ aria }}"{% endif %}>{%- endmacro %}
 {% macro rsel(name, options, cls="", aria="") -%}<select name="{{ name }}" id="{{ name }}"{% if cls %} class="{{ cls }}"{% endif %}{% if aria %} aria-label="{{ aria }}"{% endif %}>
 {%- for k, v in options %}<option value="{{ k }}"{% if k|string == form.get(name, '')|string %} selected{% endif %}>{{ v }}</option>{% endfor -%}

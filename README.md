@@ -1,40 +1,40 @@
 # ADIT
 
-**Atomistic Design and Interpretation Toolkit** — 計算化学の計算を、**構造づくりから解析まで
-画面の操作で進められる**デスクトップアプリです。
+**Atomistic Design and Interpretation Toolkit** — a desktop app that takes computational chemistry
+calculations **from building the structure to analyzing the results, all through the GUI**.
 
 [![tests](https://github.com/adit-chem-project/adit-chem/actions/workflows/tests.yml/badge.svg)](https://github.com/adit-chem-project/adit-chem/actions/workflows/tests.yml)
 [![PyPI](https://img.shields.io/pypi/v/adit-chem?color=2f7ae5)](https://pypi.org/project/adit-chem/)
 [![Python](https://img.shields.io/pypi/pyversions/adit-chem)](https://pypi.org/project/adit-chem/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-![ADIT の画面](docs/images/desktop_light.png)
+![The ADIT window](docs/images/desktop_light.png)
 
-ADIT を使うと、次のことが 1 つのアプリでできます。
+With ADIT, you can do all of the following in one app.
 
-- **構造を作れます** — 分子、結晶、表面、溶液、ナノ粒子、ポリマー。描いて作ることもできます
-- **計算コード (DFTB+ や VASP などの計算プログラム) と条件を選ぶだけで、実行に必要なファイル一式が自動で作られます**
-- **ターミナルがアプリの中にあります** — 計算機に `ssh` でつなぎ、そのまま投入できます
-- **結果を解析して、図と表にできます** — 論文やスライドにそのまま貼れます
+- **Build structures** — molecules, crystals, surfaces, solutions, nanoparticles, polymers. You can also draw them
+- **Choose a calculation code (a program such as DFTB+ or VASP) and the settings, and the full set of files for the run is generated automatically**
+- **Use the terminal built into the app** — connect to a compute server with `ssh` and submit from there
+- **Analyze results into figures and tables** — ready to paste into papers and slides
 
-計算機実験に必要な作業がこれ 1 本でそろうので、**いくつものソフトを行き来せずに済みます。**
+Everything a computational experiment needs is in this one app, so **you don't have to jump between several programs.**
 
-プログラムの操作はまだ得意ではない、という人に使ってほしいアプリです。
-学部 4 年で研究室に入ったばかりで、コマンドを打つのもこれからという段階でも、
-画面を見ながら計算の準備と解析を進められます
-(計算機に投げるときだけは、ターミナルでコマンドを打ちます。その練習にもなります)。
+ADIT is meant for people who are not yet comfortable with programming tools.
+Even a fourth-year undergraduate who has just joined a lab and has yet to type a command
+can prepare and analyze calculations by following the screen.
+(Only submitting to the compute server takes typed commands in the terminal, which is good practice too.)
 
 ---
 
-## インストール
+## Installation
 
-**Windows** — [Releases](https://github.com/adit-chem-project/adit-chem/releases) から
-`ADIT-windows-x64.zip` をダウンロードし、展開して `ADIT.exe` を起動します。
-初回に SmartScreen の警告が出たら「詳細情報」→「実行」を選んでください。
+**Windows** — Download `ADIT-windows-x64.zip` from [Releases](https://github.com/adit-chem-project/adit-chem/releases),
+extract it, and start `ADIT.exe`.
+If SmartScreen warns you on first launch, choose "More info" → "Run anyway".
 
-**macOS** — 同じ場所から `ADIT-arm64.zip` を落とし、初回だけ Finder で右クリック →「開く」を選びます。
+**macOS** — Download `ADIT-arm64.zip` from the same place. The first time only, right-click the app in Finder and choose "Open".
 
-**Linux、または自分で環境を管理したい場合**
+**Linux, or if you want to manage your own environment**
 
 ```bash
 git clone https://github.com/adit-chem-project/adit-chem.git
@@ -42,90 +42,92 @@ cd adit-chem && pip install -e ".[gui,smiles,analysis]"
 adit
 ```
 
-計算コード (DFTB+、VASP、Quantum ESPRESSO ほか) と、そのパラメータ (Slater-Koster、擬ポテンシャル、POTCAR) は
-別途用意してください。詳しい手順は [各 OS のインストール方法](docs/INSTALL.md) にあります。
+The interface starts in English. To switch to Japanese or between light and dark, use **Settings** in the ribbon. The change applies at once. See the [settings file](docs/SETTINGS.md) for `language` and `theme`.
 
-**使い方は [チュートリアル](docs/USAGE.md) にあります。**水の構造最適化を、画面の写真つきで最初から最後まで追えます。
+You need to get the calculation codes (DFTB+, VASP, Quantum ESPRESSO and others) and their parameters (Slater-Koster, pseudopotentials, POTCAR)
+separately. The detailed steps are in [Installation for each OS](docs/INSTALL.md).
 
-## できること
+**To learn how to use ADIT, see the [tutorial](docs/USAGE.md).** It follows a water geometry optimization from start to finish, with screenshots.
 
-### 構造を作る
+## Features
 
-分子 (プリセット・SMILES・Draw で手描き)、バルク結晶、表面スラブ、溶液・混合物、
-2 次元材料・ナノチューブ、ナノ粒子、ポリマー。作った構造は 3D でマウスで回して確かめられます。
+### Building structures
 
-| ナノ粒子 | 2 次元材料 |
+Molecules (from presets, from SMILES, or hand-drawn with Draw), bulk crystals, surface slabs, solutions and mixtures,
+2D materials and nanotubes, nanoparticles, polymers. You can rotate the result in 3D with the mouse to check it.
+
+| Nanoparticle | 2D material |
 |---|---|
-| ![ナノ粒子](docs/images/showcase/nanoparticle.png) | ![2 次元材料](docs/images/showcase/2d_material.png) |
+| ![Nanoparticle](docs/images/showcase/nanoparticle.png) | ![2D material](docs/images/showcase/2d_material.png) |
 
-面で切る・溶液の層を足す・原子を抜く・吸着させる、といった加工を手順として重ねられるので、
-電極と電解質の界面のような構造も画面で組み立てられます。
+You can stack editing steps such as cutting along a plane, adding a solution layer, removing atoms, and adsorbing molecules,
+so even a structure like an electrode-electrolyte interface can be built on screen.
 
-### 入力ファイルを作る
+### Creating input files
 
-21 の計算コードに対応しています。画面のプルダウンから選べるのは 9 つ (DFTB+、VASP、xtb、Quantum ESPRESSO、ORCA、CP2K、LAMMPS、GROMACS、機械学習ポテンシャル) で、
-残りは `spec.json` に条件を書いて `adit-gen` で生成します ([対応ソフトウェア](docs/SOFTWARE.md))。
+ADIT supports 21 calculation codes. Nine can be chosen from the dropdown on screen (DFTB+, VASP, xtb, Quantum ESPRESSO, ORCA, CP2K, LAMMPS, GROMACS, and machine-learning potentials).
+For the rest, write the settings in `spec.json` and generate with `adit-gen` ([supported software](docs/SOFTWARE.md)).
 
-![対応表](docs/images/support_matrix.png)
+![Support matrix](docs/images/support_matrix.png)
 
-書き出されるのは、入力ファイル、実行用の `submit.sh`、実行方法の手引き `README.txt`、
-条件を保存した `spec.json` (読み込めば同じ入力を作り直せます)、解析用の `analyze.py` です。
-クラスタ向けに作ると、転送と投入のコマンドを書いた `transfer_and_submit.sh` も付きます。
+ADIT writes the input files, `submit.sh` for running them, `README.txt` with instructions for running,
+`spec.json` with the saved settings (load it to recreate the same input), and `analyze.py` for analysis.
+For a cluster, it also writes `transfer_and_submit.sh` with the transfer and submit commands.
 
-### ファイルを扱う・ターミナルを使う
+### Working with files and the terminal
 
-**ワークスペース** タブに、ファイルのツリー・エディタ・ターミナルがあります。入力ファイルの手直し、
-ファイルの整理、`ssh` でのクラスタ接続まで、画面を切り替えずに行えます。
+The **Workspace** tab has a file tree, an editor and a terminal. You can touch up input files,
+organize files, and connect to a cluster with `ssh`, all without switching screens.
 
-![ワークスペース](docs/images/tutorial/19_workspace.png)
+![Workspace](docs/images/tutorial/19_workspace.png)
 
-### 結果を解析する
+### Analyzing results
 
-エネルギー・温度、RDF、MSD と拡散係数、状態密度、バンド図、振動数とスペクトル (赤外・ラマン)。
-配位数、構造因子 S(q)、水素結合、Voronoi、溶媒接触表面積、自由エネルギー面など、60 以上の解析手法に対応しています。
+Energy and temperature, RDF, MSD and diffusion coefficients, density of states, band structures, frequencies and spectra (IR and Raman).
+Coordination numbers, the structure factor S(q), hydrogen bonds, Voronoi, solvent-accessible surface area, free-energy surfaces and more: over 60 analysis methods in all.
 
-![解析の図](docs/images/analysis_figures.png)
+![Analysis figures](docs/images/analysis_figures.png)
 
-解析の**要約**には、値ごとに「その値を読み取ったファイル名と行番号」が付きます
-(画面の解析タブと、書き出される `analysis/summary.txt` の両方)。転記した数字を後から追えます。
+In the analysis **summary**, each value comes with the name of the file and the line number it was read from
+(both in the Analysis tab and in the exported `analysis/summary.txt`). You can trace any number you copied later on.
 
 ```
-原子の電荷 (Mulliken、detailed.out:18、単位 e): O1 -0.613, H2 +0.282, H3 +0.331 (合計 +0.0000)。表は analysis/charges_Mulliken.csv
+atomic charges (Mulliken, detailed.out:18, in e): O1 -0.613, H2 +0.282, H3 +0.331 (sum +0.0000); table in analysis/charges_Mulliken.csv
 ```
 
-### 図を論文やスライドへ
+### Figures for papers and slides
 
-構造式・3D 表示・解析の図を、SVG・PNG・MOL で書き出せます。
-画像をクリップボードにコピーして、例えば Word にそのまま貼ることもできます。
-線の色・目盛りの向き・グリッド線・枠を指定して保存できるので、投稿先の指定にも合わせられます。
+Structural formulas, 3D views and analysis figures can be exported as SVG, PNG and MOL.
+You can also copy an image to the clipboard and paste it straight into Word, for example.
+Line colors, tick direction, grid lines and frames can be set and saved, so you can also meet a journal's requirements.
 
-### 計算の記録を残す
+### Keeping a record of calculations
 
-**計算の条件と結果を、そのまま記録として残せます。**次のようなときに役立ちます
-(書き出されるのは記録だけで、記録が無い項目は「未記録」と書かれます)。
+**You can keep the settings and results of a calculation as a record, exactly as they are.** This helps in situations like these
+(only what is on record is written out; items with no record are marked "Not on record").
 
-| したいこと | 画面の項目 | 出てくるもの |
+| What you want to do | Item on screen | What you get |
 |---|---|---|
-| 論文の「計算方法」を書きたい | 方法の節 (Markdown) | 計算コードとそのバージョン、汎関数、基底関数、k 点 |
-| 条件を変えた計算をまとめて示したい | 条件の表 (CSV) | 1 計算 1 行の表。温度を変えた 5 本なら 5 行 |
-| 結果を一覧で確かめたい | 結果の表 (CSV) | 最終エネルギー、平均温度、フレーム数、正常終了したか |
-| 計算一式を第三者へ渡したい | 再現パッケージ (.zip) | 入力ファイル + **計算コードのバージョン** + **擬ポテンシャルなどの実体** + SHA-256 |
-| 入力ファイルを手で直したか確かめたい | 入力のハッシュを照合する | `spec.json` に記録した SHA-256 と実際のファイルの食い違い (同じ / 書き換え / ありません) |
+| Write the "Methods" section of a paper | Methods section (Markdown) | Calculation code and its version, functional, basis set, k-points |
+| Show calculations with different settings together | Conditions table (CSV) | One row per calculation. Five runs at different temperatures give 5 rows |
+| Check results at a glance | Results table (CSV) | Final energy, average temperature, frame count, whether the run ended normally |
+| Hand a full set of calculations to someone else | Reproducibility bundle (.zip) | Input files + **calculation code versions** + **the actual pseudopotential and similar files** + SHA-256 |
+| Check whether input files were edited by hand | Verify the input fingerprints | Differences between the SHA-256 recorded in `spec.json` and the actual files (same / changed / missing) |
 
-詳しくは [計算条件の報告](docs/REPORT.md)。
+See [Reporting calculation settings](docs/REPORT.md) for details.
 
-## ドキュメント
+## Documentation
 
-| 文書 | 内容 |
+| Document | Contents |
 |---|---|
-| [各 OS のインストール方法](docs/INSTALL.md) | Windows / macOS / Linux。実行ファイルの作り方も |
-| [チュートリアル](docs/USAGE.md) | 画像つき。構造づくり、入力ファイルの作成、実行、解析 |
-| [画面の説明](docs/SCREENS.md) | それぞれの欄が何を指定するか |
-| [対応ソフトウェア](docs/SOFTWARE.md) | 計算コードごとに、対応している計算とその範囲 |
-| [環境設定](docs/SETTINGS.md) | 計算コードの場所、クラスタのプロファイル |
-| [解析の詳細](docs/ANALYSIS.md) | 解析手法ごとの中身と条件 |
-| [重い解析](docs/HEAVY_ANALYSIS.md) | 大きな軌跡を計算機で処理する |
-| [Python API](docs/API.md) | ライブラリとして使う |
+| [Installation for each OS](docs/INSTALL.md) | Windows / macOS / Linux. Also how to build the executables |
+| [Tutorial](docs/USAGE.md) | With images. Building structures, creating input files, running, analysis |
+| [Screen guide](docs/SCREENS.md) | What each field specifies |
+| [Supported software](docs/SOFTWARE.md) | For each calculation code, the supported calculations and their scope |
+| [Settings](docs/SETTINGS.md) | Locations of calculation codes, cluster profiles |
+| [Analysis details](docs/ANALYSIS.md) | What each analysis method does and its conditions |
+| [Heavy analysis](docs/HEAVY_ANALYSIS.md) | Processing large trajectories on a compute server |
+| [Python API](docs/API.md) | Using ADIT as a library |
 
 ## License
 

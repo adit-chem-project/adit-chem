@@ -1,25 +1,25 @@
-# examples/vasp_h2o_generated —— 生成器が作った VASP の入力 (wiki の H2O 例に相当)
+# examples/vasp_h2o_generated —— VASP input made by the generator (equivalent to the wiki example H2O)
 
-`examples/vasp_h2o`(wiki の原文)と同じ設定を Spec に写し、adit の生成器 (`codes/vasp.py`) で作ったもの。
-**POTCAR は入っていない。**`potcar.spec` と `make_potcar.sh` が代わりに入る。
-この機械には POTCAR 庫が無いので、TITEL / ZVAL は「未確認」。クラスタでの実行は人が行う (未実施)。
+The same settings as `examples/vasp_h2o` (the wiki original) copied into a Spec and generated with the ADIT generator (`codes/vasp.py`).
+**POTCAR is not included.** `potcar.spec` and `make_potcar.sh` are included instead.
+This machine has no POTCAR library, so TITEL / ZVAL are "unverified". A person runs it on a cluster (not done).
 
-## 原文との差分と理由
+## Differences from the original, and why
 
-| 項目 | wiki の原文 | 生成したファイル | 理由 |
+| Item | Wiki original | Generated files | Reason |
 |---|---|---|---|
-| POSCAR の形式 | 元素名の行が無い旧形式、座標にスケール 0.52918 | 元素名の行あり (VASP 5 形式)、スケール 1 でセルと座標に 0.52918 を掛けた値 | ASE は旧形式を読めない。数値は同じ |
-| 座標の書き方 | cart (直交) | Direct (分数) | ASE の書き出しの既定。等価 |
-| Selective dynamics | O は F F F、H は T T F (z を止める) | O は F F F、H は T T T | v1 の固定は原子単位 (fixed_atoms)。軸ごとの固定は未対応 |
-| ENMAX = 400 | 旧キー | ENCUT = 400 | 現在のキー (wiki の ENCUT ページ)。値は同じ |
-| IBRION = 1, NFREE = 2 | DIIS | IBRION = 2 (共役勾配) | 生成器の既定。IBRION は extra_incar で上書きできる |
-| ALGO / EDIFF / NELM / LREAL / ISPIN | 書かない (VASP の既定) | 明示 (Normal / 1e-4 / 60 / Auto / 1) | Spec の値を必ず書く方針 |
-| ISIF | 書かない (既定 2) | ISIF = 2 | 同上 |
-| KPOINTS | Monkhorst Pack 1 1 1 | Gamma 1 1 1 | Γ 点のみは Gamma 指定 (同じ点) |
-| POTCAR | (wiki は前提として持っている) | 無し。potcar.spec (O → O、H → H) と make_potcar.sh | 配布できないため |
+| POSCAR format | Old format without an element-name line, coordinates scaled by 0.52918 | Has an element-name line (VASP 5 format), scale 1 with cell and coordinates multiplied by 0.52918 | ASE cannot read the old format. The numbers are the same |
+| Coordinate style | cart (Cartesian) | Direct (fractional) | ASE writer default. Equivalent |
+| Selective dynamics | O is F F F, H is T T F (z fixed) | O is F F F, H is T T T | v1 fixes whole atoms (fixed_atoms). Per-axis constraints are not supported |
+| ENMAX = 400 | Old key | ENCUT = 400 | The current key (ENCUT page on the wiki). Same value |
+| IBRION = 1, NFREE = 2 | DIIS | IBRION = 2 (conjugate gradient) | Generator default. IBRION can be overridden with extra_incar |
+| ALGO / EDIFF / NELM / LREAL / ISPIN | Not written (VASP defaults) | Explicit (Normal / 1e-4 / 60 / Auto / 1) | Policy: always write the Spec values |
+| ISIF | Not written (default 2) | ISIF = 2 | Same as above |
+| KPOINTS | Monkhorst Pack 1 1 1 | Gamma 1 1 1 | Γ point only is given as Gamma (the same point) |
+| POTCAR | (the wiki assumes you have it) | None. potcar.spec (O → O, H → H) and make_potcar.sh | Cannot be distributed |
 
-## クラスタでの実行 (2026-09-10、VASP 6.4.2、人が投入)
+## Run on a cluster (2026-09-10, VASP 6.4.2, submitted by a person)
 
-生成したファイルをそのまま転送し、`make_potcar.sh` が POTCAR (`PAW_PBE O 08Apr2002`、`PAW_PBE H 15Jun2001`) を組み立てて実行。
-5 ステップで「reached required accuracy」(収束)。最終エネルギー F = -14.2226 eV。警告・エラー無し。
-wiki の VASP 5 世代の書き方 (ENMAX) を ENCUT に直したものが 6.4.2 で通った。CPU 時間 5.4 秒 (32 コア)。
+The generated files were transferred as is, and `make_potcar.sh` assembled POTCAR (`PAW_PBE O 08Apr2002`, `PAW_PBE H 15Jun2001`) and ran.
+"reached required accuracy" (converged) in 5 steps. Final energy F = -14.2226 eV. No warnings or errors.
+The wiki's VASP 5 style (ENMAX) changed to ENCUT worked on 6.4.2. CPU time 5.4 s (32 cores).

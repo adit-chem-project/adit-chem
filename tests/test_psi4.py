@@ -136,7 +136,7 @@ def _run(spec, sk_root, out):
     return load_run(out)
 
 
-@pytest.mark.skipif(not PSI4, reason="psi4 が PATH にない")
+@pytest.mark.skipif(not PSI4, reason="psi4 is not on PATH")
 def test_psi4_real_run_single_point(sk_root, tmp_path):
     run = _run(spec_for(), sk_root, tmp_path / "sp")
     assert run.energies_ev and run.energies_ev[-1] == pytest.approx(-76.026 * 27.211386245988, rel=1e-4)
@@ -145,7 +145,7 @@ def test_psi4_real_run_single_point(sk_root, tmp_path):
     assert "adit-psi4: psi4" in (tmp_path / "sp" / "code_version.txt").read_text(encoding="utf-8")
 
 
-@pytest.mark.skipif(not PSI4, reason="psi4 が PATH にない")
+@pytest.mark.skipif(not PSI4, reason="psi4 is not on PATH")
 def test_psi4_real_run_optimization(sk_root, tmp_path):
     out = tmp_path / "opt"
     run = _run(spec_for(Task(type="geometry_optimization", max_steps=20)), sk_root, out)
@@ -156,7 +156,7 @@ def test_psi4_real_run_optimization(sk_root, tmp_path):
     assert summary.converged is True and summary.geometry_steps == len(run.energies_ev)
 
 
-@pytest.mark.skipif(not PSI4, reason="psi4 が PATH にない")
+@pytest.mark.skipif(not PSI4, reason="psi4 is not on PATH")
 def test_psi4_real_run_vibrations(sk_root, tmp_path):
     out = tmp_path / "vib"
     run = _run(spec_for(Task(type="vibrations")), sk_root, out)

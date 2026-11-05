@@ -1,71 +1,71 @@
 # ------------------------------------------------------------------------------
-# 水分子の構造最適化 (公式チュートリアル "First calculation with DFTB+" の再現)
+# Geometry optimization of a water molecule (reproduces the official tutorial "First calculation with DFTB+")
 #
-# 出典: https://dftbplus-recipes.readthedocs.io/en/latest/basics/firstcalc.html
-#       (配布アーカイブ recipes.tar.bz2 内 recipes/basics/firstcalc/dftb_in.hsd)
-# 原文との違いは 3 点だけ:
-#   1. 構造を Geometry ブロック内に直書きせず、<<< で geometry.gen を取り込む
-#      (同じページで紹介されている書き方)
-#   2. Slater-Koster ファイルのパスを ../../slakos/mio-1-1/ にした
-#      (原文の ../../slakos/mio-ext/ は、配布アーカイブ内で mio-1-1 への
-#       シンボリックリンク集。水に必要な O,H の 4 ファイルはすべて mio-1-1 由来)
-#   3. この # コメント
+# Source: https://dftbplus-recipes.readthedocs.io/en/latest/basics/firstcalc.html
+#       (recipes/basics/firstcalc/dftb_in.hsd in the distributed archive recipes.tar.bz2)
+# There are only 3 differences from the original:
+#   1. The structure is read from geometry.gen with <<< instead of being written inside the Geometry block
+#      (a form shown on the same page)
+#   2. The Slater-Koster file path is ../../slakos/mio-1-1/
+#      (the original ../../slakos/mio-ext/ is a set of symbolic links to mio-1-1 in the
+#       distributed archive; the 4 O,H files needed for water all come from mio-1-1)
+#   3. This # comment
 #
-# HSD 形式の約束:
-#   - ブロックの順序は自由。キーワードと単位名は大文字小文字を区別しない
-#   - 文字列 (ファイル名など) は区別する
-#   - # から行末までがコメント
-#   - 数値の既定単位は原子単位 (Hartree, Bohr)。[eV/AA] のように角括弧で単位を変えられる
+# HSD format rules:
+#   - Blocks can be in any order. Keywords and unit names are case-insensitive
+#   - Strings (such as file names) are case-sensitive
+#   - From # to the end of the line is a comment
+#   - The default units for numbers are atomic units (Hartree, Bohr). Square brackets change the unit, as in [eV/AA]
 # ------------------------------------------------------------------------------
 
-# === Geometry: 原子の種類と座標 (VASP でいう POSCAR) ===
-# gen 形式のファイルをそのまま取り込む。gen 形式の中身は geometry.gen を参照。
+# === Geometry: atom types and coordinates (POSCAR in VASP) ===
+# Reads a gen-format file as is. See geometry.gen for the contents of the gen format.
 Geometry = GenFormat {
   <<< "geometry.gen"
 }
 
-# === Driver: 構造をどう動かすか (VASP の IBRION / NSW / EDIFFG に相当) ===
-# 空の Driver {} にするか、ブロックごと省略すると一点計算になる。
+# === Driver: how the structure moves (equivalent to IBRION / NSW / EDIFFG in VASP) ===
+# An empty Driver {} or omitting the whole block gives a single point.
 Driver = GeometryOptimization {
-  Optimizer = Rational {}          # 有理関数法 (augmented Hessian + BFGS 型更新) の最適化器
-  MovedAtoms = 1:-1                # 1 番目から最後 (-1) の原子まで全部を動かす
-  MaxSteps = 100                   # 構造最適化の最大ステップ数 (VASP の NSW)
-  OutputPrefix = "geom.out"        # 最終構造を geom.out.gen と geom.out.xyz に書く
-  Convergence {GradElem = 1E-4}    # 力の最大成分が 1E-4 Hartree/Bohr を下回ったら収束
-                                   # (VASP の EDIFFG < 0 と同じ「力」基準。単位は原子単位)
+  Optimizer = Rational {}          # rational-function optimizer (augmented Hessian + BFGS-type update)
+  MovedAtoms = 1:-1                # moves all atoms from the first through the last (-1)
+  MaxSteps = 100                   # maximum number of geometry optimization steps (NSW in VASP)
+  OutputPrefix = "geom.out"        # writes the final structure to geom.out.gen and geom.out.xyz
+  Convergence {GradElem = 1E-4}    # converged when the largest force component falls below 1E-4 Hartree/Bohr
+                                   # (the same "force" criterion as EDIFFG < 0 in VASP; atomic units)
 }
 
-# === Hamiltonian: 電子状態の計算モデル (INCAR の手法設定 + POTCAR に相当) ===
+# === Hamiltonian: model for the electronic structure (equivalent to the INCAR method settings + POTCAR) ===
 Hamiltonian = DFTB {
-  Scc = Yes                        # 電荷自己無撞着 (SCC-DFTB)。原子間の電荷移動を反復で解く
-                                   # 収束判定 SccTolerance (既定 1e-5 電子) と
-                                   # 最大反復 MaxSccIterations (既定 100) は既定値のまま
-  SlaterKosterFiles {              # 元素ペアごとのパラメータファイル (POTCAR に相当。ただしペア単位)
+  Scc = Yes                        # self-consistent charges (SCC-DFTB). Solves charge transfer between atoms iteratively
+                                   # the convergence check SccTolerance (default 1e-5 electrons) and
+                                   # the iteration limit MaxSccIterations (default 100) stay at their defaults
+  SlaterKosterFiles {              # parameter files per element pair (equivalent to POTCAR, but per pair)
     O-O = "../../slakos/mio-1-1/O-O.skf"
     O-H = "../../slakos/mio-1-1/O-H.skf"
     H-O = "../../slakos/mio-1-1/H-O.skf"
     H-H = "../../slakos/mio-1-1/H-H.skf"
   }
-  MaxAngularMomentum {             # 各元素で使う最高の軌道角運動量 (s / p / d / f)
-    O = "p"                        # 値はセットの文書 (skf 末尾の説明) から取る
+  MaxAngularMomentum {             # highest orbital angular momentum used for each element (s / p / d / f)
+    O = "p"                        # values come from the set's documentation (the notes at the end of the skf)
     H = "s"
   }
 }
 
-# === Options: プログラム全体の設定。空でよい (省略しても同じ) ===
+# === Options: settings for the whole program. Can be empty (same as omitting it) ===
 Options {}
 
-# === Analysis: 追加で計算・出力する量 ===
+# === Analysis: additional quantities to compute and print ===
 Analysis {
-  CalculateForces = Yes            # 力を detailed.out に全成分出力する (最適化自体には不要)
-                                   # 注: 25.1 での正式名は PrintForces。CalculateForces はパーサ版 12 の
-                                   # 旧名で、ParserVersion = 12 の指定により自動で PrintForces に変換される
-                                   # (2026-09-10 の実行で確認。標準出力に WARNING "Keyword renamed to
-                                   # 'PrintForces'" が出て、dftb_pin.hsd には PrintForces = Yes と展開された)
+  CalculateForces = Yes            # writes all force components to detailed.out (not needed for the optimization itself)
+                                   # note: the official name in 25.1 is PrintForces. CalculateForces is the old name in
+                                   # parser version 12, converted to PrintForces automatically because of ParserVersion = 12
+                                   # (confirmed in the 2026-09-10 run: standard output shows WARNING "Keyword renamed to
+                                   # 'PrintForces'", and dftb_pin.hsd expands it to PrintForces = Yes)
 }
 
-# === ParserOptions: 入力パーサ自身への指示 ===
+# === ParserOptions: directives for the input parser itself ===
 ParserOptions {
-  ParserVersion = 12               # この入力が書かれたときのパーサ版。新しい版は自動変換する
-                                   # (この環境の DFTB+ 25.1 のパーサ版は 14)
+  ParserVersion = 12               # parser version when this input was written. Newer versions convert it automatically
+                                   # (the parser version of DFTB+ 25.1 in this environment is 14)
 }

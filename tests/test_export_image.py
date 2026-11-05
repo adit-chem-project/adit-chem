@@ -175,7 +175,7 @@ def test_the_desktop_can_copy_and_save_each_figure(tmp_path):
     assert res is not None and res.figures
     path = next(iter(res.figures.values()))
     others = panel.figure_siblings(path)
-    assert "svg" in others, "--figure-format svg を指定したのに SVG が無い"
+    assert "svg" in others, "--figure-format svg was given but there is no SVG"
     panel._copy_figure(path)
     assert "コピー" in panel.summary.text() or "clipboard" in panel.summary.text()
 
@@ -198,8 +198,8 @@ def test_the_browser_lists_a_download_link_for_every_figure(tmp_path):
         import re
 
         links = re.findall(r'href="(/file\?path=[^"]+download=1)"', html)
-        assert links, "図を保存するリンクが無い"
-        assert any(".svg" in link for link in links), "SVG のリンクが無い"
+        assert links, "no link to save the figure"
+        assert any(".svg" in link for link in links), "no SVG link"
         target = next(link for link in links if ".svg" in link).replace("&amp;", "&")
         with urllib.request.urlopen(base + target, timeout=60) as r:
             assert r.headers.get("Content-Type") == "image/svg+xml"

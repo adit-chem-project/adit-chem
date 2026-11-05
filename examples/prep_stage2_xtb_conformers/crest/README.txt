@@ -1,8 +1,8 @@
-CREST の入力 (ADIT は実行しません)
+CREST input (ADIT does not run it)
 
-  struct.xyz   出発の構造 (力場のエネルギーが最も低い配座)
+  struct.xyz   starting structure (the conformer with the lowest force-field energy)
   run_crest.sh crest struct.xyz --gfn2 --chrg 0 --uhf 0 -T 1
-               電荷・不対電子の数・溶媒・並列数は spec.json の xtb の設定から写したものです
+               charge, unpaired electrons, solvent and threads are copied from the xtb settings in spec.json
 
-インストール方法: conda install -c conda-forge crest   (xtb と同じ conda-forge)
-結果: crest_conformers.xyz (重複を除いた配座)、crest_best.xyz (最もエネルギーの低いもの)、crest.energies (相対エネルギー)。文書: https://crest-lab.github.io/crest-docs/
+Install: conda install -c conda-forge crest   (conda-forge, like xtb)
+Results: crest_conformers.xyz (unique conformers), crest_best.xyz (lowest), crest.energies (relative energies). Docs: https://crest-lab.github.io/crest-docs/

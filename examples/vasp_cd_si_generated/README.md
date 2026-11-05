@@ -1,21 +1,21 @@
-# examples/vasp_cd_si_generated —— 生成器が作った VASP の入力 (wiki の Cd Si relaxation 例に相当)
+# examples/vasp_cd_si_generated —— VASP input made by the generator (equivalent to the wiki example Cd Si relaxation)
 
-`examples/vasp_cd_si`(wiki の原文)と同じ設定を Spec に写し、adit の生成器で作ったもの。POTCAR は入っていない。
-クラスタでの実行は人が行う (未実施)。
+The same settings as `examples/vasp_cd_si` (the wiki original) copied into a Spec and generated with the ADIT generator. POTCAR is not included.
+A person runs it on a cluster (not done).
 
-## 原文との差分と理由
+## Differences from the original, and why
 
-| 項目 | wiki の原文 | 生成したファイル | 理由 |
+| Item | Wiki original | Generated files | Reason |
 |---|---|---|---|
-| POSCAR | 元素名の行が無い旧形式、スケール 5.5 | 元素名の行あり、スケール 1 で格子ベクトルに 5.5 を掛けた値 | ASE は旧形式を読めない。数値は同じ |
-| ISTART = 0, ICHARG = 2 | INCAR に明示 | extra_incar で同じ値を書く | GUI に無いキーの逃げ道として |
-| ALGO / EDIFF / NELM / LREAL / ISPIN / PREC | 書かない | 明示 | Spec の値を必ず書く方針 |
-| KPOINTS | Monkhorst Pack 11 11 11 | 同じ | |
-| POTCAR | (前提) | 無し。potcar.spec (Si → Si) と make_potcar.sh | 配布できないため |
+| POSCAR | Old format without an element-name line, scale 5.5 | Has an element-name line, scale 1 with lattice vectors multiplied by 5.5 | ASE cannot read the old format. The numbers are the same |
+| ISTART = 0, ICHARG = 2 | Explicit in INCAR | Same values written through extra_incar | The way out for keys the GUI does not have |
+| ALGO / EDIFF / NELM / LREAL / ISPIN / PREC | Not written | Explicit | Policy: always write the Spec values |
+| KPOINTS | Monkhorst Pack 11 11 11 | Same | |
+| POTCAR | (assumed) | None. potcar.spec (Si → Si) and make_potcar.sh | Cannot be distributed |
 
-## クラスタでの実行 (2026-09-10、VASP 6.4.2、人が投入)
+## Run on a cluster (2026-09-10, VASP 6.4.2, submitted by a person)
 
-生成したファイルをそのまま転送し、`make_potcar.sh` が POTCAR (`PAW_PBE Si 05Jan2001`) を組み立てて実行。
-NSW = 10 のとおり 10 ステップで終了 (wiki の例と同じ止め方。EDIFFG = -0.0001 は 10 ステップでは満たさない)。
-最終エネルギー F = -10.8244 eV。ずらした原子の z は 0.130 → 0.1275 (原文は 4.81250 Å ≈ 0.1275 に相当)。警告・エラー無し。
-CPU 時間 138 秒 (32 コア、11×11×11 の k 点)。
+The generated files were transferred as is, and `make_potcar.sh` assembled POTCAR (`PAW_PBE Si 05Jan2001`) and ran.
+It finished after 10 steps, as NSW = 10 says (it stops the same way as the wiki example; EDIFFG = -0.0001 is not met in 10 steps).
+Final energy F = -10.8244 eV. The z of the shifted atom went from 0.130 to 0.1275 (the original's 4.81250 Å ≈ 0.1275). No warnings or errors.
+CPU time 138 s (32 cores, 11×11×11 k-points).

@@ -606,7 +606,7 @@ def _readme(spec: CalculationSpec, profile, notes: ReadmeNotes, output_dir: Path
             L("     管理者か研究室の先輩に確かめてください。",
               "     between clusters, so ask the administrator or a senior member of your group."),
             *_cluster_profile_example(m.code),
-            L("     ほかの項目 (投入コマンド、環境変数、実行コマンドなど) は ADIT の docs/SETTINGS.md (環境設定) の「クラスタで実行する場合」にあります。",
+            L("     ほかの項目 (投入コマンド、環境変数、実行コマンドなど) は ADIT の docs/SETTINGS.md (環境設定) の「Running on a cluster」にあります。",
               "     Other items (submit command, environment variables, run commands, ...) are in ADIT's docs/SETTINGS.md (settings), section 'Running on a cluster'."),
             *([L("  b. spec.json の runtime.profile を追加したプロファイル名に変えて、adit-gen で生成し直します。",
                  "  b. Set runtime.profile in spec.json to the added profile name, then regenerate with adit-gen."),

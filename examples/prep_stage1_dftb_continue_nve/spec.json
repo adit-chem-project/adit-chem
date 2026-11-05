@@ -12,8 +12,8 @@
       "structure_file": "geo_end.xyz",
       "velocities": true,
       "carried": [
-        "位置 (geo_end.xyz から)",
-        "速度 (Å/fs に直して spec.json の structure.velocities に)"
+        "positions (from geo_end.xyz)",
+        "velocities (converted to Å/fs, in structure.velocities of spec.json)"
       ],
       "not_carried": []
     },
@@ -201,7 +201,7 @@
       },
       {
         "name": "submit.sh",
-        "sha256": "fb2bba8f1d6156d0840b9450d5ed0370bff117da3052e2509983dafd28a36500"
+        "sha256": "82d29f04580a19767096de8bde58f78ac0e7f66a8d489ac8d91bc71d867f9363"
       }
     ],
     "code_version_file": "code_version.txt"

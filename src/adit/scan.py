@@ -283,7 +283,7 @@ class ScanResult:
     def summary_text(self, include_table: bool = True) -> str:
         if self.notes:
             return "\n".join(self.notes)
-        """include_table=False は値ごとの行を省く (GUI は表を別の部品に出すので、要約にはそれ以外だけを残す)。"""
+        """include_table=False omits the per-value rows (the GUI shows the table in its own widget)."""
         table = self.table if include_table else Path(self.table).name
         lines = [L(f"変えた項目: {self.path}   値の数: {len(self.rows)}   表: {table}",
                    f"Scanned item: {self.path}   Number of values: {len(self.rows)}   Table: {table}")]

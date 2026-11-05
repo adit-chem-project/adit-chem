@@ -138,11 +138,11 @@
     "inputs": [
       {
         "name": "input.abi",
-        "sha256": "a5b0b341c169b4fd48c14e7fc91b092b61d205583048523c70ef8cb89b179101"
+        "sha256": "7ee6d04f1b263395ece09477dad698fedd3adb17fdc39457ea7e777c76e905d4"
       },
       {
         "name": "submit.sh",
-        "sha256": "6f5e0335f750904733b34027a52d2a02701e5dbcd2c7d885e42c261b398ae0b0"
+        "sha256": "6ca6fa12ab9f70cf3a4a2059db4db63f4a95bf1331b4c47fd3a545808a82f5cd"
       }
     ],
     "code_version_file": "code_version.txt"

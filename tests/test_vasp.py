@@ -176,7 +176,7 @@ def test_extra_incar_and_relax_cell(cfg_pp):
     assert "LASPH = .TRUE." in inc and "NCORE = 4" in inc and "GGA = PS" in inc and "ISIF = 3" in inc
 
 
-@pytest.mark.skipif(os.name == "nt", reason="生成した bash スクリプトを実行する試験 (走り先は Linux)")
+@pytest.mark.skipif(os.name == "nt", reason="runs the generated bash script (the target is Linux)")
 def test_make_potcar_assembles_from_fake_library(cfg_pp, tmp_path):
     out = tmp_path / "h2o"
     write_project(h2o_spec(), cfg_pp, out)

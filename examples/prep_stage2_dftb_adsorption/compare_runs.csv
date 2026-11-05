@@ -1,4 +1,4 @@
 dir,code,task,natoms,formula,energy_ev,energy_source,code_g_ev,code_g_label,note,structure.periodic,kpoints,kpoints.density,kpoints.mesh,kpoints.mode,kpoints.shift,kpoints.spacing_2pi_per_A
-adsorbed,dftbplus,single_point,11,C8H2O,-488.6238,output.log の Total Energy (MD では md.out の Total MD Energy),,,,True,,0.0,"[4, 4, 1]",mesh,"[0.0, 0.0, 0.0]","[0.3687, 0.3687, 0.4189]"
-slab,dftbplus,single_point,8,C8,-377.7017,output.log の Total Energy (MD では md.out の Total MD Energy),,,,True,,0.0,"[4, 4, 1]",mesh,"[0.0, 0.0, 0.0]","[0.3687, 0.3687, 0.4189]"
-molecule,dftbplus,single_point,3,H2O,-110.9604,output.log の Total Energy (MD では md.out の Total MD Energy),,,,False,,,,,,
+adsorbed,dftbplus,single_point,11,C8H2O,-488.6238,Total Energy in output.log (Total MD Energy in md.out for MD),,,,True,,0.0,"[4, 4, 1]",mesh,"[0.0, 0.0, 0.0]","[0.3687, 0.3687, 0.4189]"
+slab,dftbplus,single_point,8,C8,-377.7017,Total Energy in output.log (Total MD Energy in md.out for MD),,,,True,,0.0,"[4, 4, 1]",mesh,"[0.0, 0.0, 0.0]","[0.3687, 0.3687, 0.4189]"
+molecule,dftbplus,single_point,3,H2O,-110.9604,Total Energy in output.log (Total MD Energy in md.out for MD),,,,False,,,,,,

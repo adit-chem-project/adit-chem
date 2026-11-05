@@ -1,45 +1,45 @@
-# 開発に加わる人へ
+# Contributing
 
-## 動かす
+## Running it
 
 ```bash
 python -m pip install -e ".[dev,gui,smiles,analysis]"
-pytest -q                     # 全件 (GUI は画面なしで走ります)
-ruff check src tests packaging   # 未定義の名前・使っていない import (CI でも走ります)
+pytest -q                     # all tests (the GUI tests run without a display)
+ruff check src tests packaging   # undefined names and unused imports (also runs in CI)
 ```
 
-計算ソフト (DFTB+、xtb、Quantum ESPRESSO、CP2K、LAMMPS、GROMACS…) が PATH にあると、
-実際に実行する試験も動きます。無ければその試験だけ skip されます。
+If calculation programs (DFTB+, xtb, Quantum ESPRESSO, CP2K, LAMMPS, GROMACS...) are on PATH,
+the tests that actually run them also run. If not, only those tests are skipped.
 
-## ADIT が守っている 3 つの原則
+## Three principles ADIT follows
 
-1. **画面にロジックを置きません。**画面は条件 (`CalculationSpec`) を組み立てるだけで、
-   入力ファイルを作るのは `codes/` と `project.py` です
-2. **ジョブは投入しません。**`qsub` / `sbatch` は人が打ちます。手元で直接実行する方法だけがあります
-3. **利用者の化学的判断に口を出しません。**判定するのは「このままでは動かない」機械的な事実だけです。
-   収束したか、値が妥当かは言いません
+1. **No logic in the GUI.** The GUI only assembles the settings (`CalculationSpec`).
+   Input files are created by `codes/` and `project.py`
+2. **ADIT does not submit jobs.** A person types `qsub` / `sbatch`. The only built-in way to run is directly on the local machine
+3. **ADIT does not second-guess the user's chemical judgment.** It only reports mechanical facts that mean "this will not run as it is".
+   It does not say whether a run converged or whether a value is reasonable
 
-## 書くときの決まり
+## Writing rules
 
-- **キーワードと書式は、公式文書か実物の出力で確かめてから書きます。**記憶で書きません
-  (確かめたものは `tests/data/SOURCES.md` に出典を残します)
-- **3 つの入口 (コマンド・デスクトップ版・ウェブ版) に同じ機能を出します。**
-  解析の条件を足したら `gui/analysis_fields.py` + `gui/panels/analysis_panel.py` + `gui/help.py` +
-  `gui/i18n.py` + `web/templates/analysis.html` を同時に直します (見張りは `tests/test_analysis_ui_parity.py`)
-- **画面の文言は日本語と英語の両方で書きます。**`gui/help.py` の説明と `gui/i18n.py` の対訳を必ず足します
-- 数値を出すときは**単位と出典**を添えます
+- **Check keywords and formats against the official documentation or real output before writing them.** Do not write them from memory
+  (record the source of what you checked in `tests/data/SOURCES.md`)
+- **Offer the same features in all three entry points (command line, desktop app, web app).**
+  When you add an analysis option, change `gui/analysis_fields.py` + `gui/panels/analysis_panel.py` + `gui/help.py` +
+  `gui/i18n.py` + `web/templates/analysis.html` together (`tests/test_analysis_ui_parity.py` watches this)
+- **Write on-screen text in both Japanese and English.** Always add the description in `gui/help.py` and the translation in `gui/i18n.py`
+- When you show a number, give its **unit and source**
 
-## 計算コードを追加する
+## Adding a calculation code
 
-`codes/<name>.py` に `InputGenerator` を実装して `register()` し、`spec.py` に Method を追加し、
-デスクトップ版のパネル (`gui/panels/`) とウェブ版のフォームを追加します。
+Implement `InputGenerator` in `codes/<name>.py` and call `register()`, add the Method to `spec.py`,
+and add the desktop panel (`gui/panels/`) and the web form.
 
-## 試験
+## Tests
 
-新しい機能には、**答えの分かる小さな例**での試験を付けてください
-(例: FCC で配位数 12、自由電子で m*/m_e = 1、孤立原子の表面積 4πr²)。
+Give every new feature a test on **a small example whose answer is known**
+(for example: coordination number 12 for FCC, m*/m_e = 1 for free electrons, surface area 4πr² for an isolated atom).
 
-- **試験は `examples/` をその場で使いません。**解析や生成の出力先になるときは `tmp_path` に写してから使います
-  (その場で走らせると、追跡しているファイルが書き換わります)。`pytest` のあとに `git status` が `examples/` の変更を示したら、
-  どこかの試験が例題をその場で使っています
-- 図は再現できる形で書きます (SVG/PDF に日時を入れない)。同じ入力から同じバイト列が出ることを前提にした試験があります
+- **Tests do not use `examples/` in place.** When it would be the output location of an analysis or generation, copy it to `tmp_path` first
+  (running in place rewrites tracked files). If `git status` shows changes in `examples/` after `pytest`,
+  some test is using an example in place
+- Write figures so they are reproducible (no date or time in SVG/PDF). Some tests assume that the same input gives the same bytes

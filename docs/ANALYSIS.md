@@ -1,65 +1,65 @@
-# 解析の詳細
+# Analysis details
 
-解析タブとコマンド (`adit-analyze`) で選べる項目の中身です。
-環境設定は [環境設定](SETTINGS.md) にあります。
+This page describes the items you can choose in the Analysis tab and in the `adit-analyze` command.
+Settings are described in [Settings](SETTINGS.md).
 
-## 解析
+## Analysis
 
-各出力ディレクトリの `analyze.py` を計算後に実行すると (`python analyze.py --rdf --msd --dos`)、`analysis/` に図 (PNG) と要約 (summary.txt / summary.json) が書かれます。
-GUI の「解析」タブ、ウェブ版の「解析」ページ、`adit-analyze` も同じ処理です。数値の良し悪しの判断はしません。
+Run `analyze.py` in an output directory after the calculation (`python analyze.py --rdf --msd --dos`). It writes plots (PNG) and a summary (summary.txt / summary.json) to `analysis/`.
+The "Analysis" tab of the GUI, the "Analysis" page of the web version and `adit-analyze` all do the same work. ADIT does not judge whether the numbers are good or bad.
 
-| 解析 | 読むファイル | 出力 |
+| Analysis | Files read | Output |
 |---|---|---|
-| エネルギー・温度の推移 | DFTB+ md.out / output.log、xtb xtb.trj (エネルギー) と output.log の MD の表 (温度。画面出力の間隔で書かれ、軌跡の dump 間隔とは別)、VASP vasprun.xml と OSZICAR、pw.x output.log、ORCA output.log (エネルギーだけ。温度は読まない) | 折れ線グラフ |
-| 動径分布関数 (RDF) | 軌跡 (geo_end.xyz、xtb.trj、vasprun.xml / XDATCAR、pw.x output.log、ORCA trajectory.xyz) | 元素の組ごとの g(r) |
-| 平均二乗変位 (MSD) と拡散係数 | 同上 (周期系は境界をまたぐ移動を補正) | MSD の図と、既定では最大の遅れ時間の 10〜50 % を直線フィットして求めた D [cm²/s] |
-| 状態密度 (DOS) | DFTB+ band.out と detailed.out のフェルミ準位、VASP DOSCAR | DFTB+ の固有値はガウス関数 (幅 `--sigma`、既定 0.1 eV) で広げる。DOSCAR は格子の値をそのまま使い、広げ直さない (ISPIN = 2 は上向きと下向きの和) |
-| 振動数とスペクトル | DFTB+ hessian.out (質量重み付きヘシアンの対角化)、xtb vibspectrum、VASP OUTCAR、ORCA output.log | 振動数の一覧とスペクトル (IR 強度があれば重み付き) |
-| 結合長 | 最終構造 | 共有結合半径の和の 1.2 倍以内にある原子対 |
-| バンド図 | `bands/kpath.json` と DFTB+ band.out、pw.x output.log、VASP EIGENVAL | 高対称点のラベル付きバンド図と、フェルミ準位をまたぐ最小の間隔。フェルミ準位を横切るバンドがあれば金属 (ギャップ 0 eV。VBM・CBM・有効質量は出さない)。スピン分極 (band.out の SPIN 2、EIGENVAL の ISPIN = 2、pw.x の SPIN UP / SPIN DOWN) は 2 色で描き、ギャップは両方のスピンで判定 |
-| 原子の電荷 | DFTB+ detailed.out、xtb xtbout.json、CP2K output.log (Mulliken・Hirshfeld) | 原子ごとの表。電荷の定義と出典 (ファイル:行) を添える |
-| 熱化学 (コードの値) | xtb・ORCA の output.log | ZPE・H・G などをそのまま (行番号つき) |
-| 熱化学 (ASE で計算) | 振動数と最終構造 | 理想気体・調和・準調和・準 RRHO。温度などは利用者が入れる (既定値は無く、足りなければ計算しない理由を出す)。thermo.csv |
-| HOMO-LUMO ギャップ・双極子 | xtb xtbout.json など | 値と出典 |
-| 時系列の統計 | MD の温度・エネルギー・密度・圧力 | ブロック平均による平均値の誤差 (blocking.png)、積分自己相関時間 |
-| 配位数 n(r) | RDF と同じ軌跡 | coordination.png、rdf.json の n と n_reverse |
-| z 方向の密度分布 | 周期系の軌跡 | 元素ごとの数密度と質量密度 (zdensity.png / zdensity.json) |
-| 圧力 | LAMMPS log.lammps、GROMACS のエネルギーの表 | pressure.png |
-| 元素ごとの拡散係数 | MSD と同じ軌跡 | 元素ごとの D [cm²/s] (当てはめ範囲は指定できる)。`--select` があれば選んだ原子の中で数える (`--msd 元素` とは積集合)。指定した元素が軌跡に無ければ D は出さず、ある元素を注に書く |
-| 構造因子 S(q) | RDF と同じ軌跡 (`--rdf --sq`、周期系だけ) | 元素の組ごとの S(q) (sq.png / sq.json)。g(r) を rmax まで積んだ Faber–Ziman の形 (全原子の数密度、Lorch 窓)。q < 2π/rmax は積む範囲が有限なことの影響を受ける |
-| NEB | VASP の像のディレクトリ (00, 01, …)、QE neb.x の .dat / .int、CP2K BAND の output.log | エネルギーの曲線 (neb.png) と障壁。CP2K は像の値のみ |
-| PDOS | VASP DOSCAR、QE projwfc.x の *.pdos_atm#… | pdos.png / pdos.csv |
-| UV-Vis | ORCA の TD-DFT の吸収の表 | 遷移の表 (uvvis_transitions.csv) と、広げたスペクトル (uvvis.png) |
-| 空間群 | 最終構造 (spglib が入っているとき) | 許容誤差ごとの空間群 |
-| フォノン分散・DOS | phonopy の band.yaml、total_dos.dat | phonon_bands.png、phonon_dos.png |
-| 組にして比べる表 | 複数の計算のディレクトリ (それぞれの analysis/thermo.csv があれば熱化学も) | ΣνE、組成の釣り合い、条件が違う項目 (compare_*.csv、compare_energy.png)。各計算に ASE の熱化学の表があれば ΔH・ΔS・ΔG (温度と圧力が揃っているときだけ) |
-| 水素結合の寿命 | MD の軌跡と `--hbond` の距離・角度 | 存在の自己相関 C(τ) (intermittent / continuous)、積分と 1/e の時間 (hbond_lifetime.png / .csv) |
-| 水素結合の距離×角度の分布 | MD の軌跡 (`--hbond-cdf` の距離の上限) | D–A 距離 × D–H···A 角の 2 次元ヒストグラム (hbond_map.png / .csv)。しきい値は決めない |
-| CREST の配座 | crest_conformers.xyz (コメント行の全エネルギー [Eh])、crest.energies、crest.log の最後の表 (縮退度) | 配座ごとの相対エネルギー (kcal/mol、kJ/mol、eV)、縮退度、最低配座との重原子 RMSD。温度を入れたときだけ Boltzmann の重み (crest_conformers.csv、crest_conformers.png) |
-| 出力ログの警告と失敗の印 | 各コードのログ (output.log、log.lammps、OUTCAR、md.log など) と、同じディレクトリにあるジョブスケジューラの出力 (`*.o<番号>`、`slurm-*.out`) | 警告の件数と先頭 3 件 (ファイル:行番号と本文)、失敗の原因の候補 (SCF や構造最適化の未収束、制限時間、メモリ不足、MPI の異常終了、対角化の失敗、LAMMPS の Lost atoms、GROMACS の LINCS など)。要約の 2 行目以降と `summary.json` の `tables.diagnostics`。対応するコードは DFTB+、VASP、Quantum ESPRESSO、xtb、ORCA、CP2K、LAMMPS、GROMACS (ほかは制限時間・メモリ・MPI の印だけ) |
+| Energy and temperature vs. time | DFTB+ md.out / output.log; xtb xtb.trj (energy) and the MD table in output.log (temperature, written at the screen-output interval, which is separate from the trajectory dump interval); VASP vasprun.xml and OSZICAR; pw.x output.log; ORCA output.log (energy only, temperature is not read) | Line plot |
+| Radial distribution function (RDF) | Trajectory (geo_end.xyz, xtb.trj, vasprun.xml / XDATCAR, pw.x output.log, ORCA trajectory.xyz) | g(r) for each element pair |
+| Mean squared displacement (MSD) and diffusion coefficient | Same as above (in periodic systems, moves across a boundary are corrected) | MSD plot and D [cm²/s], by default from a linear fit over 10-50 % of the maximum lag time |
+| Density of states (DOS) | DFTB+ band.out and the Fermi level in detailed.out; VASP DOSCAR | DFTB+ eigenvalues are broadened with Gaussians (width `--sigma`, default 0.1 eV). DOSCAR values on its grid are used as they are, without further broadening (with ISPIN = 2, the sum of spin up and spin down) |
+| Frequencies and spectrum | DFTB+ hessian.out (diagonalization of the mass-weighted Hessian), xtb vibspectrum, VASP OUTCAR, ORCA output.log | List of frequencies and the spectrum (weighted by IR intensity when available) |
+| Bond lengths | Final structure | Atom pairs within 1.2 times the sum of their covalent radii |
+| Band structure | `bands/kpath.json` with DFTB+ band.out, pw.x output.log or VASP EIGENVAL | Band plot with high-symmetry point labels, and the smallest gap across the Fermi level. If a band crosses the Fermi level, the system is metallic (gap 0 eV; no VBM, CBM or effective masses are given). Spin polarization (SPIN 2 in band.out, ISPIN = 2 in EIGENVAL, SPIN UP / SPIN DOWN in pw.x) is drawn in two colors, and the gap is judged over both spins |
+| Atomic charges | DFTB+ detailed.out, xtb xtbout.json, CP2K output.log (Mulliken, Hirshfeld) | Table per atom, with the charge definition and its source (file:line) |
+| Thermochemistry (values from the code) | output.log of xtb and ORCA | ZPE, H, G and so on, as printed (with line numbers) |
+| Thermochemistry (computed with ASE) | Frequencies and the final structure | Ideal gas, harmonic, quasi-harmonic and quasi-RRHO. The user supplies the temperature and other inputs (there are no defaults; if anything is missing, nothing is computed and the reason is given). thermo.csv |
+| HOMO-LUMO gap and dipole | xtb xtbout.json and others | Value and source |
+| Time-series statistics | MD temperature, energy, density and pressure | Error of the mean from block averaging (blocking.png), integrated autocorrelation time |
+| Coordination number n(r) | Same trajectory as the RDF | coordination.png, n and n_reverse in rdf.json |
+| Density profile along z | Trajectory of a periodic system | Number density and mass density per element (zdensity.png / zdensity.json) |
+| Pressure | LAMMPS log.lammps, GROMACS energy table | pressure.png |
+| Diffusion coefficient per element | Same trajectory as the MSD | D [cm²/s] per element (the fit range can be set). With `--select`, only the selected atoms are counted (the intersection with `--msd ELEMENT`). If the requested element is not in the trajectory, no D is given and a note lists the elements that are present |
+| Structure factor S(q) | Same trajectory as the RDF (`--rdf --sq`, periodic systems only) | S(q) for each element pair (sq.png / sq.json). Faber–Ziman form, integrating g(r) up to rmax (number density of all atoms, Lorch window). q < 2π/rmax is affected by the finite integration range |
+| NEB | VASP image directories (00, 01, …), QE neb.x .dat / .int, CP2K BAND output.log | Energy curve (neb.png) and barrier. For CP2K, image values only |
+| PDOS | VASP DOSCAR, QE projwfc.x *.pdos_atm#… | pdos.png / pdos.csv |
+| UV-Vis | ORCA TD-DFT absorption table | Table of transitions (uvvis_transitions.csv) and the broadened spectrum (uvvis.png) |
+| Space group | Final structure (when spglib is installed) | Space group for each tolerance |
+| Phonon dispersion and DOS | phonopy band.yaml and total_dos.dat | phonon_bands.png, phonon_dos.png |
+| Comparison table | Several calculation directories (plus thermochemistry if each has analysis/thermo.csv) | ΣνE, composition balance, items whose settings differ (compare_*.csv, compare_energy.png). ΔH, ΔS and ΔG when every run has an ASE thermochemistry table (only when temperature and pressure match) |
+| Hydrogen-bond lifetime | MD trajectory and the distance and angle of `--hbond` | Presence autocorrelation C(τ) (intermittent / continuous), integral and 1/e times (hbond_lifetime.png / .csv) |
+| Hydrogen-bond distance-angle map | MD trajectory (upper distance from `--hbond-cdf`) | 2D histogram of D–A distance × D–H···A angle (hbond_map.png / .csv). No thresholds are chosen |
+| CREST conformers | crest_conformers.xyz (total energy [Eh] on the comment lines), crest.energies, the last table of crest.log (degeneracy) | Relative energy per conformer (kcal/mol, kJ/mol, eV), degeneracy, heavy-atom RMSD to the lowest conformer. Boltzmann weights only when a temperature is given (crest_conformers.csv, crest_conformers.png) |
+| Warnings and failure signs in output logs | Log of each code (output.log, log.lammps, OUTCAR, md.log and others) and the job scheduler output in the same directory (`*.o<number>`, `slurm-*.out`) | Number of warnings and the first 3 (file:line and text), and candidate causes of failure (unconverged SCF or geometry optimization, time limit, out of memory, abnormal MPI exit, diagonalization failure, LAMMPS Lost atoms, GROMACS LINCS and others). Shown from line 2 of the summary and in `tables.diagnostics` of `summary.json`. Supported codes are DFTB+, VASP, Quantum ESPRESSO, xtb, ORCA, CP2K, LAMMPS and GROMACS (for others, only the time limit, memory and MPI signs) |
 
-`adit-analyze` の主なオプション (`adit-analyze --help-all` に全部):
+Main options of `adit-analyze` (`adit-analyze --help-all` lists them all):
 
-| オプション | 意味 |
+| Option | Meaning |
 |---|---|
-| `--stride N` | 軌跡を N フレームおきに使う (大きな軌跡の間引き。RDF・MSD・z 密度・書き出しに効く) |
-| `--skip N` | 先頭の N フレームを平衡化として捨てる。温度・エネルギー・圧力の系列が軌跡と違う間隔で書かれているとき (LAMMPS の thermo と dump、VASP の OSZICAR と NBLOCK など) は、同じ時間 (N × 1 フレームの時間) だけ捨てる |
-| `--msd-fit T0 T1` | 拡散係数を当てはめる時間の範囲 [fs] (既定は最大の遅れ時間の 10〜50 %)。指定するとブロック誤差も全ブロックで同じ絶対範囲を使う |
-| `--select 式` | 原子の選び方 (`element O`、`index 1-10`、`z < 10`、`within 5 of index 3`、and / or / not)。MSD (元素ごと・原子ごとの D も)、変位の分布、VACF、RMSD・RMSF に効く。使った原子の数は要約に出る |
-| `--sq` | RDF から構造因子 S(q) を出す (`--rdf` が要る。周期系だけ) |
-| `--zdens [Å]` | z 方向の密度分布 (数を続けると区間の幅。既定 0.2 Å。周期系だけ) |
-| `--export` | 軌跡を `analysis/export/` に書き出す (extxyz・xyz・pdb、VMD の view.vmd と vmd_load.tcl、OVITO の ovito_pipeline.py、TRAVIS の答えファイル travis_*.in、export_README.txt。下の「書き出したファイル」) |
-| `--unwrap-molecules` | 書き出す前に分子を周期境界でつなぎ直す (`--export` を含む) |
-| `--memory-mb MB` | MSD で座標を持つメモリの上限 (既定 1024)。超える軌跡は読まずに止まり、間引きの間隔を示す |
-| `--compare [組]` | 組にして比べる表。`"ads=1:slab_mol,-1:slab,-1:mol"` (係数:ディレクトリ。反応は `;` で区切る)。省くと compare.json を読む |
-| `--thermo MODEL` ほか | 熱化学 (ASE)。`--temperature` `--pressure` `--symmetry-number` `--geometry` `--spin` `--imaginary` `--exclude-lowest` `--qh-cutoff` `--msrrho-tau` をモデルに合わせて入れる |
-| `--uvvis SHAPE:FWHM` | ORCA の UV-Vis を広げる形と半値全幅 [eV] (例 `gauss:0.3`) |
-| `--pdos` | PDOS のファイルが無いときも理由を書く (あれば指定しなくても描く) |
-| `--symprec Å[,Å…]` | 空間群の許容誤差 (既定は 1e-5、1e-3、1e-1 を並べる) |
-| `--hbond 3.5,150` | 水素結合の本数 (距離 [Å] と角度 [度] は必須で既定値は無い) |
-| `--hbond-lifetime` | 水素結合の寿命 (存在の自己相関。`--hbond` が要る) |
-| `--hbond-cdf Å` | D–A 距離 × D–H···A 角の 2 次元分布 (距離の上限を渡す) |
-| `--conformer-temperature K` | CREST の配座の Boltzmann の重みを出す温度。省くと相対エネルギーだけを出す (既定の温度は無い) |
+| `--stride N` | Use every N-th frame of the trajectory (thins out large trajectories; affects RDF, MSD, z density and export) |
+| `--skip N` | Discard the first N frames as equilibration. When a temperature, energy or pressure series is written at a different interval from the trajectory (LAMMPS thermo and dump, VASP OSZICAR and NBLOCK, and so on), the same time (N × the time of one frame) is discarded |
+| `--msd-fit T0 T1` | Time range [fs] for fitting the diffusion coefficient (default 10-50 % of the maximum lag time). When given, the block error also uses the same absolute range for all blocks |
+| `--select EXPR` | Atom selection (`element O`, `index 1-10`, `z < 10`, `within 5 of index 3`, and / or / not). Affects MSD (including D per element and per atom), the displacement distribution, VACF, RMSD and RMSF. The number of atoms used appears in the summary |
+| `--sq` | Compute the structure factor S(q) from the RDF (needs `--rdf`; periodic systems only) |
+| `--zdens [Å]` | Density profile along z (a number after the option sets the bin width; default 0.2 Å; periodic systems only) |
+| `--export` | Write the trajectory to `analysis/export/` (extxyz, xyz, pdb; VMD view.vmd and vmd_load.tcl; OVITO ovito_pipeline.py; TRAVIS answer files travis_*.in; export_README.txt. See "Exported files" below) |
+| `--unwrap-molecules` | Make molecules whole across periodic boundaries before writing (implies `--export`) |
+| `--memory-mb MB` | Memory limit for holding coordinates in MSD (default 1024). A larger trajectory is not read: ADIT stops and suggests a stride |
+| `--compare [SET]` | Comparison table. `"ads=1:slab_mol,-1:slab,-1:mol"` (coefficient:directory; separate reactions with `;`). If omitted, compare.json is read |
+| `--thermo MODEL` and others | Thermochemistry (ASE). Give `--temperature` `--pressure` `--symmetry-number` `--geometry` `--spin` `--imaginary` `--exclude-lowest` `--qh-cutoff` `--msrrho-tau` to suit the model |
+| `--uvvis SHAPE:FWHM` | Shape and full width at half maximum [eV] for broadening the ORCA UV-Vis spectrum (e.g. `gauss:0.3`) |
+| `--pdos` | Also write the reason when PDOS files are absent (if they exist, the plot is drawn without this option) |
+| `--symprec Å[,Å…]` | Space-group tolerance (the default lists 1e-5, 1e-3 and 1e-1) |
+| `--hbond 3.5,150` | Number of hydrogen bonds (distance [Å] and angle [degrees] are required; there are no defaults) |
+| `--hbond-lifetime` | Hydrogen-bond lifetime (presence autocorrelation; needs `--hbond`) |
+| `--hbond-cdf Å` | 2D distribution of D–A distance × D–H···A angle (pass the upper distance) |
+| `--conformer-temperature K` | Temperature for the Boltzmann weights of the CREST conformers. If omitted, only relative energies are given (there is no default temperature) |
 
 ```bash
 adit-analyze out/md --msd --stride 10 --msd-fit 1000 5000 --zdens 0.5
@@ -69,223 +69,216 @@ adit-analyze runs/ --compare "ads=1:slab_mol,-1:slab,-1:mol"
 adit-analyze out/conformers/crest --conformer-temperature 298.15
 ```
 
-### 3D で再生 (軌跡・最適化のステップ・振動モード)
+### Play in 3D (trajectory, optimization steps, vibrational modes)
 
-解析タブで「解析を実行」すると、要約の下に「3D で再生」の枠が出ます。ウェブ版の「解析」ページにも軌跡の再生はあります (ブラウザに送るのは最大 200 フレームで、超える分は間引きます。振動モードの再生はデスクトップ版だけ)。`adit-analyze` にはありません。
+When you press "Run analysis" in the Analysis tab, a "Play in 3D" box appears below the summary. The "Analysis" page of the web version also plays trajectories (at most 200 frames are sent to the browser, and the rest are thinned out; vibrational-mode playback is desktop only). `adit-analyze` has no playback.
 
-- **軌跡・ステップ**: 解析が読むのと同じフレーム (DFTB+ geo_end.xyz、xtb xtb.trj / xtbopt.log、VASP vasprun.xml / XDATCAR、pw.x output.log、ORCA trajectory.xyz、LAMMPS・GROMACS・CP2K の軌跡など) を、詳しい条件の「平衡化として捨てるフレーム数」と「間引き」を反映して読みます。メモリの上限 (`--memory-mb` と同じ既定 1024 MB) を超える大きさなら、収まる間隔に自動で間引き、その旨を枠の下に書きます。
-  フレーム番号と、時間刻みが分かるときは時刻 [fs] を表示します。下のグラフはエネルギー (MD なら温度も) の推移で、縦線がフレームに追従します。エネルギーの点数とフレーム数が違うときは縦線の位置を比例で合わせ、そのことを書きます。
-- **振動モード**: 対応するコードの出力から振動数と各原子の変位の向きを読み、選んだモードに沿って往復させます。振幅の欄は「いちばん大きく動く原子の変位 [Å]」です (数値の意味づけはしません)。下のグラフは振動数の一覧で、縦線が選んだモード、クリックで最も近いモードに移ります。
+- **Trajectory and steps**: ADIT reads the same frames the analysis reads (DFTB+ geo_end.xyz, xtb xtb.trj / xtbopt.log, VASP vasprun.xml / XDATCAR, pw.x output.log, ORCA trajectory.xyz, LAMMPS, GROMACS and CP2K trajectories, and others), applying "Frames to skip as equilibration" and "Stride (every N-th frame)" from "More options". If the data would exceed the memory limit (default 1024 MB, the same as `--memory-mb`), ADIT automatically applies a stride that fits and says so below the box.
+  The frame number is shown, along with the time [fs] when the time step is known. The plot below shows energy (and temperature for MD) over time, and a vertical line follows the frame. When the number of energy points differs from the number of frames, the line position is scaled proportionally and a note says so.
+- **Vibrational modes**: ADIT reads the frequencies and the displacement direction of each atom from the output of a supported code, and moves the atoms back and forth along the selected mode. The amplitude field ("Amplitude (largest atom motion)") is the displacement [Å] of the atom that moves most (ADIT attaches no meaning to the number). The plot below lists the frequencies. A vertical line marks the selected mode, and clicking jumps to the nearest mode.
 
-| コード | 読むファイル | 注 |
+| Code | Files read | Notes |
 |---|---|---|
-| DFTB+ | hessian.out と最終構造 | 質量重み付きヘシアンの固有ベクトル。並進・回転は落としていないので、0 付近のモードも並びます |
-| xtb | g98.out | xtb が書く Gaussian 98 形式 |
-| Gaussian | 出力ログの Frequencies / Atom AN の表 | HPModes 形式 (座標ごとの行) は未対応 |
-| ORCA | output.log の VIBRATIONAL FREQUENCIES と NORMAL MODES | 振動数 0 で変位も 0 の並進・回転は除く |
+| DFTB+ | hessian.out and the final structure | Eigenvectors of the mass-weighted Hessian. Translations and rotations are not removed, so modes near 0 also appear |
+| xtb | g98.out | Gaussian 98 format written by xtb |
+| Gaussian | Frequencies / Atom AN tables in the output log | HPModes format (one line per coordinate) is not supported |
+| ORCA | VIBRATIONAL FREQUENCIES and NORMAL MODES in output.log | Translations and rotations with frequency 0 and zero displacement are removed |
 
-上にないコード (VASP、Quantum ESPRESSO、CP2K など) は、振動数が読めても再生は「未対応」と表示します。
+For codes not listed above (VASP, Quantum ESPRESSO, CP2K and others), frequencies may be readable but playback is not supported. A note says "mode display supports DFTB+ (hessian.out), xtb (g98.out), Gaussian, ORCA".
 
-### 等値面 (軌道・電子密度・静電ポテンシャル)
+### Isosurfaces (orbitals, electron density, electrostatic potential)
 
-![等値面](images/viewer_isosurface.png)
+![Isosurface](images/viewer_isosurface.png)
 
-計算結果のディレクトリに体積データ (cube、CHGCAR・PARCHG・LOCPOT・CHG) があると、解析タブの要約の下に「等値面」の枠が出ます (ウェブ版の「解析」ページにも同じ枠があります)。ファイルを選び、等値を入れて「表示」を押すと、その値の面を三角形にして原子の上に半透明で描きます。3D 表示の操作 (回転・拡大・原子の選択と距離・角度の計測) はそのまま使えます。
+If a result directory contains volumetric data (cube, CHGCAR, PARCHG, LOCPOT, CHG), an "Isosurface" box appears below the summary in the Analysis tab (the "Analysis" page of the web version has the same box). Choose a file, enter an isovalue in "Level" and press "Draw the surface" (in the web version, "Show"). The surface at that value is triangulated and drawn semi-transparently over the atoms. The 3D view controls (rotation, zoom, atom selection, distance and angle measurement) work as usual.
 
-- **等値に既定値はありません。**ファイルを選ぶと値の最小・最大と「|最大| の 10 %」が出ますが、この 10 % は単に 1/10 の値で、化学的な根拠はありません。どの値の面を見るかは利用者が決めます。
-- 正の等値を入れると、負の値があるファイル (軌道の実部など) では -等値 の面も「負の色」で描きます。負の等値を入れると、その面だけを描きます。
-- 値と単位はファイルのままです (cube は書かれた値のまま。CHGCAR・PARCHG は e/Å³ に、LOCPOT は eV に直します)。座標は Å です。
-- 格子が周期的なもの (VASP のファイルと、pp.x の cube。pp.x は FFT 格子全体を端点なしで書くので、1 行目の `Cubefile created from PWScf calculation` で見分けます) は、セルの端で値をつないで面を閉じます。それ以外の cube は、書かれた箱の中だけを描きます。
-- 三角形の数には上限があります (デスクトップ 20,000 枚、ブラウザ 60,000 枚)。超える見積もりのときは描かずに止まり、収まる「間引き (格子点)」を提案します (ボタン 1 つで入ります)。間引きは格子を n 点に 1 点にするので、面は粗くなります。
-- 三角形にする方法は marching tetrahedra (格子の立方体を 6 つの四面体に分け、四面体ごとに面を切り出す。P. Bourke, "Polygonising a scalar field", https://paulbourke.net/geometry/polygonise/ の PolygoniseTri の場合分け) で、numpy だけで動きます。法線は格子の値の勾配から求めます。
-- 1 ファイルに 1 つの格子だけを読みます (複数の軌道を 1 つの cube にまとめた形式は読めません。1 軌道ずつ書き出してください)。
+- **The isovalue has no default.** Choosing a file shows the minimum and maximum values and "10 % of |max|", but this 10 % is just one tenth of the value and has no chemical basis. The user decides which surface to look at.
+- With a positive isovalue, files that contain negative values (the real part of an orbital, for example) also get the surface at -isovalue, drawn in the "Negative colour". With a negative isovalue, only that surface is drawn.
+- Values and units are as in the file (cube values as written; CHGCAR and PARCHG are converted to e/Å³, LOCPOT to eV). Coordinates are in Å.
+- Periodic grids are joined across the cell boundary so that the surface closes. These are VASP files and pp.x cube files (pp.x writes the whole FFT grid without end points; such files are recognized by `Cubefile created from PWScf calculation` on line 1). Other cube files are drawn only inside the written box.
+- The number of triangles has a limit (20,000 on the desktop, 60,000 in the browser). If the estimate exceeds it, nothing is drawn and ADIT suggests a "Stride (grid points)" value that fits (one button sets it). A stride keeps 1 of every n grid points, so the surface becomes coarser.
+- The surface is built with marching tetrahedra (each grid cube is split into 6 tetrahedra and the surface is cut from each one, using the cases of PolygoniseTri in P. Bourke, "Polygonising a scalar field", https://paulbourke.net/geometry/polygonise/). It needs only numpy. Normals come from the gradient of the grid values.
+- Only one grid is read per file (the format that puts several orbitals into one cube cannot be read; write out one orbital at a time).
 
-体積データを書かせる指定 (詳しくは各コードの文書)。
+How to make each code write volumetric data (see each code's documentation for details):
 
-| コード | 指定 | 書かれるファイル | 出どころ |
+| Code | Setting | File written | Source |
 |---|---|---|---|
-| Quantum ESPRESSO | `pp.x` の `&PLOT` で `output_format = 6` (`plot_num` で密度・ポテンシャル・軌道を選ぶ) | `fileout` の cube | INPUT_PP (quantum-espresso.org/Doc/INPUT_PP.html) |
-| DFTB+ | `waveplot` (`WriteEigenvectors = Yes` で書いた eigenvec.out と、基底の wfc ファイルが要る) | `wp-<k点>-<スピン>-<準位>-real.cube` / `-abs2.cube`、全電荷 `wp-abs2.cube` | DFTB+ recipes の waveplot の章 (dftbplus-recipes.readthedocs.io) |
-| VASP | `LPARD = .TRUE.` と `IBAND` / `EINT` / `KPUSE` (`LSEPB`・`LSEPK` で分割)。`LPARD` だけだと CHGCAR に価電子密度が書かれます | PARCHG (`PARCHG.<band>.<k>`) | VASP Wiki の LPARD |
-| xtb | xcontrol (入力ファイル) で `density=true` / `spin density=true`、または `--fod` (書くブロックは xtb docs で確かめてください) | `density.cub` / `fod.cub` | xtb docs の Properties の章 (xtb-docs.readthedocs.io) |
-| ORCA | `orca_plot` の対話メニューで軌道・密度・静電ポテンシャルを Gaussian cube に書く | `<basename>.mo<n><a/b>.cube` など | ORCA マニュアルの orca_plot の節 (書式の番号はマニュアルで確かめてください) |
+| Quantum ESPRESSO | `output_format = 6` in `&PLOT` of `pp.x` (`plot_num` selects density, potential or orbital) | The cube named by `fileout` | INPUT_PP (quantum-espresso.org/Doc/INPUT_PP.html) |
+| DFTB+ | `waveplot` (needs eigenvec.out written with `WriteEigenvectors = Yes` and the basis wfc file) | `wp-<kpoint>-<spin>-<level>-real.cube` / `-abs2.cube`, total charge `wp-abs2.cube` | waveplot chapter of DFTB+ recipes (dftbplus-recipes.readthedocs.io) |
+| VASP | `LPARD = .TRUE.` with `IBAND` / `EINT` / `KPUSE` (split with `LSEPB`, `LSEPK`). With `LPARD` alone, the valence density is written to CHGCAR | PARCHG (`PARCHG.<band>.<k>`) | LPARD in the VASP Wiki |
+| xtb | `density=true` / `spin density=true` in xcontrol (the input file), or `--fod` (check the block to write in the xtb docs) | `density.cub` / `fod.cub` | Properties chapter of the xtb docs (xtb-docs.readthedocs.io) |
+| ORCA | Write orbitals, density or electrostatic potential to a Gaussian cube with the interactive menu of `orca_plot` | `<basename>.mo<n><a/b>.cube` and others | orca_plot section of the ORCA manual (check the format number in the manual) |
 
-`adit-analyze` の「3 次元の数密度の格子」が書く cube もこの枠で見られます。
+Cube files written by the "3D number-density grid" of `adit-analyze` can also be viewed in this box.
 
-### 水素結合の寿命と、距離 × 角度の分布
+### Hydrogen-bond lifetime and the distance × angle distribution
 
-`--hbond 距離,角度` で数えた水素結合 (水素 i と受容体 j の組) について、各フレームの存在 h_ij(t) (条件を満たせば 1、
-満たさなければ 0) を追い、`--hbond-lifetime` で次の自己相関を出します (t0 は全フレーム、N(t0) > 0 のものだけで平均)。
+For hydrogen bonds counted with `--hbond DISTANCE,ANGLE` (pairs of hydrogen i and acceptor j), ADIT follows the presence h_ij(t) in each frame (1 if the criteria are met,
+0 otherwise). `--hbond-lifetime` computes the autocorrelation below (t0 runs over all frames, and only those with N(t0) > 0 enter the average).
 
     C(τ) = ⟨ Σ_ij h_ij(t0) h_ij(t0+τ) / Σ_ij h_ij(t0) ⟩_t0
 
-- intermittent: 途中で切れて戻った組も t0+τ で数える (h_ij(t0) h_ij(t0+τ) そのまま)
-- continuous: t0 から t0+τ まで 1 度も切れなかった組だけを数える (h_ij(t0) h_ij(t0+1) … h_ij(t0+τ) の積)
+- intermittent: pairs that broke and re-formed are also counted at t0+τ (h_ij(t0) h_ij(t0+τ) as is)
+- continuous: only pairs that never broke between t0 and t0+τ are counted (the product h_ij(t0) h_ij(t0+1) … h_ij(t0+τ))
 
-定義は MDAnalysis の `HydrogenBondAnalysis.lifetime` と `lib.correlations.autocorrelation`
-(https://docs.mdanalysis.org/stable/documentation_pages/analysis/hydrogenbonds.html: 「S(τ) = ⟨ N(t0, t0+τ) / N(t0) ⟩」、
-「intermittency 0 は continuous」) に合わせ、intermittent は intermittency = ∞ に当たります。
-組は MDAnalysis と同じく水素–受容体の対で区別します。
-寿命として、C(τ) の積分 (τ_max = フレーム数の半分で打ち切り。C が 0 に落ちていなければ下限) と、C が 1/e を切る τ を表に出します。
-指数関数の当てはめはしていません。時間の単位は 1 フレームの時間が分かれば fs、分からなければフレーム。
-メモリはフレーム数 × 組の数 (1 バイトずつ) を先に見積もり、`--memory-mb` の上限を超えたら計算せずに間引きの間隔を示します。
+The definition follows `HydrogenBondAnalysis.lifetime` and `lib.correlations.autocorrelation` in MDAnalysis
+(https://docs.mdanalysis.org/stable/documentation_pages/analysis/hydrogenbonds.html: "S(τ) = ⟨ N(t0, t0+τ) / N(t0) ⟩",
+"intermittency 0 is continuous"). The intermittent case corresponds to intermittency = ∞.
+As in MDAnalysis, pairs are distinguished as hydrogen-acceptor pairs.
+As the lifetime, the table gives the integral of C(τ) (truncated at τ_max = half the number of frames; a lower bound if C has not decayed to 0) and the τ at which C falls below 1/e.
+No exponential fit is done. Time is in fs if the time per frame is known, otherwise in frames.
+Memory (frames × pairs, 1 byte each) is estimated first. If it exceeds the `--memory-mb` limit, nothing is computed and a stride is suggested.
 
-`--hbond-cdf 上限` は、しきい値の根拠を見るための図です。D–H···A の全部の組 (H は 1.3 Å 以内のいちばん近い N / O / F に付く)
-のうち D–A が上限以内のものを、D–A 距離 (0〜上限) × D–H···A 角 (0〜180 度) の 2 次元ヒストグラム (60 × 60 区間) にします。
-密度は面積で割って全体を 1 にした値で、`--hbond` の距離と角度があれば破線で重ねます。しきい値は利用者が決めます。
+`--hbond-cdf MAX` gives a plot for examining the basis of the thresholds. It takes all D–H···A combinations (H is assigned to the nearest N / O / F within 1.3 Å)
+with D–A within the upper limit, and builds a 2D histogram (60 × 60 bins) of D–A distance (0 to the limit) × D–H···A angle (0 to 180 degrees).
+The density is divided by area and normalized to 1 overall. If `--hbond` gives a distance and an angle, they are overlaid as dashed lines. The user chooses the thresholds.
 
-### 反応式の ΔH・ΔS・ΔG (組にして比べる表)
+### Reaction ΔH, ΔS and ΔG (comparison table)
 
-組にして比べる表は、各計算のディレクトリに `analysis/thermo.csv` (`--thermo` で ASE が書いた熱化学の表。無ければ
-`analysis/summary.json` の `thermo_ase`) があると、係数 ν で次を足し合わせます。
+When each calculation directory has `analysis/thermo.csv` (the thermochemistry table written by ASE with `--thermo`; failing that,
+`thermo_ase` in `analysis/summary.json`), the comparison table sums the following with coefficients ν.
 
-    ΔH = Σ ν_i H_i      ΔS = Σ ν_i S_i      ΔG = Σ ν_i G_i      (H_i = E_i + H補正_i、G_i = E_i + G補正_i、E_i は出力の最終エネルギー)
+    ΔH = Σ ν_i H_i      ΔS = Σ ν_i S_i      ΔG = Σ ν_i G_i      (H_i = E_i + H_corr,i, G_i = E_i + G_corr,i, E_i is the final energy from the output)
 
-- 出すのは、組の全部の計算が同じ温度 (と圧力) の行を持つときだけ。揃っていなければ「温度が揃っていません (298.15 / 300)」と書いて値は出しません
-- 理想気体 (`ideal_gas`) は H・S・G。調和・準調和・準 RRHO は H が無いので、ΔS と ΔF (F = U − TS) だけを出し、G の列に F と書きます。
-  理想気体と振動だけのモデルが混ざった組は出しません
-- 列は `compare_reactions.csv` の `thermo_T_K`、`delta_h_ev` / `delta_h_kj_mol`、`delta_s_ev_per_k` / `delta_s_j_mol_k`、
-  `delta_g_ev` / `delta_g_kj_mol`、`delta_g_label` (G か F)、`thermo_note`。温度が複数あるときは `;` で並べます。
-  `compare_summary.json` では反応ごとの `thermo` (温度ごとの辞書の一覧) と `thermo_note`
-- 単位の換算は 1 eV = 96.485332123 kJ/mol = 23.060547830619 kcal/mol、1 eV/K = 96485.33212 J/(mol K)
-- 画面 (デスクトップ版の「組にして比べる…」、ウェブ版の `/compare`) の反応ごとの表にも同じ列が出ます
+- These are given only when all runs in the set have rows at the same temperature (and pressure). Otherwise the table says "the temperatures do not match (298.15 / 300)" and gives no values
+- Ideal gas (`ideal_gas`) gives H, S and G. Harmonic, quasi-harmonic and quasi-RRHO models have no H, so only ΔS and ΔF (F = U − TS) are given, and the G column is labeled F.
+  Sets that mix ideal-gas and vibrations-only models are not reported
+- The columns in `compare_reactions.csv` are `thermo_T_K`, `delta_h_ev` / `delta_h_kj_mol`, `delta_s_ev_per_k` / `delta_s_j_mol_k`,
+  `delta_g_ev` / `delta_g_kj_mol`, `delta_g_label` (G or F) and `thermo_note`. Multiple temperatures are listed with `;`.
+  `compare_summary.json` has `thermo` (a list of dictionaries, one per temperature) and `thermo_note` for each reaction
+- Unit conversions: 1 eV = 96.485332123 kJ/mol = 23.060547830619 kcal/mol, 1 eV/K = 96485.33212 J/(mol K)
+- The per-reaction table on screen ("Compare runs…" on the desktop, `/compare` on the web) shows the same columns
 
-### CREST の配座の読み方と重み
+### Reading CREST conformers and their weights
 
-`adit-gen --conformers` が書いた `crest/run_crest.sh` を実行すると、その場所に CREST の結果ができます。
-そのディレクトリ (か、その親の配座の集合のディレクトリ) を `adit-analyze` に渡すと、次を読みます。
+Running the `crest/run_crest.sh` written by `adit-gen --conformers` leaves the CREST results in that location.
+Pass that directory (or its parent, the directory of the conformer set) to `adit-analyze`, and it reads the following.
 
-- `crest_conformers.xyz`: 重複を除いた配座。各構造のコメント行が全エネルギー [Eh] (CREST の `cregen.f90` が `f18.8` で書く)
-- `crest.energies`: `番号  E − E(最低) [kcal/mol]` (同じく `cregen.f90`。表の `crest_energies_kcal_mol` 列にそのまま載せる)
-- `crest.log` の最後の表 (`Erel/kcal  Etot  weight/tot  conformer  set  degen`) の `degen` 列: 配座ごとの縮退度 g (回転異性体の数)。
-  表が無ければ全部 1 として、その旨を注に書く
+- `crest_conformers.xyz`: conformers with duplicates removed. The comment line of each structure holds the total energy [Eh] (written with `f18.8` by `cregen.f90` in CREST)
+- `crest.energies`: `index  E − E(lowest) [kcal/mol]` (also from `cregen.f90`; copied as is to the `crest_energies_kcal_mol` column of the table)
+- The `degen` column of the last table in `crest.log` (`Erel/kcal  Etot  weight/tot  conformer  set  degen`): the degeneracy g of each conformer (the number of rotamers).
+  If the table is absent, all are taken as 1 and a note says so
 
-相対エネルギーはコメント行の全エネルギーから出し (無ければ `crest.energies`)、kcal/mol・kJ/mol・eV で並べます。
-RMSD は最も低い配座 (1 番) との重原子の Kabsch 重ね合わせで、対称な原子の並べ替えは考えていません。
+Relative energies come from the total energies on the comment lines (or from `crest.energies` if those are absent), and are listed in kcal/mol, kJ/mol and eV.
+RMSD is from a Kabsch superposition of the heavy atoms onto the lowest conformer (number 1). Permutations of symmetric atoms are not considered.
 
-温度 T を `--conformer-temperature` (画面では「CREST の配座の重みの温度 [K]」) で入れたときだけ、重みを出します。
+Weights are given only when a temperature T is entered with `--conformer-temperature` (on screen, "Temperature for the CREST conformer weights [K]").
 
-    w_i = g_i exp(−ΔE_i / k_B T) / Σ_j g_j exp(−ΔE_j / k_B T)      ΔE_i = E_i − E(最低)、k_B = 8.617333262e-5 eV/K
+    w_i = g_i exp(−ΔE_i / k_B T) / Σ_j g_j exp(−ΔE_j / k_B T)      ΔE_i = E_i − E(lowest), k_B = 8.617333262e-5 eV/K
 
-温度の既定値は置きません (CREST 自身は 298.15 K で `weight/tot` を出しますが、ADIT はその値を写しません)。
-出典: CREST の文書 (https://crest-lab.github.io/crest-docs/page/examples/example_1.html の出力例) と、
-ソースの `src/cregen.f90` (`crest.energies` の書式 `(2x,i0,2x,f12.3)`、コメント行の `(2x,f18.8)`)。
-配座ごとに別のディレクトリで計算した振動や UV-Vis を重み付きで足し合わせる機能はまだありません
-(CREST の配座と ADIT の計算ディレクトリを結ぶ情報が無いため)。
+There is no default temperature (CREST itself reports `weight/tot` at 298.15 K, but ADIT does not copy that value).
+Sources: the CREST documentation (the sample output at https://crest-lab.github.io/crest-docs/page/examples/example_1.html) and
+`src/cregen.f90` in its source (the `crest.energies` format `(2x,i0,2x,f12.3)` and the comment-line format `(2x,f18.8)`).
+ADIT cannot yet sum vibrations or UV-Vis spectra computed in separate directories for each conformer with these weights
+(no information links CREST conformers to ADIT calculation directories).
 
-画面では、解析タブ (ウェブ版は解析のページ) の「詳しい条件」を開くと、上のオプションと同じ欄があります (間引き、MSD の当てはめ範囲、
-z 方向の密度分布、時系列の統計、熱化学の各欄、UV-Vis の広げ方、空間群の許容誤差)。熱化学の欄には既定値を入れていません。
-結果は要約の下に表 (原子の電荷、熱化学、電子状態、時系列の統計、軌跡、拡散係数、空間群、UV-Vis の遷移) と図で出ます。表は見出しを押すと畳めます。
-長い表は先頭 20 行だけを出し、全体のファイルの場所を添えます。
+On screen, opening "More options" in the Analysis tab (on the web, the Analysis page) gives the same fields as the options above (stride, MSD fit range,
+density profile along z, time-series statistics, the thermochemistry fields, UV-Vis broadening, space-group tolerances). The thermochemistry fields have no default values.
+Results appear below the summary as tables ("Atomic charges", "Thermochemistry", "Electronic structure", "Time-series statistics", "Trajectory", "Diffusion coefficients", "Space group", "UV-Vis transitions") and plots. Click a table's heading to collapse it.
+Long tables show only the first 20 lines, with the location of the full file.
 
-- 出力ログの走査は、各コードが実際に書く文字列 (例: DFTB+ の `SCC is NOT converged`、pw.x の `convergence NOT achieved`、CP2K の `SCF run NOT converged`、LAMMPS の `Lost atoms`) と、スケジューラや MPI の文字列 (Slurm の `DUE TO TIME LIMIT`、PBS の `=>> PBS: job killed: walltime`、`MPI_ABORT was invoked`) を探すだけです。見つけた行をそのまま写し、原因の候補に分類します。良し悪しや対処は判断しません。
-  対処は、生成した `README.txt` の末尾「失敗したときに文献が挙げる対処」に、各コードの文書・FAQ・aiida-quantumespresso の実装から出典 URL 付きで写してあります (ADIT の推奨ではありません)。
-- 軌跡が大きすぎて止まったときは、理由の文と「間引きを N にする」ボタンが出ます。押すと間引きの欄に N が入るので、もう一度「解析を実行」を押します
-- MSD では周期境界を越えた移動を最小像から復元します。間引き後の隣接フレーム間で移動が最短セル幅の 40 % 以上になった場合は、移動方向を一意に復元できなくなる半セル幅へ近いため、要約と `summary.json` に注意を残します。
-- MSD の D は指定した時間範囲の直線フィットから求めます。ブロックごとの D を使う参考誤差は、既定では各ブロックを自分の最大遅れ時間の 10〜50 % で当てはめて出します (ブロックごとの範囲は `summary.json` の `D_error.blocks` と要約に書きます)。`--msd-fit` で範囲を指定したときだけ、全ブロックで同じ絶対範囲を使い、入らないブロックがあれば誤差は出しません。参考誤差はブロック D の平均の標準誤差であり、全軌跡から求めた D の厳密な誤差ではありません。
-- 配位数・Steinhardt の q4/q6・かたまり・結合角の分布 (`--coordination` `--steinhardt` `--clusters` `--adf`) は ASE の近傍リストで周期像を全部数えます。セルの幅がカットオフの 2 倍より小さい小さなセル (FCC の 4 原子セルなど) でも正しい値になります。RDF は従来どおりセルの幅の半分までです。
-- DFTB+ の Barostat (NPT) の MD は、md.out の `Lattice vectors (A)` を各フレームのセルに使います。セルが変わる軌跡の MSD は、境界越えを分率座標で数えて各フレームのセルで直交座標に戻します (LAMMPS の xu と同じ)。箱の伸び縮みに乗った移動も MSD に入るので、要約にその旨を書きます。
-- 熱化学 (ASE) で 3N 本の振動数から使うモードを選ぶときは、|振動数| の大きい順に取ります (虚振動も絶対値で数えるので、虚振動が「使うモード」に残り、`--imaginary` の分岐が効きます)。使うモードに 50 cm⁻¹ 未満が残ったときは注意として書きます。準調和 (`quasi_harmonic`) と準 RRHO (`msrrho`) は ASE 3.28 以降が要ります (古い ASE では理由を書いて計算しません)。
-- 「TRAVIS・VMD・OVITO 用に書き出す」で `analysis/export/` に書き出し、export_README.txt の中身を表示します。
-  デスクトップ版は「書き出したフォルダを開く」でファイルマネージャを開きます (ウェブ版は場所を表示するだけ)
-- 「組にして比べる…」で、比べる計算のディレクトリと係数を行で入れます (名前が空の行は上の行と同じ反応)。
-  デスクトップ版は小さな画面、ウェブ版は別のページ (`/compare`)。基準のディレクトリに compare.json があれば読み込めます
+- The output-log scan only looks for strings that each code actually writes (for example, `SCC is NOT converged` in DFTB+, `convergence NOT achieved` in pw.x, `SCF run NOT converged` in CP2K, `Lost atoms` in LAMMPS) and scheduler and MPI strings (`DUE TO TIME LIMIT` in Slurm, `=>> PBS: job killed: walltime` in PBS, `MPI_ABORT was invoked`). It copies the lines it finds as they are and sorts them into candidate causes. It does not judge quality or remedies.
+  Remedies are copied, with source URLs, from each code's documentation and FAQ and from the aiida-quantumespresso implementation into the section "What the documents suggest when a run fails" at the end of the generated `README.txt` (these are not recommendations from ADIT).
+- When a trajectory is too large and the analysis stops, ADIT shows the reason and a "Set the stride to N" button. Pressing it puts N into the stride field, and you then press "Run analysis" again
+- For the MSD, moves across periodic boundaries are recovered from the minimum image. If a move between adjacent frames (after the stride) reaches 40 % or more of the shortest cell width, it is close to half a cell width, where the direction can no longer be recovered uniquely, so a caution is left in the summary and in `summary.json`.
+- D in the MSD comes from a linear fit over the given time range. The indicative error uses D per block. By default, each block is fitted over 10-50 % of its own maximum lag time (the range for each block is written to `D_error.blocks` in `summary.json` and to the summary). Only when a range is given with `--msd-fit` do all blocks use the same absolute range, and if any block cannot contain it, no error is given. The indicative error is the standard error of the mean of the block D values. It is not a rigorous error of the D from the whole trajectory.
+- Coordination number, Steinhardt q4/q6, clusters and the bond-angle distribution (`--coordination` `--steinhardt` `--clusters` `--adf`) count all periodic images with the ASE neighbor list. They give correct values even for small cells narrower than twice the cutoff (such as the 4-atom FCC cell). The RDF still goes up to half the cell width, as before.
+- MD with a DFTB+ Barostat (NPT) uses `Lattice vectors (A)` in md.out as the cell of each frame. For trajectories with a changing cell, the MSD counts boundary crossings in fractional coordinates and converts back to Cartesian coordinates with the cell of each frame (the same as xu in LAMMPS). Motion carried by the box expansion and contraction also enters the MSD, and the summary says so.
+- When thermochemistry (ASE) chooses the modes to use from the 3N frequencies, it takes them in order of decreasing |frequency| (imaginary modes count by absolute value, so an imaginary mode stays among the modes used, and the `--imaginary` branch takes effect). If a mode below 50 cm⁻¹ remains among those used, a caution is written. Quasi-harmonic (`quasi_harmonic`) and quasi-RRHO (`msrrho`) need ASE 3.28 or later (with an older ASE, nothing is computed and the reason is given).
+- "Export for TRAVIS, VMD and OVITO" writes to `analysis/export/` and displays the contents of export_README.txt.
+  On the desktop, "Open the export folder" opens the file manager (the web version only shows the location)
+- "Compare runs…" takes the directories to compare and their coefficients, one per row (a row with an empty name belongs to the same reaction as the row above).
+  The desktop version uses a small window and the web version a separate page (`/compare`). If the base directory has compare.json, it can be loaded
 
-### 書き出したファイル (TRAVIS・OVITO・VMD 用) / Exported files for TRAVIS, OVITO and VMD
+### Exported files for TRAVIS, OVITO and VMD
 
-`--export` は `analysis/export/` に次を書きます。**どれも ADIT では実行していません** (TRAVIS・OVITO・VMD は手元に無い前提)。
-雛形の中に数値は入れず、`<...>` の穴か、出典を添えた「例」にしています。
+`--export` writes the following to `analysis/export/`. **ADIT has not run any of them** (TRAVIS, OVITO and VMD are assumed not to be available locally).
+Templates contain no numerical values. They use `<...>` holes or examples with their source.
 
-| ファイル | 中身 | 確かめ方 |
+| File | Contents | How it was checked |
 |---|---|---|
-| `trajectory.extxyz` / `.xyz` / `.pdb` | 軌跡 (extxyz にはセル、pdb には各フレームの CRYST1) | ASE で読み戻す検査 |
-| `view.vmd` | VMD の読み込みとセル (最小) | 検査で文字列を照合 |
-| `vmd_load.tcl` | VMD の読み込みに加えて代表的な表示: 全原子 CPK、`--select` の原子を VDW、白背景、平行投影。DynamicBonds と画像の描画は例 (コメントアウト) | コマンド名と引数は VMD User's Guide (mol / color / display / axes / render) と PBCTools の説明で照合 |
-| `ovito_pipeline.py` | 動径分布関数と配位数 (実行部) のあとに、**コメントアウトした雛形**: 構造同定 (CNA / PTM / Ackland-Jones)、Wigner-Seitz 欠陥解析 (参照構造は `<...>`)、変位ベクトルと原子ひずみ、クラスタ解析、空間ビニング + 時間平均、式による選択 | クラス名と引数名は OVITO 3.16 の Python リファレンス (`ovito.modifiers`) で照合 |
-| `travis_rdf.in` / `travis_cdf.in` / `travis_msd.in` / `travis_hbond.in` / `travis_acf.in` | TRAVIS の `-i` に渡す答えファイル。セルの大きさ [pm] と関数の選択まで | 書式 (1 行 1 答、空行 = 既定値、`!` = コメント) は TRAVIS の Quick Start Guide とソースで確認。**質問の並びはソースを読んだもので、実行では未確認** |
-| `export_README.txt` | 上の説明と、TRAVIS の残りの質問の目安 (時間の刻み、分子と原子の選択、フレームの範囲) | — |
+| `trajectory.extxyz` / `.xyz` / `.pdb` | Trajectory (the cell in extxyz, CRYST1 for each frame in pdb) | A test reads them back with ASE |
+| `view.vmd` | VMD loading and cell (minimal) | A test compares the strings |
+| `vmd_load.tcl` | VMD loading plus typical display settings: all atoms as CPK, `--select` atoms as VDW, white background, orthographic projection. DynamicBonds and image rendering are examples (commented out) | Command names and arguments compared with the VMD User's Guide (mol / color / display / axes / render) and the PBCTools documentation |
+| `ovito_pipeline.py` | Radial distribution function and coordination number (run section), followed by **commented-out templates**: structure identification (CNA / PTM / Ackland-Jones), Wigner-Seitz defect analysis (reference structure is `<...>`), displacement vectors and atomic strain, cluster analysis, spatial binning + time averaging, selection by expression | Class and argument names compared with the OVITO 3.16 Python reference (`ovito.modifiers`) |
+| `travis_rdf.in` / `travis_cdf.in` / `travis_msd.in` / `travis_hbond.in` / `travis_acf.in` | Answer files to pass to TRAVIS with `-i`. They cover the cell size [pm] and the choice of function | Format (one answer per line, empty line = default, `!` = comment) checked against the TRAVIS Quick Start Guide and source. **The order of the questions was read from the source and has not been verified by running** |
+| `export_README.txt` | The explanation above, and a guide to the remaining TRAVIS questions (time step, choice of molecules and atoms, frame range) | — |
 
-TRAVIS の答えファイルは、**直方体で固定のセル**のときだけ書きます (直方体でないセルは advanced mode の手順が未確認、非周期は TRAVIS がセルを聞くので手で答える)。
-ファイルが尽きると TRAVIS はキーボード入力に切り替わるので、残りは対話で答えられます。公式の勧めどおり、一度 `-i` なしで走らせて TRAVIS が書く `input.txt` を次回に使うのが確実です。
-速度自己相関は TRAVIS では関数名 `acf` です (`vacf` ではありません)。
+TRAVIS answer files are written only for **orthorhombic fixed cells** (for non-orthorhombic cells the advanced-mode procedure has not been checked; for nonperiodic systems TRAVIS asks for the cell, so you answer by hand).
+When the file runs out, TRAVIS switches to keyboard input, so you can answer the rest interactively. As the official guidance suggests, the reliable approach is to run once without `-i` and reuse the `input.txt` that TRAVIS writes.
+In TRAVIS, the velocity autocorrelation function is named `acf` (not `vacf`).
 
-`--select` の式 (`element O and z < 10` など) は、`vmd_load.tcl` では VMD の選択式 (`name O and z < 10`。番号は 0 から)、
-`ovito_pipeline.py` では OVITO の式 (`ParticleType == "O" && Position.Z < 10`) に直して入れます。`within` は OVITO の式には直せないので、その旨を書きます。
+A `--select` expression (`element O and z < 10` and so on) is rewritten as a VMD selection in `vmd_load.tcl` (`name O and z < 10`; indices start at 0),
+and as an OVITO expression in `ovito_pipeline.py` (`ParticleType == "O" && Position.Z < 10`). `within` cannot be rewritten as an OVITO expression, and the file says so.
 
-`--export` writes the files above into `analysis/export/`. None of them has been run by ADIT. Templates contain no numerical values: they use
-`<...>` holes or examples with their source. The VMD commands were checked against the VMD User's Guide and the PBCTools page, the OVITO class
-and argument names against the OVITO 3.16 Python reference, and the TRAVIS answer-file format (one answer per line, empty line = default,
-`!` = comment) against the TRAVIS Quick Start Guide and source. The order of the TRAVIS questions was read from the source and is not verified
-by running; answer files are written only for orthorhombic fixed cells, and TRAVIS switches to keyboard input when the file runs out.
-A `--select` expression is rewritten as a VMD selection in `vmd_load.tcl` and as an OVITO expression in `ovito_pipeline.py` (`within` cannot be rewritten for OVITO).
+## Convergence tests and lattice constants (parameter scan)
 
-## 収束の確認と格子定数 (1 つの条件を変えて一括生成)
+Results of plane-wave DFT (VASP, Quantum ESPRESSO) depend on numerical settings as well as on the chemical setup.
+The main ones are the **cutoff energy** (how finely the electron waves are represented; `ecutwfc` in QE, `ENCUT` in VASP) and the **k-points** (how many points represent the electronic states in the crystal).
+Too small a value gives a wrong answer, and too large a value inflates the computation time. So you raise the value and look for the point where the energy barely changes. This is a convergence test.
+Listing energies while changing the lattice size in small steps also gives the equilibrium lattice constant and the bulk modulus (how hard the material is to compress).
 
-平面波 DFT (VASP、Quantum ESPRESSO) の結果は、化学的な条件とは別に、数値計算の細かさの設定で変わります。
-代表は **カットオフエネルギー** (電子の波をどこまで細かく表すか。QE の `ecutwfc`、VASP の `ENCUT`) と **k 点** (結晶の中の電子の状態を何点で代表させるか) です。
-小さすぎると答えがずれ、大きすぎると計算時間が膨らむので、値を上げていき、エネルギーがほとんど変わらなくなる所を探します。これが収束の確認です。
-格子の大きさを少しずつ変えてエネルギーを並べると、平衡の格子定数と体積弾性率 (どれだけ潰れにくいか) も求まります。
+ADIT creates inputs that differ in a single setting, one directory per value, and after you run them, turns the results into a table and a plot.
 
-ADIT は、1 つの条件だけを変えた入力を値ごとのディレクトリにまとめて作り、実行したあとの結果を表と図にします。
+**From the GUI**
 
-**画面から**
+1. Choose the structure and calculation settings as usual.
+2. In the "Run" menu, open "Generate a parameter scan…". Enter the item to change ("Cutoff energy" / "k-point mesh" / "k-point density" / "Lattice size" / "Other") and the values (comma-separated), then press "Generate".
+3. Run each resulting directory (on this PC, `bash submit.sh` in each directory; on a cluster, as jobs. Run large systems on a cluster).
+4. When all are done, press "Run analysis" in the Analysis tab (the directory field already holds the output location).
 
-1. いつもどおり構造と計算の条件を決めます。
-2. 「実行」メニューの「1 つの条件を変えて一括生成…」を開き、変える項目 (カットオフ / k 点の分割数 / k 点の密度 / 格子の大きさ / その他) と値 (カンマ区切り) を入れて「生成」を押します。
-3. できたディレクトリをそれぞれ実行します (この PC なら各ディレクトリで `bash submit.sh`、クラスタならジョブとして。大きな系はクラスタで)。
-4. すべて終わったら、解析タブで「解析を実行」を押します (ディレクトリの欄には保存先が入っています)。
-
-**コマンド行から**
+**From the command line**
 
 ```bash
-adit-gen spec.json out/ --scan method.ecutwfc=30,40,50,60     # QE のカットオフ [Ry]
-adit-gen spec.json out/ --scan kpoints.mesh=4x4x4,6x6x6,8x8x8  # k 点の分割数
-adit-gen spec.json out/ --scan scale=0.97,0.98,0.99,1.00,1.01,1.02,1.03   # 格子の大きさ (周期系)
+adit-gen spec.json out/ --scan method.ecutwfc=30,40,50,60     # QE cutoff [Ry]
+adit-gen spec.json out/ --scan kpoints.mesh=4x4x4,6x6x6,8x8x8  # k-point mesh
+adit-gen spec.json out/ --scan scale=0.97,0.98,0.99,1.00,1.01,1.02,1.03   # lattice size (periodic systems)
 
-# それぞれを実行したあと
+# after running each one
 adit-analyze out/ --scan
 ```
 
-**表と図の読み方** (`out/scan_energies.csv`、`out/scan_energy.png`、格子の大きさなら `out/eos.png` と `out/eos.json`)
+**Reading the table and plots** (`out/scan_energies.csv`, `out/scan_energy.png`; for lattice size, also `out/eos.png` and `out/eos.json`)
 
-| 列 | 意味 |
+| Column | Meaning |
 |---|---|
-| 最後の値との差 [meV/原子] | いちばん最後に書いた値 (ふつう最も細かい条件) のエネルギーとの差を、原子の数で割ったもの。格子の大きさを変えたときだけは「最小値との差」で、エネルギーがいちばん低い倍率を 0 にします |
-| 力の最大値 [eV/Å]、圧力 [GPa] | 最終構造の値 (DFTB+、QE、VASP の出力から読めるときだけ) |
-| 状態方程式の当てはめ | 格子の大きさを 5 点以上変えたときだけ。Birch–Murnaghan の式で、平衡の体積・体積弾性率・エネルギーが最小になる倍率とそのときの格子の長さを出します |
+| Diff. from last [meV/atom] | Difference from the energy of the last value written (usually the finest setting), divided by the number of atoms. Only for lattice size is it "Diff. from minimum", with the lowest-energy scale factor set to 0 |
+| Max force [eV/Å], Pressure [GPa] | Values for the final structure (only when readable from DFTB+, QE or VASP output) |
+| Equation-of-state fit | Only when the lattice size is varied over 5 or more points. The Birch–Murnaghan equation gives the equilibrium volume, the bulk modulus, the scale factor at the energy minimum and the lattice lengths at that factor |
 
-どの値で十分とみなすかは、計算の目的によって違うので、ADIT は判断しません。
-よく使われる目安は 1 原子あたり 1 meV 程度ですが、反応エネルギーのように差を見る計算ではもっと緩くてよいことが多く、力や応力 (格子定数、振動) を使う計算ではもっと厳しくする必要があります。
+What value counts as good enough depends on the purpose of the calculation, so ADIT does not judge it.
+A common target is about 1 meV per atom. Calculations that look at differences, such as reaction energies, can often be looser. Calculations that use forces or stresses (lattice constants, vibrations) need to be tighter.
 
-**注意すること**
+**Things to watch**
 
-- ふつうはカットオフを先に決め、次に k 点を決めます。
-- QE の `ecutrho` (電荷密度のカットオフ) を 0 (指定しない) にすると、pw.x は `ecutwfc` の 4 倍を使います。ウルトラソフトや PAW の擬ポテンシャルでは、もっと大きな値を求められることがあります。
-- VASP で体積を変える計算 (格子の大きさの一括生成や格子の緩和) では、カットオフが低いと見かけの応力 (Pulay 応力) が出て、格子定数が小さめに出ます。POTCAR の既定より 3 割ほど高い `ENCUT` がよく勧められます。
-- 金属は k 点の収束が遅いので、占有の広げ方 (smearing) とその幅も合わせて決めます。
-- 値の数だけ計算が増えます。
+- Usually you fix the cutoff first and then the k-points.
+- If `ecutrho` (the charge-density cutoff) in QE is 0 (not set), pw.x uses 4 times `ecutwfc`. Ultrasoft and PAW pseudopotentials may need a larger value.
+- In VASP calculations that change the volume (lattice-size scans or lattice relaxation), a low cutoff produces a spurious stress (Pulay stress) and lattice constants that come out too small. An `ENCUT` about 30 % above the POTCAR default is often recommended.
+- Metals converge slowly with k-points, so choose the occupation broadening (smearing) and its width together with them.
+- The number of calculations grows with the number of values.
 
-## ウェブ版
+## Web version
 
 ```bash
 adit-web --open        # http://127.0.0.1:8765/
 ```
 
-デスクトップ版と同じ生成と解析を、ブラウザのフォームから行います。「プレビュー」で生成ファイルの内容を確認し、「生成」でサーバー (adit-web を動かしている PC) 上の出力ディレクトリに書き出します。
-「解析」ページでは計算結果のディレクトリを解析し、図と要約をそのページに表示します。要約の下の「3D で再生」で、軌跡や最適化のステップをスライダーと再生ボタンで動かせます (エネルギー・温度の小さなグラフの縦線がフレームに追従し、クリックでそのフレームへ飛びます)。ディレクトリに cube や CHGCAR があれば「等値面」の枠も出て、等値を入れると面を原子に重ねます (ブラウザに送る三角形は最大 60,000 枚)。spec.json の読み込みとダウンロードもできます (読み込んだファイルに、どの欄にも当てはまらないキーがあると、無視したキーの名前を表示します)。
-「構造 (3D)」の絵では、原子をクリックで選び (Shift+クリックで追加)、2 個で距離、3 個で角度、4 個で二面角を表示します (周期系は最も近い像)。「固定原子の欄へ」で選んだ番号を固定原子の欄に足せます。解析ページの欄には、表示された番号を貼ってください。
-「解析へ進む」のリンクや `/analysis?dir=…` の URL でページを開いただけでは解析は走りません (欄が埋まり、「まだ実行していません」の知らせが出ます)。
-図を作るのは「解析を実行」を押したときだけです。
+The web version offers the same generation and analysis as the desktop version, through forms in a browser. "Preview" shows the contents of the generated files, and "Generate" writes them to an output directory on the server (the PC running `adit-web`).
+The "Analysis" page analyzes a result directory and shows the plots and summary on that page. Under the summary, "Play in 3D" moves through a trajectory or optimization steps with a slider and a play button (a vertical line in the small energy and temperature plots follows the frame, and clicking jumps to that frame). If the directory has a cube or CHGCAR, an "Isosurface" box also appears, and entering an isovalue overlays the surface on the atoms (at most 60,000 triangles are sent to the browser). You can also load and download spec.json (if a loaded file has keys that match no field, the names of the ignored keys are shown).
+In the "Structure (3D)" picture, click an atom to select it (Shift+click to add). Two atoms show a distance, three an angle and four a dihedral (periodic systems use the nearest image). "To the fixed-atoms field" adds the selected indices to the fixed-atoms field. For fields on the Analysis page, paste the displayed indices.
+Opening the page with the "Go to analysis" link or a `/analysis?dir=…` URL does not run the analysis (the fields are filled in, and a notice says "The analysis has not been run yet").
+Plots are made only when you press "Run analysis".
 
-依存は Python の標準ライブラリと Jinja2 だけです。既定では 127.0.0.1 でのみ待ち受けます。
-宛先 (Host) が adit-web 自身のアドレス (127.0.0.1・localhost・この PC のホスト名か IP アドレスと、起動時のポート) でない要求と、別のサイトから送られた要求 (Origin / Referer が adit-web でないもの) は 403 で断ります (ブラウザで開いている他のページからの勝手な操作を防ぐためです)。SSH のポート転送で開くときは、手元のポート番号もサーバーと同じにしてください (例 `ssh -L 8765:127.0.0.1:8765 <接続先>`)。
-画面の状態 (入力中のフォーム、プレビュー、解析の図) は adit-web 1 つにつき 1 組なので、同時に使うのは 1 つのブラウザからにしてください。
+The only dependencies are the Python standard library and Jinja2. By default it listens only on 127.0.0.1.
+Requests whose destination (Host) is not an address of `adit-web` itself (127.0.0.1, localhost, or this PC's host name or IP address, with the port used at startup), and requests sent from another site (Origin / Referer other than `adit-web`), are refused with 403 (this stops other pages open in the browser from acting without your intent). When opening through SSH port forwarding, use the same local port number as on the server (for example `ssh -L 8765:127.0.0.1:8765 <host>`).
+The screen state (the form being edited, the preview, the analysis plots) exists once per `adit-web` process, so use it from one browser at a time.
 
-`--host 0.0.0.0` のように他の PC から届くアドレスで起動すると、起動のたびに合言葉 (トークン) が作られ、端末に `http://…:8765/?token=…` の形で表示されます。この URL を一度開くと、そのブラウザでは以後合言葉なしで使えます。合言葉は `--token` で自分で決めることもでき (使える文字は英数字と `_` `-`)、`--no-token` で外せます。通信は暗号化されないので、学内などの信頼できるネットワークの中だけで使ってください。
+If you start it on an address that other PCs can reach, such as `--host 0.0.0.0`, a token is created at each startup and printed in the terminal in the form `http://…:8765/?token=…`. Once you open this URL, that browser can keep using the server without the token. You can set the token yourself with `--token` (allowed characters are alphanumerics, `_` and `-`), or remove it with `--no-token`. Traffic is not encrypted, so use this only inside a trusted network, such as a campus network.
 
-- 合言葉付きの URL はブラウザの履歴に残ります。共有の PC では、使い終わったら履歴を消してください。
-- adit-web を起動し直すと合言葉が変わり、前の URL では開けなくなります (`--token` で決めた場合は変わりません)。
-- 通信は暗号化されません (http)。合言葉も平文で流れます。
-- `--host 0.0.0.0` (すべてのアドレス) で起動すると、自分用の URL と他の PC 用の URL の 2 行が表示されます。`--host ::` なら IPv6 でも待ち受けます。
+- The URL with the token stays in the browser history. On a shared PC, clear the history when you are done.
+- Restarting `adit-web` changes the token, and the previous URL no longer opens (unless the token was set with `--token`).
+- Traffic is not encrypted (http). The token also travels in plain text.
+- Starting with `--host 0.0.0.0` (all addresses) prints two lines: a URL for yourself and a URL for other PCs. `--host ::` also listens on IPv6.
 
-開発に加わる人向けの手順 (試験の走らせ方、計算コードの追加) は [CONTRIBUTING.md](../CONTRIBUTING.md) にあります。
+For developers (running the tests, adding a calculation code), see [CONTRIBUTING.md](../CONTRIBUTING.md).

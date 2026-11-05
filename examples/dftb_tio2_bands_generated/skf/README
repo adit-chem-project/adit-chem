@@ -1,5 +1,5 @@
-mio-ext: mio-1-1 と tiorg-0-1 を合わせたリンク集 (公式レシピ集 recipes/slakos/mio-ext と同じ構成)。
-tiorg は dftb.org で Requires: mio と明記された mio の拡張。両方の README を以下に写す。
+mio-ext: a set of links combining mio-1-1 and tiorg-0-1 (same layout as recipes/slakos/mio-ext in the official recipes).
+tiorg is an extension of mio, marked Requires: mio on dftb.org. Both READMEs are copied below.
 
 ===== mio-1-1/README =====
 =======

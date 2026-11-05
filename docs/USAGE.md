@@ -1,200 +1,200 @@
-# チュートリアル
+# Tutorial
 
-水分子の構造最適化を、最初から最後まで画面で進めます。**所要 5 分**です
-(計算を始めるところだけ、ターミナルでコマンドを 1 行打ちます)。
+This tutorial runs a geometry optimization of a water molecule from start to finish in the GUI. **It takes about 5 minutes.**
+You type one command in a terminal, and only to start the calculation.
 
-インストールは [各 OS のインストール方法](INSTALL.md) にあります。
+For installation, see [Installation on each OS](INSTALL.md).
 
 ---
 
-## 1. 構造を選ぶ
+## 1. Choose a structure
 
-**構造** タブで作り方を選びます。プリセットから `H2O` を選ぶと、右側に 3D 表示が出ます。
+On the **Structure** tab, choose how to build the structure. Pick `H2O` from the presets, and a 3D view appears on the right.
 
-![構造タブ](images/tutorial/01_structure.png)
+![The Structure tab](images/tutorial/01_structure.png)
 
-- 左ドラッグで回転、ホイールで拡大縮小、右ドラッグで移動
-- 視点のプルダウンで `x 軸から` `y 軸から` `z 軸から` を選べます
-- 枠の左下の矢印は、構造と一緒に回る座標軸です
+- Left-drag to rotate, use the wheel to zoom, and right-drag to pan
+- The **Viewpoint** drop-down offers `along x`, `along y` and `along z`
+- The arrows at the lower left of the frame are coordinate axes that rotate with the structure
 
-## 2. 計算条件を決める
+## 2. Choose the calculation settings
 
-**計算条件** タブで、計算コードと計算の種類を選びます。ここでは DFTB+ と構造最適化です。
+On the **Calculation settings** tab, choose the code and the type of calculation. Here, that is DFTB+ and a geometry optimization.
 
-![計算条件タブ](images/tutorial/02_settings.png)
+![The Calculation settings tab](images/tutorial/02_settings.png)
 
-- **「必須」の印が付いた欄は必須**です。空欄のままだと、右下の **生成** の左に「1 件の不足」のような赤いバッジが出て、その欄の下に理由が赤字で出ます (バッジを押すと全件の一覧が開き、行を選ぶとその欄へ移動します)
-- 最初から入っている値は、計算コード自身の既定値です (ADIT が勧めた値ではありません)。既定から変えた欄は、ラベルの左に細い青い線が付きます (右上の **変えた欄だけ** で、その欄だけを表示できます)
-- ラベルにカーソルを合わせると、その欄の説明が出ます
+- **Fields tagged "required" must be filled in.** If one is empty, a red badge such as "1 issue" appears to the left of **Generate** at the lower right, and the reason appears in red under the field. (Click the badge to open the full list. Select a row to jump to that field.)
+- The initial values are the code's own defaults. They are not values recommended by ADIT. A field changed from its default gets a thin blue line to the left of its label. (**Changed only** at the upper right shows just those fields.)
+- Hover over a label to see a description of the field
 
-## 3. 入力ファイルを作る
+## 3. Generate the input files
 
-右下の **生成** を押すと、選んだフォルダに入力ファイル一式が書き出されます。右側の **生成ファイル** で中身を確認できます。
+Click **Generate** at the lower right. The full set of input files is written to the folder you chose. You can check their contents in **Generated files** on the right.
 
-![生成ファイル](images/tutorial/03_generated.png)
+![Generated files](images/tutorial/03_generated.png)
 
-書き出されるもの:
+Files written:
 
-| ファイル | 内容 |
+| File | Contents |
 |---|---|
-| `dftb_in.hsd` など | 計算コードの入力 |
-| `submit.sh` | 計算を実行するスクリプト |
-| `README.txt` | 実行方法の手引き (末尾に、失敗したときにそのコードの文書が挙げる対処を出典付きで載せます) |
-| `spec.json` | 設定した条件。読み込めば同じ入力を作り直せます |
-| `analyze.py` | 解析用のスクリプト |
-| `transfer_and_submit.sh` | クラスタへ送って投入するコマンド (クラスタ向けのときだけ) |
+| `dftb_in.hsd` and so on | Input for the code |
+| `submit.sh` | Script that runs the calculation |
+| `README.txt` | How to run the calculation (the end lists, with sources, the remedies that the code's documentation gives for failures) |
+| `spec.json` | The settings you chose. Load it to regenerate the same input |
+| `analyze.py` | Analysis script |
+| `transfer_and_submit.sh` | Commands that send the files to a cluster and submit the job (cluster targets only) |
 
-クラスタで計算する場合は、このフォルダを転送して `bash submit.sh` を実行します。
+To run on a cluster, transfer this folder and run `bash submit.sh`.
 
-## 4. 実行する
+## 4. Run the calculation
 
-生成すると、**ワークスペース** タブのターミナルがそのフォルダに移動します。そこで `bash submit.sh` と打つと計算が始まります。
-クラスタで計算する場合は、`transfer_and_submit.sh` に書かれたコマンドを使います。
+After you generate, the terminal on the **Workspace** tab moves to that folder. Type `bash submit.sh` there to start the calculation.
+To run on a cluster, use the commands in `transfer_and_submit.sh`.
 
-![ターミナルで実行](images/tutorial/04_run.png)
+![Running in the terminal](images/tutorial/04_run.png)
 
-**ADIT がジョブを投入することはありません。**この PC で実行するときも、人が `bash submit.sh` を打つか、`adit-gen` に `--run` を付けたときだけ始まります。
+**ADIT never submits a job.** Even on this PC, a run starts only when you type `bash submit.sh` or pass `--run` to `adit-gen`.
 
-## 5. 結果を解析する
+## 5. Analyze the results
 
-**解析** タブでは、計算したフォルダが自動で入っています。見たい項目に印を付けて **解析を実行** を押します。
+On the **Analysis** tab, the folder you ran is already filled in. Check the items you want and click **Run analysis**.
 
-![解析の条件](images/tutorial/05_analysis_settings.png)
+![Analysis settings](images/tutorial/05_analysis_settings.png)
 
-要約・表・図が下に並びます。図はその場で**画像をコピー**でき、**画像を保存…**で書き出せます。
+The summary, tables and plots appear below. You can copy a plot on the spot with **Copy image**, or export it with **Save image…**.
 
-![解析の結果](images/tutorial/06_analysis_result.png)
+![Analysis results](images/tutorial/06_analysis_result.png)
 
-数値には単位と、その値を読み取ったファイル名・行番号が付きます。
-軌跡のある計算 (MD や振動解析) では、要約の下の **3D で再生** で、軌跡や振動モードを動かして見られます。
+Each number comes with its unit and with the name and line number of the file it was read from.
+For a calculation with a trajectory (MD or vibrations), **Play in 3D** below the summary animates the trajectory or the vibrational modes.
 
 ---
 
-## ほかの構造の作り方
+## Other ways to build a structure
 
-**バルク結晶**: 元素と結晶構造、格子定数を指定します。表面スラブもここから作れます。
+**Bulk crystal**: Specify the element, crystal structure and lattice constant. You can also build surface slabs from here.
 
-![バルク結晶](images/tutorial/07_bulk.png)
+![Bulk crystal](images/tutorial/07_bulk.png)
 
-**溶液・混合物**: 成分と個数、密度を指定すると、分子を詰めた箱を作ります。
+**Solution / mixture**: Specify the components, their counts and the density. ADIT builds a box packed with the molecules.
 
-![溶液・混合物](images/tutorial/08_mixture.png)
+![Solution / mixture](images/tutorial/08_mixture.png)
 
-**分子を描く**: リボンの **挿入** → **Draw**。描いた分子はそのまま構造として使えます。SMILES からの読み込みもできます。
+**Draw a molecule**: On the ribbon, choose **Insert** → **Draw**. You can use the molecule you draw directly as the structure. You can also load one from SMILES.
 
-**データベースから取得**: 構造の作り方で「データベースから取得」を選び、PubChem (名前か CID)、COD (ID)、Materials Project (mp-ID。環境設定の `mp_api_key` が要ります)、OPTIMADE (組成) のどれかと名前や ID を入れて「取得」を押します。通信するのはこのときだけです。候補が複数なら一覧から選びます。出どころ (取得元・ID・日時・応答の SHA-256・ライセンス) は spec.json と README.txt に残り、取得したファイルは出力ディレクトリにも写します。取得したデータを公開・再配布するときの条件 (COD は CC0、PubChem はパブリックドメイン (提供元の条件が付くことがある)、Materials Project は CC BY 4.0、OPTIMADE は提供元ごと) は [画面の説明](SCREENS.md) と [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) にあります。
+**Fetch from a database**: Set the structure's "Source" to "Fetch from a database". Choose PubChem (name or CID), COD (ID), Materials Project (mp-ID; needs `mp_api_key` in the preferences) or OPTIMADE (composition), enter the name or ID, and click "Fetch". ADIT goes online only at this point. If there are several candidates, choose one from the list. The provenance (source, ID, date and time, SHA-256 of the response, license) is kept in spec.json and README.txt, and the fetched file is also copied to the output directory. The terms for publishing or redistributing fetched data (COD is CC0; PubChem is public domain, though a provider may add its own terms; Materials Project is CC BY 4.0; OPTIMADE depends on the provider) are in the [Screen reference](SCREENS.md) and [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
 
-![Draw](images/tutorial/10_draw.png)
+![The Draw window](images/tutorial/10_draw.png)
 
-## キーボードで探す
+## Find things with the keyboard
 
-どこにあるか分からない操作や欄は、**Ctrl+K** で名前を打って探せます。操作 (生成、一括生成、雛形を読み込む…)、画面に出ている欄 (温度、ecutwfc、スピン多重度…)、プリセットの分子 (水、エタノール…) が 1 つの検索窓に出て、Enter で実行、または欄へ移動します。**Ctrl+/** でショートカットの一覧が開きます。
+If you cannot find an action or a field, press **Ctrl+K** and type its name. Actions (Generate, Generate a parameter scan, Load a group template…), the fields on the screen (temperature, ecutwfc, spin multiplicity…) and preset molecules (water, ethanol…) all appear in one search box. Press Enter to run the action or jump to the field. **Ctrl+/** opens the list of shortcuts.
 
-## まとめて作る
+## Generate many calculations at once
 
-リボンの **実行** タブに、複数の計算を一度に作る機能が並んでいます。
+The **Run** tab on the ribbon has features that create several calculations at once.
 
-![実行タブ](images/tutorial/09_ribbon_run.png)
+![The Run tab](images/tutorial/09_ribbon_run.png)
 
-**一括生成** は、1 つの値だけを変えた計算を並べて作ります (カットオフや k 点の収束確認、格子定数の探索)。
+**Parameter scan** creates a series of calculations that differ in one value only (convergence tests for the cutoff or k-points, lattice constant searches).
 
-![一括生成](images/tutorial/11_scan.png)
+![Parameter scan](images/tutorial/11_scan.png)
 
-**段階に分けて生成** は、最小化 → NVT → NPT → 本計算のように、順に実行する計算を作ります。前の段階の最終構造は、次の段階を実行する直前に自動で引き継がれます。
+**Stages** creates calculations to run in sequence, such as minimization → NVT → NPT → production. The final structure of each stage is handed to the next stage automatically, just before that stage runs.
 
-**まとめて作る** には、組にして比べる・配座の候補・反応経路 (NEB)・フォノン・弾性定数・遷移状態と IRC があります。
+**Batch generation** covers sets to compare, conformer candidates, reaction paths (NEB), phonons, elastic constants, and transition states with IRC.
 
-## 報告をまとめる
+## Build a report
 
-解析タブの **報告をまとめる…**、または複数のフォルダをまとめて指定します。方法の節・条件の表・結果の表・再現用の一式を書き出せます。
+On the Analysis tab, click **Build a report…**. You can also specify several folders at once. You can export a methods section, a conditions table, a results table and a reproducibility bundle.
 
-![報告](images/tutorial/12_report.png)
+![Report](images/tutorial/12_report.png)
 
-## 図の見た目を変える
+## Change how plots look
 
-解析タブの **詳しい条件** を開くと、線の色・目盛りの向き・グリッド線・枠を指定できます。論文誌の指定に合わせるときに使います。
+Open **More options** on the Analysis tab to set line colors, tick direction, grid lines and the axis frame. Use this to match a journal's requirements.
 
-![図の書式](images/tutorial/14_plot_style.png)
+![Plot style](images/tutorial/14_plot_style.png)
 
-## ファイル形式を変換する
+## Convert file formats
 
-リボンの **ファイル** → **変換**。構造ファイルの相互変換と、計算コード間の条件の変換ができます。
+On the ribbon, choose **File** → **Convert**. It converts between structure file formats and converts settings between codes.
 
-![変換](images/tutorial/13_convert.png)
+![Convert](images/tutorial/13_convert.png)
 
-## ワークスペース: ファイル・エディタ・ターミナル
+## Workspace: files, editor and terminal
 
-**ワークスペース** タブでは、ファイルの一覧・編集・ターミナルを 1 つの画面で扱えます。
-画面を切り替えずに、入力ファイルを直したり、ファイルを動かしたり、計算機に `ssh` で入ったりできます。
+The **Workspace** tab puts a file list, an editor and a terminal on one screen.
+Without switching screens, you can fix input files, move files, or log in to a compute server with `ssh`.
 
-![ワークスペース](images/tutorial/19_workspace.png)
+![Workspace](images/tutorial/19_workspace.png)
 
-- **左のツリー**: 3 階層まで開いた状態で表示されます。ファイルの種類は左の小さな印で分かります
-  (`in` 入力、`out` 出力、`st` 構造、`cfg` 設定、`run` 実行、`py` スクリプト)。
-  ダブルクリックで開きます。右クリックの項目は「開く」「ターミナルでここへ移動」「名前を変える…」「フォルダを作る…」の 4 つです
-- **右上のエディタ**: テキストのファイルなら何でも開けます (入力ファイル、`output.log`、メモ)。`保存` で書き戻します
-- **右下のターミナル**: 手元のシェルがそのまま動きます。`ssh <ユーザー名>@<クラスタ>` でクラスタに入り、
-  `transfer_and_submit.sh` のコマンドを貼れば、転送から投入までここで済みます
+- **Tree on the left**: It opens three levels deep. A small mark on the left shows the file type
+  (`in` input, `out` output, `st` structure, `cfg` settings, `run` run, `py` script).
+  Double-click to open a file. The right-click menu has four items: "Open", "cd here in the terminal", "Rename…" and "New folder…"
+- **Editor at the upper right**: It opens any text file (input files, `output.log`, notes). `Save` writes the file back
+- **Terminal at the lower right**: Your local shell runs as is. Log in to a cluster with `ssh <user>@<cluster>`
+  and paste the commands from `transfer_and_submit.sh`. You can do everything from transfer to submission here
 
-ターミナルでできること:
+What you can do in the terminal:
 
-| 操作 | 内容 |
+| Action | What it does |
 |---|---|
-| `+` ボタン | ターミナルをもう 1 つ開く (クラスタごと、計算ごとに分けられます) |
-| ドラッグ | 範囲を選ぶ。右クリックでコピー、貼り付け |
-| `Ctrl+Shift+C` / `Ctrl+Shift+V` | コピー (選んでいなければ画面全体) / 貼り付け |
-| ホイール | 流れていった行をさかのぼる (右端のスクロールバーでも同じ) |
-| `Ctrl` + ホイール、`Ctrl+±`、`Ctrl+0` | 文字の大きさを変える / 元に戻す |
-| 並べ方のプルダウン | エディタとターミナルを上下・左右に並べ替える (入れ替えもできます) |
-| 「エディタを畳む」「ターミナルを畳む」 | 片方を畳んで、もう片方を広く使う |
-| `vim`、`htop` など | そのまま動きます。マウス操作にも対応しています |
+| `+` button | Opens another terminal (one per cluster or per calculation, for example) |
+| Drag | Selects a range. Right-click to copy or paste |
+| `Ctrl+Shift+C` / `Ctrl+Shift+V` | Copy (the whole screen if nothing is selected) / paste |
+| Wheel | Scrolls back through earlier lines (the scroll bar on the right does the same) |
+| `Ctrl` + wheel, `Ctrl+±`, `Ctrl+0` | Changes the text size / resets it |
+| Layout drop-down | Arranges the editor and terminal top and bottom or side by side (and can swap them) |
+| "Collapse the editor", "Collapse the terminal" | Collapses one to give the other more room |
+| `vim`, `htop` and so on | Work as is, with mouse support |
 
-使うシェルは環境変数 `ADIT_SHELL` で変えられます (例: `ADIT_SHELL="bash --norc"`)。
+To change the shell, set the environment variable `ADIT_SHELL` (for example `ADIT_SHELL="bash --norc"`).
 
-Windows では PowerShell が動きます。Linux と macOS では、`vim` のような画面を使うプログラムもそのまま動きます。
+On Windows, PowerShell runs. On Linux and macOS, full-screen programs such as `vim` also work as is.
 
-## 入力と結果を点検する
+## Inspect inputs and results
 
-リボンの **ファイル** → **入力と結果の点検**。他のソフトで作った入力の読み込み、生成した入力が書き換わっていないかの照合、2 つの計算の条件の突き合わせができます。
-詳しくは [既存の入力の読み込みと照合](NATIVE_INPUTS.md)。
+On the ribbon, choose **File** → **Inspect inputs/results**. You can load inputs made by other software, check whether a generated input has been altered, and compare the settings of two calculations.
+For details, see [Loading and checking existing inputs](NATIVE_INPUTS.md).
 
-![点検](images/tutorial/15_audit.png)
+![Inspection](images/tutorial/15_audit.png)
 
 ---
 
-## コマンドラインから
+## From the command line
 
-同じ操作をコマンドでも行えます。多数の計算を自動で回すときに使います。
-
-```bash
-adit-gen --list-samples                       # 付属の例を一覧で見る
-adit-gen --sample water_generated mine.json   # 1 つ写して、自分の条件ファイルにする
-adit-gen mine.json runs/water                 # 入力ファイル一式を書き出す
-adit-gen mine.json runs/water --run           # 書き出して、そのまま実行する
-adit-analyze runs/water --rdf --msd           # 解析して図と要約を出す
-adit-report runs/*/ -o methods.md             # 方法の節を書き出す
-```
-
-条件ファイルに ADIT の知らない項目 (綴り違いなど) があると、既定値で黙って進まずに止まります。承知のうえで進めるときは `--ignore-unknown-keys` を付けます。
-`--config` に指定した環境設定ファイルが無いときも止まります (既定の場所に新しく作るのは、`--config` を付けないときだけです)。
-
-一括生成と構造の差し替えは、次の形です。
+The same operations are available as commands. Use them to run many calculations automatically.
 
 ```bash
-adit-gen mine.json out/ --scan method.ecutwfc=30,40,50    # 1 つの値を振る
-adit-gen mine.json out/ --structures "mols/*.xyz"         # 構造だけ差し替えて一括
-adit-gen mine.json out/ --stages stages.json              # 段階に分けて生成
+adit-gen --list-samples                       # list the bundled examples
+adit-gen --sample water_generated mine.json   # copy one as your own settings file
+adit-gen mine.json runs/water                 # write the full set of input files
+adit-gen mine.json runs/water --run           # write them and run right away
+adit-analyze runs/water --rdf --msd           # analyze and write plots and a summary
+adit-report runs/*/ -o methods.md             # write a methods section
 ```
 
-構造をデータベースから取得して差し替えるには `--fetch` を付けます (通信はこのときだけ。候補が複数なら一覧を出して止まります)。
+If the settings file has a key ADIT does not know (a typo, for example), it stops instead of silently falling back to the default. To proceed anyway, add `--ignore-unknown-keys`.
+It also stops if the preferences file given to `--config` does not exist. (A new one is created at the default location only when you do not pass `--config`.)
+
+Parameter scans and structure swaps look like this.
 
 ```bash
-adit-gen mine.json out/ --fetch pubchem:water             # PubChem の名前 (CID なら pubchem:962)
-adit-gen mine.json out/ --fetch cod:1000041               # COD の ID
-adit-gen mine.json out/ --fetch mp:mp-149                 # Materials Project (環境設定の mp_api_key が要ります)
-adit-gen mine.json out/ --fetch optimade:SiO2             # OPTIMADE で横断検索 → 候補の一覧
-adit-gen mine.json out/ --fetch optimade:oqmd:4061352     # 候補から選んだ 1 件
+adit-gen mine.json out/ --scan method.ecutwfc=30,40,50    # vary one value
+adit-gen mine.json out/ --structures "mols/*.xyz"         # swap only the structure, in bulk
+adit-gen mine.json out/ --stages stages.json              # generate stages
 ```
 
-詳しい一覧は `adit-gen --help`、解析は `adit-analyze --help-all` で出ます。
-Python から部品として呼ぶ場合は [Python API](API.md) を参照してください。
+To replace the structure with one fetched from a database, add `--fetch`. ADIT goes online only in this case. If there are several candidates, it lists them and stops.
+
+```bash
+adit-gen mine.json out/ --fetch pubchem:water             # PubChem name (for a CID, pubchem:962)
+adit-gen mine.json out/ --fetch cod:1000041               # COD ID
+adit-gen mine.json out/ --fetch mp:mp-149                 # Materials Project (needs mp_api_key in the preferences)
+adit-gen mine.json out/ --fetch optimade:SiO2             # search across OPTIMADE providers -> list of candidates
+adit-gen mine.json out/ --fetch optimade:oqmd:4061352     # the one candidate you chose
+```
+
+For the full list, run `adit-gen --help`. For analysis, run `adit-analyze --help-all`.
+To call the parts from Python, see the [Python API](API.md).

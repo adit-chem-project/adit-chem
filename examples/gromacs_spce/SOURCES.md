@@ -1,11 +1,11 @@
-# examples/gromacs_spce —— GROMACS に同梱の SPC/E 水の箱
+# examples/gromacs_spce —— the SPC/E water box bundled with GROMACS
 
-`examples/gromacs_spce_em_generated` (エネルギー最小化) と `examples/gromacs_spce_nvt_generated` (その続きの NVT) の入力に使ったもの。
-ADIT はトポロジーを作らない (外部で作ったものを受け取る)。ここでは GROMACS に付いてくる水のファイルを使った。
+Used as input for `examples/gromacs_spce_em_generated` (energy minimization) and `examples/gromacs_spce_nvt_generated` (the NVT that follows it).
+ADIT does not create topologies (it takes ones made elsewhere). Here the water files that come with GROMACS are used.
 
-| ファイル | 出典 | ライセンス |
+| File | Source | License |
 |---|---|---|
-| `conf.gro` | GROMACS 2026.3 (conda-forge `gromacs`) の `share/gromacs/top/spc216.gro` をそのまま写したもの (水 216 分子、648 原子、立方体の箱 1.86206 nm) | GROMACS と同じ LGPL-2.1 (https://www.gromacs.org/about.html) |
-| `topol.top` | 2026-09-12 に手で書いた 8 行。GROMACS 同梱の `oplsaa.ff/forcefield.itp` と `oplsaa.ff/spce.itp` を `#include` し、`SOL 216` を並べるだけ | 同梱の力場を読むだけなので、力場のファイル自体はここに無い (grompp が GROMACS の置き場所から読む) |
+| `conf.gro` | Unmodified copy of `share/gromacs/top/spc216.gro` from GROMACS 2026.3 (conda-forge `gromacs`) (216 water molecules, 648 atoms, cubic box 1.86206 nm) | LGPL-2.1, same as GROMACS (https://www.gromacs.org/about.html) |
+| `topol.top` | 8 lines written by hand on 2026-09-12. It only uses `#include` for the bundled `oplsaa.ff/forcefield.itp` and `oplsaa.ff/spce.itp`, then lists `SOL 216` | It only reads the bundled force field, so the force-field files themselves are not here (grompp reads them from the GROMACS install location) |
 
-`spce.itp` は `#ifndef FLEXIBLE` で SETTLE (剛体の水) を使う。SPC/E の文献: Berendsen, Grigera, Straatsma, J. Phys. Chem. 91, 6269 (1987)。
+`spce.itp` uses SETTLE (rigid water) through `#ifndef FLEXIBLE`. SPC/E reference: Berendsen, Grigera, Straatsma, J. Phys. Chem. 91, 6269 (1987).

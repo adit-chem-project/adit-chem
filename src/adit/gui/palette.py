@@ -31,7 +31,7 @@ def shortcut_text(action: QAction) -> str:
 
 
 def with_shortcut(tip: str, action: QAction) -> str:
-    # "元に戻す (Ctrl+Z)": the shortcut is appended once, after the tooltip (or the name when there is none).
+    # "Undo (Ctrl+Z)": the shortcut is appended once, after the tooltip (or the name when there is none).
     key = shortcut_text(action)
     # Qt derives a default tooltip from the text without its "…"; use the text itself so it still translates.
     base = tip if tip and tip != action.text().rstrip("…") else action.text()

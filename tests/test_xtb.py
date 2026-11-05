@@ -50,7 +50,7 @@ def test_xtb_rejects_periodic_and_axes(sk_root):
     assert ex.value.errors[0].location == "structure.fixed_axes"
 
 
-@pytest.mark.skipif(not XTB, reason="xtb が無い")
+@pytest.mark.skipif(not XTB, reason="xtb is missing")
 def test_xtb_real_run(sk_root, tmp_path):
     from adit.results import summarize_run
     out = tmp_path / "w"

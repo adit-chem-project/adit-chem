@@ -1,6 +1,6 @@
 SYSTEM = adit O H
 
-# 電子状態
+# electronic structure
 ENCUT = 400
 PREC = Normal
 ALGO = Normal
@@ -11,7 +11,7 @@ SIGMA = 0.1
 LREAL = Auto
 ISPIN = 1
 
-# 構造
+# structure
 NSW = 10
 IBRION = 2
 ISIF = 2

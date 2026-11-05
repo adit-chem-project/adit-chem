@@ -745,7 +745,7 @@
   "handoff": null,
   "plumed": {
     "input_file": "",
-    "lines": "# 利用者が書いた PLUMED の入力 (ADIT は作らない)\nd1: DISTANCE ATOMS=1,2\ncn: COORDINATION GROUPA=1-32 GROUPB=1-32 R_0=3.0\nPRINT ARG=d1,cn FILE=COLVAR STRIDE=50"
+    "lines": "# PLUMED input written by the user (ADIT does not create it)\nd1: DISTANCE ATOMS=1,2\ncn: COORDINATION GROUPA=1-32 GROUPB=1-32 R_0=3.0\nPRINT ARG=d1,cn FILE=COLVAR STRIDE=50"
   },
   "provenance": {
     "adit_version": "0.1.0a1",
@@ -768,15 +768,15 @@
       },
       {
         "name": "in.lammps",
-        "sha256": "fdebc34595ce03bc3e2b657fe362040b6a2ad445b4336f2104c3ffc1d5238c75"
+        "sha256": "353f3f28ade90662c34367a3b3fe462323f4a006cfb4f8f56b642d654b0113a3"
       },
       {
         "name": "plumed.dat",
-        "sha256": "582d7451024249bc8f65432d4be13a46153d4c469b6c973ee69c77a9d60ae739"
+        "sha256": "8a9365e526750b8299adc37ebecdef8dbe6d46e3518e0c8026a073ef85d86360"
       },
       {
         "name": "submit.sh",
-        "sha256": "be9c3a2ccb06747dfcdd0b8c4ae123f733c7ed9632dec0296b88af694d5ff173"
+        "sha256": "2b9d67cebefa57730af2ac133e7c08cf53e34d2c7b35e4e72af62da56b557a1d"
       }
     ],
     "code_version_file": "code_version.txt"

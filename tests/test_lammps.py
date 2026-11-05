@@ -157,7 +157,7 @@ def test_spec_roundtrip_and_cli(sk_root, pot, tmp_path, capsys):
 LMP = shutil.which("lmp") or ""
 
 
-@pytest.mark.skipif(not (LMP and REAL_EAM.is_file()), reason="lmp か examples/lammps_cu/Cu_u3.eam が無い")
+@pytest.mark.skipif(not (LMP and REAL_EAM.is_file()), reason="lmp or examples/lammps_cu/Cu_u3.eam is missing")
 def test_lammps_real_run(sk_root, tmp_path):
     out = tmp_path / "cu"
     write_project(cu(REAL_EAM), cfg_for(sk_root), out)

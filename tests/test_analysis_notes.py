@@ -27,7 +27,7 @@ def test_md_is_not_reported_as_unconverged():
     t = s.text()
     assert "未収束" not in t and "収束しません" not in t and "指定の計算が終わりました" in t
     assert "MD のステップ数" in t
-    assert "(該当なし)" not in t, "MD の結合長は軌跡の最後のフレームから (出発の構造ではない)"
+    assert "(該当なし)" not in t, "MD bond lengths come from the last trajectory frame, not the starting structure"
     assert "終了コード 0" in summarize_run(EX / "dftb_md_water_generated", exit_code=0).status_line()
     assert "0 ではありません" in summarize_run(EX / "dftb_md_water_generated", exit_code=1).status_line()
 
@@ -200,7 +200,7 @@ def test_panel_md_defaults_titles_and_species(qapp, tmp_path):
     p = AnalysisPanel()
     d = _copy("dftb_md_water_generated", tmp_path)
     p.set_run_dir(d, ["H", "O"])
-    assert p.cb_rdf.isChecked() and p.cb_msd.isChecked(), "MD なら RDF と MSD を既定で入れる"
+    assert p.cb_rdf.isChecked() and p.cb_msd.isChecked(), "MD enables RDF and MSD by default"
     assert p.options().msd_species is None
     p.msd_species.setCurrentIndex(2)
     assert p.options().msd_species == "O"
@@ -231,5 +231,5 @@ def test_the_unoptimized_example_carries_a_note():
     note = EX / "xtb_vib_water_generated" / "NOTE.md"
     assert note.is_file()
     text = note.read_text(encoding="utf-8")
-    assert "構造最適化をしていません" in text
+    assert "has not been geometry-optimized" in text
     assert "1595" in text and "3657" in text

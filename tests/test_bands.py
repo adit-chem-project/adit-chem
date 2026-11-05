@@ -76,7 +76,7 @@ def test_read_vasp_eigenval(tmp_path):
     assert np.allclose(up, [[-5, 6, 8], [-4, 5, 7]]) and down is None
 
 
-@pytest.mark.skipif(not (DFTB and (REAL_SK_ROOT / "mio-ext" / "README").is_file()), reason="dftb+ か mio-ext が無い")
+@pytest.mark.skipif(not (DFTB and (REAL_SK_ROOT / "mio-ext" / "README").is_file()), reason="dftb+ or mio-ext is missing")
 def test_dftb_bands_real_run(tmp_path):
     from adit.analysis import AnalysisOptions, run_analysis
     from tests.test_periodic import tio2_spec

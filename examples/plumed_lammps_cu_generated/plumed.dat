@@ -1,4 +1,4 @@
-# 利用者が書いた PLUMED の入力 (ADIT は作らない)
+# PLUMED input written by the user (ADIT does not create it)
 d1: DISTANCE ATOMS=1,2
 cn: COORDINATION GROUPA=1-32 GROUPB=1-32 R_0=3.0
 PRINT ARG=d1,cn FILE=COLVAR STRIDE=50

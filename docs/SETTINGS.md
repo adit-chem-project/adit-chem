@@ -1,138 +1,138 @@
-# 環境設定
+# Settings
 
-計算コードの置き場所と、どこで実行するか (プロファイル) を決めるファイルの説明です。
-解析の条件は [解析の詳細](ANALYSIS.md) にあります。
+This document describes the file that sets where the calculation codes are and where to run them (profiles).
+Analysis conditions are in [Analysis details](ANALYSIS.md).
 
-## 環境設定 (cluster.toml)
+## Settings file (cluster.toml)
 
 ```toml
-sk_root = "/home/<ユーザー名>/slakos"   # Slater-Koster パラメータの置き場所 (直下に mio-1-1/ など)
-pseudo_root = "/home/<ユーザー名>/pseudo" # Quantum ESPRESSO の擬ポテンシャル (直下に <セット名>/*.UPF)
-cp2k_data = ""                       # CP2K の data ディレクトリ (BASIS_MOLOPT など)。空なら CP2K_DATA_DIR、cp2k の隣の share/cp2k/data の順に探します
-templates_dir = ""                   # 研究室の雛形 (構造を除いた spec.json) の置き場所。空なら、このファイルと同じ場所の templates/ だけを見ます
-mp_api_key = ""                      # Materials Project の API キー (構造を mp-ID で取得するときだけ使います。https://next-gen.materialsproject.org/dashboard で発行)
+sk_root = "/home/<user name>/slakos"   # location of the Slater-Koster parameters (with mio-1-1/ and so on directly inside)
+pseudo_root = "/home/<user name>/pseudo" # Quantum ESPRESSO pseudopotentials (with <set name>/*.UPF directly inside)
+cp2k_data = ""                       # CP2K data directory (BASIS_MOLOPT and so on). If empty, ADIT looks at CP2K_DATA_DIR, then at share/cp2k/data next to cp2k
+templates_dir = ""                   # location of your group's templates (spec.json without the structure). If empty, ADIT only looks at templates/ next to this file
+mp_api_key = ""                      # Materials Project API key (only used to fetch structures by mp-ID; issued at https://next-gen.materialsproject.org/dashboard)
 default_profile = "local"
-enable_run = true                    # false にすると、この PC では計算を実行しない設定になります (生成と解析はできます)
-language = "ja"                      # "ja" または "en" (環境変数 ADIT_LANG が優先)
-theme = "auto"                       # "auto" / "light" / "dark" (環境変数 ADIT_THEME が優先)
-window_frame = "auto"                # ウィンドウの枠。"auto" (Linux では ADIT が描く) / "custom" (ADIT が描く) / "native" (OS に任せる)。環境変数 ADIT_FRAME が優先
-ribbon_collapsed = true              # リボンを畳んだ状態で始めるか。画面の ˄ / ˅ ボタンか Ctrl+F1 で変えると、ここに保存されます
+enable_run = true                    # false means this PC does not run calculations (generation and analysis still work)
+language = "en"                      # "en" (default) or "ja" (the environment variable ADIT_LANG takes precedence)
+theme = "auto"                       # "auto" / "light" / "dark" (the environment variable ADIT_THEME takes precedence)
+window_frame = "auto"                # window frame: "auto" (ADIT draws it on Linux) / "custom" (ADIT draws it) / "native" (left to the OS). The environment variable ADIT_FRAME takes precedence
+ribbon_collapsed = true              # whether to start with the ribbon collapsed. Changing it with the ˄ / ˅ button on screen or Ctrl+F1 saves it here
 
 [profiles.local]
 kind = "direct"
-description = "この PC で bash submit.sh を実行"
+description = "run bash submit.sh on this PC"
 ```
 
-### 環境変数
+### Environment variables
 
-環境設定ファイルより優先されます。一時的に切り替えたいときに使います。
+These take precedence over the settings file. Use them to switch something temporarily.
 
-| 環境変数 | 意味 |
+| Environment variable | Meaning |
 |---|---|
-| `ADIT_CONFIG` | 読む環境設定ファイルのパス (既定は `~/.config/adit/cluster.toml`。Windows は `%APPDATA%\adit\cluster.toml`) |
-| `ADIT_LANG` | 表示言語 `ja` / `en` |
-| `ADIT_THEME` | 画面のテーマ `auto` / `light` / `dark` |
-| `ADIT_FRAME` | ウィンドウの枠 `auto` / `custom` / `native` |
-| `ADIT_SHELL` | ワークスペースのターミナルで使うシェル (例 `ADIT_SHELL="bash --norc"`) |
+| `ADIT_CONFIG` | Path of the settings file to read (default `~/.config/adit/cluster.toml`; on Windows `%APPDATA%\adit\cluster.toml`) |
+| `ADIT_LANG` | Display language `ja` / `en` |
+| `ADIT_THEME` | Screen theme `auto` / `light` / `dark` |
+| `ADIT_FRAME` | Window frame `auto` / `custom` / `native` |
+| `ADIT_SHELL` | Shell used in the Workspace terminal (for example `ADIT_SHELL="bash --norc"`) |
 
-### クラスタで実行する場合
+### Running on a cluster
 
-環境設定ファイルに `kind = "pbs"` または `kind = "slurm"` のプロファイルを追加すると、`submit.sh` にそのスケジューラのヘッダが付きます。
-テンプレートが書くのは汎用の項目 (ジョブ名、ノード数、コア数、MPI プロセス数、OpenMP スレッド数、制限時間) だけで、
-サイト固有の値はすべて環境設定から埋めます (既定は空)。
-下の例の `<...>` はそのままでは動かないので、クラスタの管理者か研究室の先輩に確かめて置き換えてください。置き換え忘れがあると、生成の前の検証で「仮の値のままです」と表示されます。
-使わない行は、行頭に `#` を付けて無効にしたままにします。
+If you add a profile with `kind = "pbs"` or `kind = "slurm"` to the settings file, `submit.sh` gets that scheduler's header.
+The template writes only the generic items (job name, node count, core count, MPI process count, OpenMP thread count, time limit).
+All site-specific values come from the settings (empty by default).
+The `<...>` values in the example below will not work as they are, so check them with your cluster administrator or a senior member of your group and replace them. If you miss one, the validation before generation reports "a placeholder is still in the settings".
+Keep lines you don't use disabled with `#` at the start.
 
-`host` と `remote_dir` を書いておくと、生成した `transfer_and_submit.sh` に、そのまま貼れる `rsync` と `ssh`、投入コマンドが書き出されます (**ADIT は実行しません**)。
-`cores_max` / `nodes_max` / `walltime_max` を書いておくと、画面や `spec.json` の runtime がそれを超えたとき、「仮の値のままです」と同じ形で生成の前に止まります (既定は無し = 照合しない)。
+If you set `host` and `remote_dir`, the generated `transfer_and_submit.sh` contains `rsync`, `ssh` and submit commands ready to paste (**ADIT does not run them**).
+If you set `cores_max` / `nodes_max` / `walltime_max`, generation stops beforehand when the screen or the runtime in `spec.json` exceeds them, in the same way as "a placeholder is still in the settings" (the default is none, meaning no check).
 
 ```toml
 [profiles.remote]
-kind = "pbs"                        # または "slurm"
-description = "所属のクラスタ"
-select_extra = ""                   # PBS の select 行の末尾に付ける文字列 (サイトが要求する場合。例 ":jobtype=core")
-header_extra = ["#PBS -q <キュー名>"]  # ヘッダに追加する行 (queue / partition / account など。Slurm なら "#SBATCH --partition=<パーティション名>")
-submit_command = "qsub"             # 投入コマンド名 (README.txt に書くだけで、ADIT は実行しません)
-status_command = "qstat -u $USER"   # 状態確認のコマンド (同上)
-host = "<クラスタのホスト名>"          # 転送と投入のコマンドに使います (空でも生成できます。その場合は <...> のまま出ます)
-user = "<ログイン名>"                 # 空なら手元のログイン名を使う想定で、host だけを書きます
-remote_dir = "<クラスタでの作業ディレクトリ>"  # 転送先
-cores_max = 0                       # そのキューで使えるコア数の上限 (ノード数 × ノードあたりのコア数と照合)。0 なら照合しません
-nodes_max = 0                       # ノード数の上限。0 なら照合しません
-walltime_max = ""                   # 制限時間の上限 (HH:MM:SS)。空なら照合しません。超えていると生成の前の検証で止まります
-modules = []                        # どの計算コードでも module load するもの (例 ["intel-mpi"])。下の code_modules の前に読み込みます
+kind = "pbs"                        # or "slurm"
+description = "your institution's cluster"
+select_extra = ""                   # string added to the end of the PBS select line (if your site requires it; for example ":jobtype=core")
+header_extra = ["#PBS -q <queue>"]  # lines added to the header (queue / partition / account and so on; for Slurm, "#SBATCH --partition=<partition>")
+submit_command = "qsub"             # name of the submit command (only written in README.txt; ADIT does not run it)
+status_command = "qstat -u $USER"   # command that checks status (same as above)
+host = "<cluster host name>"        # used in the transfer and submit commands (generation also works if empty; the commands then keep <...>)
+user = "<login name>"               # if empty, your local login name is assumed; write only host
+remote_dir = "<working directory on the cluster>"  # transfer destination
+cores_max = 0                       # upper limit of cores available in that queue (compared with nodes × cores per node). 0 means no check
+nodes_max = 0                       # upper limit of nodes. 0 means no check
+walltime_max = ""                   # upper limit of the time limit (HH:MM:SS). Empty means no check. If exceeded, the validation before generation stops
+modules = []                        # what to module load for every calculation code (for example ["intel-mpi"]). Loaded before code_modules below
 
-[profiles.remote.code_modules]   # 計算コードごとに module load するもの (クラスタで module avail と打つと一覧が出ます)
-dftbplus = ["<DFTB+ の module 名>"]
+[profiles.remote.code_modules]   # what to module load for each calculation code (type module avail on the cluster to see the list)
+dftbplus = ["<DFTB+ module name>"]
 
-# vasp = ["<MPI の module 名>", "<数値計算ライブラリの module 名>"]
+# vasp = ["<MPI module name>", "<math library module name>"]
 
-# [profiles.remote.env]          # submit.sh の先頭で export する環境変数 (VASP を使うときだけ。# を外して使います)
+# [profiles.remote.env]          # environment variables exported at the top of submit.sh (only when using VASP; remove the # to use them)
 
-# VASP_PP_PATH = "<POTCAR ライブラリの親ディレクトリ>"
+# VASP_PP_PATH = "<parent directory of the POTCAR library>"
 
-[profiles.remote.commands]       # 計算コードごとの実行コマンド。{mpiprocs} {omp_threads} {binary} {ntasks} が埋められます
-                                 # {ntasks} = ノード数 × ノードあたりの MPI プロセス数 (複数ノードの mpirun -np に使います)。それ以外の {...} は生成の前の検証で止まります
+[profiles.remote.commands]       # run command for each calculation code. {mpiprocs} {omp_threads} {binary} {ntasks} are filled in
+                                 # {ntasks} = nodes × MPI processes per node (used for mpirun -np across several nodes). Any other {...} stops the validation before generation
 dftbplus = "dftb+"
 
-# vasp = "mpirun -np {ntasks} <VASP の bin>/vasp_{binary}"
+# vasp = "mpirun -np {ntasks} <VASP bin>/vasp_{binary}"
 
-# orca = "<ORCA を展開したディレクトリ>/orca"   # ORCA は絶対パスで呼び、mpirun は付けません
+# orca = "<directory where ORCA is unpacked>/orca"   # call ORCA by its absolute path, without mpirun
 ```
 
-生成したあとの手順は次の 3 つです (`transfer_and_submit.sh` には、この 3 つが `host` と `remote_dir` を埋めた形で書かれています)。
+After generation there are three steps (`transfer_and_submit.sh` contains all three, with `host` and `remote_dir` filled in).
 
 ```bash
-rsync -av <生成したディレクトリ> <クラスタ>:<作業ディレクトリ>/       # 1. 転送 (scp -r でも同じです)
-ssh <クラスタ> 'cd <作業ディレクトリ>/<名前> && qsub submit.sh'     # 2. 投入 (Slurm なら sbatch)
-ssh <クラスタ> 'qstat -u $USER'                                      # 3. 状態確認 (Slurm なら squeue)
+rsync -av <generated directory> <cluster>:<working directory>/       # 1. transfer (scp -r also works)
+ssh <cluster> 'cd <working directory>/<name> && qsub submit.sh'     # 2. submit (sbatch on Slurm)
+ssh <cluster> 'qstat -u $USER'                                      # 3. check status (squeue on Slurm)
 ```
 
-`#!/bin/sh` で `module` コマンドが定義されていない環境があるため、`submit.sh` は `module` を使う前に `/etc/profile` を読み、それでも見つからなければ理由を表示して止まります。
+On some systems the `module` command is not defined under `#!/bin/sh`, so `submit.sh` reads `/etc/profile` before using `module`. If it still cannot find the command, it shows the reason and stops.
 
-クラスタ向けのプロファイルでは `check_remote.sh` も生成されます。手元の PC で `bash check_remote.sh` と打つと、`ssh -o BatchMode=yes` でのログイン、`module load`、実行ファイルの有無 (`command -v`)、
-`remote_dir` に書けるか、Slurm なら `sbatch --test-only submit.sh`、PBS なら `qstat -Q <キュー名>` を順に試し、1 行ずつ OK / NG を出します。**投入はしません** (`host` と `remote_dir` が要ります)。
+Cluster profiles also generate `check_remote.sh`. Type `bash check_remote.sh` on your local PC, and it tries, in order, logging in with `ssh -o BatchMode=yes`, `module load`, whether the executable exists (`command -v`),
+whether `remote_dir` is writable, and `sbatch --test-only submit.sh` on Slurm or `qstat -Q <queue>` on PBS. It prints one OK / NG line for each. **It does not submit anything** (it needs `host` and `remote_dir`).
 
-## 各計算コードで用意するもの
+## What to prepare for each code
 
-| 計算コード | 本体 | パラメータ |
+| Calculation code | Program | Parameters |
 |---|---|---|
-| DFTB+ | conda-forge の `dftbplus` など。`dftb+` を PATH に | Slater-Koster パラメータを https://dftb.org/parameters/download.html から取得し、`sk_root` の下に置きます (CC BY-SA 4.0)。必要な元素ペアの skf ファイルと LICENSE / README が出力ディレクトリの `skf/` にコピーされます |
-| VASP | ライセンスを持つ利用者が用意します。実行パスを `commands.vasp` に | POTCAR ライブラリを `potpaw_PBE/<名前>/POTCAR` の階層で置き、親ディレクトリを `env.VASP_PP_PATH` に。**POTCAR 自体は出力に含めません** (`potcar.spec` と `make_potcar.sh` を書き、実行時に連結します) |
-| xtb | conda-forge の `xtb` を PATH に (LGPL-3.0) | 不要 (計算手法に内蔵) |
-| Quantum ESPRESSO | conda-forge の `qe` などで `pw.x` を PATH に | UPF ファイルを `pseudo_root/<セット名>/` に置きます (pslibrary、SSSP https://www.materialscloud.org/discover/sssp など。ライセンスは配布元で確認してください)。必要な元素の UPF と付属文書が `pseudo/` にコピーされます |
-| ORCA | 登録して入手し、実行パスを `commands.orca` に (再配布不可) | 不要 |
-| CP2K | conda-forge の `cp2k` などで `cp2k.psmp` を PATH に (GPL-2.0-or-later) | CP2K に付いている data ディレクトリ (BASIS_MOLOPT、GTH_POTENTIALS など)。場所は環境設定の `cp2k_data` に書きます (空なら環境変数 `CP2K_DATA_DIR`、PATH にある cp2k の隣の `share/cp2k/data` の順に探します)。使う項目だけが `BASIS_adit` / `POTENTIAL_adit` に写されます |
-| LAMMPS | conda-forge の `lammps` などで `lmp` を PATH に (GPL-2.0) | 力場のファイル (EAM、ReaxFF の ffield、機械学習ポテンシャルのモデル) か、外部で作った data ファイル。ADIT は力場の係数を決めません |
-| GROMACS | conda-forge の `gromacs` などで `gmx` を PATH に (LGPL-2.1) | 外部で作ったトポロジー (.top / .itp) と構造 (.gro / .pdb)。CHARMM-GUI、acpype、pdb2gmx などで作ります |
-| 機械学習ポテンシャル (MACE・CHGNet) | 生成した `run_mlip.py` を実行する環境に `pip install ase mace-torch` (または `chgnet`)。PyTorch が入るので数 GB になります。**ADIT 自身は使いません** | 学習済みモデル。空欄ならパッケージの既定のモデル (初回に自動でダウンロードされます)。モデルのファイルを指定すると出力ディレクトリに写します。ライセンスはモデルごとに違うので配布元で確認してください |
+| DFTB+ | `dftbplus` from conda-forge or similar. Put `dftb+` on PATH | Get the Slater-Koster parameters from https://dftb.org/parameters/download.html and place them under `sk_root` (CC BY-SA 4.0). The skf files for the element pairs needed, plus LICENSE / README, are copied to `skf/` in the output directory |
+| VASP | Provided by a user with a license. Put the path of the executable in `commands.vasp` | Place the POTCAR library in the hierarchy `potpaw_PBE/<name>/POTCAR` and put its parent directory in `env.VASP_PP_PATH`. **POTCAR itself is not included in the output** (ADIT writes `potcar.spec` and `make_potcar.sh`, which concatenate it at run time) |
+| xtb | `xtb` from conda-forge, on PATH (LGPL-3.0) | Not needed (built into the method) |
+| Quantum ESPRESSO | `pw.x` on PATH, from `qe` on conda-forge or similar | Place UPF files in `pseudo_root/<set name>/` (pslibrary, SSSP https://www.materialscloud.org/discover/sssp and so on; check the license with the distributor). The UPF files for the elements needed, and the accompanying documents, are copied to `pseudo/` |
+| ORCA | Register and download it, then put the path of the executable in `commands.orca` (no redistribution) | Not needed |
+| CP2K | `cp2k.psmp` on PATH, from `cp2k` on conda-forge or similar (GPL-2.0-or-later) | The data directory that comes with CP2K (BASIS_MOLOPT, GTH_POTENTIALS and so on). Write its location in `cp2k_data` in the settings file (if empty, ADIT looks at the environment variable `CP2K_DATA_DIR`, then at `share/cp2k/data` next to the cp2k on PATH). Only the entries used are copied to `BASIS_adit` / `POTENTIAL_adit` |
+| LAMMPS | `lmp` on PATH, from `lammps` on conda-forge or similar (GPL-2.0) | Force-field files (EAM, ReaxFF ffield, machine-learning potential models) or a data file made elsewhere. ADIT does not decide force-field coefficients |
+| GROMACS | `gmx` on PATH, from `gromacs` on conda-forge or similar (LGPL-2.1) | A topology (.top / .itp) and structure (.gro / .pdb) made elsewhere, with CHARMM-GUI, acpype, pdb2gmx and so on |
+| Machine-learning potential (MACE, CHGNet) | `pip install ase mace-torch` (or `chgnet`) in the environment that runs the generated `run_mlip.py`. This brings in PyTorch and takes several GB. **ADIT itself does not use it** | A trained model. If left blank, the package's default model is used (downloaded automatically on first use). If you specify a model file, it is copied to the output directory. Licenses differ by model, so check with the distributor |
 
-### CP2K・LAMMPS・GROMACS の画面
+### The CP2K, LAMMPS and GROMACS screens
 
-計算コードのプルダウンで選ぶと、そのコードの欄が出ます。「必須」の印が付いた青字のラベルは必須の欄です (ラベルにカーソルを合わせると説明が出ます)。
+Choose a code in the calculation code dropdown, and that code's fields appear. Blue labels with a "required" tag are required fields (hover over a label to see an explanation).
 
-- **CP2K**: 汎関数、カットオフと相対カットオフ [Ry] は既定を持たないので、自分で決めます (CP2K のマニュアルの「CUTOFF と REL_CUTOFF の収束」の手順)。元素ごとの基底と擬ポテンシャルは、data ディレクトリのファイルから読んだ候補がプルダウンに並びます。候補が 1 つだけの元素は空欄のままでそれを使います。分子や表面のように周期でない方向があるときは「ポアソン方程式の解き方」を選び、箱の無い分子なら「分子の箱の一辺」を入れます。画面に無い設定は「追加の行 (節ごと)」に `[FORCE_EVAL/DFT/SCF]` のような見出しを書き、その下に行を書きます。
-- **LAMMPS**: 単位系 (metal / real) と pair_style、pair_coeff を書き、力場のファイルを「写すファイル」に入れます (入力の中ではファイル名だけで書きます)。data ファイルを空にすると構造から `data.lammps` を書きます (atomic か charge 形式)。外部の data ファイルを使うときは、型番号の元素を順に入れ、構造の群にも同じ系を読み込みます。k 点の群は出ません。
-- **GROMACS**: トポロジー (.top) と構造のファイル (.gro / .pdb) を指定します。**構造の正本は構造のファイルです。**「構造の群にも読み込む」を押すと、構造の群の作り方が「ファイル」になって同じファイルを読み込みます (原子数の確認と 3D 表示に使います。ウェブ版では「構造の欄にもこのファイルを使う」に印を付けます)。NPT では「圧力浴 (pcoupl)」と等温圧縮率が必須です (GROMACS のマニュアルの水の例は 4.5e-5 /bar)。NVT → NPT → 本計算のように段階を重ねるときは、前の段階の `adit.cpt` を「前の段階の .cpt」に指定します。k 点の群は出ません。
+- **CP2K**: "Functional", "Cutoff [Ry]" and "Relative cutoff [Ry]" have no defaults, so decide them yourself (follow the procedure for converging CUTOFF and REL_CUTOFF in the CP2K manual). The basis set and pseudopotential for each element are offered in dropdowns, with candidates read from the files in the data directory. For an element with only one candidate, leaving the field blank uses it. If there are non-periodic directions, as with molecules and surfaces, choose a "Poisson solver". For a molecule with no box, enter "Box edge for a molecule [Å]". For settings not on the screen, write a header such as `[FORCE_EVAL/DFT/SCF]` in "Extra lines (per section)" and put the lines below it.
+- **LAMMPS**: Write the units (metal / real), pair_style and pair_coeff, and put the force-field files in "Files to copy" (use only the file name in the input). If the data file is left empty, ADIT writes `data.lammps` from the structure (atomic or charge style). When you use an external data file, enter the elements of the atom types in order, and load the same system into the structure group too. The "k-points (periodic)" group does not appear.
+- **GROMACS**: Specify the topology (.top) and the structure file (.gro / .pdb). **The structure file is the master copy of the structure.** Pressing "Also load into the structure group" sets the structure group's source to "File" and loads the same file (it is used to check the atom count and for the 3D view; in the web app, tick "use this file for the structure too"). For NPT, "Barostat (pcoupl)" and "Compressibility [1/bar]" are required (the water example in the GROMACS manual uses 4.5e-5 /bar). When you run stages such as NVT → NPT → production, set the previous stage's `adit.cpt` as "Previous stage .cpt". The "k-points (periodic)" group does not appear.
 
-計算の種類のうち、そのコードの生成器に無いもの (LAMMPS と GROMACS の振動解析とバンド計算、CP2K のバンド計算) は、選ぶと「生成できません」の欄に理由が出ます。ほかのコードと同じ扱いです。
+Calculation types that a code's generator does not have (vibrational analysis and band structures for LAMMPS and GROMACS, band structures for CP2K) show the reason in the "Cannot generate" pane when you select them. Other codes are handled the same way.
 
-ORCA は本体が再配布できないため、入力ファイルの内容だけをテストしています。VASP はクラスタで、DFTB+、xtb、pw.x、CP2K、LAMMPS、GROMACS、OpenMM、Psi4、ABINIT、PLUMED は手元の PC で実行して確認しています。
+ORCA itself cannot be redistributed, so only the contents of its input files are tested. VASP has been checked by running it on a cluster, and DFTB+, xtb, pw.x, CP2K, LAMMPS, GROMACS, OpenMM, Psi4, ABINIT and PLUMED by running them on a local PC.
 
-## 出力ディレクトリ
+## Output directory
 
 ```
-<出力ディレクトリ>/
-  submit.sh      実行スクリプト (ローカル: bash submit.sh / クラスタ: qsub または sbatch submit.sh)
-  spec.json      計算設定一式。ADIT で開くと復元できます
-  README.txt     実行手順と出力ファイルの見方
-  analyze.py     解析スクリプト (analysis/ に図と要約を書きます)。解析に対応した計算コードのときだけ
-  transfer_and_submit.sh   転送と投入のコマンド。プロファイルが pbs / slurm のときだけ
-  check_remote.sh          投入前の疎通確認 (ssh、module、実行ファイル、作業ディレクトリ、キュー)。同上。投入はしません
-  dftb_in.hsd, geometry.gen, skf/       DFTB+ の場合
-  INCAR, POSCAR, KPOINTS, potcar.spec, make_potcar.sh   VASP の場合
-  struct.xyz, xtb.inp                   xtb の場合
-  pw.in, pseudo/                        Quantum ESPRESSO の場合
-  orca.inp                              ORCA の場合
+<output directory>/
+  submit.sh      run script (local: bash submit.sh / cluster: qsub or sbatch submit.sh)
+  spec.json      the full calculation settings. Opening it in ADIT restores them
+  README.txt     how to run, and how to read the output files
+  analyze.py     analysis script (writes figures and a summary to analysis/). Only for codes that support analysis
+  transfer_and_submit.sh   transfer and submit commands. Only when the profile is pbs / slurm
+  check_remote.sh          connectivity check before submitting (ssh, module, executable, working directory, queue). Same condition. It does not submit anything
+  dftb_in.hsd, geometry.gen, skf/       for DFTB+
+  INCAR, POSCAR, KPOINTS, potcar.spec, make_potcar.sh   for VASP
+  struct.xyz, xtb.inp                   for xtb
+  pw.in, pseudo/                        for Quantum ESPRESSO
+  orca.inp                              for ORCA
 ```
 

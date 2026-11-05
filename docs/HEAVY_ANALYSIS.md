@@ -1,83 +1,83 @@
-# 重い解析: 大きな軌跡を計算機で処理する
+# Heavy analysis: processing large trajectories on a compute machine
 
-ADIT は計算を投入しません。**重い解析も同じ扱い**にしました。
-
-```
-ADIT が用意する        人が実行する              ADIT が図にする
-msd_worker.py   ──▶   bash msd_run.sh    ──▶   adit-analyze <ディレクトリ>
-msd_run.sh           (→ msd_vanhove.json)     (図・要約・報告)
-```
-
-フォノン (`phonon_collect.py`) や弾性定数と同じ流儀です。画面の中で数十分かかる計算を回さないので、
-**GUI が固まらず、ノート PC のメモリも使い切りません。**
-
-## 何が「重い」のか
-
-`adit-analyze --vanhove` は、実行する前に**算術で見積もります** (実際には計算しません)。
+ADIT does not submit calculations. **Heavy analyses get the same treatment.**
 
 ```
-変位の数 ≒ τ の本数 × フレーム数 × 原子数 × 0.75
-時間 ≒ 変位の数 × 100 ns + τ の本数 × 5 ms     (2026-09-13 に手元で測った係数)
-座標のメモリ = フレーム数 × 原子数 × 24 バイト
+ADIT prepares          a person runs             ADIT plots
+msd_worker.py   ──▶   bash msd_run.sh    ──▶   adit-analyze <directory>
+msd_run.sh           (→ msd_vanhove.json)     (plots, summary, report)
 ```
 
-見積もりが **60 秒** (`--heavy-limit` で変更可) を超えると、その場では計算せず、実行用のファイルを置きます。
+This is the same approach as phonons (`phonon_collect.py`) and elastic constants. Calculations that take tens of minutes do not run inside the GUI, so
+**the GUI does not freeze and a laptop's memory is not exhausted.**
 
-| 系 | 変位の数 | 見積もり | どうなるか |
+## What counts as "heavy"
+
+Before running, `adit-analyze --vanhove` **makes an arithmetic estimate** (it does not actually compute anything).
+
+```
+displacements ≈ number of τ × frames × atoms × 0.75
+time ≈ displacements × 100 ns + number of τ × 5 ms     (coefficients measured locally on 2026-09-13)
+coordinate memory = frames × atoms × 24 bytes
+```
+
+If the estimate exceeds **60 seconds** (change this with `--heavy-limit`), ADIT does not compute on the spot. It writes files for running the job instead.
+
+| System | Displacements | Estimate | What happens |
 |---|---|---|---|
-| 18 原子 × 1,000 フレーム × τ 100 本 | 135 万 | 0.6 秒 | その場で計算 |
-| 18 原子 × 11,001 フレーム × τ 100 本 | 1,485 万 | 2 秒 | その場で計算 |
-| 1,000 原子 × 10,000 フレーム × τ 100 本 | 7.5 億 | 76 秒 | ファイルを置く |
-| 18 原子 × 11,001 フレーム × τ 3,000 本 | 4.5 億 | 45 秒 + 当てはめ 15 秒 | ファイルを置く |
+| 18 atoms × 1,000 frames × 100 τ | 1.35 million | 0.6 s | Computed on the spot |
+| 18 atoms × 11,001 frames × 100 τ | 14.85 million | 2 s | Computed on the spot |
+| 1,000 atoms × 10,000 frames × 100 τ | 750 million | 76 s | Files are written |
+| 18 atoms × 11,001 frames × 3,000 τ | 450 million | 45 s + 15 s for the fit | Files are written |
 
-## 使い方
+## Usage
 
 ```bash
-adit-analyze run/ --msd --vanhove              # 見積もって、重ければ msd_worker.py と msd_run.sh を置く
-bash run/msd_run.sh                             # 人が実行する (クラスタならジョブとして投入)
-adit-analyze run/ --msd --vanhove              # 2 回目。msd_vanhove.json を読んで図にする
-adit-analyze run/ --msd --vanhove --vanhove-here   # 小さい系なら、その場で計算してもよい
-adit-analyze run/ --write-msd-job              # 見積もらずにファイルだけ置く (既定の置き場所は run/)
+adit-analyze run/ --msd --vanhove              # estimate; if heavy, write msd_worker.py and msd_run.sh
+bash run/msd_run.sh                             # a person runs this (on a cluster, submit it as a job)
+adit-analyze run/ --msd --vanhove              # second pass: read msd_vanhove.json and plot it
+adit-analyze run/ --msd --vanhove --vanhove-here   # small systems may also be computed on the spot
+adit-analyze run/ --write-msd-job              # write the files without estimating (default location is run/)
 ```
 
-`msd_run.sh` の中身は出力から埋めます: 軌跡のファイル名 (geo_end.xyz、xtb.trj、XDATCAR など)、1 フレームの時間
-(`--dt`、読めなければ穴のまま残してその旨をコメントに書く)、そして軌跡のファイルにセルが書かれていない周期系
-(DFTB+ の geo_end.xyz など) では最後のフレームのセルを `msd_cell.txt` (TV の行 3 本) に書いて `--cell` で渡します。
-セルが無いと `msd_worker.py` は境界越えを巻き戻せないので、JSON の `warnings` にその旨を書きます。
+The contents of `msd_run.sh` are filled in from the output: the trajectory file name (geo_end.xyz, xtb.trj, XDATCAR and so on) and the time per frame
+(`--dt`; if it cannot be read, the blank stays and a comment says so). For periodic systems whose trajectory file has no cell
+(DFTB+ geo_end.xyz and others), the cell of the last frame is written to `msd_cell.txt` (3 TV lines) and passed with `--cell`.
+Without a cell, `msd_worker.py` cannot unwrap boundary crossings, and it says so in `warnings` in the JSON.
 
-`msd_worker.py` は **numpy と scipy だけで動きます** (ADIT を import しません。`handoff.py` と同じ決まりで、
-試験 `tests/test_heavy_setup.py` が見張っています)。クラスタに ADIT が入っていなくても走ります。
+`msd_worker.py` **runs with only numpy and scipy** (it does not import ADIT; this is the same rule as for `handoff.py`, and the test
+`tests/test_heavy_setup.py` enforces it). It runs even on a cluster where ADIT is not installed.
 
 ```bash
-# 1 行 = 1 原子 (ラベル x y z) の独自形式をそのまま読む場合
+# reading a custom format as is, with one line per atom (label x y z)
 python msd_worker.py Na.dat --natoms 18 --cell dftb.inp --dt 10 --taus 100 --out msd_vanhove.json
 
-# ASE が読める形式 (extxyz、vasprun.xml など) はそのまま
+# formats ASE can read (extxyz, vasprun.xml and so on) work as they are
 python msd_worker.py trajectory.extxyz --dt 10 --species Na
 ```
 
-## 出てくるもの
+## What you get
 
-`msd_vanhove.json` に入るのは**数値だけ** (判定はしません)。
+`msd_vanhove.json` holds **only numbers** (no judgments).
 
-| 鍵 | 中身 |
+| Key | Contents |
 |---|---|
-| `d_per_atom_cm2_s` | 原子 1 個ごとの D。時間原点を全部使った MSD の傾きから |
-| `d_from_mean_msd_cm2_s` | 全原子の平均の MSD から出した D |
-| `vanhove.d_fit_A2_fs` | 変位の分布にガウスの形を当てはめた D(τ) |
-| `vanhove.d_direct_A2_fs` | 同じ変位から ⟨r²⟩/(6τ) で出した D(τ)。ガウスなら上と一致します |
-| `vanhove.alpha2` | 非ガウス因子 α₂ = 3⟨r⁴⟩/(5⟨r²⟩²) − 1 (Rahman 1964)。0 ならガウス |
-| `vanhove.truncated_from_fs` | 最小像の上限で変位が頭打ちになり始めた遅れ時間 (なければ null) |
-| `cell_A` | 巻き戻しに使ったセル [Å] (3 × 3。無ければ null) |
-| `warnings` | 注意の文。セルが無く巻き戻していないとき (周期系なら `--cell` でセルを渡す) |
+| `d_per_atom_cm2_s` | D for each atom, from the slope of the MSD using all time origins |
+| `d_from_mean_msd_cm2_s` | D from the MSD averaged over all atoms |
+| `vanhove.d_fit_A2_fs` | D(τ) from a Gaussian fit to the displacement distribution |
+| `vanhove.d_direct_A2_fs` | D(τ) from ⟨r²⟩/(6τ) with the same displacements. For a Gaussian, this agrees with the row above |
+| `vanhove.alpha2` | Non-Gaussian parameter α₂ = 3⟨r⁴⟩/(5⟨r²⟩²) − 1 (Rahman 1964). 0 means Gaussian |
+| `vanhove.truncated_from_fs` | Lag time at which displacements begin to saturate at the minimum-image limit (null if none) |
+| `cell_A` | Cell used for unwrapping [Å] (3 × 3; null if none) |
+| `warnings` | Cautions, such as when there is no cell and nothing was unwrapped (for a periodic system, pass the cell with `--cell`) |
 
-**最小像の頭打ちに注意。**`--vanhove-displacement mic` (既定) は折り返した座標の最小像を使うので、
-**セルの最小の幅の半分**より大きい変位を測れません。変位の 1 % がその 9 割を超えたら、その遅れ時間を
-`truncated_from_fs` に記録し、要約でも注意します。`--vanhove-displacement unwrapped` なら頭打ちしません。
+**Watch for minimum-image saturation.** `--vanhove-displacement mic` (the default) uses the minimum image of wrapped coordinates, so it cannot measure
+displacements larger than **half the smallest cell width**. When 1 % of the displacements exceed 90 % of that limit, that lag time is recorded in
+`truncated_from_fs`, and the summary also warns about it. `--vanhove-displacement unwrapped` does not saturate.
 
-## 判定しないこと
+## What ADIT does not judge
 
-- どの D を採るか (MSD の傾き / 分布の当てはめ / ⟨r²⟩/(6τ))
-- どこからを「非ガウス」と呼ぶか
-- どの原子が「速い」か
-- 当てはめ範囲が妥当か (既定は遅れ時間の 10〜50 %。`--msd-fit` で変えられます)
+- Which D to adopt (MSD slope / distribution fit / ⟨r²⟩/(6τ))
+- Where "non-Gaussian" begins
+- Which atoms are "fast"
+- Whether the fit range is appropriate (the default is 10-50 % of the lag time; change it with `--msd-fit`)

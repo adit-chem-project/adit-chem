@@ -167,7 +167,7 @@ def test_spec_roundtrip_and_cli(sk_root, src, tmp_path, capsys):
 GMX = shutil.which("gmx") or ""
 
 
-@pytest.mark.skipif(not (GMX and gmx_top_dir() and (gmx_top_dir() / "spc216.gro").is_file()), reason="gmx か GROMACS 同梱の spc216.gro が無い")
+@pytest.mark.skipif(not (GMX and gmx_top_dir() and (gmx_top_dir() / "spc216.gro").is_file()), reason="gmx or the spc216.gro shipped with GROMACS is missing")
 def test_gromacs_real_run(sk_root, tmp_path):
     top_dir = gmx_top_dir()
     s = tmp_path / "src"
