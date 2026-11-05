@@ -54,7 +54,9 @@ def main() -> int:
     win = MainWindow(cfg, config_path())
     translate_widgets(win)
     win.show()
-    return app.exec()
+    code = app.exec()
+    MainWindow._current = None
+    return code
 
 
 if __name__ == "__main__":

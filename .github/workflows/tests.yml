@@ -55,18 +55,27 @@ jobs:
         run: pip install ".[dev,smiles,analysis,xrd,phonons]"
       - if: runner.os != 'Linux'
         run: pip install ".[dev,smiles,analysis]"
-      - run: pytest -q -rs --junitxml=junit.xml
+      - name: Run the tests
+        shell: bash
+        run: |
+          set -o pipefail
+          pytest -q -rs --junitxml=junit.xml 2>&1 | tee pytest.log
       - name: Name the failed tests in the run summary (readable without opening the log)
         if: failure()
         shell: python
         run: |
           import xml.etree.ElementTree as ET
           from pathlib import Path
+          def clean(text):
+              return text.replace("%", "%25").replace("\r", "").replace("\n", "%0A")
           if Path("junit.xml").is_file():
               for case in ET.parse("junit.xml").iter("testcase"):
                   for bad in list(case.iter("failure")) + list(case.iter("error")):
-                      msg = (bad.get("message") or "").replace("%", "%25").replace("\r", "").replace("\n", "%0A")[:900]
-                      print(f"::error title={case.get('classname')}.{case.get('name')}::{msg}")
+                      print(f"::error title={case.get('classname')}.{case.get('name')}::{clean(bad.get('message') or '')[:900]}")
+          elif Path("pytest.log").is_file():
+              # pytest crashed before it could write its report: show how the log ends
+              tail = Path("pytest.log").read_text(encoding="utf-8", errors="replace").splitlines()[-40:]
+              print(f"::error title=pytest stopped without a report::{clean(chr(10).join(tail))[-3500:]}")
 
   dftbplus-run:
     # Install the simulation codes and run the tests that execute the generated inputs (Linux only)
@@ -109,4 +118,22 @@ jobs:
           OMPI_MCA_plm: isolated
           OMPI_MCA_rmaps_base_oversubscribe: "yes"
           OMP_NUM_THREADS: "1"
-        run: pytest -q -rs
+        run: |
+          set -o pipefail
+          pytest -q -rs --junitxml=junit.xml 2>&1 | tee pytest.log
+      - name: Name the failed tests in the run summary (readable without opening the log)
+        if: failure()
+        shell: python
+        run: |
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          def clean(text):
+              return text.replace("%", "%25").replace("\r", "").replace("\n", "%0A")
+          if Path("junit.xml").is_file():
+              for case in ET.parse("junit.xml").iter("testcase"):
+                  for bad in list(case.iter("failure")) + list(case.iter("error")):
+                      print(f"::error title={case.get('classname')}.{case.get('name')}::{clean(bad.get('message') or '')[:900]}")
+          elif Path("pytest.log").is_file():
+              # pytest crashed before it could write its report: show how the log ends
+              tail = Path("pytest.log").read_text(encoding="utf-8", errors="replace").splitlines()[-40:]
+              print(f"::error title=pytest stopped without a report::{clean(chr(10).join(tail))[-3500:]}")

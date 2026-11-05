@@ -278,13 +278,14 @@ def test_generate_reloads_the_open_file_and_cds_the_terminal(app, quiet, sk_root
     win.generate()
     out = tmp_path / "out"
     assert win.workspace.open_file(out / "submit.sh") == ""
-    text = win.workspace.editor.toPlainText()
     (out / "submit.sh").write_text("stale\n", encoding="utf-8"); _touch_later(out / "submit.sh")
     sent = []
     win.workspace.terminal.current.session = FakeSession()
     win.workspace.terminal.current.session.write = sent.append
     win.generate()                                                      # overwrite confirmed by the quiet fixture
-    assert win.workspace.editor.toPlainText() == text and not win.workspace.editor.dirty
+    # The generation time in the header may have moved on by a second.
+    assert win.workspace.editor.toPlainText() == (out / "submit.sh").read_text(encoding="utf-8") and not win.workspace.editor.dirty
+    assert "stale" not in win.workspace.editor.toPlainText()
     assert sent == [f"cd {WorkspacePanel._quoted(out)}\r"]                 # double quotes on Windows
     win.workspace.terminal.current.session = None
     win.close()

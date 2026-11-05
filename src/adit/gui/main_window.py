@@ -56,6 +56,8 @@ def readme_location() -> str:
 
 
 class MainWindow(QMainWindow):
+    _current = None     # keeps a rebuilt window alive; cleared before the application ends
+
     def __init__(self, cfg: Config, cfg_path: Path):
         super().__init__()
         self.cfg, self.cfg_path = cfg, cfg_path

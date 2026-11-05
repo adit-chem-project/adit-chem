@@ -5,6 +5,7 @@ import pytest
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
+import shiboken6  # noqa: E402
 from PySide6.QtWidgets import QApplication, QMessageBox  # noqa: E402
 
 from adit import lang  # noqa: E402
@@ -27,6 +28,12 @@ def window(tmp_path):
     win.show()
     app.processEvents()
     yield win
+    for w in (win, MainWindow._current):
+        if w is not None and shiboken6.isValid(w):
+            w.close()
+            w.deleteLater()
+    MainWindow._current = None
+    app.processEvents()
     apply_theme(app, "light")
 
 
@@ -38,6 +45,11 @@ def _background(win) -> str:
     QApplication.instance().processEvents()
     image = win.grab().toImage()
     return image.pixelColor(image.width() // 2, image.height() - 40).name()
+
+
+def test_the_rebuilt_window_is_released_when_the_application_ends():
+    source = (Path(__file__).resolve().parents[1] / "src" / "adit" / "gui" / "app.py").read_text(encoding="utf-8")
+    assert "MainWindow._current = None" in source
 
 
 def test_the_default_language_is_english():
