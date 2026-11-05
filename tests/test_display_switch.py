@@ -14,10 +14,12 @@ from adit.gui import i18n  # noqa: E402
 from adit.gui.main_window import MainWindow  # noqa: E402
 from adit.gui.style import apply_theme, current_theme  # noqa: E402
 
+_APP = QApplication.instance() or QApplication([])
+
 
 @pytest.fixture
 def window(tmp_path):
-    app = QApplication.instance() or QApplication([])
+    app = _APP
     path = tmp_path / "cluster.toml"
     cfg = default_config(sk_root="")
     cfg.language, cfg.theme = "ja", "light"

@@ -72,10 +72,10 @@ jobs:
               for case in ET.parse("junit.xml").iter("testcase"):
                   for bad in list(case.iter("failure")) + list(case.iter("error")):
                       print(f"::error title={case.get('classname')}.{case.get('name')}::{clean(bad.get('message') or '')[:900]}")
-          elif Path("pytest.log").is_file():
-              # pytest crashed before it could write its report: show how the log ends
+          if Path("pytest.log").is_file():
+              # A crash during shutdown leaves a clean report, so always show how the log ends.
               tail = Path("pytest.log").read_text(encoding="utf-8", errors="replace").splitlines()[-40:]
-              print(f"::error title=pytest stopped without a report::{clean(chr(10).join(tail))[-3500:]}")
+              print(f"::error title=The end of the pytest log::{clean(chr(10).join(tail))[-3500:]}")
 
   dftbplus-run:
     # Install the simulation codes and run the tests that execute the generated inputs (Linux only)
@@ -133,7 +133,7 @@ jobs:
               for case in ET.parse("junit.xml").iter("testcase"):
                   for bad in list(case.iter("failure")) + list(case.iter("error")):
                       print(f"::error title={case.get('classname')}.{case.get('name')}::{clean(bad.get('message') or '')[:900]}")
-          elif Path("pytest.log").is_file():
-              # pytest crashed before it could write its report: show how the log ends
+          if Path("pytest.log").is_file():
+              # A crash during shutdown leaves a clean report, so always show how the log ends.
               tail = Path("pytest.log").read_text(encoding="utf-8", errors="replace").splitlines()[-40:]
-              print(f"::error title=pytest stopped without a report::{clean(chr(10).join(tail))[-3500:]}")
+              print(f"::error title=The end of the pytest log::{clean(chr(10).join(tail))[-3500:]}")
