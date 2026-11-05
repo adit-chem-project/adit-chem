@@ -4,12 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}ADIT{% endblock %}</title>
+<script>window.ADIT_DARK = function () { var theme = "{{ theme }}"; return theme === "dark" || (theme !== "light" && !!window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches); };</script>
 <style>
-/* 透明感のある色 (2026-09-11、デスクトップ版の gui/style.py と同じ系統): 地は無色に近い淡い灰色のグラデーション、面は半透明の白 + ぼかし */
+/* Translucent colors in the same family as the desktop gui/style.py: a pale gray gradient behind frosted white panels */
 :root { --bg-top:#e9e9ec; --bg-bottom:#f5f5f7; --fg:#14161b; --muted:#4b5260; --line:rgba(0,0,0,.12); --box:rgba(255,255,255,.62); --edge:rgba(255,255,255,.9);
         --field:rgba(255,255,255,.75); --hover:rgba(255,255,255,.92); --accent:#0a7aff; --accent-top:#3a95ff; --err:#d70015; --ok:#1f7a38; --pill-bg:#e1e3e8; --pill-fg:#3b4150; --radius:12px; }
-@media (prefers-color-scheme: dark) { :root { --bg-top:#1c1c1e; --bg-bottom:#2a2a2d; --fg:#f0f1f4; --muted:#b6b8c2; --line:rgba(255,255,255,.13); --box:rgba(255,255,255,.06);
-        --edge:rgba(255,255,255,.15); --field:rgba(255,255,255,.09); --hover:rgba(255,255,255,.16); --accent:#3d8cff; --accent-top:#6aa8ff; --err:#ff6961; --ok:#5fd07a; --pill-bg:#4a4b52; --pill-fg:#e8e9ee; } }
+{% if theme != "light" %}{% if theme != "dark" %}@media (prefers-color-scheme: dark) { {% endif %}:root { --bg-top:#1c1c1e; --bg-bottom:#2a2a2d; --fg:#f0f1f4; --muted:#b6b8c2; --line:rgba(255,255,255,.13); --box:rgba(255,255,255,.06);
+        --edge:rgba(255,255,255,.15); --field:rgba(255,255,255,.09); --hover:rgba(255,255,255,.16); --accent:#3d8cff; --accent-top:#6aa8ff; --err:#ff6961; --ok:#5fd07a; --pill-bg:#4a4b52; --pill-fg:#e8e9ee; }{% if theme != "dark" %} }{% endif %}{% endif %}
 * { box-sizing: border-box; }
 body { margin:0; padding:0 20px 32px; min-height:100vh; background:linear-gradient(135deg, var(--bg-top), var(--bg-bottom)) fixed; color:var(--fg); font:14px/1.55 "Inter", -apple-system, "Helvetica Neue", "Noto Sans CJK JP", "Noto Sans JP", system-ui, sans-serif; }
 header { display:flex; flex-wrap:wrap; gap:12px; align-items:center; padding:14px 0 12px; margin-bottom:16px; }
@@ -38,7 +39,7 @@ button, .btn { padding:7px 16px; border:1px solid var(--line); border-radius:10p
 button:hover, .btn:hover { background:var(--hover); border-color:var(--edge); }
 button.primary { background:linear-gradient(180deg, var(--accent-top), var(--accent)); color:#fff; border-color:var(--accent); }
 button:disabled { opacity:.45; cursor:not-allowed; }
-.hint { color:var(--muted); font-size:12px; overflow-wrap:anywhere; }  /* 長いパス (data ディレクトリなど) が欄の外へ出ないように */
+.hint { color:var(--muted); font-size:12px; overflow-wrap:anywhere; }  /* keeps long paths inside the field */
 .status { font-weight:600; } .status.ok { color:var(--ok); } .error { color:var(--err); white-space:pre-wrap; } .message { color:var(--ok); white-space:pre-wrap; }
 pre { background:var(--field); border:1px solid var(--edge); border-radius:10px; padding:10px 12px; overflow:auto; max-height:70vh; font-size:12.5px; }
 .tabs { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; } .tabs button { padding:5px 12px; border-radius:999px; } .tabs button.active { background:var(--accent); color:#fff; border-color:transparent; }
@@ -61,8 +62,8 @@ table.scan th { font-weight:600; color:var(--muted); }
 table.scan .num { text-align:right; font-variant-numeric:tabular-nums; }
 table.scan td:last-child { white-space:normal; }
 .sub { font-weight:700; margin:16px 0 4px; }
-/* 狭い画面 (スマホ・幅 400 px ほど)。fieldset は既定で min-width: min-content なので、中の広いもの (180 px のラベル列 + 欄、
-   手順の行のボタン) に合わせて画面の外まで広がっていた。0 にして画面の幅に収め、ラベルと欄を縦に積む。1366 px の見た目は変えない */
+/* Narrow screens (phones, about 400 px). A fieldset defaults to min-width: min-content, so wide contents pushed it off screen.
+   Setting 0 fits the screen and stacks labels over fields. The 1366 px layout does not change */
 fieldset, .cols > div { min-width:0; }
 @media (max-width: 600px) {
   body { padding:0 10px 24px; }

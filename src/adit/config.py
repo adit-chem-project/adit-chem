@@ -71,7 +71,7 @@ class Config(BaseModel):
     mp_api_key: str = ""     # Materials Project API key (fetching structures by mp-ID)
     default_profile: str = "local"
     enable_run: bool = True
-    language: str = "ja"
+    language: str = "en"
     theme: str = "auto"
     window_frame: str = "auto"
     ribbon_collapsed: bool = True
@@ -168,9 +168,9 @@ def _english(text: str = "") -> bool:
 
     env = env_var("LANG")
     if env:
-        return env.lower().startswith("en")
+        return not env.lower().startswith("ja")
     m = re.search(r'^\s*language\s*=\s*["\']?(en|ja)', text, re.M)
-    return bool(m and m.group(1) == "en")
+    return not (m and m.group(1) == "ja")
 
 
 def describe_config_error(ex: Exception, text: str, path: Path) -> str:

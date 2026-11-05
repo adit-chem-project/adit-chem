@@ -9,9 +9,9 @@ from adit.gui.widgets import add_row, label, narrow
 from adit.lang import L
 from adit.spec import MlipMethod
 
-FAMILIES = [("", L("(選んでください)", "(choose one)")), ("mace_mp", "MACE-MP (mace_mp)"), ("mace_off", "MACE-OFF (mace_off)"),
+FAMILIES = [("", ("(選んでください)", "(choose one)")), ("mace_mp", "MACE-MP (mace_mp)"), ("mace_off", "MACE-OFF (mace_off)"),
             ("chgnet", "CHGNet (chgnet)")]
-DTYPES = [("", L("(パッケージの既定)", "(package default)")), ("float32", "float32"), ("float64", "float64")]
+DTYPES = [("", ("(パッケージの既定)", "(package default)")), ("float32", "float32"), ("float64", "float64")]
 
 
 class MlipMethodPanel(QWidget):
@@ -21,7 +21,7 @@ class MlipMethodPanel(QWidget):
         super().__init__(parent)
         self.family = QComboBox()
         for k, v in FAMILIES:
-            self.family.addItem(v, k)
+            self.family.addItem(L(*v) if isinstance(v, tuple) else v, k)
         self.model = QLineEdit()
         self.model.setPlaceholderText("空欄ならパッケージの既定のモデル (例 small、medium-mpa-0、またはモデルのファイルのパス)")
         self.device = QComboBox(); self.device.setEditable(True)
@@ -29,7 +29,7 @@ class MlipMethodPanel(QWidget):
         self.device.lineEdit().setPlaceholderText("空欄ならパッケージの既定 (例 cpu、cuda)")
         self.dtype = QComboBox()
         for k, v in DTYPES:
-            self.dtype.addItem(v, k)
+            self.dtype.addItem(L(*v) if isinstance(v, tuple) else v, k)
         self.dispersion = QCheckBox("D3 を足す (mace_mp の dispersion)")
         self.dispersion.setProperty("adit_key", self.dispersion.text())
         self.seed = narrow(QSpinBox()); self.seed.setRange(0, 2 ** 31 - 1); self.seed.setValue(12345)

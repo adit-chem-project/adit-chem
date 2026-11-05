@@ -6,7 +6,7 @@ from adit.config import env_var
 from PySide6.QtWidgets import (QAbstractButton, QComboBox, QGroupBox, QLabel, QLineEdit, QMenu, QMenuBar, QPlainTextEdit, QTabBar, QTabWidget, QToolBar,
                                QToolButton, QWidget)
 
-LANGUAGE = "ja"
+LANGUAGE = "en"
 
 _EN: dict[str, str] = {
     "構造": "Structure", "プリセット": "Preset", "ファイル": "File", "バルク": "Bulk", "スラブ": "Slab",
@@ -51,11 +51,11 @@ _EN: dict[str, str] = {
     "先に「生成」を押してください": "Press “Generate” first", "実行中": "Running",
     "クラスタ用 (PBS / Slurm) の入力は、このアプリからは実行しません": "Cluster (PBS / Slurm) input is not run from this app",
     "Windows では実行できません (生成した入力を Linux のサーバーに転送して使います)": "Cannot run on Windows (transfer the generated input to a Linux server)",
-    "環境設定ファイルを作りました": "Settings file created", "表示言語を切り替えます (環境設定の language に保存。再起動後に反映)": "Switch the display language (saved as language in the preferences; effective after restart)", "挿入": "Insert", "表示": "View", "設定": "Preferences",
+    "環境設定ファイルを作りました": "Settings file created", "表示言語を切り替えます (環境設定の language に保存)": "Switch the display language (saved as language in the settings)", "挿入": "Insert", "表示": "View", "設定": "Preferences",
     "ヘルプ": "Help", "計算設定 (spec.json) を保存…": "Save calculation settings (spec.json)…", "終了": "Quit", "構造ファイルを読み込む…": "Load a structure file…",
-    "溶液に成分を追加": "Add a component to the solution", "テーマ": "Theme", "システムに従う": "Follow the system", "ライト": "Light", "ダーク": "Dark",
-    "ADIT について": "About ADIT", "README を開く": "Open the README", "言語 (再起動後に反映)": "Language (after restart)", "テーマ (再起動後に反映)": "Theme (after restart)",
-    "ウィンドウの枠 (再起動後に反映)": "Window frame (after restart)", "自動 (Linux では ADIT が描く)": "Automatic (drawn by ADIT on Linux)",
+    "溶液に成分を追加": "Add a component to the solution", "システムに従う": "Follow the system", "ライト": "Light", "ダーク": "Dark",
+    "ADIT について": "About ADIT", "README を開く": "Open the README", "言語": "Language", "テーマ": "Theme",
+    "ウィンドウの枠": "Window frame", "自動 (Linux では ADIT が描く)": "Automatic (drawn by ADIT on Linux)",
     "ADIT が描く (ボタンにカーソルで色が点く)": "Drawn by ADIT (buttons light up on hover)", "OS に任せる": "Use the system frame",
     "フォルダを選ぶ…": "Choose folder…", "指定": "Reference",
     "Slater-Koster パラメータのセット (mio-1-1 など) を入れたフォルダを選びます。選んだ場所は環境設定 (sk_root) に保存されます":
@@ -92,7 +92,7 @@ _EN: dict[str, str] = {
     "%ブロックをそのまま追加 (例 %basis newGTO ... end)": "% blocks appended verbatim (e.g. %basis newGTO ... end)",
     "分子系のみ。電荷とスピン多重度は構造パネルの値を使います。並列数は実行環境の MPI プロセス数 (%pal nprocs)。ORCA 本体は登録して入手し、実行パスは環境設定に書きます":
         "Molecules only. Charge and multiplicity from the structure panel. Parallelism = MPI processes of the target (%pal nprocs). Obtain ORCA by registration; set its path in the settings",
-    "conv_thr [Ry]": "conv_thr [Ry]", "mixing_beta": "mixing_beta", "保存しました。表示言語は次回の起動から: ": "Saved. The language applies from the next start: ",
+    "conv_thr [Ry]": "conv_thr [Ry]", "mixing_beta": "mixing_beta",
     "開く": "Open", "保存": "Save", "再読み込み": "Reload", "元に戻す": "Undo", "構造ファイル": "Structure file",
     "計算設定": "Calculation settings", "アプリ": "Application", "ボタン": "Buttons", "入力": "Input", "この PC": "This PC",
     "環境設定": "Preferences", "自動": "Automatic", "ADIT が描く": "Drawn by ADIT", "OS の枠": "System frame",
@@ -228,12 +228,12 @@ _EN.setdefault("SCC の反復上限 (MaxSccIterations)", "Maximum SCC iterations
 
 def set_language(lang: str) -> None:
     global LANGUAGE
-    LANGUAGE = "en" if str(lang).lower().startswith("en") else "ja"
+    LANGUAGE = "ja" if str(lang).lower().startswith("ja") else "en"
     from adit import lang as _lang
     _lang.set_language(LANGUAGE)
 
 
-def language_from_env(default: str = "ja") -> str:
+def language_from_env(default: str = "en") -> str:
     return env_var("LANG", default)
 
 

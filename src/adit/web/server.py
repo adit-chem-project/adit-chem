@@ -144,7 +144,7 @@ class WebApp:
 
     def render(self, name: str, **ctx) -> str:
         tmpl = _env.get_template(name)
-        return tmpl.render(T=L, HELP=help_for, lang=lang.LANGUAGE, version=__version__, cfg=self.cfg, cfg_path=str(self.cfg_path), app=self, **ctx)
+        return tmpl.render(T=L, HELP=help_for, lang=lang.LANGUAGE, theme=env_var("THEME", self.cfg.theme), version=__version__, cfg=self.cfg, cfg_path=str(self.cfg_path), app=self, **ctx)
 
     def scene(self) -> tuple[str, str, bool]:
         from adit.web.structure3d import scene_from_atoms, summary_line
@@ -1911,7 +1911,7 @@ def server_url(host: str, port: int, token: str | None = None) -> str:
 
 
 def server_lines(host: str, port: int, token: str | None = None) -> list[str]:
-    stop = "(Ctrl-C で停止 / Ctrl-C to stop)"
+    stop = L("(Ctrl-C で停止 / Ctrl-C to stop)", "(Ctrl-C to stop)")
     if host not in WILDCARD_HOSTS:
         return [f"adit-web {__version__}: {server_url(host, port, token)}  {stop}"]
     return [f"adit-web {__version__}:",

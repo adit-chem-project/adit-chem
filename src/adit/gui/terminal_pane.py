@@ -139,6 +139,14 @@ class TerminalTabs(QWidget):
                 view.terminal.dark = dark
                 view.terminal.update()
 
+    def any_busy(self) -> bool:
+        for i in range(self.tabs.count()):
+            view = self.tabs.widget(i)
+            session = view.terminal.session if isinstance(view, TerminalView) else None
+            if session is not None and session.busy():
+                return True
+        return False
+
     def close_session(self) -> None:
         for i in range(self.tabs.count()):
             view = self.tabs.widget(i)

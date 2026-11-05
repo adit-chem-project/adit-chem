@@ -87,7 +87,7 @@ class PlaybackPanel(QWidget):
         self.btn_next = QPushButton(">"); self.btn_last = QPushButton(">|")
         for b in (self.btn_first, self.btn_prev, self.btn_next, self.btn_last):
             b.setFixedWidth(40)
-        self.btn_play.setFixedWidth(64)
+        self.btn_play.setFixedWidth(84)
         self.btn_first.setToolTip(L("最初のフレーム", "First frame")); self.btn_last.setToolTip(L("最後のフレーム", "Last frame"))
         self.btn_prev.setToolTip(L("1 つ前 (コマ送り)", "Previous frame")); self.btn_next.setToolTip(L("1 つ先 (コマ送り)", "Next frame"))
         self.btn_play.setToolTip(L("再生 / 停止", "Play / pause"))

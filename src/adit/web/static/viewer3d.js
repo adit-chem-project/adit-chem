@@ -111,7 +111,7 @@
 
     function draw() {
       var w = canvas.width, h = canvas.height;
-      var dark = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches;
+      var dark = window.ADIT_DARK();
       var ratio = window.devicePixelRatio || 1;
       ctx.fillStyle = dark ? "#1e1e1e" : "#ffffff";
       ctx.fillRect(0, 0, w, h);

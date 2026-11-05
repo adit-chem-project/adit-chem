@@ -60,7 +60,7 @@
   }
 
   function draw() {
-    var dark = matchMedia && matchMedia("(prefers-color-scheme: dark)").matches;
+    var dark = window.ADIT_DARK();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle = dark ? "#2b2d35" : "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);

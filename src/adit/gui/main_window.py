@@ -100,7 +100,7 @@ class MainWindow(QMainWindow):
         self._history: list[str] = []; self._hist_pos = -1; self._applying = False
         tb = QToolBar("操作"); tb.setMovable(False); tb.setObjectName("ribbon_actions"); self.action_bar = tb
         self.act_lang = QAction("English / 日本語", self)
-        self.act_lang.setToolTip("表示言語を切り替えます (環境設定の language に保存。再起動後に反映)")
+        self.act_lang.setToolTip("表示言語を切り替えます (環境設定の language に保存)")
         self.btn_generate = QPushButton(icons.icon("generate", 16), "生成"); self.btn_generate.setObjectName("primary"); self.btn_generate.setDefault(True)
         self.run_hint = QLabel(""); self.run_hint.setObjectName("hint")
         home = str(Path.home())
@@ -745,14 +745,7 @@ class MainWindow(QMainWindow):
 
 
     def _toggle_language(self) -> None:
-        self.cfg.language = "en" if self.cfg.language != "en" else "ja"
-        try:
-            from adit.config import save_config
-            save_config(self.cfg, self.cfg_path)
-            self.statusBar().showMessage(tr("保存しました。表示言語は次回の起動から: ") + self.cfg.language)
-        except OSError as ex:
-            self.statusBar().showMessage(L(f"設定を保存できません: {ex}", f"cannot save the settings: {ex}"))
-
+        self._set_language("en" if self.cfg.language != "en" else "ja")
 
 
     @staticmethod
@@ -1090,9 +1083,9 @@ class MainWindow(QMainWindow):
         g.add_small([self.act_batch[k] for k in ("phonons", "elastic", "ts")])
         p = rb.add_page("設定")
         g = p.add_group("環境設定"); g.add_large(self.act_settings); g.add_small([self.act_reload])
-        g = p.add_group("言語 (再起動後に反映)"); g.add_small([a for _c, a in self._lang_actions])
-        g = p.add_group("テーマ (再起動後に反映)"); g.add_small([a for _c, a in self._theme_actions])
-        g = p.add_group("ウィンドウの枠 (再起動後に反映)"); g.add_small([a for _c, a in self._frame_actions])
+        g = p.add_group("言語"); g.add_small([a for _c, a in self._lang_actions])
+        g = p.add_group("テーマ"); g.add_small([a for _c, a in self._theme_actions])
+        g = p.add_group("ウィンドウの枠"); g.add_small([a for _c, a in self._frame_actions])
         p = rb.add_page("ヘルプ")
         g = p.add_group(L("探す", "Find")); g.add_large(self.act_palette); g.add_large(self.act_shortcuts)
         g = p.add_group("ヘルプ"); g.add_large(self.act_readme); g.add_large(self.act_about)
@@ -1192,20 +1185,67 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(L(f"設定を保存できません: {ex}", f"cannot save the settings: {ex}"))
 
     def _set_language(self, code: str) -> None:
-        self.cfg.language = code; self._save_cfg()
-        self.statusBar().showMessage(L(f"言語を {code} にしました。次回の起動から反映されます", f"language set to {code}; takes effect after restart"))
+        self._change_appearance("language", code)
 
     def _set_theme(self, code: str) -> None:
-        self.cfg.theme = code; self._save_cfg()
-        for c, a in self._theme_actions:
-            a.setChecked(c == code)
-        self.statusBar().showMessage(L(f"テーマを {code} にしました。次回の起動から反映されます", f"theme set to {code}; takes effect after restart"))
+        self._change_appearance("theme", code)
+
+    def _change_appearance(self, key: str, code: str):
+        before = getattr(self.cfg, key)
+        if code == before:
+            self._sync_menu_checks()
+            return self
+        if not self._may_replace_window():
+            self._sync_menu_checks()
+            return self
+        setattr(self.cfg, key, code); self._save_cfg()
+        return self._replace_window()
+
+    def _may_replace_window(self) -> bool:
+        # Rebuilding closes the terminals, so a running command needs the user's word.
+        if self.workspace.editor.dirty and not self.workspace._ask_discard():
+            return False
+        if not self.workspace.terminal.any_busy():
+            return True
+        answer = QMessageBox.question(self, L("表示を切り替えます", "Switch the display"),
+                                      L("ターミナルでコマンドが動いています。切り替えるとターミナルを閉じるので、そのコマンドは止まります。切り替えますか",
+                                        "A command is running in the terminal. Switching closes the terminals and stops that command. Switch anyway?"))
+        return answer == QMessageBox.StandardButton.Yes
+
+    def _replace_window(self):
+        # Text and colors are fixed when the widgets are built, so a new window is the only complete way to apply them.
+        from PySide6.QtWidgets import QApplication
+
+        from adit.gui.i18n import set_language, translate_widgets
+        from adit.gui.style import apply_theme
+
+        app = QApplication.instance()
+        try:
+            spec = self.current_spec()
+        except Exception:  # an unfinished form must not block the switch
+            spec = None
+        set_language(self.cfg.language)
+        apply_theme(app, self.cfg.theme)
+        new = MainWindow(self.cfg, self.cfg_path)
+        translate_widgets(new)
+        if spec is not None:
+            new.apply_spec(spec, origin=False)
+        new.origin = self.origin
+        new.runtime.outdir.setText(self.runtime.outdir.text())
+        new.analysis.run_dir.setText(self.analysis.run_dir.text())
+        new.set_mode(self.mode())
+        new.ribbon.set_collapsed(self.ribbon.is_collapsed())
+        new.setGeometry(self.geometry())
+        MainWindow._current = new                # the old window's owner is gone once it closes
+        (new.showMaximized if self.isMaximized() else new.show)()
+        new.refresh_preview()
+        self.workspace.editor.discard()
+        self.close()
+        self.deleteLater()
+        return new
 
     def _set_frame(self, code: str) -> None:
-        self.cfg.window_frame = code; self._save_cfg()
-        for c, a in self._frame_actions:
-            a.setChecked(c == code)
-        self.statusBar().showMessage(L(f"ウィンドウの枠を {code} にしました。次回の起動から反映されます", f"window frame set to {code}; takes effect after restart"))
+        self._change_appearance("window_frame", code)
 
     def save_spec(self) -> None:
         try:
@@ -1340,6 +1380,7 @@ class MainWindow(QMainWindow):
             self.reload_config()
 
     def reload_config(self) -> None:
+        before = (self.cfg.language, self.cfg.theme, self.cfg.window_frame)
         try:
             self.cfg = load_config(self.cfg_path)
         except ConfigError as ex:
@@ -1349,6 +1390,8 @@ class MainWindow(QMainWindow):
         self._on_context()                       # the code panels keep their own cfg (POTCAR root etc.)
         self._sync_menu_checks()
         self.refresh_preview()
+        if (self.cfg.language, self.cfg.theme, self.cfg.window_frame) != before and self._may_replace_window():
+            self._replace_window()
 
     def closeEvent(self, event) -> None:  # noqa: N802 (Qt)
         if self.workspace.editor.dirty and not self.workspace._ask_discard():

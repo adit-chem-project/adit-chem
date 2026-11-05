@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import itertools
+import os
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -12,6 +13,9 @@ from adit.spec import HARTREE_PER_BOHR_IN_EV_PER_ANG, AtomsData, CalculationSpec
 
 if TYPE_CHECKING:
     from adit.config import Config
+
+# Expected texts are the Japanese ones; subprocesses read this too.
+os.environ.setdefault("ADIT_LANG", "ja")
 
 REPO = Path(__file__).resolve().parent.parent
 REAL_SK_ROOT = REPO / "slakos"

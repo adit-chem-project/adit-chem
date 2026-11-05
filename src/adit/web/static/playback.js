@@ -24,7 +24,7 @@
     var w = series.clientWidth || 420, h = series.clientHeight || 180;
     series.width = Math.round(w * ratio); series.height = Math.round(h * ratio);
     var ctx = series.getContext("2d");
-    var dark = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches;
+    var dark = window.ADIT_DARK();
     ctx.fillStyle = dark ? "#1e1e1e" : "#ffffff"; ctx.fillRect(0, 0, series.width, series.height);
     var rows = [];
     if (data.energies_ev) { rows.push([T("エネルギー [eV]", "energy [eV]"), data.energies_ev]); }
