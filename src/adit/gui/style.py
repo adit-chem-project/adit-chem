@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from adit.config import env_var
+from adit.lang import L
 from dataclasses import dataclass
 
 from PySide6.QtGui import QFont, QFontDatabase
@@ -70,11 +71,11 @@ def qss(t: Tokens) -> str:
     primary = f"qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 {t.accent_top}, stop:1 {t.accent})"
     return f"""
 QMainWindow, QDialog {{ background: {ground}; }}
-/* 地のグラデーションを透かすため、土台の部品 (中央の部品・分割・スクロールの中・タブの中身) は塗らない。
-   既製テーマ (qdarktheme) はこれらを不透明に塗るので、ここで打ち消す */
+/* Base widgets (central widget, splitters, scroll areas, tab contents) stay unpainted so the ground gradient shows through.
+   qdarktheme paints them opaque, so that is undone here. */
 QMainWindow > QWidget, QSplitter, QSplitter > QWidget, QStackedWidget, QStackedWidget > QWidget,
 QScrollArea > QWidget#qt_scrollarea_viewport, QAbstractScrollArea#qt_scrollarea_viewport {{ background: transparent; }}
-/* 本体の窓を親にしたダイアログも「QMainWindow > QWidget」に当たって透明になる (> は親オブジェクトで判定する)。地を塗り直す */
+/* Dialogs parented to the main window also match "QMainWindow > QWidget" (> follows the parent object) and turn transparent, so repaint the ground. */
 QMainWindow > QDialog {{ background: {ground}; }}
 QScrollArea {{ border: none; background: transparent; }}
 QScrollArea > QWidget > QWidget {{ background: transparent; }}
@@ -90,7 +91,7 @@ QGroupBox {{
     margin-top: 0px;
     padding: 34px {PANEL_MARGIN}px 12px {PANEL_MARGIN}px;
 }}
-/* 見出しは面 (カード) の中の左上に置く。境界線の上にまたがらせない */
+/* The title sits at the top left inside the card, not across its border. */
 QGroupBox::title {{
     subcontrol-origin: padding;
     subcontrol-position: top left;
@@ -100,7 +101,7 @@ QGroupBox::title {{
     color: {t.fg};
     background: transparent;
 }}
-/* 群のタイトルだけ太字にし、中の部品は通常の字に戻す */
+/* Only the group title is bold; widgets inside return to the normal weight. */
 QGroupBox QWidget {{ font-weight: 400; font-size: 11pt; color: {t.fg}; }}
 {group_css}
 QWidget#rowbox {{ background: transparent; }}
@@ -129,9 +130,9 @@ QLineEdit:hover, QSpinBox:hover, QDoubleSpinBox:hover, QComboBox:hover {{ backgr
 QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QComboBox:focus, QPlainTextEdit:focus {{ border: 1px solid {t.accent}; background: {t.glass_hover}; }}
 QLineEdit:disabled, QSpinBox:disabled, QDoubleSpinBox:disabled, QComboBox:disabled {{ color: {t.muted}; background: transparent; }}
 QComboBox::drop-down {{ border: none; width: 18px; }}
-/* プルダウンの一覧は別の窓なので、読みやすさを優先して不透明。
-   combobox-popup: 0 で「選んだ項目の位置に画面いっぱいの一覧を重ねる」出し方を止め、一度に見える行数 (widgets.POPUP_ROWS) で切って
-   スクロールさせる (選択肢の多い一覧が画面の上下で見切れていた。2026-09-12 の方針) */
+/* The drop-down list is a separate window, so it stays opaque for legibility.
+   combobox-popup: 0 stops the full-screen list placed over the selected item; the list is cut at widgets.POPUP_ROWS rows
+   and scrolls (long lists were clipped at the screen edges). */
 QComboBox {{ combobox-popup: 0; }}
 QComboBox QAbstractItemView {{ background: {t.card}; border: 1px solid {t.line}; border-radius: 8px; selection-background-color: {t.accent}; }}
 QComboBox QAbstractItemView QScrollBar:vertical {{ background: transparent; width: 12px; margin: 4px 2px 4px 0; border: none; }}
@@ -180,13 +181,13 @@ QToolBar QToolButton {{ border-radius: {rs}px; padding: 5px 12px; background: tr
 QToolBar QToolButton:hover {{ background: {t.glass_hover}; }}
 QToolBar QToolButton:checked {{ background: {t.glass}; border: 1px solid {t.line}; }}
 QToolBar QLabel {{ color: {t.muted}; font-size: 10pt; }}
-/* 自前の題名の帯 (gui/titlebar.py)。地のグラデーションを見せる。枠を外した窓には 1 px の縁を付け、隣の窓と見分けられるようにする */
+/* Custom title bar (gui/titlebar.py). It shows the ground gradient; a frameless window gets a 1 px edge to tell it from its neighbors. */
 QMainWindow#adit_frameless {{ border: 1px solid {t.line}; }}
 QWidget#titlebar {{ background: transparent; border-bottom: 1px solid {t.line}; }}
 QWidget#titlebar QMenuBar {{ background: transparent; border: none; }}
-/* リボン (gui/ribbon.py)。見出しは右側のタブと同じ丸い札、中身は群と同じすりガラスの面 */
+/* Ribbon (gui/ribbon.py). Its headers are rounded tabs like those on the right; its body is a frosted surface like the groups. */
 QWidget#ribbon, QWidget#qat, QWidget#ribbon_group, QStackedWidget#ribbon_stack {{ background: transparent; }}
-/* メインの面の札 (gui/ribbon.py の ModeBar)。作業の順に左から並ぶ。選ばれている札だけ色を持つ */
+/* Main surface tabs (ModeBar in gui/ribbon.py), left to right in working order. Only the selected tab has a color. */
 QWidget#modebar {{ background: transparent; }}
 QToolButton#mode_button {{
     background: transparent; border: 1px solid transparent; border-radius: 8px;
@@ -238,7 +239,7 @@ QTabBar::tab:hover:!selected {{ background: {t.glass}; }}
 QTableWidget, QTableView {{ background: {t.glass_field}; border: 1px solid {t.line}; border-radius: 8px; gridline-color: {t.line}; }}
 QListWidget {{ background: {t.glass_field}; border: 1px solid {t.line}; border-radius: 8px; padding: 4px; }}
 QListWidget::item {{ padding: 4px 6px; border-radius: 6px; }}
-/* 選んだ行は、窓の前後 (active / inactive) に依らず地の文字色のまま、縁をアクセント色に (ライトで白い字が淡い地に乗り、読めなかった) */
+/* A selected row keeps the normal text color whether the window is active or not, with an accent border (white text on a pale ground was unreadable in the light theme). */
 QListWidget::item:selected, QListWidget::item:selected:!active {{ background: {t.glass_hover}; color: {t.fg}; border: 1px solid {t.accent}; }}
 QHeaderView::section {{ background: {t.glass}; border: none; border-bottom: 1px solid {t.line}; padding: 4px 6px; color: {t.muted}; }}
 QProgressBar {{ background: {t.glass_field}; border: 1px solid {t.line}; border-radius: 6px; min-height: 10px; max-height: 10px; }}
@@ -247,8 +248,8 @@ QCheckBox, QRadioButton {{ spacing: 8px; background: transparent; }}
 QCheckBox::indicator, QRadioButton::indicator {{ width: 16px; height: 16px; }}
 QToolTip {{ background: {t.card}; color: {t.fg}; border: 1px solid {t.line}; border-radius: 6px; padding: 4px 8px; }}
 
-/* 生成できない欄の印 (2026-09-13 の方針)。理由の行を押すと、その欄へ飛んでここが赤くなる。
-   **このまとまりは一番最後に置く。**前に書くと、:focus などあとの規則に上書きされて色が出ない */
+/* Marks a field that blocks generation: pressing the reason line jumps to the field and turns it red.
+   Keep this block last; otherwise later rules such as :focus override the color. */
 QComboBox[adit_error="true"], QLineEdit[adit_error="true"], QSpinBox[adit_error="true"],
 QDoubleSpinBox[adit_error="true"], QPlainTextEdit[adit_error="true"], QPushButton[adit_error="true"],
 QComboBox[adit_error="true"]:focus, QLineEdit[adit_error="true"]:focus, QSpinBox[adit_error="true"]:focus,
@@ -324,4 +325,5 @@ def apply_theme(app: QApplication, theme: str | None = None) -> str:
         return f"qdarktheme:{resolved}"
     except Exception as ex:
         apply_base_style(app, resolved)
-        return f"base:{resolved} (qdarktheme を使えない: {type(ex).__name__}: {ex})"
+        return L(f"base:{resolved} (qdarktheme を使えない: {type(ex).__name__}: {ex})",
+                 f"base:{resolved} (qdarktheme is not available: {type(ex).__name__}: {ex})")

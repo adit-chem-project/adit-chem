@@ -6,6 +6,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from adit.lang import L
+
 
 @dataclass
 class VoronoiResult:
@@ -39,9 +41,9 @@ def voronoi(positions, cell=None, face_area_threshold_ang2: float = 0.0) -> Voro
 
     pos = np.asarray(positions, dtype=float)
     if pos.ndim != 2 or pos.shape[1] != 3:
-        raise ValueError("positions は (原子数, 3) にしてください")
+        raise ValueError(L("positions は (原子数, 3) にしてください", "positions must have shape (atoms, 3)"))
     if len(pos) < 4:
-        raise ValueError("Voronoi には 4 原子以上が要ります")
+        raise ValueError(L("Voronoi には 4 原子以上が要ります", "Voronoi analysis needs 4 or more atoms"))
     if cell is not None:
         all_pos, owner = _images(pos, np.asarray(cell, dtype=float))
     else:
@@ -79,10 +81,15 @@ def _face_area(verts: np.ndarray) -> float:
 
 def summary_lines(vr: VoronoiResult, cell_volume_ang3: float | None = None) -> list[str]:
     ok = np.isfinite(vr.volume)
-    lines = [f"Voronoi (閉じた多面体 {int(ok.sum())} / {vr.volume.size} 原子)",
-             f"  体積: 平均 {vr.volume[ok].mean():.4f} Å³、最小 {vr.volume[ok].min():.4f}、最大 {vr.volume[ok].max():.4f}",
-             f"  面の数: 平均 {vr.faces[ok].mean():.2f} (面積 {vr.threshold_ang2:g} Å² より大きい面だけ)"]
+    lines = [L(f"Voronoi (閉じた多面体 {int(ok.sum())} / {vr.volume.size} 原子)",
+               f"Voronoi (closed polyhedra for {int(ok.sum())} / {vr.volume.size} atoms)"),
+             L(f"  体積: 平均 {vr.volume[ok].mean():.4f} Å³、最小 {vr.volume[ok].min():.4f}、最大 {vr.volume[ok].max():.4f}",
+               f"  volume: mean {vr.volume[ok].mean():.4f} Å³, min {vr.volume[ok].min():.4f}, max {vr.volume[ok].max():.4f}"),
+             L(f"  面の数: 平均 {vr.faces[ok].mean():.2f} (面積 {vr.threshold_ang2:g} Å² より大きい面だけ)",
+               f"  faces: mean {vr.faces[ok].mean():.2f} (only faces larger than {vr.threshold_ang2:g} Å²)")]
     if cell_volume_ang3 is not None and ok.all():
-        lines.append(f"  体積の合計 {vr.volume.sum():.4f} Å³ / セル {cell_volume_ang3:.4f} Å³ "
-                     f"(比 {vr.volume.sum() / cell_volume_ang3:.6f})")
+        lines.append(L(f"  体積の合計 {vr.volume.sum():.4f} Å³ / セル {cell_volume_ang3:.4f} Å³ "
+                       f"(比 {vr.volume.sum() / cell_volume_ang3:.6f})",
+                       f"  total volume {vr.volume.sum():.4f} Å³ / cell {cell_volume_ang3:.4f} Å³ "
+                       f"(ratio {vr.volume.sum() / cell_volume_ang3:.6f})"))
     return lines

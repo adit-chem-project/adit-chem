@@ -6,6 +6,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from adit.lang import L
+
 HBAR_SQ_OVER_ME_EV_ANG2 = 7.6199682
 
 
@@ -32,23 +34,26 @@ def _fit(x: np.ndarray, y: np.ndarray) -> tuple[float, float]:
 def effective_mass(kdist_inv_ang, energies_ev, band_index: int, kpoint_index: int,
                    n_points: int = 5, kind: str = "electron") -> EffectiveMass:
     if n_points < 3:
-        raise ValueError("n_points は 3 以上にしてください")
+        raise ValueError(L("n_points は 3 以上にしてください", "n_points must be 3 or more"))
     x = np.asarray(kdist_inv_ang, dtype=float)
     e = np.asarray(energies_ev, dtype=float)
     if e.ndim != 2:
-        raise ValueError("energies_ev は (k 点, バンド) の 2 次元にしてください")
+        raise ValueError(L("energies_ev は (k 点, バンド) の 2 次元にしてください", "energies_ev must be 2-dimensional (k-points, bands)"))
     if not (0 <= band_index < e.shape[1]) or not (0 <= kpoint_index < e.shape[0]):
-        raise ValueError("band_index または kpoint_index が範囲の外です")
+        raise ValueError(L("band_index または kpoint_index が範囲の外です", "band_index or kpoint_index is out of range"))
     half = n_points // 2
     lo, hi = kpoint_index - half, kpoint_index + half + 1
     if lo < 0 or hi > x.size:
-        raise ValueError(f"端の周りに {n_points} 点が取れません (k 点 {kpoint_index}、全 {x.size} 点)")
+        raise ValueError(L(f"端の周りに {n_points} 点が取れません (k 点 {kpoint_index}、全 {x.size} 点)",
+                           f"cannot take {n_points} points around the band edge (k-point {kpoint_index}, {x.size} points in all)"))
     xs, ys = x[lo:hi], e[lo:hi, band_index]
     if np.any(np.diff(xs) <= 0):
-        raise ValueError("この範囲の k 点の距離が単調に増えていません (経路の折れ目をまたいでいます)")
+        raise ValueError(L("この範囲の k 点の距離が単調に増えていません (経路の折れ目をまたいでいます)",
+                           "the k-point distance does not increase steadily in this range (it crosses a corner of the path)"))
     curvature, r2 = _fit(xs - xs[half], ys)
     if curvature == 0.0:
-        raise ValueError("曲率が 0 です (この範囲では平らなので有効質量を出せません)")
+        raise ValueError(L("曲率が 0 です (この範囲では平らなので有効質量を出せません)",
+                           "the curvature is 0 (the band is flat in this range, so there is no effective mass)"))
     return EffectiveMass(m_over_me=HBAR_SQ_OVER_ME_EV_ANG2 / curvature, curvature_ev_ang2=curvature,
                          band_index=band_index, kpoint_index=kpoint_index, n_points=n_points,
                          r_squared=r2, k_window_inv_ang=float(xs[-1] - xs[0]), kind=kind)
@@ -84,11 +89,16 @@ def at_band_edges(kdist_inv_ang, energies_ev, fermi_ev: float | None,
 def summary_lines(masses: list[EffectiveMass]) -> list[str]:
     if not masses:
         return []
-    lines = ["有効質量 (経路に沿った向きの値。テンソルではありません)"]
+    lines = [L("有効質量 (経路に沿った向きの値。テンソルではありません)", "effective mass (along the path; not a tensor)")]
     for m in masses:
-        who = "正孔 (価電子帯の頂上)" if m.kind == "hole" else "電子 (伝導帯の底)"
-        lines.append(f"  {who}: m*/m_e = {m.m_over_me:+.3f}  "
-                     f"(バンド {m.band_index}、k 点 {m.kpoint_index}、{m.n_points} 点、"
-                     f"幅 {m.k_window_inv_ang:.4f} 1/Å、決定係数 {m.r_squared:.4f})")
-    lines.append("  当てはめの幅と決定係数を見てください。幅が広すぎると 2 次式から外れます。")
+        who = (L("正孔 (価電子帯の頂上)", "hole (valence-band maximum)") if m.kind == "hole"
+               else L("電子 (伝導帯の底)", "electron (conduction-band minimum)"))
+        lines.append(L(f"  {who}: m*/m_e = {m.m_over_me:+.3f}  "
+                       f"(バンド {m.band_index}、k 点 {m.kpoint_index}、{m.n_points} 点、"
+                       f"幅 {m.k_window_inv_ang:.4f} 1/Å、決定係数 {m.r_squared:.4f})",
+                       f"  {who}: m*/m_e = {m.m_over_me:+.3f}  "
+                       f"(band {m.band_index}, k-point {m.kpoint_index}, {m.n_points} points, "
+                       f"width {m.k_window_inv_ang:.4f} 1/Å, R² {m.r_squared:.4f})"))
+    lines.append(L("  当てはめの幅と決定係数を見てください。幅が広すぎると 2 次式から外れます。",
+                   "  Check the fit width and R². If the width is too large, the band departs from a quadratic."))
     return lines

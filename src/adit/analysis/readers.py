@@ -141,7 +141,7 @@ def _read_openmx(run_dir: Path) -> RunData | None:
         r.eigenvalues_ev = np.array(got.eigenvalues_ev, dtype=float)
     if got.populations:
         r.charges = [{"definition": L("Mulliken の電子数", "Mulliken populations"),
-                      "values": got.populations, "source": f"{path.name} の Mulliken populations",
+                      "values": got.populations, "source": L(f"{path.name} の Mulliken populations", f"{path.name} Mulliken populations"),
                       "unit": "e", "note": L("電子の数です (価電子数を引いた電荷ではありません)",
                                              "these are electron counts, not charges relative to the valence")}]
     if got.homo_index is not None and got.eigenvalues_ev:

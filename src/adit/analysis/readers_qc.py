@@ -9,6 +9,8 @@ import numpy as np
 from ase import Atoms
 from ase.data import chemical_symbols
 
+from adit.lang import L
+
 HARTREE_EV = 27.211386245988
 BOHR_ANG = 0.529177210903
 GAMESS_IR_TO_KM_PER_MOL = 42.2561
@@ -73,7 +75,7 @@ def read_gaussian(path: Path) -> QcOutput:
     reading_geom = mulliken = False
     skip = 0
     charges: list[float] = []
-    definition, source = "Mulliken", "Gaussian の Mulliken charges"
+    definition, source = "Mulliken", L("Gaussian の Mulliken charges", "Gaussian Mulliken charges")
     for line in _lines(path):
         if line.startswith(" SCF Done:"):
             m = re.search(r"=\s*(-?\d+\.\d+)", line)
@@ -111,8 +113,8 @@ def read_gaussian(path: Path) -> QcOutput:
                 _add_charges(out, charges, definition, source)
                 charges = []
             summed = "hydrogens summed" in line
-            definition = "Mulliken (水素を重原子にまとめた)" if summed else "Mulliken"
-            source = "Gaussian の " + line.strip().rstrip(":")
+            definition = L("Mulliken (水素を重原子にまとめた)", "Mulliken (hydrogens summed into heavy atoms)") if summed else "Mulliken"
+            source = L("Gaussian の ", "Gaussian ") + line.strip().rstrip(":")
             mulliken = True
             continue
         if mulliken:
@@ -201,7 +203,7 @@ def read_gamess(path: Path) -> QcOutput:
     out.ir_intensities = [irs[k] * GAMESS_IR_TO_KM_PER_MOL for k in keep if k < len(irs)]
     out.raman_activities = [ramans[k] for k in keep if k < len(ramans)] if ramans else []
     if charges:
-        _add_charges(out, charges, "Mulliken", "GAMESS の TOTAL MULLIKEN AND LOWDIN ATOMIC POPULATIONS")
+        _add_charges(out, charges, "Mulliken", L("GAMESS の TOTAL MULLIKEN AND LOWDIN ATOMIC POPULATIONS", "GAMESS TOTAL MULLIKEN AND LOWDIN ATOMIC POPULATIONS"))
     return _keep_last_per_definition(out)
 
 
@@ -256,10 +258,10 @@ def read_qchem(path: Path) -> QcOutput:
                 charges.append(float(parts[2]))
                 continue
             mulliken = False
-            _add_charges(out, charges, "Mulliken", "Q-Chem の Ground-State Mulliken Net Atomic Charges")
+            _add_charges(out, charges, "Mulliken", L("Q-Chem の Ground-State Mulliken Net Atomic Charges", "Q-Chem Ground-State Mulliken Net Atomic Charges"))
             continue
     if mulliken and charges:
-        _add_charges(out, charges, "Mulliken", "Q-Chem の Ground-State Mulliken Net Atomic Charges")
+        _add_charges(out, charges, "Mulliken", L("Q-Chem の Ground-State Mulliken Net Atomic Charges", "Q-Chem Ground-State Mulliken Net Atomic Charges"))
     return _keep_last_per_definition(out)
 
 

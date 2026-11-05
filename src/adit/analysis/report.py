@@ -1458,7 +1458,7 @@ def _add_local_order(res: AnalysisResult, data: RunData, frames, opts: AnalysisO
             got = count_series(frames, float(distance), float(angle))
         except (ValueError, HydrogenBondError) as ex:
             res.notes.append(L(f"水素結合を数えられません: {ex} 書き方は --hbond 3.5,150 (距離 [Å], 角度 [度]) です。",
-                               f"cannot count hydrogen bonds: {ex} write it as --hbond 3.5,150 (distance in Å, angle in degrees).")
+                               f"cannot count hydrogen bonds: {ex}. Write it as --hbond 3.5,150 (distance in Å, angle in degrees).")
                              + criteria_note())
         else:
             res.tables["hbond"] = got
@@ -1733,18 +1733,18 @@ def _add_structure_extras(res: AnalysisResult, data: RunData, frames, opts: Anal
                     f"{vr.volume[ok].mean():.4f} Å³, mean face count {vr.faces[ok].mean():.2f} "
                     f"(faces larger than {vr.threshold_ang2:g} Å² only)") + extra)
     if opts.sasa:
-        from adit.analysis.sasa import RADII_SETS, radii_for, sasa as _sasa
+        from adit.analysis.sasa import RADII_SETS, radii_description, radii_for, sasa as _sasa
 
         name, _, probe_text = opts.sasa.partition(",")
         name = name.strip() or "bondi"
         try:
             probe = float(probe_text) if probe_text.strip() else 1.4
             radii = radii_for(list(last.get_chemical_symbols()), name)
-            source = RADII_SETS[name][0] if name in RADII_SETS else name
+            source = radii_description(name) if name in RADII_SETS else name
             sr = _sasa(last.get_positions(), radii, probe, radii_source=source)
         except ValueError as ex:
             res.notes.append(L(f"溶媒接触表面積を計算できません: {ex} 書き方は --sasa bondi,1.4 です。",
-                               f"cannot compute the solvent-accessible surface area: {ex} write it as --sasa bondi,1.4."))
+                               f"cannot compute the solvent-accessible surface area: {ex}. Write it as --sasa bondi,1.4."))
         else:
             res.tables["sasa"] = {"total_ang2": sr.total_ang2, "probe_ang": sr.probe_ang,
                                   "radii_set": name, "n_points": sr.n_points,

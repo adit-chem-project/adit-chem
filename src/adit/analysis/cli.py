@@ -105,13 +105,13 @@ def main(argv: list[str] | None = None) -> int:
         "Steinhardt q4 and q6 within the cutoff in Å; ADIT does not say which structure a value means"))
     ap.add_argument("--clusters", type=float, default=0.0, metavar="Å", help=L(
         "カットオフ以内でつながった原子のかたまりの数と大きさを出します", "number and sizes of clusters connected within the cutoff in Å"))
-    ap.add_argument("--adf", nargs="?", const="", default=None, metavar="中心[,外側]", help=L(
+    ap.add_argument("--adf", nargs="?", const="", default=None, metavar=L("中心[,外側]", "CENTER[,OUTER]"), help=L(
         "結合角の分布を出します (--adf O や --adf O,H)。カットオフは --adf-cutoff で指定します",
         "angle distribution (e.g. --adf O or --adf O,H); give the cutoff with --adf-cutoff"))
     ap.add_argument("--adf-cutoff", type=float, default=0.0, metavar="Å", help=L("結合角の分布のカットオフ [Å]", "cutoff in Å for the angle distribution"))
     ap.add_argument("--sq", action="store_true", help=L(
         "RDF から構造因子 S(q) を出します (--rdf が要ります)", "structure factor S(q) from the RDF (needs --rdf)"))
-    ap.add_argument("--hbond", default="", metavar="距離,角度", help=L(
+    ap.add_argument("--hbond", default="", metavar=L("距離,角度", "DISTANCE,ANGLE"), help=L(
         "水素結合の本数を数えます (例 --hbond 3.5,150)。距離 [Å] と角度 [度] は必須で、ADIT は既定値を持ちません",
         "count hydrogen bonds (e.g. --hbond 3.5,150); the distance in Å and the angle in degrees are required, with no defaults"))
     ap.add_argument("--hbond-lifetime", action="store_true", help=L(
@@ -136,7 +136,7 @@ def main(argv: list[str] | None = None) -> int:
         "赤外・ラマンの図に、測定の表 (1 列目 波数 [cm⁻¹]、2 列目 強度) を重ねます。強度は最大値で規格化して重ねます",
         "measured spectrum to overlay on the IR and Raman plots (column 1 wavenumber in cm^-1, column 2 intensity); "
         "both are normalized to their maximum"))
-    ap.add_argument("--plot-colors", default="", metavar="色,色,...", help=L(
+    ap.add_argument("--plot-colors", default="", metavar=L("色,色,...", "COLOR,COLOR,..."), help=L(
         "図の線の色を順に使います (例 --plot-colors black,#1f77b4,tab:red)",
         "colors used for the lines, in order (e.g. --plot-colors black,#1f77b4,tab:red)"))
     ap.add_argument("--plot-ticks", default="", choices=("", "in", "out", "inout"), help=L(
@@ -169,7 +169,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--voronoi-face-threshold", type=float, default=0.0, metavar="Å²", help=L(
         "数える面の面積の下限 [Å²] (小さい面を数えるかで面の数が変わります)",
         "smallest face area in Å² to count (the face count depends on this)"))
-    ap.add_argument("--sasa", nargs="?", const="bondi,1.4", default="", metavar="表,プローブ", help=L(
+    ap.add_argument("--sasa", nargs="?", const="bondi,1.4", default="", metavar=L("表,プローブ", "TABLE,PROBE"), help=L(
         "溶媒接触表面積を出します (例 --sasa bondi,1.4)。半径の表とプローブ半径 [Å] は利用者が選びます",
         "solvent-accessible surface area (e.g. --sasa bondi,1.4); you choose the radii set and the probe radius in Å"))
     ap.add_argument("--pca", nargs="?", const=3, type=int, default=0, metavar="N", help=L(
@@ -188,7 +188,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--zdens-axis", choices=("a", "b", "c"), default="c", help=L(
         "密度分布を取る軸 (既定 c)。界面が a 面や b 面に平行な系で使います",
         "axis for the density profile (default c); use it when the interface is normal to a or b"))
-    ap.add_argument("--select", default="", metavar="式", help=L(
+    ap.add_argument("--select", default="", metavar=L("式", "EXPR"), help=L(
         "原子の選び方 (例: \"element O\"、\"index 1-10\"、\"z < 10\"、\"within 5 of index 3\"、and / or / not)。"
         "MSD (元素ごと・原子ごとの D も選んだ原子の中で数えます。--msd の元素とは積集合)・変位の分布・VACF・RMSD・RMSF に効きます",
         "how to select atoms (e.g. \"element O\", \"index 1-10\", \"z < 10\", \"within 5 of index 3\", and/or/not); applies to the MSD "
@@ -200,7 +200,7 @@ def main(argv: list[str] | None = None) -> int:
         "3 原子の角度の時系列を出します (j が頂点)", "time series of the angle i-j-k (j is the vertex)"))
     ap.add_argument("--dihedral", action="append", default=[], metavar="i,j,k,l", help=L(
         "4 原子の二面角の時系列を出します", "time series of the dihedral i-j-k-l"))
-    ap.add_argument("--rmsd", nargs="?", const=1, type=int, default=0, metavar="基準", help=L(
+    ap.add_argument("--rmsd", nargs="?", const=1, type=int, default=0, metavar=L("基準", "REF"), help=L(
         "基準のフレーム (1 始まり、既定 1) からの RMSD の時系列を出します (Kabsch で重ね合わせます)",
         "time series of the RMSD from a reference frame (1-based, default 1), after a Kabsch superposition"))
     ap.add_argument("--rmsf", action="store_true", help=L(
@@ -211,7 +211,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--vacf", action="store_true", help=L(
         "速度自己相関 (VACF) と振動スペクトルを出します (軌跡に速度が無ければ座標の差分で作ります)",
         "compute the velocity autocorrelation (VACF) and the vibrational spectrum (velocities are made by finite differences if absent)"))
-    ap.add_argument("--conductivity", type=float, default=0.0, metavar="電荷", help=L(
+    ap.add_argument("--conductivity", type=float, default=0.0, metavar=L("電荷", "CHARGE"), help=L(
         "拡散係数からイオン伝導度 (Nernst-Einstein) を出します。イオンの電荷を指定します (Na なら 1)。ADIT は酸化数を決めません",
         "compute the ionic conductivity (Nernst-Einstein) from the diffusion coefficient; give the ionic charge (1 for Na). ADIT does not assign oxidation states"))
     ap.add_argument("--conductivity-temperature", type=float, default=0.0, metavar="K", help=L(
@@ -228,7 +228,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--vanhove-here", action="store_true", help=L(
         "重くてもこの場で計算します (既定では、見積もりが 60 秒を超えたら実行用のファイルを置くだけです)",
         "compute it here even when heavy (by default, files to run it are written when the estimate exceeds 60 s)"))
-    ap.add_argument("--heavy-limit", type=float, default=60.0, metavar="秒", help=L(
+    ap.add_argument("--heavy-limit", type=float, default=60.0, metavar=L("秒", "SECONDS"), help=L(
         "この場で計算してよい見積もりの上限 [秒] (既定 60)", "limit in seconds for computing here (default 60)"))
     ap.add_argument("--vanhove-displacement", choices=("mic", "unwrapped"), default="mic", help=L(
         "変位の測り方: mic = 折り返した座標の最小像 (セルの幅の半分で頭打ち)、unwrapped = 巻き戻した座標の差",

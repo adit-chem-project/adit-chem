@@ -13,13 +13,17 @@ from adit.analysis.trajectory import MEMORY_BUDGET_MB, Trajectory
 from adit.errors import AditValueError
 from adit.lang import L
 
+# "source" is an (ja, en) pair, resolved with L() where it is shown.
 KNOWN_CRITERIA = {
     "gromacs": {"donor_acceptor_A": 3.5, "angle_deg": 150.0,
-                "source": "GROMACS gmx hbond (既定: D–A 0.35 nm、H–D–A 30 度)"},
+                "source": ("GROMACS gmx hbond (既定: D–A 0.35 nm、H–D–A 30 度)",
+                           "GROMACS gmx hbond (default: D-A 0.35 nm, H-D-A 30 degrees)")},
     "vmd": {"donor_acceptor_A": 3.0, "angle_deg": 160.0,
-            "source": "VMD HBonds プラグイン (既定: D–A 3.0 Å、角度のずれ 20 度)"},
+            "source": ("VMD HBonds プラグイン (既定: D–A 3.0 Å、角度のずれ 20 度)",
+                       "VMD HBonds plugin (default: D-A 3.0 Å, angle deviation 20 degrees)")},
     "cpptraj": {"donor_acceptor_A": 3.0, "angle_deg": 135.0,
-                "source": "AmberTools cpptraj hbond (既定: D–A 3.0 Å、D–H–A 135 度)"},
+                "source": ("AmberTools cpptraj hbond (既定: D–A 3.0 Å、D–H–A 135 度)",
+                           "AmberTools cpptraj hbond (default: D-A 3.0 Å, D-H-A 135 degrees)")},
 }
 DEFAULT_DONORS = ("N", "O", "F")
 CHUNK_BYTES = 32 * 2 ** 20
@@ -34,7 +38,7 @@ class HydrogenBondError(AditValueError):
 
 
 def criteria_note() -> str:
-    parts = [f"{v['source']}" for v in KNOWN_CRITERIA.values()]
+    parts = [L(*v["source"]) for v in KNOWN_CRITERIA.values()]
     return L("よく使われる値: " + " / ".join(parts) + "。GROMACS の角度は H–D–A (ADIT の D–H···A とは定義が違う) なので、"
              "同じ数値を入れても同じ本数にはなりません。ADIT は既定値を持ちません (どれを採るかは利用者が決めます)",
              "commonly used criteria: " + " / ".join(parts) + ". GROMACS defines the angle as H-D-A (not D-H...A as ADIT does), "

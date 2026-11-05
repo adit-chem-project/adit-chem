@@ -4,6 +4,8 @@ from __future__ import annotations
 import math
 from xml.sax.saxutils import escape
 
+from adit.lang import L
+
 SVG_HEAD = ('<svg xmlns="http://www.w3.org/2000/svg" width="{w:.0f}" height="{h:.0f}" '
             'viewBox="{x0:.2f} {y0:.2f} {w:.2f} {h:.2f}">\n')
 BOND_WIDTH = 2.0
@@ -25,7 +27,7 @@ def sketch_to_svg(sketch, colors: dict[str, str] | None = None, background: str 
     colors = {**ELEMENT_COLORS, **(colors or {})}
     atoms, bonds = sketch.atoms, sketch.bonds
     if not atoms:
-        raise ValueError("何も描かれていません")
+        raise ValueError(L("何も描かれていません", "nothing has been drawn"))
     pts = [(a.x, a.y) for a in atoms]
     x0, y0, w, h = _bounds(pts, margin=28.0)
     out = [SVG_HEAD.format(w=w, h=h, x0=x0, y0=y0)]
@@ -65,7 +67,7 @@ def sketch_to_mol(sketch) -> str:
 def scene_to_svg(scene, width: int = 640, height: int = 520, rx: float = -1.05, ry: float = 0.52,
                  background: str = "white", rotation=None) -> str:
     if scene.n_atoms == 0:
-        raise ValueError("構造がありません")
+        raise ValueError(L("構造がありません", "no structure"))
     if rotation is not None:
         # the 3x3 matrix of the desktop viewer (screen = R @ p), so the file shows the view on screen
         R = [[float(x) for x in row] for row in rotation]

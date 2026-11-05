@@ -256,7 +256,8 @@ AXIS_INDEX = {"x": 0, "y": 1, "z": 2}
 def parse_axes(axes: str) -> tuple[int, ...]:
     a = "".join(dict.fromkeys(str(axes).strip().lower().replace(",", "")))
     if not a or any(c not in AXIS_INDEX for c in a):
-        raise ValueError(f"MSD の成分は x / y / z の組み合わせで指定します (受け取った値: {axes!r})")
+        raise ValueError(L(f"MSD の成分は x / y / z の組み合わせで指定します (受け取った値: {axes!r})",
+                           f"the MSD components must be a combination of x / y / z (got: {axes!r})"))
     return tuple(AXIS_INDEX[c] for c in a)
 
 
@@ -520,7 +521,7 @@ class ZDensityAccumulator:
 
     def __init__(self, bin_ang: float = 0.2, axis: int = 2):
         if axis not in (0, 1, 2):
-            raise ValueError("axis は 0 (a) / 1 (b) / 2 (c) のどれか")
+            raise ValueError(L("axis は 0 (a) / 1 (b) / 2 (c) のどれか", "axis must be 0 (a), 1 (b) or 2 (c)"))
         self.bin_ang = float(bin_ang)
         self.axis = int(axis)
         self.nbins = None

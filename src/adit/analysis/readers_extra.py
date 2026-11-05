@@ -191,7 +191,7 @@ def read_gromacs(d: Path) -> RunData:
                                     "source": f"{log.name} (Pressure (bar))"}
         if "Density" in v0:
             r.series["density_log"] = {"values": [b["values"].get("Density", np.nan) / 1000.0 for b in blocks], "unit": "g/cm^3",
-                                       "source": f"{log.name} (Density、kg/m^3 を g/cm^3 に)"}
+                                       "source": L(f"{log.name} (Density、kg/m^3 を g/cm^3 に)", f"{log.name} (Density, kg/m^3 converted to g/cm^3)")}
         if is_md and "Conserved En." in v0:
             r.series["conserved"] = {"values": [b["values"]["Conserved En."] * KJ_MOL_EV for b in blocks], "unit": "eV",
                                      "source": f"{log.name} (Conserved En.)"}
@@ -415,7 +415,7 @@ def read_openmm(d: Path) -> RunData:
             volume = column("Box Volume (nm^3)")
             if volume:
                 r.series["volume"] = {"values": [x * 1000.0 for x in volume], "unit": "Å³",
-                                      "source": "md.log (Box Volume (nm^3) を Å³ に)"}
+                                      "source": L("md.log (Box Volume (nm^3) を Å³ に)", "md.log (Box Volume (nm^3) converted to Å³)")}
             density = column("Density (g/mL)")
             if density:
                 r.series["density_log"] = {"values": density, "unit": "g/cm^3", "source": "md.log (Density (g/mL))"}

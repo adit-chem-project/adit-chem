@@ -8,6 +8,8 @@ from pathlib import Path
 
 import numpy as np
 
+from adit.lang import L
+
 
 @dataclass
 class Projection:
@@ -29,19 +31,19 @@ class ProjectedBands:
     def by_atom(self, atom_index: int) -> np.ndarray:
         parts = [p.weights for p in self.projections if p.atom_index == atom_index]
         if not parts:
-            raise ValueError(f"原子 {atom_index} の射影がありません")
+            raise ValueError(L(f"原子 {atom_index} の射影がありません", f"no projections for atom {atom_index}"))
         return np.sum(parts, axis=0)
 
     def by_element(self, element: str) -> np.ndarray:
         parts = [p.weights for p in self.projections if p.element.lower() == element.lower()]
         if not parts:
-            raise ValueError(f"元素 {element} の射影がありません")
+            raise ValueError(L(f"元素 {element} の射影がありません", f"no projections for element {element}"))
         return np.sum(parts, axis=0)
 
     def by_angular_momentum(self, l: int) -> np.ndarray:
         parts = [p.weights for p in self.projections if p.l == l]
         if not parts:
-            raise ValueError(f"l = {l} の射影がありません")
+            raise ValueError(L(f"l = {l} の射影がありません", f"no projections for l = {l}"))
         return np.sum(parts, axis=0)
 
     def total(self) -> np.ndarray:
@@ -63,17 +65,20 @@ def read_filproj(path: Path) -> ProjectedBands:
             natomwfc, nk, nbnd = (int(x) for x in m.groups())
             break
     if start is None:
-        raise ValueError(f"{Path(path).name} に projwfc の見出し (natomwfc nkstot nbnd) が見つかりません")
+        raise ValueError(L(f"{Path(path).name} に projwfc の見出し (natomwfc nkstot nbnd) が見つかりません",
+                           f"no projwfc header (natomwfc nkstot nbnd) found in {Path(path).name}"))
     pos = start + 2
     projections: list[Projection] = []
     for _ in range(natomwfc):
         head = _WFC.match(lines[pos])
         if head is None:
-            raise ValueError(f"{Path(path).name} の {pos + 1} 行目を軌道の見出しとして読めません: {lines[pos]!r}")
+            raise ValueError(L(f"{Path(path).name} の {pos + 1} 行目を軌道の見出しとして読めません: {lines[pos]!r}",
+                               f"cannot read line {pos + 1} of {Path(path).name} as an orbital header: {lines[pos]!r}"))
         iwfc, iatom, element, label, _n, l, m_index = head.groups()
         block = lines[pos + 1: pos + 1 + nk * nbnd]
         if len(block) < nk * nbnd:
-            raise ValueError(f"{Path(path).name} の軌道 {iwfc} の重みが {nk * nbnd} 行ありません")
+            raise ValueError(L(f"{Path(path).name} の軌道 {iwfc} の重みが {nk * nbnd} 行ありません",
+                               f"{Path(path).name}: orbital {iwfc} does not have {nk * nbnd} rows of weights"))
         vals = np.fromstring(" ".join(block), sep=" ").reshape(nk * nbnd, 3)[:, 2]
         projections.append(Projection(int(iwfc), int(iatom), element, label, int(l), int(m_index),
                                       vals.reshape(nk, nbnd)))
@@ -92,10 +97,14 @@ def find_filproj(run_dir: Path) -> Path | None:
 def summary_lines(pb: ProjectedBands) -> list[str]:
     total = pb.total()
     elements = sorted({p.element for p in pb.projections})
-    lines = [f"射影バンド: {pb.n_kpoints} k 点 × {pb.n_bands} バンド、原子軌道 {len(pb.projections)} 個"]
+    lines = [L(f"射影バンド: {pb.n_kpoints} k 点 × {pb.n_bands} バンド、原子軌道 {len(pb.projections)} 個",
+               f"projected bands: {pb.n_kpoints} k-points x {pb.n_bands} bands, {len(pb.projections)} atomic orbitals")]
     for el in elements:
         w = pb.by_element(el)
-        lines.append(f"  {el}: 重みの平均 {w.mean():.3f} (帯・k 点で平均)")
-    lines.append(f"  全射影の和の平均 {total.mean():.3f} "
-                 "(1 に足りない分は、原子軌道で表しきれない成分です)")
+        lines.append(L(f"  {el}: 重みの平均 {w.mean():.3f} (帯・k 点で平均)",
+                       f"  {el}: mean weight {w.mean():.3f} (averaged over bands and k-points)"))
+    lines.append(L(f"  全射影の和の平均 {total.mean():.3f} "
+                   "(1 に足りない分は、原子軌道で表しきれない成分です)",
+                   f"  mean of the sum of all projections {total.mean():.3f} "
+                   "(the shortfall from 1 is the part atomic orbitals cannot represent)"))
     return lines

@@ -58,7 +58,8 @@ def write_job(run_dir: Path | str, *, dt_fs: float | None, species: str | None =
         cell_file = CELL_FILE
         written.append(out / CELL_FILE)
     dt_known = dt_fs is not None and dt_fs > 0
-    args = [WORKER_FILE, trajectory or "<軌跡のファイル>", f"--dt {dt_fs:g}" if dt_known else "--dt <1フレームの時間 fs>",
+    args = [WORKER_FILE, trajectory or L("<軌跡のファイル>", "<trajectory file>"),
+            f"--dt {dt_fs:g}" if dt_known else L("--dt <1フレームの時間 fs>", "--dt <time per frame in fs>"),
             f"--taus {taus}", f"--displacement {displacement}"]
     if natoms:
         args.append(f"--natoms {natoms}")
@@ -78,7 +79,7 @@ def write_job(run_dir: Path | str, *, dt_fs: float | None, species: str | None =
     ]
     if not trajectory:
         body.append(L("# <軌跡のファイル> を、この場所にある軌跡の名前に置き換えてください。",
-                      "# Replace <軌跡のファイル> with the name of the trajectory file in this directory."))
+                      "# Replace <trajectory file> with the name of the trajectory file in this directory."))
     if not dt_known:
         body.append(L("# 1 フレームの時間 [fs] が出力から読めなかったので --dt は穴です。値を入れてから実行してください。",
                       "# The time per frame in fs could not be read from the output; fill in --dt before running."))
