@@ -17,6 +17,14 @@ if TYPE_CHECKING:
 # Expected texts are the Japanese ones; subprocesses read this too.
 os.environ.setdefault("ADIT_LANG", "ja")
 
+# Each MainWindow built and destroyed drops about ten references to True inside PySide6. Python 3.12 made
+# True immortal; on 3.11 the hundreds of windows here reach zero and abort at exit (bool_dealloc).
+if sys.version_info < (3, 12):
+    import ctypes
+
+    for _flag in (True, False):
+        ctypes.c_ssize_t.from_address(id(_flag)).value += 1_000_000    # never released, unlike a list of references
+
 REPO = Path(__file__).resolve().parent.parent
 REAL_SK_ROOT = REPO / "slakos"
 
